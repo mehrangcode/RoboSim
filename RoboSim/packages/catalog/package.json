@@ -1,0 +1,45 @@
+{
+  "name": "@robosim/catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@robosim/component-battery": "workspace:*",
+    "@robosim/component-breadboard": "workspace:*",
+    "@robosim/component-buzzer-active": "workspace:*",
+    "@robosim/component-l298n": "workspace:*",
+    "@robosim/component-ldr": "workspace:*",
+    "@robosim/component-led": "workspace:*",
+    "@robosim/component-potentiometer": "workspace:*",
+    "@robosim/component-push-button": "workspace:*",
+    "@robosim/component-resistor": "workspace:*",
+    "@robosim/component-sg90-servo": "workspace:*",
+    "@robosim/component-switch": "workspace:*",
+    "@robosim/component-tt-motor": "workspace:*",
+    "@robosim/sim-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@robosim/board-avr-uno": "workspace:*",
+    "@robosim/config": "workspace:*",
+    "@robosim/i18n": "workspace:*",
+    "@robosim/test-fixtures": "workspace:*",
+    "eslint": "^10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "^5.0.4"
+  }
+}

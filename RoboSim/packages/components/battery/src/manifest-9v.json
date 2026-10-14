@@ -1,0 +1,20 @@
+{
+  "id": "power.battery-9v",
+  "version": "1.0.0",
+  "category": "power",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "power.battery-9v.name",
+  "pins": [
+    { "name": "pos", "kind": "power" },
+    { "name": "neg", "kind": "ground" }
+  ],
+  "props": {
+    "capacityMah": { "type": "number", "default": 550, "min": 1, "max": 20000, "unit": "mAh" },
+    "internalOhms": { "type": "number", "default": 1.5, "min": 0.01, "max": 20, "unit": "Ω" },
+    "initialCharge": { "type": "number", "default": 1, "min": 0, "max": 1 }
+  },
+  "inputs": [{ "name": "charge", "type": "number", "default": 1, "min": 0, "max": 1 }],
+  "massG": 45,
+  "limits": { "maxCurrentMa": 800 }
+}

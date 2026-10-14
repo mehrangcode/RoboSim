@@ -1,0 +1,18 @@
+{
+  "id": "sensor.push-button",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.push-button.name",
+  "pins": [
+    { "name": "a1", "kind": "passive" },
+    { "name": "a2", "kind": "passive" },
+    { "name": "b1", "kind": "passive" },
+    { "name": "b2", "kind": "passive" }
+  ],
+  "props": {},
+  "inputs": [{ "name": "pressed", "type": "boolean", "default": false }],
+  "massG": 1,
+  "limits": { "maxCurrentMa": 50 }
+}

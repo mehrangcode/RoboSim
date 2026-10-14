@@ -1,0 +1,54 @@
+{
+  "actuator": {
+    "buzzer-active": {
+      "name": "Active buzzer"
+    },
+    "led": {
+      "name": "LED"
+    },
+    "sg90-servo": {
+      "name": "SG90 micro servo"
+    },
+    "tt-motor": {
+      "name": "TT gear motor"
+    }
+  },
+  "driver": {
+    "l298n": {
+      "name": "L298N motor driver"
+    }
+  },
+  "passive": {
+    "breadboard-full": {
+      "name": "Full breadboard"
+    },
+    "breadboard-half": {
+      "name": "Half breadboard"
+    },
+    "potentiometer": {
+      "name": "Potentiometer"
+    },
+    "resistor": {
+      "name": "Resistor"
+    }
+  },
+  "power": {
+    "battery-4aa": {
+      "name": "4×AA battery pack"
+    },
+    "battery-9v": {
+      "name": "9 V battery"
+    },
+    "switch": {
+      "name": "On/off switch"
+    }
+  },
+  "sensor": {
+    "ldr": {
+      "name": "Light sensor (LDR)"
+    },
+    "push-button": {
+      "name": "Push button"
+    }
+  }
+}

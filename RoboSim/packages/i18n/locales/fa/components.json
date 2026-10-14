@@ -1,0 +1,54 @@
+{
+  "actuator": {
+    "buzzer-active": {
+      "name": "بازر اکتیو"
+    },
+    "led": {
+      "name": "ال‌ای‌دی"
+    },
+    "sg90-servo": {
+      "name": "سروو موتور SG90"
+    },
+    "tt-motor": {
+      "name": "موتور گیربکسی TT"
+    }
+  },
+  "driver": {
+    "l298n": {
+      "name": "درایور موتور L298N"
+    }
+  },
+  "passive": {
+    "breadboard-full": {
+      "name": "بردبورد کامل"
+    },
+    "breadboard-half": {
+      "name": "بردبورد نیم"
+    },
+    "potentiometer": {
+      "name": "پتانسیومتر"
+    },
+    "resistor": {
+      "name": "مقاومت"
+    }
+  },
+  "power": {
+    "battery-4aa": {
+      "name": "جاباتری ۴ عددی قلمی"
+    },
+    "battery-9v": {
+      "name": "باتری ۹ ولت"
+    },
+    "switch": {
+      "name": "کلید روشن/خاموش"
+    }
+  },
+  "sensor": {
+    "ldr": {
+      "name": "سنسور نور (LDR)"
+    },
+    "push-button": {
+      "name": "دکمه فشاری"
+    }
+  }
+}

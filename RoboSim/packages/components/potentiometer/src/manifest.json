@@ -1,0 +1,19 @@
+{
+  "id": "passive.potentiometer",
+  "version": "1.0.0",
+  "category": "passive",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "passive.potentiometer.name",
+  "pins": [
+    { "name": "a", "kind": "passive" },
+    { "name": "wiper", "kind": "analog" },
+    { "name": "b", "kind": "passive" }
+  ],
+  "props": {
+    "ohms": { "type": "number", "default": 10000, "min": 100, "max": 1000000, "unit": "Ω" }
+  },
+  "inputs": [{ "name": "position", "type": "number", "default": 0.5, "min": 0, "max": 1 }],
+  "massG": 2,
+  "limits": { "maxPowerMw": 100 }
+}

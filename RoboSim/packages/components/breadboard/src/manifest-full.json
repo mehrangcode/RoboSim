@@ -1,0 +1,13 @@
+{
+  "id": "passive.breadboard-full",
+  "version": "1.0.0",
+  "category": "passive",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "passive.breadboard-full.name",
+  "pins": [],
+  "props": {},
+  "inputs": [],
+  "massG": 80,
+  "limits": { "maxCurrentMa": 1000 }
+}

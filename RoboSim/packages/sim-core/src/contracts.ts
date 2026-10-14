@@ -1,0 +1,307 @@
+/**
+ * Engine contracts shared by boards, components, and the scheduler (Technical Design §5.2).
+ * Everything here must stay structured-clone-able and free of DOM / Node APIs.
+ */
+
+export type Level = 0 | 1;
+
+/** Board-scoped pin identifier, e.g. 'D13', 'A0'. */
+export type PinId = string;
+
+/** Net index produced by the netlist builder; 0 is ground. */
+export type NetId = number;
+
+export type Unsubscribe = () => void;
+
+export interface FirmwareImage {
+  readonly format: 'ihex' | 'uf2' | 'elf';
+  readonly bytes: Uint8Array;
+  readonly sha256: string;
+}
+
+export type PinMode = 'input' | 'input_pullup' | 'output';
+
+export interface PwmOutput {
+  /** 0..1, derived from timer registers, never from sampled edges. */
+  readonly dutyRatio: number;
+  readonly freqHz: number;
+}
+
+export interface PinOutput {
+  readonly mode: PinMode;
+  readonly level: Level;
+  readonly pwm?: PwmOutput;
+}
+
+/** What the outside world presents to an MCU input pin: thresholded level plus raw voltage for the ADC. */
+export interface PinDrive {
+  readonly level: Level;
+  readonly volts: number;
+}
+
+export interface UartPort {
+  write(bytes: Uint8Array): void;
+  onData(cb: (bytes: Uint8Array) => void): Unsubscribe;
+}
+
+export interface McuCore {
+  readonly clockHz: number;
+  /** Monotonically increasing CPU cycle count. */
+  readonly cycle: number;
+  /** Executes until `untilCycle`, applying scheduled inputs at their exact cycles. */
+  run(untilCycle: number): void;
+  scheduleInput(pin: PinId, drive: PinDrive, atCycle: number): void;
+  pinOutputs(): ReadonlyMap<PinId, PinOutput>;
+  /** Cycle-stamped edges for software PWM, servo pulses, ultrasonic TRIG. */
+  onPinEdge(cb: (pin: PinId, level: Level, cycle: number) => void): Unsubscribe;
+  uart(index: number): UartPort;
+  reset(): void;
+}
+
+/** Electrical characteristics of a board's GPIO used by the component bus. */
+export interface PinElectrical {
+  /** Supply voltage of the pin driver (V). */
+  readonly vcc: number;
+  /** Output driver resistance (Ω); pin current falls out of the MNA solution. */
+  readonly outputResistance: number;
+  /** Internal pull-up resistance when `input_pullup` (Ω). */
+  readonly pullupResistance: number;
+  /** Input low / high thresholds (V); between them the previous level is kept (hysteresis). */
+  readonly vil: number;
+  readonly vih: number;
+}
+
+export type PinCapability =
+  'digital' | 'pwm' | 'adc' | 'uart' | 'i2c' | 'spi' | 'interrupt' | 'power' | 'ground';
+
+export interface BoardPinDef {
+  readonly id: PinId;
+  /** Silkscreen label, e.g. '~9', 'A0', '5V'. */
+  readonly label: string;
+  readonly capabilities: readonly PinCapability[];
+  /** Absolute-maximum voltage on the pin (V). */
+  readonly absMaxV: number;
+  /** Absolute-maximum continuous pin current (mA); exceeding it feeds the damage model. */
+  readonly maxCurrentMa: number;
+}
+
+export interface PowerRailDef {
+  readonly id: string; // '5V', '3V3', 'VIN'
+  readonly volts: number;
+  /** Maximum current the rail can supply (mA). */
+  readonly maxCurrentMa: number;
+}
+
+export interface PowerTreeDef {
+  readonly rails: readonly PowerRailDef[];
+  /** VIN regulator: valid input window and dropout (V). */
+  readonly regulator: { readonly minInV: number; readonly maxInV: number; readonly dropoutV: number };
+  /** Total current through all GND/VCC pins of the MCU package (mA). */
+  readonly mcuPackageMaxCurrentMa: number;
+}
+
+export interface UploadProtocolDef {
+  readonly protocol: 'stk500v1' | 'stk500v2' | 'uf2';
+  readonly baud: number;
+  /** MCU signature bytes checked before flashing. */
+  readonly signature: readonly number[];
+  readonly flashBytes: number;
+}
+
+export interface Board {
+  readonly id: string; // 'avr-uno'
+  readonly fqbn: string; // 'arduino:avr:uno'
+  readonly clockHz: number;
+  readonly pins: readonly BoardPinDef[];
+  readonly electrical: PinElectrical;
+  readonly power: PowerTreeDef;
+  readonly upload: UploadProtocolDef;
+  createCore(fw: FirmwareImage): McuCore;
+}
+
+export interface Vec2 {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface RayHit {
+  readonly point: Vec2;
+  readonly distance: number;
+  readonly bodyId: string;
+}
+
+export interface BodySnapshot {
+  readonly id: string;
+  readonly position: Vec2;
+  readonly angle: number;
+}
+
+export interface WorldModel {
+  /** Fixed-step physics. */
+  step(dt: number): void;
+  raycast(origin: Vec2, dir: Vec2, maxDist: number): RayHit | null;
+  /** Floor luminance 0..1 averaged over a disc. */
+  sampleFloor(p: Vec2, radius: number): number;
+  bodies(): readonly BodySnapshot[];
+}
+
+export interface Fault {
+  readonly code: string;
+  readonly componentId: string;
+  readonly params: Readonly<Record<string, string | number>>;
+}
+
+/** Handle to a stamped ideal/real voltage source, used to read its current after a solve. */
+export type SourceHandle = number & { readonly __brand: 'SourceHandle' };
+/** Handle to a stamped piecewise-linear diode. */
+export type DiodeHandle = number & { readonly __brand: 'DiodeHandle' };
+
+export interface DiodeParams {
+  /** Forward voltage at which the diode turns on (V). */
+  readonly vf: number;
+  /** Series resistance in the on region (Ω). */
+  readonly rs: number;
+}
+
+/** Electrical contribution of a component to the circuit (§5.4). */
+export interface MnaStamper {
+  conductance(a: NetId, b: NetId, siemens: number): void;
+  /** Constant current flowing from `from` through the element into `to` (A). */
+  currentSource(from: NetId, to: NetId, amps: number): void;
+  /** Source of `volts` between `pos` and `neg` with optional series resistance (Ω). */
+  voltageSource(
+    pos: NetId,
+    neg: NetId,
+    volts: number,
+    seriesResistance?: number,
+    options?: VoltageSourceOptions,
+  ): SourceHandle;
+  /**
+   * Ideal averaged DC transformer: V(secPos) − V(secNeg) = ratio·(V(priPos) − V(priNeg)) − offsetV − r·I,
+   * drawing ratio × the secondary current from the primary. Models PWM-averaged H-bridges and buck stages.
+   */
+  transformer(
+    primaryPos: NetId,
+    primaryNeg: NetId,
+    secondaryPos: NetId,
+    secondaryNeg: NetId,
+    ratio: number,
+    options?: { readonly seriesResistance?: number; readonly offsetV?: number },
+  ): SourceHandle;
+  diode(anode: NetId, cathode: NetId, params: DiodeParams): DiodeHandle;
+}
+
+export interface VoltageSourceOptions {
+  /**
+   * Net the delivered current is drawn from instead of `neg` — a linear regulator draws its output
+   * current from its input, so a battery behind it sags realistically.
+   */
+  readonly supplyFrom?: NetId;
+}
+
+/** Read-only view of the latest DC operating point. */
+export interface MnaSolution {
+  readonly converged: boolean;
+  voltage(net: NetId): number;
+  /** Current delivered out of the source's + terminal (A). */
+  sourceCurrent(h: SourceHandle): number;
+  /** Anode → cathode current (A). */
+  diodeCurrent(h: DiodeHandle): number;
+}
+
+export interface ModelContext {
+  readonly id: string;
+  /** Net connected to the component's named pin. */
+  net(pin: string): NetId;
+  /** Deterministic random stream scoped to this component. */
+  random(): number;
+}
+
+/** Output edge of an MCU pin, stamped with simulated time (s) at CPU-cycle precision. */
+export interface PinEdge {
+  readonly level: Level;
+  readonly time: number;
+}
+
+export interface ComponentIO {
+  /** Simulated time at the start of this slice (s). */
+  readonly simTime: number;
+  /** MCU output edges during this slice on pins wired directly to `net` (servo pulses, TRIG), in time order. */
+  edges(net: NetId): readonly PinEdge[];
+  /**
+   * PWM generated by an MCU pin wired directly to `net`, or null. Logic inputs use it to tell a PWM
+   * average (duty) from a DC level, which the averaged operating point alone cannot.
+   */
+  pwm(net: NetId): PwmOutput | null;
+  readonly solution: MnaSolution;
+  readonly world: WorldModel | null;
+  /** Tells the scheduler the component's stamp changed and the circuit must be re-solved. */
+  invalidate(): void;
+}
+
+export interface ComponentModel<Props = unknown, State = unknown> {
+  /** Manifest id, e.g. 'driver.l298n'. */
+  readonly type: string;
+  init(ctx: ModelContext, props: Props): void;
+  stamp(s: MnaStamper): void;
+  /** Reads the operating point and MCU signals; writes mechanical outputs. */
+  step(dt: number, io: ComponentIO): void;
+  faults(): readonly Fault[];
+  /** Plain data for renderers and the inspector. */
+  snapshot(): State;
+  /**
+   * User interaction declared in the manifest's `inputs` (press, rotate, light level). The scheduler
+   * re-solves the circuit afterwards, so models only update state here.
+   */
+  input?(name: string, value: number | boolean): void;
+}
+
+export type PropSpec =
+  | {
+      readonly type: 'number';
+      readonly default: number;
+      readonly min?: number;
+      readonly max?: number;
+      readonly unit?: string;
+    }
+  | { readonly type: 'enum'; readonly default: string; readonly options: readonly string[] }
+  | { readonly type: 'boolean'; readonly default: boolean };
+
+export interface InputSpec {
+  readonly name: string;
+  readonly type: 'boolean' | 'number';
+  readonly default: number | boolean;
+  readonly min?: number;
+  readonly max?: number;
+}
+
+export type PinKind = 'power' | 'ground' | 'digital' | 'analog' | 'passive' | 'output';
+
+/** Catalogue entry of a component package (`packages/components/<slug>/manifest.json`, Technical Design §3). */
+export interface ComponentManifest {
+  /** Stable type id, e.g. 'driver.l298n'. */
+  readonly id: string;
+  readonly version: string;
+  readonly category:
+    'power' | 'actuator' | 'driver' | 'sensor' | 'display' | 'comms' | 'passive' | 'mechanical';
+  readonly tier: 'basic' | 'pro';
+  readonly phase: 'P1' | 'P2' | 'P3' | 'P4';
+  /** i18n key in the `components` namespace. */
+  readonly nameKey: string;
+  readonly pins: readonly { readonly name: string; readonly kind: PinKind }[];
+  readonly props: Readonly<Record<string, PropSpec>>;
+  readonly inputs: readonly InputSpec[];
+  readonly massG: number;
+  /** Electrical / mechanical limits used by faults and safety rules (units in the key, e.g. maxCurrentMa). */
+  readonly limits: Readonly<Record<string, number>>;
+}
+
+export interface ComponentDefinition<Props = unknown> {
+  readonly manifest: ComponentManifest;
+  create(): ComponentModel<Props>;
+  /**
+   * Pin pairs that are the same conductor inside the part (breadboard strips). The netlist builder
+   * merges them like wires, so they cost nothing in the MNA solve.
+   */
+  internalConnections?(): readonly (readonly [string, string])[];
+}

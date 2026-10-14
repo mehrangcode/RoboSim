@@ -3,19 +3,21 @@ import ICU from 'i18next-icu';
 import { DEFAULT_LOCALE, type Locale } from '@robosim/shared';
 import enAdmin from '../locales/en/admin.json' with { type: 'json' };
 import enCommon from '../locales/en/common.json' with { type: 'json' };
+import enComponents from '../locales/en/components.json' with { type: 'json' };
 import enErrors from '../locales/en/errors.json' with { type: 'json' };
 import enShell from '../locales/en/shell.json' with { type: 'json' };
 import faAdmin from '../locales/fa/admin.json' with { type: 'json' };
 import faCommon from '../locales/fa/common.json' with { type: 'json' };
+import faComponents from '../locales/fa/components.json' with { type: 'json' };
 import faErrors from '../locales/fa/errors.json' with { type: 'json' };
 import faShell from '../locales/fa/shell.json' with { type: 'json' };
 
-export const NAMESPACES = ['common', 'shell', 'admin', 'errors'] as const;
+export const NAMESPACES = ['common', 'shell', 'admin', 'errors', 'components'] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
 export const resources = {
-  en: { common: enCommon, shell: enShell, admin: enAdmin, errors: enErrors },
-  fa: { common: faCommon, shell: faShell, admin: faAdmin, errors: faErrors },
+  en: { common: enCommon, shell: enShell, admin: enAdmin, errors: enErrors, components: enComponents },
+  fa: { common: faCommon, shell: faShell, admin: faAdmin, errors: faErrors, components: faComponents },
 } as const;
 
 /** Intl locale tags: Persian uses the Jalali (persian) calendar and Persian digits (FR-I18N-04). */

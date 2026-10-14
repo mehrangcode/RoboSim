@@ -1,0 +1,31 @@
+{
+  "id": "driver.l298n",
+  "version": "1.0.0",
+  "category": "driver",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "driver.l298n.name",
+  "pins": [
+    { "name": "in1", "kind": "digital" },
+    { "name": "in2", "kind": "digital" },
+    { "name": "in3", "kind": "digital" },
+    { "name": "in4", "kind": "digital" },
+    { "name": "ena", "kind": "digital" },
+    { "name": "enb", "kind": "digital" },
+    { "name": "out1", "kind": "output" },
+    { "name": "out2", "kind": "output" },
+    { "name": "out3", "kind": "output" },
+    { "name": "out4", "kind": "output" },
+    { "name": "vs", "kind": "power" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "v5", "kind": "power" }
+  ],
+  "props": {
+    "regulatorJumper": { "type": "boolean", "default": true },
+    "enaJumper": { "type": "boolean", "default": true },
+    "enbJumper": { "type": "boolean", "default": true }
+  },
+  "inputs": [],
+  "massG": 30,
+  "limits": { "maxVsV": 35, "maxChannelCurrentMa": 2000, "regulatorMinVsV": 7 }
+}

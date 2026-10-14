@@ -19,6 +19,13 @@ module.exports = {
       },
     },
     {
+      name: 'sim-core-no-node-builtins',
+      comment: 'sim-core runs unchanged in a browser worker: node:* / fs / path etc. are forbidden.',
+      severity: 'error',
+      from: { path: '^packages/sim-core/' },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
       name: 'extensions-are-isolated',
       comment: 'Boards, components, and safety rules depend only on sim-core and shared.',
       severity: 'error',

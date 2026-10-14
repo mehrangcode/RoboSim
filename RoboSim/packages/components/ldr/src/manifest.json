@@ -1,0 +1,20 @@
+{
+  "id": "sensor.ldr",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.ldr.name",
+  "pins": [
+    { "name": "a", "kind": "passive" },
+    { "name": "b", "kind": "passive" }
+  ],
+  "props": {
+    "r10LuxOhms": { "type": "number", "default": 10000, "min": 1000, "max": 200000, "unit": "Ω" },
+    "gamma": { "type": "number", "default": 0.7, "min": 0.3, "max": 1.2 },
+    "darkOhms": { "type": "number", "default": 1000000, "min": 10000, "max": 20000000, "unit": "Ω" }
+  },
+  "inputs": [{ "name": "lux", "type": "number", "default": 300, "min": 0, "max": 100000 }],
+  "massG": 0.5,
+  "limits": { "maxPowerMw": 100, "maxVoltageV": 150 }
+}

@@ -160,7 +160,8 @@ robosim/
 │   ├── ui/                     # Design system (shadcn-based, RTL-aware), icons, tokens
 │   ├── i18n/                   # en/ and fa/ namespaces, ICU messages, key linter
 │   ├── content/                # Built-in arenas, guided projects, courses (JSON + assets), content schema
-│   ├── test-fixtures/          # Golden circuits, firmware, traces shared by tests
+│   ├── catalog/                # Registry of all component definitions (worker + grader) + cross-component tests
+│   ├── test-fixtures/          # Test bench (part.pin wiring), AVR assembler firmware, golden circuits/traces
 │   └── config/                 # tsconfig, eslint, prettier, dependency-cruiser presets
 ├── infra/
 │   ├── docker/                 # docker-compose.yml for local dev (WSL2-compatible)
@@ -259,6 +260,14 @@ export interface WorldModel {
   bodies(): readonly BodySnapshot[];
 }
 
+export interface ComponentDefinition {       // exported by every packages/components/<slug>
+  manifest: ComponentManifest;                // pins, props (defaults/ranges), inputs, limits, mass, nameKey
+  create(): ComponentModel;
+  internalConnections?(): [pin, pin][];       // same-conductor pins (breadboard strips) merged by the netlist
+}
+// ComponentIO also offers io.pwm(net) (MCU PWM duty on a net) and io.edges(net) (cycle-stamped pin edges),
+// and ComponentModel.input(name, value) receives user interaction (button, pot, light level).
+
 export interface SuccessCondition { /* declarative JSON, see §5.7 */ }
 ```
 
@@ -289,6 +298,8 @@ loop (worker, requestAnimationFrame-independent timer):
 
 - If the budget is exhausted before reaching `target`, simulation **slows down**; it never drops cycles (FR-SIM-05).
 - The grader runs the same loop without wall-clock pacing (as fast as possible) and with a maximum simulated duration.
+- Simulated time is an integer slice counter (`simTime = slice / 1000`), so no floating-point drift accumulates; the MCU cycle at a slice boundary is `round(slice × clockHz / 1000)`. Components that invalidate the circuit during their `step` are re-solved within the same slice, so sensor outputs reach MCU inputs without an extra slice of latency.
+- Board adapters (e.g. `boards/avr-uno`) apply scheduled inputs at their exact CPU cycle, between instructions. PWM duty and frequency come from WGM/COM/CS/OCR/ICR registers per the ATmega328P datasheet. avr8js's emulated waveform can differ from the datasheet by one timer tick, which the conformance tests tolerate.
 - PWM duty is derived from timer configuration registers (TOP/OCR, prescaler, mode) — not by sampling edges at 1 ms, which would be wrong. Software-generated pulses (Servo library, bit-banged PWM, HC-SR04 TRIG) are measured from cycle-stamped edges via `onPinEdge`.
 
 ### 5.4 Electrical model
@@ -304,8 +315,12 @@ A small **modified nodal analysis (MNA)** solver covers the whole circuit at DC 
 | MCU input pin | High impedance + optional internal pull-up (~35 kΩ) when `INPUT_PULLUP` |
 | LED, diode | Piecewise-linear model (Vf, Rs), solved by iterating region selection (≤ 10 iterations) |
 | DC motor | Resistance + back-EMF source `Ke·ω` (ω from the mechanical model of the previous slice) |
-| L298N / TB6612 | Behavioural: logic inputs high-Z; outputs as H-bridge voltage sources with load-dependent drop (L298N ≈ 1.8–2.5 V total from calibration) |
+| L298N / TB6612 | Behavioural: logic inputs high-Z, read as MCU PWM duty (`io.pwm`) or as thresholded DC levels. Each enabled output is a PWM-averaged leg (transformer element): `V = f·(Vs − 1.6 V) − 0.5 Ω·I`, drawing `f·I` from VS. That gives a total drop of 1.75 V at 0.15 A and 2.1 V at 0.5 A. The onboard 78M05 needs VS ≥ 7 V; below that the logic browns out. ENA/ENB jumpers are installed by default, as shipped |
 | Servo, sensors, modules | Behavioural current sinks from manifest (`idle`, `active`, `stall` currents) |
+
+Besides R/G, current sources, voltage sources and PWL diodes, the stamper offers two branch elements. `voltageSource(…, { supplyFrom })` draws the delivered current from another net, so a linear regulator loads the battery behind it. `transformer(…)` is an ideal averaged DC transformer, `V(sec) = ratio·V(pri) − offset − r·I`, with `ratio·I` drawn from the primary, for PWM-averaged bridges and buck stages.
+
+Implementation notes: every net has GMIN = 10⁻¹² S to ground (as in SPICE), so floating islands solve to 0 V instead of producing a singular matrix. Off diodes leak 10⁻⁹ S. Voltage sources add one branch unknown each; their reported current is the current delivered out of the + terminal. Diode regions warm-start from the previous solve; a result that has not settled after 10 passes is returned with `converged: false`. PWM pins are not stamped at their average voltage, because that is wrong for nonlinear loads: a 25 % LED would sit below Vf and stay dark. Instead the scheduler solves k + 1 operating points (all PWM pins low, then each PWM pin high on its own) and blends them as `avg = base + Σ dutyᵢ·(solᵢ − base)`. This is exact when PWM-driven sub-circuits are independent (separate LEDs, motor channels) and an approximation when they are coupled. Behavioural drivers can still read the duty directly.
 
 Circuits are small (< 200 nodes), so a dense LU decomposition is used; solves only happen when something changed (typically ≤ 1 kHz, microseconds each). Digital levels seen by MCU inputs are thresholded from node voltages using the board's `VIL`/`VIH`.
 
@@ -381,8 +396,8 @@ Without cross-origin isolation (rare embed cases) snapshots fall back to transfe
 ### 5.9 Determinism
 
 1. Fixed slices; no wall-clock inside the engine.
-2. All randomness from `xoshiro128**` seeded per run.
-3. Transcendental functions via `sim-core/dmath` (deterministic polynomial implementations), never `Math.sin` etc., so results are bit-identical across JavaScript engines.
+2. All randomness from `xoshiro128**` seeded per run. Each component gets its own stream, forked from the run seed and the component id, so adding a component never shifts another component's random numbers.
+3. Transcendental functions via `sim-core/dmath` (fdlibm ports that use only correctly rounded IEEE-754 operations), never `Math.sin` etc., so results are bit-identical across JavaScript engines. Golden bit patterns in `dmath.test.ts` guard against accidental changes. `Math.sqrt`, `abs`, `floor`, and `round` are exact and allowed.
 4. Stable iteration order (arrays, never object key order or `Set` of objects for logic).
 5. Every run records `engineVersion` (package version of sim-core + boards + components). The grader keeps the last 6 engine versions deployable so regrades reproduce the original result.
 6. Golden-trace tests in CI compare browser (Playwright) and Node runs for the fixture suite.

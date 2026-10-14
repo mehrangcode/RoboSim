@@ -1,0 +1,16 @@
+{
+  "id": "power.switch",
+  "version": "1.0.0",
+  "category": "power",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "power.switch.name",
+  "pins": [
+    { "name": "a", "kind": "power" },
+    { "name": "b", "kind": "power" }
+  ],
+  "props": {},
+  "inputs": [{ "name": "on", "type": "boolean", "default": false }],
+  "massG": 2,
+  "limits": { "maxCurrentMa": 3000 }
+}

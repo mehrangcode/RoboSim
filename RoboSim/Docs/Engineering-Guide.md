@@ -53,7 +53,9 @@ pnpm db:migrate && pnpm db:seed
 pnpm dev
 ```
 
-If port 3000 is already used on your machine, set `API_PORT` in `.env`; the Vite dev proxies follow it.
+If port 3000 is already used on your machine, set `API_PORT` in `.env`; the Vite dev proxies read the same file and follow it.
+
+Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same checkout: a Windows install swaps the platform-specific binaries (esbuild, swc, rollup, lightningcss) and breaks the WSL setup. `pnpm install`, `pnpm dev`, and `pnpm verify` refuse to run on Windows (`tools/require-wsl.ts`).
 
 | URL | Service | Available from |
 |---|---|---|
@@ -101,7 +103,7 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |
 | `pnpm i18n:check` | Missing/unused keys, ICU syntax, FA/EN parity |
 | `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed` | Drizzle migrations |
-| `pnpm new:component <slug>` · `pnpm new:rule <id>` · `pnpm new:board <slug>` | Scaffolders (§8) |
+| `pnpm new:component <slug> <type-id> <category> <Class>` · `pnpm new:rule <id>` (planned) · `pnpm new:board <slug>` (planned) | Scaffolders (§8) |
 | `pnpm ai:eval` | AI evaluation harness (FR-AI-09) |
 | `pnpm arch:check` | dependency-cruiser boundary rules |
 
@@ -203,13 +205,13 @@ flowchart LR
 
 ### 8.1 Add a component
 
-1. `pnpm new:component tb6612fng` → creates `packages/components/tb6612fng/` with `manifest.json`, `model.ts`, `model.test.ts`, `assets/`, `calibration.json`.
-2. Fill the manifest (validated against `packages/shared/schemas/component-manifest.schema.json`): pins with electrical types, `limits` (absMax voltages, max currents), properties schema, names FA/EN, mass, mounting footprint, 2D SVG, 3D GLB (Draco, ≤ 300 KB), product SKU links.
-3. Implement `model.ts` (`stamp`, `step`, `faults`, `snapshot`).
-4. Tests: electrical stamp, behaviour, faults; generic safety rules should already cover limits — add a fixture to prove it.
-5. Add i18n keys (`components:tb6612fng.*`) in both locales.
-6. Run `pnpm test --filter @robosim/components-tb6612fng` and the visual preview (`pnpm dev:component tb6612fng`).
-7. No changes outside the package are allowed; `pnpm arch:check` enforces it.
+1. `pnpm new:component <slug> <type-id> <category> <ModelClass>`, e.g. `pnpm new:component tb6612fng driver.tb6612fng driver Tb6612fng`, creates `packages/components/tb6612fng/` (package `@robosim/component-tb6612fng`) with `src/manifest.json`, `src/model.ts`, `src/model.test.ts`, and `src/index.ts` exporting `definition`. Then run `pnpm install`.
+2. Fill in the manifest (`ComponentManifest` in `sim-core/contracts.ts`, checked by `validateManifest`): pins with electrical kinds, `props` with defaults and ranges, user `inputs`, `limits` (abs-max voltages and currents), and mass. *Planned:* mounting footprint, 2D SVG, 3D GLB (Draco, ≤ 300 KB), `calibration.json`, product SKU links.
+3. Implement `model.ts`: `stamp` (MNA elements), `step` (read the operating point, `io.pwm()`, `io.edges()`), `faults`, `snapshot`, and `input` if users interact with it. Keep stamps pure: with PWM present the scheduler stamps several times per solve.
+4. Write tests with `bench()` from `@robosim/test-fixtures` (wiring is `part.pin`, plus `dcSupply`/`fixedResistor` helpers). Cover the manifest, the electrical behaviour against hand calculations, and each fault. Component packages never import each other, not even in tests. Multi-component scenarios go in `packages/catalog`.
+5. Add the name key `components:<type-id>.name` in `packages/i18n/locales/{en,fa}/components.json`.
+6. Register the definition in `packages/catalog/src/index.ts`. The catalog tests then check the manifest, uniqueness, and the FA/EN names.
+7. Run `pnpm verify`. `pnpm arch:check` enforces that the component depends only on `sim-core`/`shared`.
 
 ### 8.2 Add a safety rule
 

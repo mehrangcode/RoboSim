@@ -7,7 +7,8 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo run dev",
+    "preinstall": "node tools/require-wsl.ts",
+    "dev": "node tools/require-wsl.ts && turbo run dev",
     "dev:infra": "docker compose -f infra/docker/docker-compose.yml up -d",
     "build": "turbo run build",
     "lint": "turbo run lint",
@@ -20,8 +21,9 @@
     "db:generate": "pnpm --filter @robosim/api run db:generate",
     "db:migrate": "pnpm --filter @robosim/api run db:migrate",
     "db:seed": "pnpm --filter @robosim/api run db:seed",
-    "verify": "pnpm format:check && pnpm i18n:check && pnpm arch:check && turbo run lint typecheck test build && pnpm bundle:check",
-    "bundle:check": "node tools/check-bundle-size.ts"
+    "verify": "node tools/require-wsl.ts && pnpm format:check && pnpm i18n:check && pnpm arch:check && turbo run lint typecheck test build && pnpm bundle:check",
+    "bundle:check": "node tools/check-bundle-size.ts",
+    "new:component": "node tools/new-component.ts"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.6.0",

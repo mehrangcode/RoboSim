@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
@@ -38,6 +39,8 @@ export function createPostgresDatabase(url: string): Database {
 
 /** In-process PostgreSQL (WASM) for local development without Docker and for tests. */
 export async function createPgliteDatabase(dataDir = 'memory://'): Promise<Database> {
+  // PGlite creates only the last path segment, so a fresh checkout without `.local/` would fail.
+  if (!dataDir.includes('://')) mkdirSync(dataDir, { recursive: true });
   const client = await PGlite.create(dataDir);
   const db = drizzlePglite({ client, schema, casing: 'snake_case' });
   return {
