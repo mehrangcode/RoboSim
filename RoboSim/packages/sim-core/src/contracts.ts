@@ -155,6 +155,34 @@ export interface WorldModel {
   bodies(): readonly BodySnapshot[];
   /** Pose of a component mounted on a robot, or null when it is not mounted (e.g. on the bench). */
   componentPose(componentId: string): ComponentPose | null;
+  /**
+   * Called once by the scheduler after component models are initialised, so the world can couple
+   * drivetrain actuators (motors) to wheels by component id.
+   */
+  bind?(lookup: (componentId: string) => ComponentModel | undefined): void;
+}
+
+/**
+ * A component that drives a wheel (gear motor). The world reads the shaft torque each physics step,
+ * applies F = τ / r at the wheel, and feeds the resulting wheel speed back (no-slip coupling), which
+ * sets the motor's back-EMF for the next electrical solve (Technical Design §5.4–5.5).
+ */
+export interface WheelActuator {
+  /** Output-shaft torque delivered now (N·m); positive drives the robot forward. */
+  shaftTorque(): number;
+  /** Output-shaft speed imposed by the drivetrain (rad/s). */
+  setShaftSpeed(omega: number): void;
+  /** Rotor + gearbox inertia reflected to the output shaft (kg·m²). */
+  readonly shaftInertia: number;
+}
+
+export function isWheelActuator(model: unknown): model is WheelActuator {
+  const m = model as Partial<WheelActuator> | null;
+  return (
+    typeof m?.shaftTorque === 'function' &&
+    typeof m.setShaftSpeed === 'function' &&
+    typeof m.shaftInertia === 'number'
+  );
 }
 
 export interface Fault {
@@ -310,8 +338,42 @@ export interface ComponentManifest {
   readonly props: Readonly<Record<string, PropSpec>>;
   readonly inputs: readonly InputSpec[];
   readonly massG: number;
-  /** Electrical / mechanical limits used by faults and safety rules (units in the key, e.g. maxCurrentMa). */
+  /**
+   * Electrical / mechanical limits used by faults and safety rules (units in the key). Generic rules read:
+   * `peakCurrentMa` (worst-case draw, e.g. stall), `maxVoltageV` (abs. max across the polarity pins).
+   */
   readonly limits: Readonly<Record<string, number>>;
+  /** Behaviour classes generic safety rules key on (FR-SAF-05). */
+  readonly traits?: readonly ComponentTrait[];
+  /** [positive pin, negative pin] of a polarised supply input; reversed wiring is an Error. */
+  readonly polarity?: readonly [string, string];
+  /** Pins that act as a supply output (battery +, regulator out), optionally only when a boolean prop is true. */
+  readonly supplyPins?: readonly SupplyPinSpec[];
+  /** Per-pin absolute maximum voltage to the part's negative polarity pin (V). */
+  readonly pinMaxVolts?: Readonly<Record<string, number>>;
+}
+
+export type ComponentTrait = 'inductive' | 'led' | 'source';
+
+export interface SupplyPinSpec {
+  readonly pin: string;
+  readonly maxCurrentMa: number;
+  /** Boolean prop that must be true for the pin to supply (e.g. a regulator jumper). */
+  readonly enabledByProp?: string;
+}
+
+/**
+ * A component the damage model can break (FR-SIM-10): once damaged it stops working (open circuit,
+ * stuck output…) and shows it in its snapshot until the simulation is reset.
+ */
+export interface Damageable {
+  readonly damaged: boolean;
+  damage(reason: string): void;
+}
+
+export function isDamageable(model: unknown): model is Damageable {
+  const m = model as Partial<Damageable> | null;
+  return typeof m?.damage === 'function' && typeof m.damaged === 'boolean';
 }
 
 export interface ComponentDefinition<Props = unknown> {

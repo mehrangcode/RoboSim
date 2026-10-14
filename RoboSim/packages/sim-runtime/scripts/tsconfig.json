@@ -1,0 +1,9 @@
+{
+  "extends": "@robosim/config/tsconfig/node.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["."]
+}

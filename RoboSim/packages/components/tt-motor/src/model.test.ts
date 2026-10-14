@@ -1,4 +1,4 @@
-import { validateManifest } from '@robosim/sim-core';
+import { validateManifest, type WheelActuator } from '@robosim/sim-core';
 import { bench, dcSupply } from '@robosim/test-fixtures';
 import { describe, expect, it } from 'vitest';
 import { definition, manifest, motorConstants, type TtMotorProps, type TtMotorState } from './index.js';
@@ -65,5 +65,24 @@ describe('actuator.tt-motor', () => {
     expect(s.rpm).toBeLessThan(230);
     expect(s.currentMa).toBeGreaterThan(300);
     expect(s.torqueNm).toBeCloseTo(0.05, 2);
+  });
+});
+
+describe('actuator.tt-motor as a wheel actuator', () => {
+  it('delivers stall torque at standstill and follows the imposed shaft speed', () => {
+    const b = motorAt(6);
+    const motor = b.models['m'] as unknown as WheelActuator;
+    motor.setShaftSpeed(0);
+    b.run(0.002);
+    const k = motorConstants(defaults);
+    expect(motor.shaftTorque()).toBeCloseTo(k.ke * 1.2 * 48 * 0.75, 6); // Kt·I_stall·G·η
+    expect(motor.shaftInertia).toBeCloseTo(k.j * 48 * 48, 12);
+
+    const noLoad = (250 * 2 * Math.PI) / 60;
+    motor.setShaftSpeed(noLoad);
+    b.run(0.002);
+    expect(b.state<TtMotorState>('m').rpm).toBeCloseTo(250, 6); // speed is imposed, not integrated
+    expect(b.state<TtMotorState>('m').currentMa).toBeCloseTo(150, 0);
+    expect(motor.shaftTorque()).toBeCloseTo(0, 6); // Kt·I0 just balances friction
   });
 });

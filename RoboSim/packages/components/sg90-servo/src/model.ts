@@ -1,4 +1,12 @@
-import type { ComponentIO, ComponentModel, Fault, MnaStamper, ModelContext, NetId } from '@robosim/sim-core';
+import type {
+  ComponentIO,
+  ComponentModel,
+  Damageable,
+  Fault,
+  MnaStamper,
+  ModelContext,
+  NetId,
+} from '@robosim/sim-core';
 
 export interface Sg90ServoProps {
   readonly initialAngleDeg: number;
@@ -13,6 +21,7 @@ export interface Sg90ServoState {
   readonly pulseUs: number | null;
   readonly moving: boolean;
   readonly currentMa: number;
+  readonly damaged: boolean;
 }
 
 const SPEED_DEG_PER_S_AT_4V8 = 600; // datasheet 0.1 s / 60° at 4.8 V
@@ -31,7 +40,7 @@ const ON_TARGET_DEG = 0.5;
  * at a voltage-proportional rate; supply current is a behavioural sink per state (idle / hold / moving).
  * Limitation: pulses are seen only when an MCU pin drives the signal net directly.
  */
-export class Sg90Servo implements ComponentModel<Sg90ServoProps, Sg90ServoState> {
+export class Sg90Servo implements ComponentModel<Sg90ServoProps, Sg90ServoState>, Damageable {
   readonly type = 'actuator.sg90-servo';
   private id = '';
   private signal: NetId = 0;
@@ -47,6 +56,12 @@ export class Sg90Servo implements ComponentModel<Sg90ServoProps, Sg90ServoState>
   private stampedA = -1;
   private volts = 0;
 
+  damaged = false;
+
+  damage(_reason: string): void {
+    this.damaged = true; // driver IC dead: no movement, no draw
+  }
+
   init(ctx: ModelContext, props: Sg90ServoProps): void {
     this.id = ctx.id;
     this.signal = ctx.net('signal');
@@ -57,6 +72,7 @@ export class Sg90Servo implements ComponentModel<Sg90ServoProps, Sg90ServoState>
   }
 
   stamp(s: MnaStamper): void {
+    if (this.damaged) return;
     // Current sink sized at 5 V; scales with supply like the real motor driver.
     this.stampedA = this.supplyA;
     s.conductance(this.vccNet, this.gnd, this.supplyA / 5);
@@ -77,7 +93,7 @@ export class Sg90Servo implements ComponentModel<Sg90ServoProps, Sg90ServoState>
       this.pulseUs = null;
     }
 
-    const powered = this.volts >= BROWNOUT_V;
+    const powered = !this.damaged && this.volts >= BROWNOUT_V;
     let moving = false;
     if (powered && this.target !== null) {
       const error = this.target - this.angle;
@@ -101,7 +117,8 @@ export class Sg90Servo implements ComponentModel<Sg90ServoProps, Sg90ServoState>
       targetDeg: this.target,
       pulseUs: this.pulseUs,
       moving: this.supplyA === MOVING_A,
-      currentMa: (this.supplyA / 5) * this.volts * 1000,
+      currentMa: this.damaged ? 0 : (this.supplyA / 5) * this.volts * 1000,
+      damaged: this.damaged,
     };
   }
 

@@ -11,11 +11,15 @@ const apiPort =
   loadEnv('development', resolve(import.meta.dirname, '../..'), 'API_').API_PORT ??
   '3000';
 
+/** WSL checkouts on a Windows drive (/mnt/c, /mnt/d) get no inotify events: poll so edits reload. */
+const watch = import.meta.dirname.startsWith('/mnt/') ? { usePolling: true, interval: 300 } : undefined;
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5174,
     strictPort: true,
+    ...(watch ? { watch } : {}),
     proxy: { '/api': `http://localhost:${apiPort}` },
   },
   preview: { port: 4174 },

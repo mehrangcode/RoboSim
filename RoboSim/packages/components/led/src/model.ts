@@ -1,5 +1,6 @@
 import type {
   ComponentIO,
+  Damageable,
   ComponentModel,
   DiodeHandle,
   DiodeParams,
@@ -20,6 +21,7 @@ export interface LedState {
   readonly currentMa: number;
   /** 0..1 relative to the rated 20 mA; renderers map it to glow. */
   readonly brightness: number;
+  readonly damaged: boolean;
 }
 
 /** Piecewise-linear 5 mm LED models (Vf at threshold, Rs so V ≈ datasheet typ. at 20 mA). */
@@ -34,7 +36,7 @@ const RATED_A = 0.02;
 const ABS_MAX_A = 0.03;
 const MAX_REVERSE_V = 5;
 
-export class Led implements ComponentModel<LedProps, LedState> {
+export class Led implements ComponentModel<LedProps, LedState>, Damageable {
   readonly type = 'actuator.led';
   private id = '';
   private anode: NetId = 0;
@@ -44,6 +46,12 @@ export class Led implements ComponentModel<LedProps, LedState> {
   private currentA = 0;
   private reverseV = 0;
 
+  damaged = false;
+
+  damage(_reason: string): void {
+    this.damaged = true;
+  }
+
   init(ctx: ModelContext, props: LedProps): void {
     this.id = ctx.id;
     this.anode = ctx.net('a');
@@ -52,11 +60,12 @@ export class Led implements ComponentModel<LedProps, LedState> {
   }
 
   stamp(s: MnaStamper): void {
+    if (this.damaged) return; // burnt die: open circuit
     this.handle = s.diode(this.anode, this.cathode, LED_PARAMS[this.color]);
   }
 
   step(_dt: number, io: ComponentIO): void {
-    this.currentA = io.solution.diodeCurrent(this.handle);
+    this.currentA = this.damaged ? 0 : io.solution.diodeCurrent(this.handle);
     this.reverseV = io.solution.voltage(this.cathode) - io.solution.voltage(this.anode);
   }
 
@@ -84,6 +93,7 @@ export class Led implements ComponentModel<LedProps, LedState> {
       color: this.color,
       currentMa: this.currentA * 1000,
       brightness: Math.min(1, Math.max(0, this.currentA / RATED_A)),
+      damaged: this.damaged,
     };
   }
 }

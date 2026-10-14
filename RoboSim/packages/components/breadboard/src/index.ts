@@ -12,7 +12,7 @@ import {
 } from './model.js';
 
 function define(json: unknown, layout: BreadboardLayout): ComponentDefinition<BreadboardProps> {
-  const manifest = { ...(json as ComponentManifest), pins: breadboardPins(layout) };
+  const manifest = { ...(json as unknown as ComponentManifest), pins: breadboardPins(layout) };
   const connections = breadboardConnections(layout);
   return { manifest, create: () => new Breadboard(manifest.id), internalConnections: () => connections };
 }

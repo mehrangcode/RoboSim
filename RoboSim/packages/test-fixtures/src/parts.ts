@@ -20,6 +20,8 @@ export const dcSupply: ComponentDefinition<{ volts: number; ohms: number }> = {
       { name: 'pos', kind: 'power' },
       { name: 'neg', kind: 'ground' },
     ],
+    traits: ['source'],
+    supplyPins: [{ pin: 'pos', maxCurrentMa: 500 }],
     props: {
       volts: { type: 'number', default: 5 },
       ohms: { type: 'number', default: 0.01, min: 0 },

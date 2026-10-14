@@ -6,11 +6,24 @@
   "phase": "P1",
   "nameKey": "actuator.buzzer-active.name",
   "pins": [
-    { "name": "pos", "kind": "power" },
-    { "name": "neg", "kind": "ground" }
+    {
+      "name": "pos",
+      "kind": "power"
+    },
+    {
+      "name": "neg",
+      "kind": "ground"
+    }
   ],
   "props": {},
   "inputs": [],
   "massG": 2,
-  "limits": { "ratedVoltageV": 5, "minVoltageV": 3, "maxVoltageV": 8, "ratedCurrentMa": 30 }
+  "limits": {
+    "ratedVoltageV": 5,
+    "minVoltageV": 3,
+    "maxVoltageV": 8,
+    "ratedCurrentMa": 30,
+    "peakCurrentMa": 30
+  },
+  "polarity": ["pos", "neg"]
 }

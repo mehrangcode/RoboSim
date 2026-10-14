@@ -1,0 +1,74 @@
+{
+  "SAF-INDUCTIVE-ON-PIN": {
+    "title": "{part} is wired straight to pin {pin}",
+    "why": "A motor needs far more current than an Arduino pin can give (40 mA absolute maximum), and its voltage spikes can destroy the pin.",
+    "fix": "Drive the motor through a motor driver such as the L298N, or a transistor with a flyback diode."
+  },
+  "SAF-LED-NO-RESISTOR": {
+    "title": "{part} has no current-limiting resistor",
+    "why": "Without a resistor the LED draws far more than its 20 mA rating and burns out — and it can damage the pin driving it.",
+    "fix": "Put a 220 Ω – 1 kΩ resistor in series with the LED."
+  },
+  "SAF-SHORT-CIRCUIT": {
+    "title": "{part} is short-circuited",
+    "why": "Its + and − are joined with almost no resistance: it heats up, drains at once and can melt wires.",
+    "fix": "Remove the direct connection between + and −."
+  },
+  "SAF-OVERVOLTAGE": {
+    "title": "{part} gets {volts, number} V (maximum {max, number} V)",
+    "why": "Above its absolute maximum voltage a part is damaged immediately.",
+    "fix": "Use a lower supply voltage or add a regulator."
+  },
+  "SAF-REVERSE-POLARITY": {
+    "title": "{part} is powered backwards",
+    "why": "Reversed supply polarity destroys most electronic parts.",
+    "fix": "Swap the + and − wires of {part}."
+  },
+  "SAF-PIN-CURRENT": {
+    "title": "Pin {pin} carries {ma, number} mA (limit {limit, number} mA)",
+    "why": "Each ATmega328P pin is rated 20 mA; 40 mA is the absolute maximum before the pin is damaged.",
+    "fix": "Add or increase the series resistor, or switch the load with a transistor or driver."
+  },
+  "SAF-MCU-TOTAL-CURRENT": {
+    "title": "The Arduino would supply {ma, number} mA in total (limit {limit, number} mA)",
+    "why": "All I/O pins together share the chip's power pins, which carry only about 200 mA.",
+    "fix": "Power the loads from a separate supply through transistors or drivers."
+  },
+  "SAF-SUPPLY-OVERLOAD": {
+    "title": "{supply} gives at most {limit, number} mA, but its loads can draw {ma, number} mA",
+    "why": "When motors or servos stall, the supply voltage collapses and the board resets or the regulator overheats.",
+    "fix": "Give the motors or servos their own stronger supply and connect its − to GND."
+  },
+  "SAF-FLOATING-INPUT": {
+    "title": "Pin {pin} is a floating input",
+    "why": "With nothing pulling it HIGH or LOW, the pin reads random noise.",
+    "fix": "Use pinMode(…, INPUT_PULLUP) or add a 10 kΩ pull-up or pull-down resistor."
+  },
+  "SAF-NO-COMMON-GROUND": {
+    "title": "{part}'s − is not connected to the common ground",
+    "why": "Signals between two circuits only work when their grounds are joined.",
+    "fix": "Connect the − of {part} to Arduino GND."
+  },
+  "SAF-BACKFEED": {
+    "title": "Two supplies drive the same rail: {parts}",
+    "why": "Supplies fighting each other back-feed regulators and the USB port.",
+    "fix": "Keep a single source on each rail — for example, remove the L298N regulator jumper."
+  },
+  "SAF-OUTPUTS-FIGHTING": {
+    "title": "Outputs {pins} are wired together and fighting",
+    "why": "One pin drives HIGH while the other drives LOW: a short circuit straight through both pins.",
+    "fix": "Never connect two outputs; use one pin, or put a resistor between them."
+  },
+  "SAF-COMPONENT-FAULT": {
+    "title": "{part} was damaged ({code})",
+    "why": "It ran outside its ratings long enough to fail.",
+    "fix": "Fix the wiring fault, then reset the simulation."
+  },
+  "codes": {
+    "OVER_CURRENT": "over-current",
+    "SHORT_CIRCUIT": "short circuit",
+    "OVER_VOLTAGE": "over-voltage",
+    "REVERSE_VOLTAGE": "reverse voltage",
+    "OVER_POWER": "overheating"
+  }
+}

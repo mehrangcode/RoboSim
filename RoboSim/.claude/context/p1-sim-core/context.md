@@ -2,7 +2,7 @@
 
 ## Status
 
-Slices 1–3 done 2026-10-14 (uncommitted), incl. the full PRD §7.2 P1 basic set (18 catalogue ids; jumper wires = netlist edges). `pnpm verify` 104/104, 274 tests. Next: slice 4 — planck.js world implementing `WorldModel` (incl. `componentPose` from mount slots, floor raster 1 px = 1 mm, raycast vs bodies), chassis body from `chassisGeometry`, wheels ↔ `TtMotor.outputOmega()` / `loadTorqueNm`.
+Slices 1–4 + Lab committed by user. Slice 5 (safety + damage) done 2026-10-14, uncommitted. Next: slice 6 — success conditions (§5.7: laps, checkpointsInOrder, timeLimit, noCollision, onLineRatio, reachZone, serialMatches, pinState; all/any/not; score) + Lab lap timer/score demo.
 
 ## Decisions
 
@@ -19,6 +19,16 @@ Slices 1–3 done 2026-10-14 (uncommitted), incl. the full PRD §7.2 P1 basic se
 - Safety-rule candidates for slice 5: (a) L298N VS < 7 V with regulator jumper on; (b) ENA/ENB jumper installed while an MCU pin drives EN (pin fights the 5 V rail); (c) 4-leg button wired on the same side.
 - Sensors use `WorldModel.componentPose(id)`; bench fallback via inputs (`surface*`, `distanceCm`). HC-SR04 echo goes through `io.scheduleMcuInput` (cycle-exact); clamp to the *end* of the executed slice keeps the width exact.
 - SG90 sees pulses only when an MCU pin drives its signal net directly (edges are per MCU pin).
+
+- Physics: planck 1.5.0 + `patches/planck@1.5.0.patch` routes trig via `globalThis.__robosimDmath` (ADR-021). 1.5.1 skipped (published 2026-10-12, < 2 weeks).
+- Robot spinning fast skids (COM 3 cm behind axle, μN limit) — realistic, covered by a test.
+- Uno 5 V pin is still a test `dcSupply` stand-in: board power tree is not in the netlist yet.
+
+- Simulator Lab at /lab (sim-runtime + renderer-2d + web lazy route); every slice must add a visible Lab demo. Browser check: Windows Chrome via CDP script in %TEMP%\robosim-cdp\shot.mjs (real-time; virtual-time headless stalls workers).
+- Bundle: web initial JS 232→237 KB gz (Lab adds ~4 KB strings). The earlier 165→232 KB jump predates the Lab (zod used at startup via localeSchema/problemDetailsSchema) — follow-up: consider zod/mini in the browser.
+
+- Safety: framework in sim-core/src/safety; rules in packages/safety-rules (one package). Static analysis solves fresh model instances (power-on + per-pin drive probes); sensor-output nets are skipped for drive probes until code analysis (P2).
+- Servo demo rewired to its own 4×AA: SG90 stall 650 mA > Uno 5 V 500 mA (SAF-SUPPLY-OVERLOAD, PRD example).
 
 ## Known issues
 

@@ -3,8 +3,8 @@ import json4aa from './manifest-4aa.json' with { type: 'json' };
 import json9v from './manifest-9v.json' with { type: 'json' };
 import { Battery, type BatteryProps } from './model.js';
 
-export const manifest9v = json9v as ComponentManifest;
-export const manifest4aa = json4aa as ComponentManifest;
+export const manifest9v = json9v as unknown as ComponentManifest;
+export const manifest4aa = json4aa as unknown as ComponentManifest;
 
 export const battery9v: ComponentDefinition<BatteryProps> = {
   manifest: manifest9v,

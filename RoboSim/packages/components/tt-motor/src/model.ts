@@ -6,6 +6,8 @@ import type {
   ModelContext,
   NetId,
   SourceHandle,
+  WheelActuator,
+  Damageable,
 } from '@robosim/sim-core';
 
 export interface TtMotorProps {
@@ -25,6 +27,7 @@ export interface TtMotorState {
   readonly volts: number;
   /** Output-shaft torque delivered (N·m). */
   readonly torqueNm: number;
+  readonly damaged: boolean;
 }
 
 /** Motor constants (motor side of the gearbox) derived from datasheet-style properties. */
@@ -57,7 +60,7 @@ const RESTAMP_EPSILON_V = 1e-4;
  * τ = Kt·i, first-order mechanics with gearbox ratio and efficiency. The world model (next slice) couples
  * the output shaft to a wheel through `loadTorqueNm` / `outputOmega()`.
  */
-export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState> {
+export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState>, WheelActuator, Damageable {
   readonly type = 'actuator.tt-motor';
   private m1: NetId = 0;
   private m2: NetId = 0;
@@ -71,6 +74,14 @@ export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState> {
   private volts = 0;
   private loadTorqueNm = 0;
   private stalled = false;
+  /** True once a drivetrain imposes the shaft speed (mounted on a wheel in the world). */
+  private coupled = false;
+
+  damaged = false;
+
+  damage(_reason: string): void {
+    this.damaged = true; // burnt winding: open circuit, no torque
+  }
 
   init(ctx: ModelContext, props: TtMotorProps): void {
     this.m1 = ctx.net('m1');
@@ -92,24 +103,44 @@ export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState> {
     return this.omega / this.gear();
   }
 
+  // --- WheelActuator: the world reads torque and imposes the wheel speed (no-slip coupling) ---
+
+  shaftTorque(): number {
+    if (this.damaged) return -this.k.b * this.omega * this.gear();
+    return (
+      (this.k.ke * this.currentA - this.k.b * this.omega) * this.gear() * (this.props?.gearEfficiency ?? 1)
+    );
+  }
+
+  setShaftSpeed(omega: number): void {
+    this.coupled = true;
+    this.omega = omega * this.gear();
+  }
+
+  get shaftInertia(): number {
+    return this.k.j * this.gear() * this.gear();
+  }
+
   stamp(s: MnaStamper): void {
     this.stampedEmf = this.k.ke * this.omega;
+    if (this.damaged) return;
     this.handle = s.voltageSource(this.m1, this.m2, this.stampedEmf, this.k.r);
   }
 
   step(dt: number, io: ComponentIO): void {
     this.volts = io.solution.voltage(this.m1) - io.solution.voltage(this.m2);
     // Source current is reported out of its + terminal; motor current flows m1 → m2 inside the motor.
-    this.currentA = -io.solution.sourceCurrent(this.handle);
+    this.currentA = this.damaged ? 0 : -io.solution.sourceCurrent(this.handle);
     if (this.stalled) {
       this.omega = 0;
-    } else {
+    } else if (!this.coupled) {
       const { ke, b, j } = this.k;
       const loadMotorSide = this.loadTorqueNm / (this.gear() * (this.props?.gearEfficiency ?? 1));
       // Semi-implicit Euler on the viscous term keeps the update stable for any time constant.
       this.omega = (this.omega + (dt * (ke * this.currentA - loadMotorSide)) / j) / (1 + (dt * b) / j);
     }
-    if (Math.abs(this.k.ke * this.omega - this.stampedEmf) > RESTAMP_EPSILON_V) io.invalidate();
+    if (!this.damaged && Math.abs(this.k.ke * this.omega - this.stampedEmf) > RESTAMP_EPSILON_V)
+      io.invalidate();
   }
 
   faults(): readonly Fault[] {
@@ -123,6 +154,7 @@ export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState> {
       currentMa: this.currentA * 1000,
       volts: this.volts,
       torqueNm: torqueMotor * this.gear() * (this.props?.gearEfficiency ?? 1),
+      damaged: this.damaged,
     };
   }
 

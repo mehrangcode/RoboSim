@@ -6,15 +6,55 @@
   "phase": "P1",
   "nameKey": "power.battery-4aa.name",
   "pins": [
-    { "name": "pos", "kind": "power" },
-    { "name": "neg", "kind": "ground" }
+    {
+      "name": "pos",
+      "kind": "power"
+    },
+    {
+      "name": "neg",
+      "kind": "ground"
+    }
   ],
   "props": {
-    "capacityMah": { "type": "number", "default": 2500, "min": 1, "max": 20000, "unit": "mAh" },
-    "internalOhms": { "type": "number", "default": 0.6, "min": 0.01, "max": 20, "unit": "Ω" },
-    "initialCharge": { "type": "number", "default": 1, "min": 0, "max": 1 }
+    "capacityMah": {
+      "type": "number",
+      "default": 2500,
+      "min": 1,
+      "max": 20000,
+      "unit": "mAh"
+    },
+    "internalOhms": {
+      "type": "number",
+      "default": 0.6,
+      "min": 0.01,
+      "max": 20,
+      "unit": "Ω"
+    },
+    "initialCharge": {
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    }
   },
-  "inputs": [{ "name": "charge", "type": "number", "default": 1, "min": 0, "max": 1 }],
+  "inputs": [
+    {
+      "name": "charge",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    }
+  ],
   "massG": 110,
-  "limits": { "maxCurrentMa": 3000 }
+  "limits": {
+    "maxCurrentMa": 3000
+  },
+  "traits": ["source"],
+  "supplyPins": [
+    {
+      "pin": "pos",
+      "maxCurrentMa": 3000
+    }
+  ]
 }

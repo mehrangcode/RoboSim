@@ -87,7 +87,8 @@ const files: Record<string, string> = {
 import manifestJson from './manifest.json' with { type: 'json' };
 import { ${className}, type ${className}Props } from './model.js';
 
-export const manifest = manifestJson as ComponentManifest;
+// JSON imports widen tuples/unions; validateManifest() in the package tests checks the shape.
+export const manifest = manifestJson as unknown as ComponentManifest;
 export const definition: ComponentDefinition<${className}Props> = { manifest, create: () => new ${className}() };
 export { ${className}, type ${className}Props } from './model.js';
 `,

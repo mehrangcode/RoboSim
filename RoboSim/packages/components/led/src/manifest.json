@@ -6,13 +6,29 @@
   "phase": "P1",
   "nameKey": "actuator.led.name",
   "pins": [
-    { "name": "a", "kind": "passive" },
-    { "name": "k", "kind": "passive" }
+    {
+      "name": "a",
+      "kind": "passive"
+    },
+    {
+      "name": "k",
+      "kind": "passive"
+    }
   ],
   "props": {
-    "color": { "type": "enum", "default": "red", "options": ["red", "yellow", "green", "blue", "white"] }
+    "color": {
+      "type": "enum",
+      "default": "red",
+      "options": ["red", "yellow", "green", "blue", "white"]
+    }
   },
   "inputs": [],
   "massG": 0.4,
-  "limits": { "ratedCurrentMa": 20, "absMaxCurrentMa": 30, "maxReverseV": 5 }
+  "limits": {
+    "ratedCurrentMa": 20,
+    "absMaxCurrentMa": 30,
+    "maxReverseV": 5,
+    "peakCurrentMa": 20
+  },
+  "traits": ["led"]
 }

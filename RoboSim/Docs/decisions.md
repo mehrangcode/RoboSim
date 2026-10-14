@@ -165,3 +165,10 @@
 - **Context.** ADR-013 chose NestJS 11. NestJS 12 (Aug 2026) is ESM-only and adds Standard Schema validation for `@Body/@Query/@Param` with a built-in `StandardSchemaValidationPipe`.
 - **Decision.** Use NestJS 12 as an ESM application. Request validation uses the Zod schemas from `packages/shared` directly (`@Body({ schema })`) with a global `StandardSchemaValidationPipe` whose exception factory produces `validation_failed` problem details. Tests use Vitest with SWC (decorator metadata).
 - **Consequences.** One schema language end to end without class-validator DTOs; all relative imports carry `.js` extensions.
+
+## ADR-021 — planck.js with trigonometry routed through `dmath`
+
+- **Context.** §5.9 requires simulation results to be bit-identical across JavaScript engines (golden traces in Node, Chrome and Firefox are a P1 exit criterion). planck.js (the physics engine chosen in §5.5) calls `Math.sin`, `Math.cos` and `Math.atan2`, which ECMAScript leaves implementation-approximated. Its remaining arithmetic is IEEE-754 basic operations and `Math.sqrt`, which are exact. An alternative was a custom minimal engine; it was rejected so that later needs (pushable objects, sumo, multi-robot) reuse a mature solver.
+- **Decision.** Pin planck **1.5.0** and keep a committed pnpm patch (`patches/planck@1.5.0.patch`, registered under `patchedDependencies`). It replaces the 8 trig bindings in `dist/planck.mjs` and `dist/planck.js` with lazy calls to `globalThis.__robosimDmath`, which `sim-core/src/world/planck-world.ts` sets to the fdlibm-derived `dmath` functions. The unused `random()` utility is left alone; the engine never calls it.
+- **Consequences.** Upgrading planck means regenerating the patch (`pnpm patch planck@<v>`, apply the same 8 substitutions, `pnpm patch-commit`). A test fails if planck stops calling the routed functions. The global hook only affects the dedicated simulation worker or grader process.
+

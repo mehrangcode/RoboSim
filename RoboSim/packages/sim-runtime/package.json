@@ -1,0 +1,39 @@
+{
+  "name": "@robosim/sim-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p scripts/tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "gen:firmware": "node scripts/gen-firmware.ts"
+  },
+  "dependencies": {
+    "@robosim/board-avr-uno": "workspace:*",
+    "@robosim/catalog": "workspace:*",
+    "@robosim/component-chassis-2wd": "workspace:*",
+    "@robosim/content": "workspace:*",
+    "@robosim/safety-rules": "workspace:*",
+    "@robosim/sim-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@robosim/config": "workspace:*",
+    "@robosim/test-fixtures": "workspace:*",
+    "@types/node": "^24.19.2",
+    "avr8js": "0.21.1",
+    "eslint": "^10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "^5.0.4"
+  }
+}

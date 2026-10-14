@@ -1,4 +1,5 @@
 import type {
+  Damageable,
   ComponentIO,
   ComponentModel,
   Fault,
@@ -27,6 +28,7 @@ export interface L298nState {
   readonly currentBMa: number;
   readonly vs: number;
   readonly v5: number;
+  readonly damaged: boolean;
 }
 
 // Calibration (Technical Design §5.4: total drop ≈ 1.8–2.5 V; L298 datasheet VCEsat(H) + VCEsat(L)):
@@ -66,7 +68,7 @@ interface Drive {
  * PWM-averaged leg: V(out) = f·(V(vs) − 1.6 V) − 0.5 Ω·I with f·I drawn from VS, so a battery
  * behind the module sags realistically. ENA/ENB jumpers tie enable to the module's 5 V, as shipped.
  */
-export class L298n implements ComponentModel<L298nProps, L298nState> {
+export class L298n implements ComponentModel<L298nProps, L298nState>, Damageable {
   readonly type = 'driver.l298n';
   private id = '';
   private props: L298nProps = { regulatorJumper: true, enaJumper: true, enbJumper: true };
@@ -84,6 +86,13 @@ export class L298n implements ComponentModel<L298nProps, L298nState> {
   private currents: [number, number] = [0, 0];
   private vs = 0;
   private v5 = 0;
+
+  damaged = false;
+
+  damage(_reason: string): void {
+    this.damaged = true; // bridge transistors blown: outputs float, logic still draws current
+    this.drives = [null, null];
+  }
 
   init(ctx: ModelContext, props: L298nProps): void {
     this.id = ctx.id;
@@ -114,7 +123,7 @@ export class L298n implements ComponentModel<L298nProps, L298nState> {
     const handles: SourceHandle[] = [];
     this.channels?.forEach((c, i) => {
       if (c.jumper) s.conductance(c.en, this.v5Net, 1 / JUMPER_OHMS);
-      const d = this.drives[i];
+      const d = this.damaged ? null : this.drives[i];
       if (!d) return;
       for (const [out, f] of [
         [c.outA, d.a],
@@ -148,7 +157,9 @@ export class L298n implements ComponentModel<L298nProps, L298nState> {
       const en = logicOk ? this.fraction(c.en, io, rel) : 0;
       this.enables[i] = en;
       const next: Drive | null =
-        en > 0 ? { a: en * this.fraction(c.inA, io, rel), b: en * this.fraction(c.inB, io, rel) } : null;
+        !this.damaged && en > 0
+          ? { a: en * this.fraction(c.inA, io, rel), b: en * this.fraction(c.inB, io, rel) }
+          : null;
       const prev = this.drives[i] ?? null;
       if (
         (prev === null) !== (next === null) ||
@@ -193,6 +204,7 @@ export class L298n implements ComponentModel<L298nProps, L298nState> {
       currentBMa: this.currents[1] * 1000,
       vs: this.vs,
       v5: this.v5,
+      damaged: this.damaged,
     };
   }
 

@@ -1,14 +1,14 @@
 import {
-  Simulation,
-  buildNetlist,
-  resolveProps,
+  assembleCircuit,
+  instantiateCircuit,
+  type AssembledCircuit,
   type ComponentDefinition,
-  type ComponentInstance,
   type ComponentModel,
   type McuCore,
   type NetId,
   type PinElectrical,
   type PropValue,
+  type Simulation,
   type SimulationSnapshot,
   type WorldModel,
 } from '@robosim/sim-core';
@@ -37,6 +37,7 @@ export interface BenchSpec {
 export interface Bench {
   readonly sim: Simulation;
   readonly models: Readonly<Record<string, ComponentModel>>;
+  readonly circuit: AssembledCircuit;
   net(terminal: string): NetId;
   volts(terminal: string): number;
   state<T>(partId: string): T;
@@ -49,56 +50,28 @@ export interface Bench {
  * from their definitions with manifest defaults, and runs the real scheduler.
  */
 export function bench(spec: BenchSpec): Bench {
-  const toNl = (t: string): string => {
-    const dot = t.indexOf('.');
-    if (dot < 0) throw new Error(`Terminal '${t}' must be written 'part.pin'`);
-    return `${t.slice(0, dot)}:${t.slice(dot + 1)}`;
-  };
-  const terminals: string[] = [];
-  for (const [id, part] of Object.entries(spec.parts)) {
-    for (const pin of part.def.manifest.pins) terminals.push(`${id}:${pin.name}`);
-  }
-  for (const pin of spec.mcu?.pins ?? []) terminals.push(`mcu:${pin}`);
-  const internal = Object.entries(spec.parts).flatMap(([id, part]) =>
-    (part.def.internalConnections?.() ?? []).map(([a, b]) => [`${id}:${a}`, `${id}:${b}`] as const),
-  );
-  const netlist = buildNetlist({
-    terminals,
-    connections: [...internal, ...(spec.wires ?? []).map(([a, b]) => [toNl(a), toNl(b)] as const)],
-    ground: (spec.ground ?? []).map(toNl),
+  const circuit = assembleCircuit({
+    parts: spec.parts,
+    wires: spec.wires ?? [],
+    ground: spec.ground ?? [],
+    mcuPins: spec.mcu?.pins ?? [],
   });
-
-  const models: Record<string, ComponentModel> = {};
-  const components: ComponentInstance[] = Object.entries(spec.parts).map(([id, part]) => {
-    const model = part.def.create();
-    models[id] = model;
-    const pins = Object.fromEntries(
-      part.def.manifest.pins.map((p) => [p.name, netlist.netOf(`${id}:${p.name}`)]),
-    );
-    return { id, model, pins, props: resolveProps(part.def.manifest, part.props) };
-  });
-
-  const sim = new Simulation({
-    netCount: netlist.netCount,
+  const sim = instantiateCircuit(circuit, {
     seed: spec.seed ?? 1,
-    components,
     ...(spec.world ? { world: spec.world } : {}),
-    ...(spec.mcu
-      ? {
-          mcu: {
-            core: spec.mcu.core,
-            electrical: spec.mcu.electrical,
-            pins: spec.mcu.pins.map((pin) => ({ pin, net: netlist.netOf(`mcu:${pin}`) })),
-          },
-        }
-      : {}),
+    ...(spec.mcu ? { mcu: { core: spec.mcu.core, electrical: spec.mcu.electrical } } : {}),
   });
-
+  const models: Record<string, ComponentModel> = {};
+  for (const p of circuit.parts) {
+    const m = sim.model(p.id);
+    if (m) models[p.id] = m;
+  }
   return {
     sim,
     models,
-    net: (t) => netlist.netOf(toNl(t)),
-    volts: (t) => sim.currentSolution.voltage(netlist.netOf(toNl(t))),
+    circuit,
+    net: (t) => circuit.netOf(t),
+    volts: (t) => sim.currentSolution.voltage(circuit.netOf(t)),
     state: <T>(id: string) => {
       const model = models[id];
       if (!model) throw new Error(`Unknown part '${id}'`);

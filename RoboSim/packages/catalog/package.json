@@ -40,6 +40,7 @@
   "devDependencies": {
     "@robosim/board-avr-uno": "workspace:*",
     "@robosim/config": "workspace:*",
+    "@robosim/content": "workspace:*",
     "@robosim/i18n": "workspace:*",
     "@robosim/test-fixtures": "workspace:*",
     "eslint": "^10.12.0",

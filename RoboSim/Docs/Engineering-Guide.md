@@ -55,11 +55,14 @@ pnpm dev
 
 If port 3000 is already used on your machine, set `API_PORT` in `.env`; the Vite dev proxies read the same file and follow it.
 
+On a checkout under `/mnt/c` or `/mnt/d`, WSL gets no file-change events, so the Vite configs switch to polling there; the API's `tsc --watch` may still need a restart after edits.
+
 Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same checkout: a Windows install swaps the platform-specific binaries (esbuild, swc, rollup, lightningcss) and breaks the WSL setup. `pnpm install`, `pnpm dev`, and `pnpm verify` refuse to run on Windows (`tools/require-wsl.ts`).
 
 | URL | Service | Available from |
 |---|---|---|
 | http://localhost:5173 | Web app | P0 |
+| http://localhost:5173/lab | Simulator Lab: live engine demos (arena + component bench) | P1 |
 | http://localhost:5174 | Admin app | P0 |
 | http://localhost:3000/api/v1/health/ready | API readiness | P0 |
 | http://localhost:3000/api/v1/feature-flags | Evaluated feature flags | P0 |

@@ -1,4 +1,5 @@
 import { McuBus, type McuPinBinding } from './bus.js';
+import { isDamageable } from './contracts.js';
 import type {
   BodySnapshot,
   ComponentIO,
@@ -151,9 +152,10 @@ export class Simulation {
       c.model.init(ctx, c.props);
     }
 
+    for (const c of this.components) this.byId.set(c.id, c);
+    this.world?.bind?.((id) => this.byId.get(id)?.model);
     this.io = new SimulationIO(this, this.world);
     this.mcuElectrical = options.mcu?.electrical ?? null;
-    for (const c of this.components) this.byId.set(c.id, c);
     if (options.mcu) {
       const { core } = options.mcu;
       for (const { pin, net } of options.mcu.pins)
@@ -200,6 +202,36 @@ export class Simulation {
   /** Marks the circuit for re-solving (component stamp or user input changed). */
   invalidate(): void {
     this.dirty = true;
+  }
+
+  /** Component model by instance id. */
+  model(id: string): ComponentModel | undefined {
+    return this.byId.get(id)?.model;
+  }
+
+  /** The MCU ↔ circuit bus (pin currents, bindings, pin damage), or null without an MCU. */
+  get mcuBus(): McuBus | null {
+    return this.bus;
+  }
+
+  /** Breaks an MCU pin (damage model) and re-solves. */
+  damagePin(pin: string): void {
+    this.bus?.damagePin(pin);
+    this.dirty = true;
+  }
+
+  /** Breaks a component (damage model) and re-solves; no-op for models that cannot be damaged. */
+  damageComponent(id: string, reason: string): void {
+    const model = this.byId.get(id)?.model;
+    if (isDamageable(model) && !model.damaged) {
+      model.damage(reason);
+      this.dirty = true;
+    }
+  }
+
+  /** The attached MCU core, or null for MCU-less circuits. */
+  get mcu(): McuCore | null {
+    return this.bus?.core ?? null;
   }
 
   get slice(): number {
@@ -286,10 +318,25 @@ export class Simulation {
           );
   }
 
-  private solveWith(pwmHigh: ReadonlySet<string>): MnaSolution {
+  private solveWith(pwmHigh: ReadonlySet<string>, extra?: (s: MnaCircuit) => void): MnaSolution {
     this.circuit.clear();
     this.bus?.stamp(this.circuit, pwmHigh);
     for (const c of this.components) c.model.stamp(this.circuit);
+    extra?.(this.circuit);
     return this.circuit.solve();
+  }
+
+  /**
+   * DC resistance from `net` to ground in the present state (Ω): injects 1 µA and measures the
+   * voltage shift. A net with no path to any rail reads ~1 TΩ (GMIN only). Used by the
+   * floating-input rule; does not change the published operating point.
+   */
+  netResistance(net: NetId): number {
+    if (net === 0) return 0;
+    const probeA = 1e-6;
+    const base = this.solveWith(new Set());
+    const probed = this.solveWith(new Set(), (s) => s.currentSource(0, net, probeA));
+    this.dirty = true; // the circuit object now holds probe stamps; re-stamp before the next slice
+    return Math.abs(probed.voltage(net) - base.voltage(net)) / probeA;
   }
 }

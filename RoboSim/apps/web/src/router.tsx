@@ -1,10 +1,22 @@
-import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router';
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+  type RouterHistory,
+} from '@tanstack/react-router';
 import { Home } from './routes/home.js';
 import { NotFound, RootLayout } from './routes/root.js';
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound });
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Home });
-const routeTree = rootRoute.addChildren([homeRoute]);
+// The Lab pulls in the engine worker and renderer: a lazy chunk keeps them out of the initial bundle.
+const labRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/lab',
+  component: lazyRouteComponent(() => import('./lab/lab-page.js'), 'LabPage'),
+});
+const routeTree = rootRoute.addChildren([homeRoute, labRoute]);
 
 export function createAppRouter(history?: RouterHistory) {
   return createRouter({ routeTree, ...(history ? { history } : {}) });

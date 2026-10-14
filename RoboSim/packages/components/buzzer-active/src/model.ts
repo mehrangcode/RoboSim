@@ -1,4 +1,12 @@
-import type { ComponentIO, ComponentModel, Fault, MnaStamper, ModelContext, NetId } from '@robosim/sim-core';
+import type {
+  ComponentIO,
+  ComponentModel,
+  Damageable,
+  Fault,
+  MnaStamper,
+  ModelContext,
+  NetId,
+} from '@robosim/sim-core';
 
 export type ActiveBuzzerProps = Record<string, never>;
 
@@ -8,6 +16,7 @@ export interface ActiveBuzzerState {
   readonly currentMa: number;
   /** Fixed tone of the built-in oscillator (Hz), for the audio renderer. */
   readonly toneHz: number;
+  readonly damaged: boolean;
 }
 
 const OHMS = 5 / 0.03; // ~30 mA at 5 V
@@ -19,12 +28,18 @@ const TONE_HZ = 2300;
  * Active (self-oscillating) buzzer: polarised, sounds whenever ≥ 3 V is applied. Electrically a
  * ~167 Ω load; reverse polarity draws current but stays silent, as the internal driver does not run.
  */
-export class ActiveBuzzer implements ComponentModel<ActiveBuzzerProps, ActiveBuzzerState> {
+export class ActiveBuzzer implements ComponentModel<ActiveBuzzerProps, ActiveBuzzerState>, Damageable {
   readonly type = 'actuator.buzzer-active';
   private id = '';
   private pos: NetId = 0;
   private neg: NetId = 0;
   private volts = 0;
+
+  damaged = false;
+
+  damage(_reason: string): void {
+    this.damaged = true;
+  }
 
   init(ctx: ModelContext): void {
     this.id = ctx.id;
@@ -33,6 +48,7 @@ export class ActiveBuzzer implements ComponentModel<ActiveBuzzerProps, ActiveBuz
   }
 
   stamp(s: MnaStamper): void {
+    if (this.damaged) return;
     s.conductance(this.pos, this.neg, 1 / OHMS);
   }
 
@@ -48,10 +64,11 @@ export class ActiveBuzzer implements ComponentModel<ActiveBuzzerProps, ActiveBuz
 
   snapshot(): ActiveBuzzerState {
     return {
-      sounding: this.volts >= MIN_V,
+      sounding: !this.damaged && this.volts >= MIN_V,
       volts: this.volts,
-      currentMa: (this.volts / OHMS) * 1000,
+      currentMa: this.damaged ? 0 : (this.volts / OHMS) * 1000,
       toneHz: TONE_HZ,
+      damaged: this.damaged,
     };
   }
 }

@@ -54,6 +54,17 @@ export function validateManifest(m: ComponentManifest): string[] {
       errors.push((e as Error).message);
     }
   }
+  const hasPin = (pin: string): boolean => pinNames.includes(pin);
+  for (const pin of m.polarity ?? []) if (!hasPin(pin)) errors.push(`polarity pin '${pin}' does not exist`);
+  for (const sp of m.supplyPins ?? []) {
+    if (!hasPin(sp.pin)) errors.push(`supply pin '${sp.pin}' does not exist`);
+    if (sp.enabledByProp && m.props[sp.enabledByProp]?.type !== 'boolean') {
+      errors.push(`supply pin '${sp.pin}': enabledByProp '${sp.enabledByProp}' must be a boolean prop`);
+    }
+  }
+  for (const pin of Object.keys(m.pinMaxVolts ?? {}))
+    if (!hasPin(pin)) errors.push(`pinMaxVolts pin '${pin}' does not exist`);
+  if (m.pinMaxVolts && !m.polarity) errors.push('pinMaxVolts needs a polarity pair as reference');
   for (const input of m.inputs) {
     if (typeof input.default !== input.type)
       errors.push(`input '${input.name}' default must be ${input.type}`);

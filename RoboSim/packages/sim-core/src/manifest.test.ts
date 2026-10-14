@@ -56,4 +56,19 @@ describe('validateManifest', () => {
     };
     expect(validateManifest(bad)).toHaveLength(6);
   });
+
+  it('checks safety metadata references real pins', () => {
+    const bad: ComponentManifest = {
+      ...manifest,
+      polarity: ['a', 'x'],
+      supplyPins: [{ pin: 'y', maxCurrentMa: 10, enabledByProp: 'ohms' }],
+      pinMaxVolts: { z: 5 },
+    };
+    expect(validateManifest(bad)).toEqual([
+      "polarity pin 'x' does not exist",
+      "supply pin 'y' does not exist",
+      "supply pin 'y': enabledByProp 'ohms' must be a boolean prop",
+      "pinMaxVolts pin 'z' does not exist",
+    ]);
+  });
 });

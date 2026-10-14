@@ -6,26 +6,91 @@
   "phase": "P1",
   "nameKey": "driver.l298n.name",
   "pins": [
-    { "name": "in1", "kind": "digital" },
-    { "name": "in2", "kind": "digital" },
-    { "name": "in3", "kind": "digital" },
-    { "name": "in4", "kind": "digital" },
-    { "name": "ena", "kind": "digital" },
-    { "name": "enb", "kind": "digital" },
-    { "name": "out1", "kind": "output" },
-    { "name": "out2", "kind": "output" },
-    { "name": "out3", "kind": "output" },
-    { "name": "out4", "kind": "output" },
-    { "name": "vs", "kind": "power" },
-    { "name": "gnd", "kind": "ground" },
-    { "name": "v5", "kind": "power" }
+    {
+      "name": "in1",
+      "kind": "digital"
+    },
+    {
+      "name": "in2",
+      "kind": "digital"
+    },
+    {
+      "name": "in3",
+      "kind": "digital"
+    },
+    {
+      "name": "in4",
+      "kind": "digital"
+    },
+    {
+      "name": "ena",
+      "kind": "digital"
+    },
+    {
+      "name": "enb",
+      "kind": "digital"
+    },
+    {
+      "name": "out1",
+      "kind": "output"
+    },
+    {
+      "name": "out2",
+      "kind": "output"
+    },
+    {
+      "name": "out3",
+      "kind": "output"
+    },
+    {
+      "name": "out4",
+      "kind": "output"
+    },
+    {
+      "name": "vs",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "v5",
+      "kind": "power"
+    }
   ],
   "props": {
-    "regulatorJumper": { "type": "boolean", "default": true },
-    "enaJumper": { "type": "boolean", "default": true },
-    "enbJumper": { "type": "boolean", "default": true }
+    "regulatorJumper": {
+      "type": "boolean",
+      "default": true
+    },
+    "enaJumper": {
+      "type": "boolean",
+      "default": true
+    },
+    "enbJumper": {
+      "type": "boolean",
+      "default": true
+    }
   },
   "inputs": [],
   "massG": 30,
-  "limits": { "maxVsV": 35, "maxChannelCurrentMa": 2000, "regulatorMinVsV": 7 }
+  "limits": {
+    "maxVsV": 35,
+    "maxChannelCurrentMa": 2000,
+    "regulatorMinVsV": 7,
+    "peakCurrentMa": 36
+  },
+  "polarity": ["vs", "gnd"],
+  "supplyPins": [
+    {
+      "pin": "v5",
+      "maxCurrentMa": 500,
+      "enabledByProp": "regulatorJumper"
+    }
+  ],
+  "pinMaxVolts": {
+    "vs": 35,
+    "v5": 7
+  }
 }

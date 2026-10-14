@@ -16,9 +16,21 @@ export function RootLayout() {
       }
       navLabel={t('shell:nav.mainLabel')}
       nav={
-        <Link to="/" className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink">
-          {t('shell:nav.home')}
-        </Link>
+        <>
+          <Link
+            to="/"
+            activeOptions={{ exact: true }}
+            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+          >
+            {t('shell:nav.home')}
+          </Link>
+          <Link
+            to="/lab"
+            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+          >
+            {t('shell:nav.lab')}
+          </Link>
+        </>
       }
       actions={<LanguageSwitch />}
     >

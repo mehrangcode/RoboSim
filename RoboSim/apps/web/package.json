@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@robosim/i18n": "workspace:*",
+    "@robosim/renderer-2d": "workspace:*",
     "@robosim/shared": "workspace:*",
+    "@robosim/sim-runtime": "workspace:*",
     "@robosim/ui": "workspace:*",
     "@tanstack/react-query": "^5.104.2",
     "@tanstack/react-router": "^1.170.42",

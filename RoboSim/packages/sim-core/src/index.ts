@@ -1,4 +1,5 @@
 export type * from './contracts.js';
+export { isDamageable, isWheelActuator } from './contracts.js';
 export * as dmath from './dmath/index.js';
 export { Prng } from './prng.js';
 export { buildNetlist, NetlistError, type Netlist, type NetlistInput, type Terminal } from './netlist.js';
@@ -27,3 +28,42 @@ export {
 export { Pacer, type PacerOptions, type TickResult } from './pacer.js';
 export { resolveProps, validateManifest, type PropValue } from './manifest.js';
 export { irReflectance, irSpotRadiusMm, sonarRange, toWorld, SPEED_OF_SOUND_M_S } from './sensors.js';
+export { PlanckWorld } from './world/planck-world.js';
+export { floorAt, rasterizeFloor, type FloorRaster } from './world/floor.js';
+export {
+  DEFAULT_PHYSICS,
+  type ArenaSpec,
+  type ArenaZone,
+  type FloorSpec,
+  type FloorStroke,
+  type MountSpec,
+  type ObstacleSpec,
+  type PhysicsParams,
+  type Pose2,
+  type RobotGeometry,
+  type RobotSpec,
+} from './world/types.js';
+export {
+  assembleCircuit,
+  instantiateCircuit,
+  type AssembledCircuit,
+  type AssembledPart,
+  type CircuitPartSpec,
+  type CircuitSpec,
+  type InstantiateOptions,
+} from './circuit.js';
+export { SafetyMonitor } from './safety/monitor.js';
+export { analyzeCircuit, sortFindings } from './safety/static-analyzer.js';
+export {
+  finding,
+  type BoardInfo,
+  type Condition,
+  type Finding,
+  type RuntimeContext,
+  type RuntimeRule,
+  type SafetyRule,
+  type Severity,
+  type StaticContext,
+  type StaticProbe,
+  type StaticRule,
+} from './safety/types.js';

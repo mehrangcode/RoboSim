@@ -41,6 +41,8 @@ export class McuBus {
   private readonly handles = new Map<PinId, SourceHandle>();
   private readonly inputLevel = new Map<PinId, Level>();
   private readonly inputVolts = new Map<PinId, number>();
+  /** Pins destroyed by the damage model: high-impedance, read as LOW (FR-SIM-10). */
+  private readonly damaged = new Set<PinId>();
 
   constructor(
     readonly core: McuCore,
@@ -59,6 +61,16 @@ export class McuBus {
     return changed;
   }
 
+  damagePin(pin: PinId): void {
+    if (this.damaged.has(pin)) return;
+    this.damaged.add(pin);
+    this.core.scheduleInput(pin, { level: 0, volts: 0 }, this.core.cycle);
+  }
+
+  isPinDamaged(pin: PinId): boolean {
+    return this.damaged.has(pin);
+  }
+
   /** PWM driven onto `net` by an output pin, or null. */
   pwmOnNet(net: NetId): PwmOutput | null {
     for (const b of this.pins) {
@@ -74,7 +86,8 @@ export class McuBus {
     const result: { pin: PinId; duty: number }[] = [];
     for (const { pin, net } of this.pins) {
       const out = this.outputs.get(pin);
-      if (net !== 0 && out?.mode === 'output' && out.pwm) result.push({ pin, duty: out.pwm.dutyRatio });
+      if (net !== 0 && out?.mode === 'output' && out.pwm && !this.damaged.has(pin))
+        result.push({ pin, duty: out.pwm.dutyRatio });
     }
     return result;
   }
@@ -88,7 +101,7 @@ export class McuBus {
     this.handles.clear();
     for (const { pin, net } of this.pins) {
       const out = this.outputs.get(pin);
-      if (!out || net === 0) continue;
+      if (!out || net === 0 || this.damaged.has(pin)) continue;
       if (out.mode === 'output') {
         const high = out.pwm ? pwmHigh.has(pin) : out.level === 1;
         const volts = high ? vcc : 0;
@@ -105,7 +118,7 @@ export class McuBus {
     const { vil, vih } = this.electrical;
     for (const { pin, net } of this.pins) {
       const mode = this.outputs.get(pin)?.mode ?? 'input';
-      if (mode === 'output') continue;
+      if (mode === 'output' || this.damaged.has(pin)) continue;
       const volts = solution.voltage(net);
       const previous = this.inputLevel.get(pin);
       const level: Level = volts >= vih ? 1 : volts <= vil ? 0 : (previous ?? 0);
@@ -116,6 +129,16 @@ export class McuBus {
         this.core.scheduleInput(pin, { level, volts }, atCycle);
       }
     }
+  }
+
+  /** Pins and their nets, in binding order. */
+  bindings(): readonly McuPinBinding[] {
+    return this.pins;
+  }
+
+  /** Last pin outputs read from the core. */
+  outputOf(pin: PinId): PinOutput | undefined {
+    return this.outputs.get(pin);
   }
 
   /** Current sourced by an output pin (A, negative when sinking); 0 for inputs. Feeds safety rules. */

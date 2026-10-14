@@ -1,7 +1,8 @@
 {
   "nav": {
     "home": "Home",
-    "mainLabel": "Main navigation"
+    "mainLabel": "Main navigation",
+    "lab": "Lab"
   },
   "home": {
     "title": "Build it virtually. Verify it. Then build it for real.",
@@ -14,5 +15,111 @@
   "notFound": {
     "title": "Page not found",
     "body": "The page you are looking for does not exist or has moved."
+  },
+  "lab": {
+    "title": "Simulator Lab",
+    "intro": "Live demos of the simulation engine as it is built. Everything runs in your browser.",
+    "tabsLabel": "Lab view",
+    "tabs": {
+      "arena": "Robot arena",
+      "bench": "Component bench",
+      "safety": "Safety"
+    },
+    "controls": {
+      "label": "Simulation controls",
+      "run": "Run",
+      "pause": "Pause",
+      "reset": "Reset",
+      "step": "Step 10 ms",
+      "speed": "Speed"
+    },
+    "status": {
+      "time": "Sim time {seconds} s",
+      "rtf": "{factor}× real time",
+      "paused": "Paused",
+      "loading": "Loading the engine…"
+    },
+    "scenarioLabel": "Demo",
+    "scenario": {
+      "line-follower": "Line follower",
+      "blink": "Blink",
+      "button": "Button + LED",
+      "dimmer": "Knob dims an LED",
+      "servo": "Knob turns a servo",
+      "led-no-resistor": "LED without resistor",
+      "outputs-fighting": "Outputs fighting",
+      "motor-on-pin": "Motor on a pin",
+      "floating-input": "Floating input"
+    },
+    "scenarioHint": {
+      "line-follower": "Arduino Uno + L298N + two TT motors + 3-channel line sensor on 4×AA. The firmware follows the black line around the oval.",
+      "blink": "The Uno toggles D13 every 500 ms through a 220 Ω resistor.",
+      "button": "Hold the button: D2 reads LOW through the internal pull-up and the sketch turns the LED on.",
+      "dimmer": "Turn the knob: analogRead(A0) sets the PWM duty on D6.",
+      "servo": "Turn the knob: the sketch maps A0 to the servo pulse width on D9. The servo runs from its own 4×AA pack — a stalled SG90 needs more than the Uno's 5 V pin can give.",
+      "led-no-resistor": "An LED straight on D13 with no resistor. The checker flags it before you run; run it and watch the pin and the LED burn out.",
+      "outputs-fighting": "D2 and D3 are wired together; the sketch drives D2 HIGH and D3 LOW — a short circuit through both pins.",
+      "motor-on-pin": "A TT motor straight on D9. Motors need a driver: the pin cannot supply the current.",
+      "floating-input": "A button on D2 to GND, but the sketch uses INPUT without a pull-up: released, the pin floats."
+    },
+    "telemetry": {
+      "title": "Telemetry",
+      "motorLeft": "Left motor",
+      "motorRight": "Right motor",
+      "rpm": "{value} rpm",
+      "milliamps": "{value} mA",
+      "volts": "{value} V",
+      "percent": "{value}%",
+      "lineSensor": "Line sensor",
+      "left": "L",
+      "center": "C",
+      "right": "R",
+      "battery": "Battery",
+      "driver": "Motor driver"
+    },
+    "bridge": {
+      "forward": "forward",
+      "reverse": "reverse",
+      "brake": "brake",
+      "coast": "coast"
+    },
+    "parts": {
+      "hold": "Hold to press",
+      "knob": "Knob position",
+      "angle": "{value}°",
+      "pulse": "Pulse {value} µs",
+      "noSignal": "No signal"
+    },
+    "pins": {
+      "title": "Uno pins",
+      "pin": "Pin",
+      "mode": "Mode",
+      "value": "Value",
+      "duty": "PWM {value}%"
+    },
+    "pinMode": {
+      "input": "input",
+      "input_pullup": "input + pull-up",
+      "output": "output"
+    },
+    "error": "The simulation stopped: {message}",
+    "findings": {
+      "title": "Safety findings",
+      "filterLabel": "Filter findings",
+      "all": "All",
+      "errors": "Errors",
+      "warnings": "Warnings",
+      "none": "No problems found.",
+      "error": "Error",
+      "warning": "Warning",
+      "static": "Wiring check",
+      "runtime": "While running",
+      "why": "Why",
+      "fix": "How to fix",
+      "acknowledge": "Got it",
+      "acknowledged": "{count, plural, one {# warning acknowledged} other {# warnings acknowledged}}"
+    },
+    "damaged": "Damaged",
+    "pinDamaged": "damaged"
   }
 }

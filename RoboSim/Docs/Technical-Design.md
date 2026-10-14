@@ -150,6 +150,7 @@ robosim/
 │   │   └── <slug>/             # manifest.json, model.ts, model.test.ts, assets/ (svg, glb), calibration.json
 │   ├── safety-rules/
 │   │   └── <rule-id>/          # rule.ts, rule.test.ts, fixtures/, messages (i18n keys)
+│   ├── sim-runtime/            # Worker host (SimHost), worker protocol types, circuit builder, demo scenarios + firmware
 │   ├── renderer-2d/            # Canvas 2D arena renderer (consumes snapshots only)
 │   ├── renderer-3d/            # three.js / @react-three/fiber renderer (consumes snapshots only)
 │   ├── circuit-canvas/         # SVG breadboard editor + netlist builder bindings
@@ -331,11 +332,11 @@ Circuits are small (< 200 nodes), so a dense LU decomposition is used; solves on
 
 | Model | Implementation |
 |---|---|
-| Chassis | planck.js dynamic body, zero gravity (top-down), mass and inertia = chassis + mounted components (manifest masses) |
+| Chassis | planck.js dynamic body (`PlanckWorld`, deterministic trig per [ADR-021](decisions.md#adr-021--planckjs-with-trigonometry-routed-through-dmath)), zero gravity (top-down). Mass and inertia come from the chassis geometry plus mounted components (manifest masses), plus the gearbox inertia reflected to each wheel (J/r²). The static load is split between axle and caster by the lever rule |
 | Wheels | Longitudinal force `F = τ/r` at each wheel's mount point; lateral friction impulse cancels sideways slip up to `μ·N`; rolling resistance; caster as low-friction contact |
-| Motor dynamics | `τ = Kt·i`, `i = (V − Ke·ω)/R`, first-order mechanical response with gearbox ratio and efficiency; ω read back for back-EMF (closed loop with §5.4) |
+| Motor dynamics | `τ = Kt·i`, `i = (V − Ke·ω)/R`, with gearbox ratio and efficiency. Drive motors implement `WheelActuator`: every physics step the world reads `shaftTorque()`, applies `F = τ/r` capped at μ·N, and imposes the resulting wheel ground speed via `setShaftSpeed()` (no-slip coupling). That speed sets the back-EMF of the next electrical solve. On the bench (no world) the motor integrates its own first-order mechanics |
 | Battery | Open-circuit voltage curve by state of charge + internal resistance → sag under load |
-| Line sensor | Floor is a luminance raster (1 px = 1 mm). Sensor samples a disc whose radius depends on mount height; reflectance → analog voltage via calibration curve; digital modules apply comparator threshold (potentiometer property) with hysteresis |
+| Line sensor | Floor is a luminance raster (1 px = 1 mm), rasterised deterministically from the arena's vector paint (`rasterizeFloor`); built-in arenas live in `packages/content`. Sensor samples a disc whose radius depends on mount height; reflectance → analog voltage via calibration curve; digital modules apply comparator threshold (potentiometer property) with hysteresis |
 | Ultrasonic | On a valid TRIG pulse (≥ 10 µs, cycle-stamped), cast 7 rays across a 15° cone; nearest hit distance `d` within 2–400 cm → ECHO HIGH after calibrated latency for `2d / 343 m·s⁻¹`; no hit → timeout pulse like the real module |
 | Bump switch | Contact listener on the switch fixture |
 | Encoder (P4) | Ticks from wheel angle with slots-per-revolution from manifest |
@@ -343,8 +344,10 @@ Circuits are small (< 200 nodes), so a dense LU decomposition is used; solves on
 
 ### 5.6 Safety in the engine
 
-- **Static rules** (`packages/safety-rules`) run on the netlist + manifests + code-analysis facts, in the main thread (debounced 300 ms) and once before each run.
-- **Runtime rules** run inside the scheduler on MNA results: pin current over limits, rail over-current, two outputs fighting, over-voltage after a battery change. A sustained violation (configurable duration per rule, e.g. 50 ms over 40 mA) marks the component `damaged`; damaged models return a failure behaviour (pin stuck, motor stops) until reset after the fault is removed.
+- **Static rules** (`packages/safety-rules`) run on the netlist + manifests + code-analysis facts, in the main thread (debounced 300 ms) and once before each run. *Implementation:* `analyzeCircuit` does not guess from topology. It **solves** the circuit with fresh models at power-on (every MCU pin high-Z), and on demand with one pin driven HIGH or LOW (memoised). Rules then read voltages, pin currents and component faults. Pins sharing a net with a part's `output` pin are inputs by design and are not drive-probed until code analysis (FR-SAF-03) knows the pin modes.
+- **Generic rules read manifests** (FR-SAF-05): `traits` (`inductive`, `led`, `source`), `polarity` [+, −], `supplyPins` (with an optional enabling prop, e.g. the L298N regulator jumper), `pinMaxVolts`, and `limits.maxVoltageV` / `limits.peakCurrentMa`. `validateManifest` checks that they reference real pins.
+- *Packaging:* one `packages/safety-rules` package with a folder per rule group and trigger/clean fixture tests per rule. The framework (`analyzeCircuit`, `SafetyMonitor`, rule and finding types) lives in `sim-core/src/safety`.
+- **Runtime rules** (`SafetyMonitor`, a slice observer evaluated every 5 ms; rules may declare a slower `periodS`) run on MNA results: pin current over limits, rail over-current, two outputs fighting, over-voltage after a battery change. A sustained violation (configurable duration per rule, e.g. 50 ms over 40 mA) marks the component `damaged`; damaged models return a failure behaviour (pin stuck, motor stops) until reset after the fault is removed.
 - Rule interface:
 
 ```ts
@@ -395,6 +398,8 @@ Types at GA: `reachZone`, `laps`, `checkpointsInOrder`, `timeLimit`, `noCollisio
 | worker → main | `event` | `serial`, `finding`, `damaged`, `conditionMet`, `rtf`, `error` (postMessage) |
 
 Without cross-origin isolation (rare embed cases) snapshots fall back to transferable `ArrayBuffer` messages.
+
+*Current implementation (Simulator Lab):* `packages/sim-runtime` holds the worker-side `SimHost` (scenario loading, pacing, frames ≤ 30 Hz over `postMessage`) and the message types; `apps/web/src/lab/sim.worker.ts` hosts it. The `SharedArrayBuffer` snapshot path replaces the frame messages when the editor arrives.
 
 ### 5.9 Determinism
 

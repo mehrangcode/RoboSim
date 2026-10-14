@@ -1,0 +1,96 @@
+diff --git a/dist/planck.js b/dist/planck.js
+index 90d9d9423217c882bdcae3a16bcab43a4246d1a4..d4d569bfaefb3e2037ddb1e6a6727f1aef802f82 100755
+--- a/dist/planck.js
++++ b/dist/planck.js
+@@ -1621,8 +1621,8 @@
+       return BroadPhase2;
+     })()
+   );
+-  var math_sin$2 = Math.sin;
+-  var math_cos$2 = Math.cos;
++  var math_sin$2 = function (x) { return (globalThis.__robosimDmath || Math).sin(x); }; // RoboSim: deterministic math (ADR-021)
++  var math_cos$2 = function (x) { return (globalThis.__robosimDmath || Math).cos(x); }; // RoboSim: deterministic math (ADR-021)
+   var math_sqrt$4 = Math.sqrt;
+   function vec2(x2, y) {
+     return { x: x2, y };
+@@ -1825,9 +1825,9 @@
+     out.p.y = y;
+     return out;
+   }
+-  var math_sin$1 = Math.sin;
+-  var math_cos$1 = Math.cos;
+-  var math_atan2$1 = Math.atan2;
++  var math_sin$1 = function (x) { return (globalThis.__robosimDmath || Math).sin(x); }; // RoboSim: deterministic math (ADR-021)
++  var math_cos$1 = function (x) { return (globalThis.__robosimDmath || Math).cos(x); }; // RoboSim: deterministic math (ADR-021)
++  var math_atan2$1 = function (y, x) { return (globalThis.__robosimDmath || Math).atan2(y, x); }; // RoboSim: deterministic math (ADR-021)
+   var Rot = (
+     /** @class */
+     (function() {
+@@ -1944,7 +1944,7 @@
+       return Rot2;
+     })()
+   );
+-  var math_atan2 = Math.atan2;
++  var math_atan2 = function (y, x) { return (globalThis.__robosimDmath || Math).atan2(y, x); }; // RoboSim: deterministic math (ADR-021)
+   var math_PI$5 = Math.PI;
+   var temp$7 = vec2(0, 0);
+   var Sweep = (
+@@ -2144,8 +2144,8 @@
+       return Velocity2;
+     })()
+   );
+-  var math_sin = Math.sin;
+-  var math_cos = Math.cos;
++  var math_sin = function (x) { return (globalThis.__robosimDmath || Math).sin(x); }; // RoboSim: deterministic math (ADR-021)
++  var math_cos = function (x) { return (globalThis.__robosimDmath || Math).cos(x); }; // RoboSim: deterministic math (ADR-021)
+   var Position = (
+     /** @class */
+     (function() {
+diff --git a/dist/planck.mjs b/dist/planck.mjs
+index 85183fc98d5646f0105019abd55a9313dc1a9559..019a20783260e5406538352c2e5a1921a45daf41 100755
+--- a/dist/planck.mjs
++++ b/dist/planck.mjs
+@@ -1617,8 +1617,8 @@ var BroadPhase = (
+     return BroadPhase2;
+   })()
+ );
+-var math_sin$2 = Math.sin;
+-var math_cos$2 = Math.cos;
++var math_sin$2 = function (x) { return (globalThis.__robosimDmath || Math).sin(x); }; // RoboSim: deterministic math (ADR-021)
++var math_cos$2 = function (x) { return (globalThis.__robosimDmath || Math).cos(x); }; // RoboSim: deterministic math (ADR-021)
+ var math_sqrt$4 = Math.sqrt;
+ function vec2(x2, y) {
+   return { x: x2, y };
+@@ -1821,9 +1821,9 @@ function detransformTransform(out, a2, b2) {
+   out.p.y = y;
+   return out;
+ }
+-var math_sin$1 = Math.sin;
+-var math_cos$1 = Math.cos;
+-var math_atan2$1 = Math.atan2;
++var math_sin$1 = function (x) { return (globalThis.__robosimDmath || Math).sin(x); }; // RoboSim: deterministic math (ADR-021)
++var math_cos$1 = function (x) { return (globalThis.__robosimDmath || Math).cos(x); }; // RoboSim: deterministic math (ADR-021)
++var math_atan2$1 = function (y, x) { return (globalThis.__robosimDmath || Math).atan2(y, x); }; // RoboSim: deterministic math (ADR-021)
+ var Rot = (
+   /** @class */
+   (function() {
+@@ -1940,7 +1940,7 @@ var Rot = (
+     return Rot2;
+   })()
+ );
+-var math_atan2 = Math.atan2;
++var math_atan2 = function (y, x) { return (globalThis.__robosimDmath || Math).atan2(y, x); }; // RoboSim: deterministic math (ADR-021)
+ var math_PI$5 = Math.PI;
+ var temp$7 = vec2(0, 0);
+ var Sweep = (
+@@ -2140,8 +2140,8 @@ var Velocity = (
+     return Velocity2;
+   })()
+ );
+-var math_sin = Math.sin;
+-var math_cos = Math.cos;
++var math_sin = function (x) { return (globalThis.__robosimDmath || Math).sin(x); }; // RoboSim: deterministic math (ADR-021)
++var math_cos = function (x) { return (globalThis.__robosimDmath || Math).cos(x); }; // RoboSim: deterministic math (ADR-021)
+ var Position = (
+   /** @class */
+   (function() {
