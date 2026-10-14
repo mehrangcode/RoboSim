@@ -1,0 +1,10 @@
+{
+  "extends": "@robosim/config/tsconfig/node.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

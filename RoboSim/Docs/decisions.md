@@ -22,6 +22,9 @@
 | 015 | Yjs and Hocuspocus for real-time collaboration | Accepted |
 | 016 | Self-hosted, in-region infrastructure | Accepted |
 | 017 | Prepaid renewals instead of recurring card billing | Accepted |
+| 018 | Pin TypeScript to 6.0.x | Accepted |
+| 019 | PGlite for Docker-free development and database tests | Accepted |
+| 020 | NestJS 12 (ESM) with Zod through Standard Schema | Accepted (refines ADR-013) |
 
 ---
 
@@ -143,3 +146,22 @@
 - **Decision.** Subscriptions are prepaid periods with reminders, one-click renewal, and optional wallet auto-renewal; organizations pay by gateway or invoice.
 - **Consequences.** Churn risk at renewal points mitigated by reminders, yearly discount, and wallet; simpler compliance.
 - **Alternatives.** Direct debit mandates (limited availability; revisit if gateways offer standardized recurring payments).
+
+## ADR-018 — Pin TypeScript to 6.0.x
+
+- **Context.** TypeScript 7.0 (the native Go compiler) is `latest` on npm, but typescript-eslint 8.71 supports only `>=4.8.4 <6.1.0`; linting with type information would break.
+- **Decision.** Pin `typescript@6.0.3` across the monorepo; Renovate is restricted to `<6.1` until typescript-eslint declares support for 7.x.
+- **Consequences.** Stable lint/typecheck; we miss TS 7 compile-speed gains for now. Revisit when typescript-eslint supports 7.x.
+
+## ADR-019 — PGlite for Docker-free development and database tests
+
+- **Context.** The development machine has no Docker, yet migrations, RLS policies, and tenant isolation must be verified for real, not mocked (NFR-TEN-01).
+- **Decision.** The API supports `DATABASE_DRIVER=pglite` (PostgreSQL compiled to WebAssembly, in-process) for local development and for all database tests. Tests run every migration on a fresh in-memory PGlite instance and switch to the restricted `robosim_app` role, so RLS is enforced exactly as in production. `pglite` is rejected when `APP_ENV=production`.
+- **Consequences.** Real SQL, real RLS, zero infrastructure for contributors and CI. PGlite runs a single connection, so concurrency behaviour (e.g. `SKIP LOCKED` contention between relay instances) must additionally be tested against PostgreSQL 16 via Testcontainers in P1.
+- **Alternatives.** Mocked repositories (would not test RLS); requiring Docker for every developer (not available now).
+
+## ADR-020 — NestJS 12 (ESM) with Zod through Standard Schema
+
+- **Context.** ADR-013 chose NestJS 11. NestJS 12 (Aug 2026) is ESM-only and adds Standard Schema validation for `@Body/@Query/@Param` with a built-in `StandardSchemaValidationPipe`.
+- **Decision.** Use NestJS 12 as an ESM application. Request validation uses the Zod schemas from `packages/shared` directly (`@Body({ schema })`) with a global `StandardSchemaValidationPipe` whose exception factory produces `validation_failed` problem details. Tests use Vitest with SWC (decorator metadata).
+- **Consequences.** One schema language end to end without class-validator DTOs; all relative imports carry `.js` extensions.

@@ -109,7 +109,7 @@ flowchart LR
 | `apps/web` | React 19, Vite, TypeScript, Tailwind v4, shadcn/ui | Workspace, editor, simulator host, all user UI | Static (CDN/edge cache) |
 | `apps/admin` | Same stack | Back-office (separate origin `admin.`) | Static |
 | `apps/site` | Astro (static, SSR-free) | Marketing pages, docs, SEO in FA/EN | Static |
-| `apps/api` (http) | Node.js 24 LTS, NestJS 11 on Fastify, Drizzle ORM, Zod | REST API, auth, all business modules | Replicas (HPA on CPU/RPS) |
+| `apps/api` (http) | Node.js 24 LTS, NestJS 12 (ESM) on Fastify 5, Drizzle ORM, Zod via Standard Schema | REST API, auth, all business modules | Replicas (HPA on CPU/RPS) |
 | `apps/api` (worker) | Same codebase, `worker` entrypoint, BullMQ | Outbox relay, emails/SMS, reconciliation, retention, Moodian, search indexing | Replicas (KEDA on queue depth) |
 | `apps/realtime` | Hocuspocus (Yjs) | Real-time collaboration documents and presence | Replicas with Redis extension |
 | `apps/compiler` | Node.js dispatcher + worker; `arduino-cli` in sandbox image | Builds, cache, fair-share scheduling | Worker pods (KEDA on queue depth) |
@@ -187,7 +187,7 @@ robosim/
 
 | Concern | Choice | Notes |
 |---|---|---|
-| Routing | TanStack Router (file-based, type-safe) | Route-level code splitting |
+| Routing | TanStack Router (code-based route tree, type-safe) | No generated route file, so typecheck needs no codegen step; route-level code splitting |
 | Server state | TanStack Query | Generated client from OpenAPI (§API-Spec) |
 | Editor state | Zustand stores per domain (`circuitStore`, `codeStore`, `simStore`, `uiStore`) | Collaboration mode binds stores to Yjs documents |
 | Forms | react-hook-form + Zod (`packages/shared`) | Same schemas as API |

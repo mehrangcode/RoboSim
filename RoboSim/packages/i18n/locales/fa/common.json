@@ -1,0 +1,16 @@
+{
+  "appName": "روبوسیم",
+  "publisher": "محصول مهرترونیک",
+  "language": {
+    "label": "زبان",
+    "en": "English",
+    "fa": "فارسی"
+  },
+  "actions": {
+    "retry": "تلاش دوباره",
+    "backHome": "بازگشت به خانه"
+  },
+  "status": {
+    "loading": "در حال بارگذاری…"
+  }
+}

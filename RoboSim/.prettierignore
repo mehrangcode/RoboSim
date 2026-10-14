@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+dist
+coverage
+Docs
+**/drizzle/migrations/**
+**/routeTree.gen.ts
+.claude

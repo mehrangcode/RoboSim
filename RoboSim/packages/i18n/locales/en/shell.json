@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "home": "Home",
+    "mainLabel": "Main navigation"
+  },
+  "home": {
+    "title": "Build it virtually. Verify it. Then build it for real.",
+    "subtitle": "Design a robot circuit, program it, and watch it drive in a virtual arena — before you buy a single part.",
+    "statusTitle": "Platform status",
+    "statusOk": "Connected to the RoboSim platform.",
+    "statusDown": "Cannot reach the server right now. Your local work is safe.",
+    "lastChecked": "Last checked {time}"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist or has moved."
+  }
+}

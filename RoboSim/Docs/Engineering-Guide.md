@@ -23,7 +23,7 @@
 
 | Tool | Version | Notes |
 |---|---|---|
-| Windows 11 + WSL2 | Ubuntu 24.04 distro | Clone the repo **inside the WSL filesystem** (`~/src/robosim`), not under `/mnt/c` or `/mnt/d` — file watching and I/O are much faster |
+| Windows 11 + WSL2 | Ubuntu 24.04 distro | RoboSim lives in the `RoboSim/` folder of the Mehrtronic repo. A checkout under `/mnt/c` or `/mnt/d` works but is slower (`pnpm install` ≈ 1 min, `pnpm verify` ≈ 1.5 min); a clone inside the WSL filesystem is faster |
 | Docker | Docker Desktop with WSL2 backend, or Docker Engine inside WSL | Compose v2 |
 | Node.js | 24 LTS via `fnm` or `nvm` | Version pinned in `.nvmrc` / `package.json#engines` |
 | pnpm | via Corepack (`corepack enable`) | Version pinned in `package.json#packageManager` |
@@ -32,29 +32,48 @@
 
 ### 2.2 First run
 
+**Mode A — no Docker (PGlite).** Works on a fresh WSL2 machine with only Node and pnpm. The API runs an in-process PostgreSQL (PGlite, [ADR-019](decisions.md#adr-019--pglite-for-docker-free-development-and-database-tests)) and migrates it automatically on start.
+
 ```bash
-git clone <repo-url> ~/src/robosim && cd ~/src/robosim
+git clone <mehrtronic-repo-url> && cd Mehrtronic/RoboSim
 corepack enable
 pnpm install
-cp .env.example .env                 # defaults work for local dev
-pnpm dev:infra                       # docker compose: postgres, valkey, minio, openbao(dev), mailpit, compiler sandbox image
-pnpm db:migrate && pnpm db:seed      # schema + demo catalogue, plans, guided projects, test users
-pnpm dev                             # turbo: web (5173), admin (5174), api (3000), realtime (3001), compiler, grader, exporter
+sed -e 's/^DATABASE_DRIVER=postgres/DATABASE_DRIVER=pglite/' \
+    -e 's#^PGLITE_DATA_DIR=.*#PGLITE_DATA_DIR=../../.local/pglite#' .env.example > .env
+pnpm build                           # shared packages + apps (first time)
+pnpm db:seed                         # demo users and feature flags
+pnpm dev                             # web (5173), admin (5174), api (3000)
 ```
 
-| URL | Service |
-|---|---|
-| http://localhost:5173 | Web app (seed users: `learner@dev.local`, `teacher@dev.local`, `admin@dev.local`, password `devpass!`) |
-| http://localhost:5174 | Admin app |
-| http://localhost:3000/api/v1/openapi.json | API spec |
-| http://localhost:8025 | Mailpit (emails; SMS are logged to the console by the dev SMS provider) |
-| http://localhost:9001 | MinIO console |
+**Mode B — full local infrastructure (Docker).** Same as above, but keep `DATABASE_DRIVER=postgres` in `.env` and start the services first:
+
+```bash
+pnpm dev:infra                       # docker compose: postgres, valkey, minio, openbao (dev), mailpit
+pnpm db:migrate && pnpm db:seed
+pnpm dev
+```
+
+If port 3000 is already used on your machine, set `API_PORT` in `.env`; the Vite dev proxies follow it.
+
+| URL | Service | Available from |
+|---|---|---|
+| http://localhost:5173 | Web app | P0 |
+| http://localhost:5174 | Admin app | P0 |
+| http://localhost:3000/api/v1/health/ready | API readiness | P0 |
+| http://localhost:3000/api/v1/feature-flags | Evaluated feature flags | P0 |
+| http://localhost:3000/api/v1/openapi.json | API spec | P2 (with the first public endpoints) |
+| http://localhost:8025 | Mailpit | Mode B |
+| http://localhost:9001 | MinIO console | Mode B |
+
+Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the `platform_admin` staff role) exist from P0; passwords and login arrive with authentication in P2.
 
 ### 2.3 Environment variables (excerpt)
 
 | Variable | Dev default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `postgres://robosim:robosim@localhost:5432/robosim` | PostgreSQL |
+| `DATABASE_DRIVER` | `postgres` (`pglite` in Mode A) | Database driver; `pglite` is rejected when `APP_ENV=production` |
+| `PGLITE_DATA_DIR` | `memory://` | PGlite data directory (Mode A) |
+| `DATABASE_URL` | `postgres://robosim:robosim@localhost:5432/robosim` | PostgreSQL (Mode B) |
 | `REDIS_URL` | `redis://localhost:6379` | Valkey |
 | `S3_ENDPOINT` / `S3_BUCKET` | `http://localhost:9000` / `robosim-dev` | Object storage |
 | `BAO_ADDR` | `http://localhost:8200` | OpenBao (dev mode) |
@@ -69,15 +88,17 @@ pnpm dev                             # turbo: web (5173), admin (5174), api (300
 
 | Command | What it does |
 |---|---|
+| `pnpm verify` | Everything CI runs: format, i18n, architecture, lint, typecheck, test, build, bundle budget (`pnpm ci` is a pnpm built-in, so the script is named `verify`) |
 | `pnpm dev` | Run all apps with hot reload |
 | `pnpm dev --filter web` | Run one app (plus its dependencies) |
 | `pnpm build` | Build everything (Turborepo cache) |
 | `pnpm lint` · `pnpm typecheck` · `pnpm format` | ESLint, `tsc --noEmit`, Prettier |
 | `pnpm test` | Unit tests (Vitest) |
-| `pnpm test:int` | Integration tests (Testcontainers: Postgres, Valkey, MinIO, compiler image) |
+| `pnpm test:int` | Integration tests against real services via Testcontainers (P1; until then DB integration tests run on PGlite inside `pnpm test`) |
 | `pnpm test:e2e` | Playwright E2E (EN + FA projects, Chrome + Firefox) |
 | `pnpm test:sim` | Simulation conformance + golden traces (Node and browser) |
 | `pnpm bench` | Performance benchmarks (§17 of Technical Design) |
+| `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |
 | `pnpm i18n:check` | Missing/unused keys, ICU syntax, FA/EN parity |
 | `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed` | Drizzle migrations |
 | `pnpm new:component <slug>` · `pnpm new:rule <id>` · `pnpm new:board <slug>` | Scaffolders (§8) |

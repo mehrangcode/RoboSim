@@ -1,0 +1,6 @@
+{
+  "$comment": "Used only by dependency-cruiser to resolve imports across the monorepo.",
+  "extends": "./packages/config/tsconfig/base.json",
+  "compilerOptions": { "allowJs": true, "jsx": "react-jsx", "experimentalDecorators": true, "noEmit": true },
+  "include": ["apps/*/src", "packages/*/src", "packages/*/*/src"]
+}

@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+  - packages/boards/*
+  - packages/components/*
+  - packages/safety-rules/*
+
+# Dependencies allowed to run install scripts (everything else is blocked by pnpm).
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  protobufjs: false

@@ -54,19 +54,24 @@ gantt
 
 **Scope**
 - Monorepo per [Technical Design §3](Technical-Design.md#3-repository-layout); CI pipeline with all gates (lint, typecheck, arch rules, i18n, unit, integration, image scan, SBOM).
-- Infrastructure: local Docker Compose (WSL2), staging Kubernetes, Harbor/Verdaccio mirrors, OpenBao, CloudNativePG, Valkey, MinIO, observability stack, Argo CD.
+- Infrastructure: local Docker Compose (WSL2) and a Docker-free local mode on PGlite ([ADR-019](decisions.md#adr-019--pglite-for-docker-free-development-and-database-tests)); OpenTelemetry tracing hooks, structured JSON logs with request IDs.
+- *Re-scoped 2026-10-13:* staging Kubernetes, Harbor/Verdaccio mirrors, CloudNativePG, OpenBao, observability stack, and Argo CD move to **P1 (Platform deployment track)** because no cluster or cloud provider is available yet (open question Q-5).
 - `apps/web`, `apps/admin`, `apps/api` skeletons; design system (`packages/ui`) with RTL; i18n infrastructure (FR-I18N-01…04); feature flags (FR-ADM-09).
 - Full database schema baseline for IAM, workspaces, memberships, audit, outbox, feature flags; RLS framework and isolation test harness.
 - Personal workspace creation on user creation (internal only; auth UI comes in P2).
 - Long-lead items started: eNamad, payment gateway contract, cloud contract, SMS/email providers, GPU capacity (§7).
 
 **Exit criteria**
-- `pnpm dev` brings the full stack up on a fresh WSL2 machine in < 30 min following the Engineering Guide.
+- `pnpm dev` brings the full stack up on a fresh WSL2 machine in < 30 min following the Engineering Guide (PGlite mode without Docker; Compose mode once Docker is installed).
 - Switching to FA flips the app shell to RTL; i18n check and pseudo-locale build pass with zero hard-coded strings.
-- Tenant-isolation test suite runs in CI; staging deploys via Argo CD from `main`.
-- Dashboards show RED metrics and traces for the API.
+- Tenant-isolation test suite runs in CI (`pnpm verify` locally, GitHub Actions on every PR).
+- API emits structured logs with correlation IDs; OTLP tracing activates when an endpoint is configured.
+
+**P0 status (2026-10-13):** implemented. Verified: `pnpm verify` green from a clean checkout (25/25 tasks, 118 tests), all gates proven to fail on planted violations. Not yet verified: Docker Compose stack (no Docker host), GitHub Actions run (no remote yet), browser screenshot/visual check (headless Chromium system libraries missing in WSL).
 
 ### P1 — Simulation engine
+
+**Platform deployment track (moved from P0):** staging Kubernetes (Helm umbrella chart, gVisor RuntimeClass node pool), Argo CD, Harbor + Verdaccio mirrors, CloudNativePG with PITR, Valkey, OpenBao + External Secrets, observability stack (OTel Collector, Prometheus, Loki, Tempo, Grafana, GlitchTip), outbox relay worker on BullMQ. Exit: staging deploys from `main` via Argo CD; dashboards show RED metrics and traces for the API; tenant-isolation suite also passes against real PostgreSQL 16.
 
 **Scope** (FR-WRK-01…03, FR-CIR-01…06, 10, FR-COD-01, 03, 06, FR-BLD-01…06, FR-SIM-01…07, 09…11, FR-ARN-01…09, 11 (engine), FR-SAF-01, 02 (rules 1–11), 04…06, FR-EXT-01…03, 06)
 - `sim-core`: netlist, MNA solver, scheduler, component bus, world model, physics, sensors, success-condition engine, determinism (dmath, PRNG).

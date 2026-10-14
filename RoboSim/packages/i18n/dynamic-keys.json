@@ -1,0 +1,4 @@
+{
+  "$comment": "Key prefixes resolved at runtime (template-literal keys) that the static scan cannot see.",
+  "prefixes": ["errors:", "common:language."]
+}

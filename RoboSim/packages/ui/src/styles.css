@@ -1,0 +1,65 @@
+/* RoboSim design tokens (Tailwind v4, CSS-first). Neutral placeholder palette until Mehrtronic brand assets exist. */
+@import 'tailwindcss';
+@import '@fontsource-variable/vazirmatn';
+@source './';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-fa: 'Vazirmatn Variable', 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --color-brand-50: oklch(0.97 0.02 250);
+  --color-brand-100: oklch(0.93 0.04 250);
+  --color-brand-500: oklch(0.58 0.16 250);
+  --color-brand-600: oklch(0.51 0.17 250);
+  --color-brand-700: oklch(0.44 0.15 250);
+
+  --color-surface: var(--rs-surface);
+  --color-surface-raised: var(--rs-surface-raised);
+  --color-ink: var(--rs-ink);
+  --color-ink-muted: var(--rs-ink-muted);
+  --color-line: var(--rs-line);
+  --color-ok: oklch(0.58 0.14 150);
+  --color-danger: oklch(0.56 0.2 27);
+}
+
+:root {
+  --rs-surface: oklch(0.985 0.003 250);
+  --rs-surface-raised: oklch(1 0 0);
+  --rs-ink: oklch(0.22 0.02 250);
+  --rs-ink-muted: oklch(0.48 0.02 250);
+  --rs-line: oklch(0.9 0.01 250);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rs-surface: oklch(0.18 0.015 250);
+    --rs-surface-raised: oklch(0.23 0.015 250);
+    --rs-ink: oklch(0.95 0.005 250);
+    --rs-ink-muted: oklch(0.72 0.015 250);
+    --rs-line: oklch(0.32 0.015 250);
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  html {
+    @apply bg-surface text-ink font-sans antialiased;
+  }
+  html:lang(fa) {
+    font-family: var(--font-fa);
+  }
+  /* Code, pins, and numeric technical values stay LTR inside RTL pages (FR-I18N-02). */
+  code,
+  kbd,
+  pre,
+  .ltr {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-family: var(--font-mono);
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}

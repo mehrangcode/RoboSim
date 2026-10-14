@@ -1,0 +1,16 @@
+{
+  "appName": "RoboSim",
+  "publisher": "by Mehrtronic",
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "fa": "فارسی"
+  },
+  "actions": {
+    "retry": "Retry",
+    "backHome": "Back to home"
+  },
+  "status": {
+    "loading": "Loading…"
+  }
+}

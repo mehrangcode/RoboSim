@@ -1,0 +1,46 @@
+{
+  "name": "@robosim/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput & node --env-file-if-exists=../../.env --enable-source-maps --watch dist/main.js",
+    "start": "node --enable-source-maps --import ./dist/instrumentation.js dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "pnpm build && node --env-file-if-exists=../../.env dist/db/migrate.js",
+    "db:seed": "pnpm build && node --env-file-if-exists=../../.env dist/db/seed.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.9",
+    "@nestjs/common": "^12.1.3",
+    "@nestjs/core": "^12.1.3",
+    "@nestjs/platform-fastify": "^12.1.3",
+    "@opentelemetry/auto-instrumentations-node": "^0.81.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
+    "@robosim/i18n": "workspace:*",
+    "@robosim/shared": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.5",
+    "pg": "^8.23.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^12.1.3",
+    "@robosim/config": "workspace:*",
+    "@swc/core": "^1.16.18",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^10.12.0",
+    "typescript": "6.0.3",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^5.0.4"
+  }
+}

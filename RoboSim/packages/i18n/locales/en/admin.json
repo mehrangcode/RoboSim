@@ -1,0 +1,11 @@
+{
+  "title": "RoboSim Admin",
+  "nav": {
+    "dashboard": "Dashboard",
+    "mainLabel": "Admin navigation"
+  },
+  "dashboard": {
+    "heading": "Back-office",
+    "body": "Operations modules (users, catalogue, content, commerce, finance) arrive in phase P2."
+  }
+}
