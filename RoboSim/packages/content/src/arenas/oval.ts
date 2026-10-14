@@ -1,4 +1,4 @@
-import type { ArenaSpec } from '@robosim/sim-core';
+import type { ArenaSpec, ChallengeSpec } from '@robosim/sim-core';
 import { stadiumPath } from './shapes.js';
 
 const W = 2.4;
@@ -44,5 +44,23 @@ export const ovalArena: ArenaSpec = {
       center: { x: CENTER.x - STRAIGHT / 2 - RADIUS, y: CENTER.y },
       radiusM: 0.15,
     },
+  ],
+};
+
+/** US-ARN-08 / Technical Design §5.7 example: one lap in under 60 s, clean and on the line. */
+export const ovalChallenge: ChallengeSpec = {
+  id: 'oval-one-lap',
+  condition: {
+    all: [
+      { type: 'laps', count: 1 },
+      { type: 'timeLimit', seconds: 60 },
+      { type: 'noCollision', tolerance: 0 },
+      { type: 'onLineRatio', min: 0.85 },
+    ],
+  },
+  score: [
+    { type: 'laps', weight: 60 },
+    { type: 'timeBonus', under: 45, weight: 25 },
+    { type: 'onLineRatio', weight: 15 },
   ],
 };

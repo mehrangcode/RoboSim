@@ -31,9 +31,17 @@ export interface RobotPose {
   readonly sensors: readonly { readonly x: number; readonly y: number; readonly black: boolean }[];
 }
 
+/** Challenge overlay: checkpoints already passed and the one to reach next. */
+export interface ZoneOverlay {
+  readonly visitedZones: readonly string[];
+  readonly nextZone: string | null;
+}
+
 export interface Theme {
   readonly wall: string;
   readonly zone: string;
+  readonly zoneVisited: string;
+  readonly zoneNext: string;
   readonly body: string;
   readonly bodyStroke: string;
   readonly wheel: string;
@@ -45,6 +53,8 @@ export interface Theme {
 export const DEFAULT_THEME: Theme = {
   wall: '#475569',
   zone: '#0ea5e9',
+  zoneVisited: 'rgba(22, 163, 74, 0.25)',
+  zoneNext: '#f59e0b',
   body: '#2563eb',
   bodyStroke: '#1e3a8a',
   wheel: '#111827',

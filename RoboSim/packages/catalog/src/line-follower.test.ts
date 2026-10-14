@@ -1,8 +1,14 @@
 import { UNO_ELECTRICAL, avrUno } from '@robosim/board-avr-uno';
 import { chassisGeometry, type Chassis2wdProps } from '@robosim/component-chassis-2wd';
 import type { Line3chState } from '@robosim/component-line-3ch';
-import { ovalArena } from '@robosim/content';
-import { PlanckWorld, resolveProps, type RobotSpec } from '@robosim/sim-core';
+import { ovalArena, ovalChallenge } from '@robosim/content';
+import {
+  ChallengeTracker,
+  PlanckWorld,
+  resolveProps,
+  type ChallengeResult,
+  type RobotSpec,
+} from '@robosim/sim-core';
 import { bench, dcSupply, firmware } from '@robosim/test-fixtures';
 import { describe, expect, it } from 'vitest';
 import { findDefinition } from './index.js';
@@ -151,6 +157,53 @@ function runLap(duty: number, limitS = 40): LapResult {
   }
   return { completed: false, lapTimeS: null, visited, maxOffLineS: maxOffLine };
 }
+
+/** Runs the oval's default challenge headless, like the grader (unpaced, stop on decision). */
+function runChallenge(duty: number, maxSimSeconds = 70): ChallengeResult {
+  const { b, world } = starterRobot(duty);
+  let decided: ChallengeResult | null = null;
+  const tracker = new ChallengeTracker(b.sim, world, ovalArena, ovalChallenge, {
+    maxSimSeconds,
+    onDecided: (r) => (decided = r),
+  });
+  b.sim.addObserver(tracker);
+  b.input('sw', 'on', true);
+  for (let t = 0; t < maxSimSeconds && !decided; t += 0.1) b.run(0.1);
+  return decided ?? tracker.result();
+}
+
+describe('oval challenge (US-ARN-08, FR-ARN-11)', () => {
+  it(
+    'the starter robot passes "1 lap < 60 s, no collisions, on line ≥ 85 %" with a score',
+    { timeout: 120_000 },
+    () => {
+      const r = runChallenge(150);
+      expect(r.status).toBe('success');
+      expect(r.decidedAt).toBeGreaterThan(5);
+      expect(r.decidedAt).toBeLessThan(30);
+      expect(r.metrics).toMatchObject({
+        lapsDone: 1,
+        collisions: 0,
+        checkpointsPassed: 3,
+        checkpointsTotal: 3,
+      });
+      expect(r.metrics.onLineRatio).toBeGreaterThan(0.85);
+      expect(r.score?.max).toBe(100);
+      expect(r.score?.total).toBeGreaterThan(95); // full laps + full time bonus (< 45 s) + on-line share
+    },
+  );
+
+  it('a robot that never moves fails at the time limit', { timeout: 120_000 }, () => {
+    const r = runChallenge(0);
+    expect(r.status).toBe('failure');
+    expect(r.decidedAt).toBeCloseTo(60.01, 1);
+    expect(r.score?.total).toBeCloseTo(15, 0); // only the on-line share: it never left the line
+  });
+
+  it('the result is identical run to run (grader determinism)', { timeout: 120_000 }, () => {
+    expect(runChallenge(150)).toEqual(runChallenge(150));
+  });
+});
 
 describe('starter line-follower on the oval (Release Plan P1 exit criterion, physics part)', () => {
   it('completes a lap through every checkpoint in order', { timeout: 120_000 }, () => {

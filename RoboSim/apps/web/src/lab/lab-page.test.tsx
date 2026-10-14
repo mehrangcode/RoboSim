@@ -145,6 +145,57 @@ describe('Simulator Lab', () => {
     );
   });
 
+  it('arena: shows the live challenge checklist and the result card with score', async () => {
+    const { worker, user } = await setup();
+    worker.reply({
+      type: 'loaded',
+      scene: { ...benchScene, scenario: 'line-follower', kind: 'bench', parts: [] },
+    });
+    const challenge = {
+      id: 'oval-one-lap',
+      status: 'success' as const,
+      decidedAt: 14.47,
+      visitedZones: ['cp-right'],
+      nextZone: null,
+      tree: {
+        type: 'all',
+        status: 'met' as const,
+        final: true,
+        params: {},
+        children: [
+          {
+            type: 'laps',
+            status: 'met' as const,
+            final: true,
+            params: { laps: 1, count: 1, checkpoint: 3, checkpoints: 3 },
+          },
+          { type: 'timeLimit', status: 'met' as const, final: true, params: { time: 14.47, seconds: 60 } },
+          { type: 'onLineRatio', status: 'met' as const, final: true, params: { ratio: 0.97, min: 0.85 } },
+        ],
+      },
+      score: {
+        total: 99.6,
+        max: 100,
+        lines: [
+          { type: 'laps', weight: 60, points: 60 },
+          { type: 'timeBonus', weight: 25, points: 25 },
+          { type: 'onLineRatio', weight: 15, points: 14.6 },
+        ],
+      },
+    };
+    worker.reply({ type: 'frame', frame: frame({ running: false, challenge }) });
+    expect(screen.getByText('Laps 1/1 · checkpoint 3/3')).toBeInTheDocument();
+    expect(screen.getByText('On the line 97% (needs 85%)')).toBeInTheDocument();
+    expect(screen.getByText('Challenge complete!')).toBeInTheDocument();
+    expect(screen.getByText('Score 99.6/100')).toBeInTheDocument();
+    expect(screen.getByText('Decided at 14.47 s of simulated time')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Run again' }));
+    expect(worker.sent.slice(-2)).toEqual([
+      { type: 'control', action: 'reset' },
+      { type: 'control', action: 'run' },
+    ]);
+  });
+
   it('surfaces worker errors', async () => {
     const { worker } = await setup();
     worker.reply({ type: 'error', message: 'boom' });

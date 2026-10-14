@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArenaView } from './arena-view.js';
 import { BenchView } from './bench-view.js';
+import { ChallengePanel } from './challenge-panel.js';
 import { FindingsPanel } from './findings-panel.js';
 import { useFormat } from './format.js';
 import { PinTable } from './pin-table.js';
@@ -133,6 +134,7 @@ export function LabPage({ createWorker }: { createWorker?: () => WorkerLike }) {
             )}
           </div>
           <div className="flex flex-col gap-3">
+            {frame?.challenge && <ChallengePanel challenge={frame.challenge} send={send} />}
             {scene.kind === 'arena' && <Telemetry frame={frame} />}
             <PinTable scene={scene} frame={frame} />
             <FindingsPanel

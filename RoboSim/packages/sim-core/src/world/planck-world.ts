@@ -57,6 +57,8 @@ export class PlanckWorld implements WorldModel {
   private readonly world: World;
   private readonly robots: Robot[] = [];
   private readonly dynamicObstacles: { readonly id: string; readonly body: Body }[] = [];
+  /** New contacts between each robot and anything that is not itself (walls, obstacles, other robots). */
+  private readonly collisions = new Map<string, number>();
 
   constructor(
     readonly arena: ArenaSpec,
@@ -69,6 +71,34 @@ export class PlanckWorld implements WorldModel {
     if (arena.perimeterWalls !== false) this.addPerimeter(ground);
     for (const o of arena.obstacles ?? []) this.addObstacle(o, ground);
     for (const r of robots) this.robots.push(this.addRobot(r));
+    this.world.on('begin-contact', (contact) => {
+      const a = (contact.getFixtureA().getBody().getUserData() as { id?: string } | null)?.id;
+      const b = (contact.getFixtureB().getBody().getUserData() as { id?: string } | null)?.id;
+      for (const r of this.robots) {
+        const id = r.spec.id;
+        if ((a === id) !== (b === id)) this.collisions.set(id, (this.collisions.get(id) ?? 0) + 1);
+      }
+    });
+  }
+
+  /** Number of contacts the robot has started with walls, obstacles or other robots so far. */
+  collisionCount(robotId: string): number {
+    return this.collisions.get(robotId) ?? 0;
+  }
+
+  /**
+   * Whether the line runs under the robot: any black floor (luminance < 0.5) on the segment across the
+   * axle midpoint, ±`toleranceMm` along the robot's lateral axis. Independent of mounted sensors.
+   */
+  isOnLine(robotId: string, toleranceMm = 25): boolean {
+    const r = this.robots.find((x) => x.spec.id === robotId);
+    if (!r) throw new Error(`Unknown robot '${robotId}'`);
+    const steps = Math.max(1, Math.round(toleranceMm / 2.5));
+    for (let i = -steps; i <= steps; i++) {
+      const p = r.body.getWorldPoint(new PVec2(0, (i * toleranceMm) / steps / 1000));
+      if (floorAt(this.floor, { x: p.x, y: p.y }) < 0.5) return true;
+    }
+    return false;
   }
 
   bind(lookup: (componentId: string) => ComponentModel | undefined): void {

@@ -1,6 +1,6 @@
-import { floorAt, rasterizeFloor } from '@robosim/sim-core';
+import { floorAt, rasterizeFloor, validateChallenge } from '@robosim/sim-core';
 import { describe, expect, it } from 'vitest';
-import { ovalArena, stadiumPath } from '../index.js';
+import { ovalArena, ovalChallenge, stadiumPath } from '../index.js';
 
 describe('oval arena', () => {
   const raster = rasterizeFloor(ovalArena.floor, ovalArena.widthM, ovalArena.heightM);
@@ -31,6 +31,10 @@ describe('oval arena', () => {
       area2 += (a?.x ?? 0) * (b?.y ?? 0) - (b?.x ?? 0) * (a?.y ?? 0);
     }
     expect(area2).toBeGreaterThan(0);
+  });
+
+  it('ships a valid default challenge', () => {
+    expect(validateChallenge(ovalChallenge, { zones: ovalArena.zones ?? [], objects: [] })).toEqual([]);
   });
 
   it('rasterisation is deterministic', () => {

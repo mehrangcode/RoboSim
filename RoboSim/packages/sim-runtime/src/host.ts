@@ -1,6 +1,7 @@
 import { UNO_ELECTRICAL } from '@robosim/board-avr-uno';
-import { Pacer, dmath, type McuCore } from '@robosim/sim-core';
-import type { Frame, MainToWorker, PinView, WorkerToMain } from './protocol.js';
+import { Pacer, dmath, type ChallengeResult, type McuCore, type NodeView } from '@robosim/sim-core';
+import { ovalArena } from '@robosim/content';
+import type { ChallengeView, Frame, MainToWorker, PinView, WorkerToMain } from './protocol.js';
 import { LINE_SPACING_MM, buildScenario, findingView, type Scenario } from './scenarios.js';
 
 /** Frames to the UI at most this often (wall ms); the simulation itself is unaffected. */
@@ -50,14 +51,27 @@ export class SimHost {
 
   /** Called by the worker loop (~every 16 ms). */
   tick(): void {
-    if (this.running) this.pacer?.tick();
+    if (this.running) {
+      this.pacer?.tick();
+      // The pacer stops on the decisive slice (stopWhen); mirror that as a paused run.
+      if (this.scenario?.challenge?.isDecided) {
+        this.running = false;
+        this.publish(true);
+        return;
+      }
+    }
     this.publish(false);
   }
 
   private load(id: Parameters<typeof buildScenario>[0], seed: number): void {
     this.scenario = buildScenario(id, seed);
     this.loaded = { id, seed };
-    this.pacer = new Pacer(this.scenario.circuit.sim, { now: this.now, speed: this.speed });
+    const challenge = this.scenario.challenge;
+    this.pacer = new Pacer(this.scenario.circuit.sim, {
+      now: this.now,
+      speed: this.speed,
+      ...(challenge ? { stopWhen: () => challenge.isDecided } : {}),
+    });
     this.running = false;
     this.lastFrameSim = 0;
     const floor = this.scenario.scene.arena?.floor.data;
@@ -114,6 +128,7 @@ export class SimHost {
         pins: s.scene.pins.filter((p) => sim.mcuBus?.isPinDamaged(p)),
       },
       ...(s.world ? { robot: this.robotView(s) } : {}),
+      ...(s.challenge ? { challenge: challengeView(s.challenge.result()) } : {}),
     };
     this.post({ type: 'frame', frame });
   }
@@ -164,4 +179,37 @@ export class SimHost {
       : [];
     return { x: body?.position.x ?? 0, y: body?.position.y ?? 0, angle: body?.angle ?? 0, sensors };
   }
+}
+
+const CHECKPOINTS = (ovalArena.zones ?? []).filter((z) => z.kind === 'checkpoint').map((z) => z.id);
+const START = (ovalArena.zones ?? []).find((z) => z.kind === 'start')?.id ?? null;
+
+function findNode(n: NodeView, type: string): NodeView | null {
+  if (n.type === type) return n;
+  for (const c of n.children ?? []) {
+    const hit = findNode(c, type);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function challengeView(r: ChallengeResult): ChallengeView {
+  const laps = findNode(r.tree, 'laps');
+  const index = Number(laps?.params['checkpoint'] ?? 0);
+  const done = laps?.status === 'met';
+  return {
+    id: r.challengeId,
+    status: r.status,
+    decidedAt: r.decidedAt,
+    tree: r.tree,
+    score: r.score
+      ? {
+          total: r.score.total,
+          max: r.score.max,
+          lines: r.score.lines.map((l) => ({ type: l.type, weight: l.weight, points: l.points })),
+        }
+      : null,
+    visitedZones: done ? [...CHECKPOINTS] : CHECKPOINTS.slice(0, index),
+    nextZone: done ? null : (CHECKPOINTS[index] ?? START),
+  };
 }

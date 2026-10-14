@@ -160,3 +160,29 @@ describe('SimHost safety (slice 5)', () => {
     expect(h.scene()?.staticFindings.map((f) => f.ruleId)).toContain('SAF-INDUCTIVE-ON-PIN');
   });
 });
+
+describe('SimHost challenge (slice 6)', () => {
+  it('tracks the oval challenge live and pauses on the decision with a score', { timeout: 120_000 }, () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'line-follower' });
+    expect(h.last()?.challenge).toMatchObject({
+      id: 'oval-one-lap',
+      status: 'running',
+      visitedZones: [],
+      nextZone: 'cp-right',
+    });
+    h.host.handle({ type: 'speed', value: 4 });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(1500); // 6 s simulated: on the way to the first checkpoint
+    expect(h.last()?.challenge?.status).toBe('running');
+    h.advance(10_000); // enough wall time for a ~15 s lap at 4×
+    const f = h.last();
+    expect(f?.challenge?.status).toBe('success');
+    expect(f?.running).toBe(false);
+    expect(f?.simTime).toBeCloseTo(f?.challenge?.decidedAt ?? 0, 1); // stopped on the decisive slice
+    expect(f?.challenge?.visitedZones).toEqual(['cp-right', 'cp-top', 'cp-left']);
+    expect(f?.challenge?.score?.total).toBeGreaterThan(95);
+    h.host.handle({ type: 'control', action: 'reset' });
+    expect(h.last()?.challenge?.status).toBe('running');
+  });
+});

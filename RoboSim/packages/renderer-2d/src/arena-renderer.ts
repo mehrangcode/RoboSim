@@ -9,6 +9,7 @@ import {
   type RobotView,
   type Theme,
   type ViewTransform,
+  type ZoneOverlay,
 } from './view.js';
 
 const TRAIL_POINTS = 900;
@@ -40,13 +41,13 @@ export class ArenaRenderer {
     this.trail.length = 0;
   }
 
-  draw(pose: RobotPose | null): void {
+  draw(pose: RobotPose | null, overlay: ZoneOverlay | null = null): void {
     const { ctx, transform: t } = this;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     this.drawFloor(t);
-    this.drawZones(t);
+    this.drawZones(t, overlay);
     ctx.strokeStyle = this.theme.wall;
     ctx.lineWidth = Math.max(2, 0.01 * t.scale);
     const a = toCanvas(t, { x: 0, y: 0 });
@@ -98,15 +99,21 @@ export class ArenaRenderer {
     );
   }
 
-  private drawZones(t: ViewTransform): void {
-    const { ctx } = this;
-    ctx.setLineDash([6, 4]);
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = this.theme.zone;
+  private drawZones(t: ViewTransform, overlay: ZoneOverlay | null): void {
+    const { ctx, theme } = this;
     for (const z of this.arena.zones) {
       const c = toCanvas(t, z);
+      const visited = overlay?.visitedZones.includes(z.id) ?? false;
+      const next = overlay?.nextZone === z.id;
       ctx.beginPath();
       ctx.arc(c.x, c.y, z.radiusM * t.scale, 0, 2 * Math.PI);
+      if (visited) {
+        ctx.fillStyle = theme.zoneVisited;
+        ctx.fill();
+      }
+      ctx.setLineDash(next ? [] : [6, 4]);
+      ctx.lineWidth = next ? 3 : 1.5;
+      ctx.strokeStyle = next ? theme.zoneNext : theme.zone;
       ctx.stroke();
     }
     ctx.setLineDash([]);

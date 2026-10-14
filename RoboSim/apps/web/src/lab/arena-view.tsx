@@ -19,7 +19,7 @@ export function ArenaView({ scene, frame, label }: { scene: SceneInfo; frame: Fr
       canvas.width = Math.round(canvas.clientWidth * dpr);
       canvas.height = Math.round(canvas.clientHeight * dpr);
       renderer.resize();
-      renderer.draw(frameRef.current?.robot ?? null);
+      renderer.draw(frameRef.current?.robot ?? null, frameRef.current?.challenge ?? null);
     };
     fit();
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null;
@@ -33,7 +33,7 @@ export function ArenaView({ scene, frame, label }: { scene: SceneInfo; frame: Fr
   useEffect(() => {
     frameRef.current = frame;
     if (frame?.simTime === 0) rendererRef.current?.clearTrail();
-    rendererRef.current?.draw(frame?.robot ?? null);
+    rendererRef.current?.draw(frame?.robot ?? null, frame?.challenge ?? null);
   }, [frame]);
 
   return (

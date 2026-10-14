@@ -302,6 +302,18 @@ describe('Pacer', () => {
     expect(pacer.tick().slicesRun).toBeLessThanOrEqual(5);
   });
 
+  it('stopWhen halts on the exact slice and pauses the pacer', () => {
+    let wall = 0;
+    const sim = new Simulation({ netCount: 0, seed: 1, components: [] });
+    const pacer = new Pacer(sim, { now: () => wall, stopWhen: () => sim.slice >= 7 });
+    pacer.start();
+    wall = 50;
+    expect(pacer.tick().slicesRun).toBe(7);
+    wall = 100;
+    expect(pacer.tick().slicesRun).toBe(0); // paused
+    expect(sim.slice).toBe(7);
+  });
+
   it('does nothing while paused', () => {
     let wall = 0;
     const sim = new Simulation({ netCount: 0, seed: 1, components: [] });

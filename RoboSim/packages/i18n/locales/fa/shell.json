@@ -120,6 +120,45 @@
       "acknowledged": "{count, plural, one {# هشدار تأیید شد} other {# هشدار تأیید شد}}"
     },
     "damaged": "آسیب‌دیده",
-    "pinDamaged": "آسیب‌دیده"
+    "pinDamaged": "آسیب‌دیده",
+    "challenge": {
+      "title": "چالش",
+      "name": {
+        "oval-one-lap": "یک دور کامل مسیر بیضی در کمتر از ۶۰ ثانیه، بدون برخورد و روی خط"
+      },
+      "status": {
+        "running": "در حال انجام",
+        "success": "چالش با موفقیت انجام شد!",
+        "failure": "چالش ناموفق بود"
+      },
+      "decided": "نتیجه در زمان شبیه‌سازی {time, number, ::.00} ثانیه مشخص شد",
+      "cond": {
+        "laps": "دور {laps, number}/{count, number} · نقطه‌ی بازرسی {checkpoint, number}/{checkpoints, number}",
+        "timeLimit": "زمان {time, number, ::.0}/{seconds, number} ثانیه",
+        "noCollision": "برخورد {collisions, number} (مجاز {tolerance, number})",
+        "onLineRatio": "روی خط {ratio, number, ::percent} (حداقل {min, number, ::percent})",
+        "reachZone": "رسیدن به ناحیه‌ی {zone}",
+        "checkpointsInOrder": "نقاط بازرسی به‌ترتیب {passed, number}/{total, number}",
+        "serialMatches": "خروجی سریال با {pattern} جور شود",
+        "pinState": "پایه‌ی {pin} به مدت {forS, number} ثانیه {level, number} بماند",
+        "pushOut": "{object} را از {zone} بیرون برانید"
+      },
+      "stateLabel": {
+        "met": "انجام شد",
+        "failed": "ناموفق",
+        "pending": "هنوز نه",
+        "holding": "برقرار"
+      },
+      "score": {
+        "title": "امتیاز {total, number}/{max, number}",
+        "laps": "دورها",
+        "timeBonus": "پاداش زمان",
+        "onLineRatio": "ماندن روی خط",
+        "checkpoints": "نقاط بازرسی",
+        "noCollision": "بدون برخورد",
+        "points": "{points, number}/{weight, number}"
+      },
+      "again": "اجرای دوباره"
+    }
   }
 }

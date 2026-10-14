@@ -120,6 +120,45 @@
       "acknowledged": "{count, plural, one {# warning acknowledged} other {# warnings acknowledged}}"
     },
     "damaged": "Damaged",
-    "pinDamaged": "damaged"
+    "pinDamaged": "damaged",
+    "challenge": {
+      "title": "Challenge",
+      "name": {
+        "oval-one-lap": "One lap of the oval in under 60 s, without collisions, staying on the line"
+      },
+      "status": {
+        "running": "In progress",
+        "success": "Challenge complete!",
+        "failure": "Challenge failed"
+      },
+      "decided": "Decided at {time, number, ::.00} s of simulated time",
+      "cond": {
+        "laps": "Laps {laps, number}/{count, number} · checkpoint {checkpoint, number}/{checkpoints, number}",
+        "timeLimit": "Time {time, number, ::.0}/{seconds, number} s",
+        "noCollision": "Collisions {collisions, number} (allowed {tolerance, number})",
+        "onLineRatio": "On the line {ratio, number, ::percent} (needs {min, number, ::percent})",
+        "reachZone": "Reach zone {zone}",
+        "checkpointsInOrder": "Checkpoints in order {passed, number}/{total, number}",
+        "serialMatches": "Serial output matches {pattern}",
+        "pinState": "Pin {pin} stays {level, number} for {forS, number} s",
+        "pushOut": "Push {object} out of {zone}"
+      },
+      "stateLabel": {
+        "met": "done",
+        "failed": "failed",
+        "pending": "not yet",
+        "holding": "holding"
+      },
+      "score": {
+        "title": "Score {total, number}/{max, number}",
+        "laps": "Laps",
+        "timeBonus": "Time bonus",
+        "onLineRatio": "Staying on the line",
+        "checkpoints": "Checkpoints",
+        "noCollision": "No collisions",
+        "points": "{points, number}/{weight, number}"
+      },
+      "again": "Run again"
+    }
   }
 }

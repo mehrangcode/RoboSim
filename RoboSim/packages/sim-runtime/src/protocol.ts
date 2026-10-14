@@ -109,6 +109,31 @@ export interface Frame {
   readonly findings: readonly FindingView[];
   /** Ids of damaged parts and MCU pins (FR-SIM-10). */
   readonly damaged: { readonly parts: readonly string[]; readonly pins: readonly string[] };
+  /** Arena challenge progress / outcome (FR-ARN-11), when the scenario has one. */
+  readonly challenge?: ChallengeView;
+}
+
+export interface ChallengeNodeView {
+  readonly type: string;
+  readonly status: 'pending' | 'met' | 'failed';
+  readonly final: boolean;
+  readonly params: Readonly<Record<string, number | string>>;
+  readonly children?: readonly ChallengeNodeView[];
+}
+
+export interface ChallengeView {
+  readonly id: string;
+  readonly status: 'running' | 'success' | 'failure';
+  readonly decidedAt: number | null;
+  readonly tree: ChallengeNodeView;
+  readonly score: {
+    readonly total: number;
+    readonly max: number;
+    readonly lines: readonly { readonly type: string; readonly weight: number; readonly points: number }[];
+  } | null;
+  /** Checkpoints passed on the current lap, and the zone the robot must reach next. */
+  readonly visitedZones: readonly string[];
+  readonly nextZone: string | null;
 }
 
 export type WorkerToMain =

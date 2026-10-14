@@ -10,4 +10,5 @@ export {
   type RobotView,
   type Theme,
   type ViewTransform,
+  type ZoneOverlay,
 } from './view.js';

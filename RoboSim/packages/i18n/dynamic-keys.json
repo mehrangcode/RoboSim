@@ -11,6 +11,7 @@
     "shell:lab.tabs.",
     "shell:lab.telemetry.",
     "safety:",
-    "shell:lab.findings."
+    "shell:lab.findings.",
+    "shell:lab.challenge."
   ]
 }

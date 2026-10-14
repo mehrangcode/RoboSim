@@ -67,3 +67,23 @@ export {
   type StaticProbe,
   type StaticRule,
 } from './safety/types.js';
+export {
+  isSafePattern,
+  validateChallenge,
+  type ChallengeSpec,
+  type ConditionSpec,
+  type ConstraintSpec,
+  type GoalSpec,
+  type ScoreTerm,
+} from './challenge/spec.js';
+export {
+  ConditionTree,
+  computeScore,
+  type ChallengeMetrics,
+  type NodeStatus,
+  type NodeView,
+  type Score,
+  type ScoreLine,
+  type TickState,
+} from './challenge/evaluate.js';
+export { ChallengeTracker, type ChallengeResult, type ChallengeTrackerOptions } from './challenge/tracker.js';

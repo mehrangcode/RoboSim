@@ -1,9 +1,10 @@
 import { UNO_ELECTRICAL, avrUno } from '@robosim/board-avr-uno';
 import { findDefinition } from '@robosim/catalog';
 import { chassisGeometry, type Chassis2wdProps } from '@robosim/component-chassis-2wd';
-import { ovalArena } from '@robosim/content';
+import { ovalArena, ovalChallenge } from '@robosim/content';
 import { RUNTIME_RULES, STATIC_RULES } from '@robosim/safety-rules';
 import {
+  ChallengeTracker,
   PlanckWorld,
   SafetyMonitor,
   analyzeCircuit,
@@ -34,6 +35,8 @@ export interface Scenario {
   readonly scene: SceneInfo;
   /** Runtime safety: latched findings + damage model, observing every slice. */
   readonly safety: SafetyMonitor;
+  /** Arena challenge (FR-ARN-11), when the scenario has one. */
+  readonly challenge?: ChallengeTracker;
 }
 
 export const UNO_BOARD: BoardInfo = {
@@ -270,6 +273,8 @@ function lineFollower(seed: number): Scenario {
   };
   const circuit = buildCircuit(spec);
   circuit.sim.input('sw', 'on', true);
+  const challenge = new ChallengeTracker(circuit.sim, world, ovalArena, ovalChallenge);
+  circuit.sim.addObserver(challenge);
   const robotScene: RobotScene = {
     footprint: geometry.footprint,
     wheels: geometry.wheels.map((w) => ({ x: w.position.x, y: w.position.y, radiusM: w.radiusM })),
@@ -278,6 +283,7 @@ function lineFollower(seed: number): Scenario {
   return withSafety({
     circuit,
     world,
+    challenge,
     scene: {
       scenario: 'line-follower',
       kind: 'arena',

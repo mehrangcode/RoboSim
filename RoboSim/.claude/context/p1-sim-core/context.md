@@ -2,7 +2,9 @@
 
 ## Status
 
-Slices 1–4 + Lab committed by user. Slice 5 (safety + damage) done 2026-10-14, uncommitted. Next: slice 6 — success conditions (§5.7: laps, checkpointsInOrder, timeLimit, noCollision, onLineRatio, reachZone, serialMatches, pinState; all/any/not; score) + Lab lap timer/score demo.
+Slices 1–4 + Lab committed by user. Slices 5 (safety + damage) and 6 (success conditions + scoring + Lab challenge panel) done 2026-10-14, uncommitted. Next: slice 7 — worker protocol (§5.8: SharedArrayBuffer snapshots, event stream, input log).
+
+Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scoring included now; Lab pauses on decision and shows a result card; collision = any new contact with walls/obstacles.
 
 ## Decisions
 

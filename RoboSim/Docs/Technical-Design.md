@@ -387,6 +387,19 @@ Declarative JSON evaluated each slice (no user-supplied code on the server):
 
 Types at GA: `reachZone`, `laps`, `checkpointsInOrder`, `timeLimit`, `noCollision`, `onLineRatio`, `serialMatches` (regex, bounded), `pinState`, `pushOut` (sumo), combined with `all` / `any` / `not`.
 
+**Implementation notes (P1 slice 6, `sim-core/src/challenge`):**
+
+| Topic | Rule |
+|---|---|
+| Node status | `pending` / `met` / `failed`, each with a `final` flag. Goals start pending and finalise when reached. Constraints (`timeLimit`, `noCollision`, `onLineRatio`) start met and finalise only on violation or at the end of the run. |
+| Combinators | `all` fails on the first final failure and succeeds when every child is met *and* final, or at end of run. `any` is the dual. `not` inverts. The run is decided when the root becomes final. |
+| `laps` | Every `checkpoint` zone in arena order, then back into the `start` zone. |
+| `onLineRatio` | Sampled every 10 ms: on-line = floor darker than 0.5 within ±25 mm of the axle midpoint, along the lateral axis. It stays provisional until the run ends. |
+| `noCollision` | Each new contact (planck `begin-contact`) between the robot and a wall or obstacle counts once. `tolerance` = contacts allowed. |
+| `serialMatches` | UART0 output is kept as a 4 KB tail. Patterns are ≤ 200 chars with no nested quantifiers (`isSafePattern`). |
+| Decision | `Pacer({ stopWhen })` halts on the exact slice the tree decides, so the Lab pauses without overshoot. `maxSimSeconds` ends open-ended specs. |
+| Score | `Σ weight × fraction`. `laps` and `checkpoints` use progress; `timeBonus` scales linearly from full at ≤ `under` to 0 at the time limit, and only on success; `onLineRatio` uses the measured ratio; `noCollision` counts only if contacts stayed within `tolerance`. |
+
 ### 5.8 Worker protocol
 
 | Direction | Message | Payload |

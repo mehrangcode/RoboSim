@@ -7,6 +7,8 @@ export interface PacerOptions {
   readonly speed?: number;
   /** Maximum wall time spent simulating per tick (ms). */
   readonly budgetMs?: number;
+  /** Checked after every slice; true stops the tick there (e.g. a challenge was decided). */
+  readonly stopWhen?: () => boolean;
 }
 
 export interface TickResult {
@@ -64,9 +66,20 @@ export class Pacer {
       Math.floor(((tickStart - this.anchorWall) * this.speedFactor * SLICES_PER_SECOND) / 1000);
     const startSlice = this.sim.slice;
     let now = tickStart;
+    let stopped = false;
     while (this.sim.slice < target && now - tickStart < this.budgetMs) {
       this.sim.step();
       now = this.options.now();
+      if (this.options.stopWhen?.()) {
+        stopped = true;
+        break;
+      }
+    }
+    if (stopped) {
+      this.running = false;
+      const slicesRun = this.sim.slice - startSlice;
+      this.lastTickWall = now;
+      return { slicesRun, realTimeFactor: 0, behind: false };
     }
     const behind = this.sim.slice < target;
     if (behind) this.rebase(now); // slow down instead of trying to catch up forever

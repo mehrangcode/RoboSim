@@ -9,6 +9,8 @@ export {
   type FindingView,
   type SafetyScenarioId,
   type ArenaScene,
+  type ChallengeNodeView,
+  type ChallengeView,
   type Frame,
   type MainToWorker,
   type PartInfo,
