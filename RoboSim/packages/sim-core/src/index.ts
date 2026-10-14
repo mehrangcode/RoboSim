@@ -26,3 +26,4 @@ export {
 } from './scheduler.js';
 export { Pacer, type PacerOptions, type TickResult } from './pacer.js';
 export { resolveProps, validateManifest, type PropValue } from './manifest.js';
+export { irReflectance, irSpotRadiusMm, sonarRange, toWorld, SPEED_OF_SOUND_M_S } from './sensors.js';

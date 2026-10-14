@@ -1,0 +1,21 @@
+{
+  "id": "mechanical.chassis-2wd",
+  "version": "1.0.0",
+  "category": "mechanical",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "mechanical.chassis-2wd.name",
+  "pins": [],
+  "props": {
+    "trackWidthMm": { "type": "number", "default": 130, "min": 60, "max": 300, "unit": "mm" },
+    "wheelDiameterMm": { "type": "number", "default": 65, "min": 20, "max": 150, "unit": "mm" },
+    "lengthMm": { "type": "number", "default": 210, "min": 80, "max": 400, "unit": "mm" },
+    "widthMm": { "type": "number", "default": 150, "min": 60, "max": 300, "unit": "mm" },
+    "bodyCenterXMm": { "type": "number", "default": -30, "min": -150, "max": 150, "unit": "mm" },
+    "casterXMm": { "type": "number", "default": -110, "min": -250, "max": 250, "unit": "mm" },
+    "bodyMassG": { "type": "number", "default": 160, "min": 20, "max": 2000, "unit": "g" }
+  },
+  "inputs": [],
+  "massG": 160,
+  "limits": { "maxPayloadG": 1000 }
+}

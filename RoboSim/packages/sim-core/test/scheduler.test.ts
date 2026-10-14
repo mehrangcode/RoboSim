@@ -203,6 +203,28 @@ describe('Simulation scheduler', () => {
     expect(seen[1]).toEqual([]); // cleared every slice
   });
 
+  it('schedules cycle-precise MCU inputs from components (and clamps past times to now)', () => {
+    const core = new FakeCore(CLOCK, () => new Map());
+    let calls = 0;
+    const echo = {
+      type: 'test.echo',
+      init: () => undefined,
+      stamp: () => undefined,
+      step: (_dt: number, io: { scheduleMcuInput: (n: number, l: 0 | 1, t: number) => void }) => {
+        if (calls++ > 0) return;
+        io.scheduleMcuInput(1, 1, 0.0025); // future: exact cycle
+        io.scheduleMcuInput(1, 0, 0.0001); // already executed: applied at the current cycle
+      },
+      faults: () => [],
+      snapshot: () => null,
+    };
+    const sim = blinkCircuit(core, [{ id: 'echo', model: echo, pins: {}, props: null }]);
+    sim.run(1);
+    const mine = core.inputs.filter((i) => i.pin === 'D13');
+    expect(mine).toContainEqual({ pin: 'D13', drive: { level: 1, volts: 5 }, atCycle: 40_000 });
+    expect(mine).toContainEqual({ pin: 'D13', drive: { level: 0, volts: 0 }, atCycle: 16_000 });
+  });
+
   it('rejects duplicate ids and unknown pins', () => {
     const make = () => ({ id: 'r', model: new Resistor(), pins: { a: 0, b: 0 }, props: { ohms: 1 } });
     expect(() => new Simulation({ netCount: 0, seed: 1, components: [make(), make()] })).toThrow(/Duplicate/);

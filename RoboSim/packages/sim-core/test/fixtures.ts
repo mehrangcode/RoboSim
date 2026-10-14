@@ -213,6 +213,9 @@ export class CountingWorld implements WorldModel {
   bodies(): readonly BodySnapshot[] {
     return [{ id: 'chassis', position: { x: this.steps.length, y: 0 }, angle: 0 }];
   }
+  componentPose(): null {
+    return null;
+  }
 }
 
 export const out = (level: Level): PinOutput => ({ mode: 'output', level });

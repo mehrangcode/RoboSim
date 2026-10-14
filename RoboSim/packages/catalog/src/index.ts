@@ -1,14 +1,18 @@
 import { definitions as batteries } from '@robosim/component-battery';
 import { definitions as breadboards } from '@robosim/component-breadboard';
 import { definition as buzzerActive } from '@robosim/component-buzzer-active';
+import { definition as chassis2wd } from '@robosim/component-chassis-2wd';
+import { definition as hcSr04 } from '@robosim/component-hc-sr04';
 import { definition as l298n } from '@robosim/component-l298n';
 import { definition as ldr } from '@robosim/component-ldr';
 import { definition as led } from '@robosim/component-led';
+import { definition as line3ch } from '@robosim/component-line-3ch';
 import { definition as potentiometer } from '@robosim/component-potentiometer';
 import { definition as pushButton } from '@robosim/component-push-button';
 import { definition as resistor } from '@robosim/component-resistor';
 import { definition as sg90Servo } from '@robosim/component-sg90-servo';
 import { definition as powerSwitch } from '@robosim/component-switch';
+import { definition as tcrt5000 } from '@robosim/component-tcrt5000';
 import { definition as ttMotor } from '@robosim/component-tt-motor';
 import type { ComponentDefinition } from '@robosim/sim-core';
 
@@ -26,9 +30,13 @@ export const CATALOG: readonly ComponentDefinition[] = [
   buzzerActive,
   pushButton,
   ldr,
+  tcrt5000,
+  line3ch,
+  hcSr04,
   l298n,
   ttMotor,
   sg90Servo,
+  chassis2wd,
 ] as readonly ComponentDefinition[];
 
 const byId = new Map<string, ComponentDefinition>();

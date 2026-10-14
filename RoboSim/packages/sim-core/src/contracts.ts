@@ -136,13 +136,25 @@ export interface BodySnapshot {
   readonly angle: number;
 }
 
+/** Where a mounted component sits in the arena (world units: metres, radians). */
+export interface ComponentPose {
+  readonly position: Vec2;
+  /** Heading of the component's +x axis (rad, counter-clockwise). */
+  readonly angle: number;
+  /** Height of the component's sensing face above the floor (mm). */
+  readonly heightMm: number;
+}
+
 export interface WorldModel {
   /** Fixed-step physics. */
   step(dt: number): void;
+  /** Nearest obstacle hit along a unit direction, within maxDist metres. */
   raycast(origin: Vec2, dir: Vec2, maxDist: number): RayHit | null;
-  /** Floor luminance 0..1 averaged over a disc. */
+  /** Floor luminance 0 (black) .. 1 (white) averaged over a disc (metres). */
   sampleFloor(p: Vec2, radius: number): number;
   bodies(): readonly BodySnapshot[];
+  /** Pose of a component mounted on a robot, or null when it is not mounted (e.g. on the bench). */
+  componentPose(componentId: string): ComponentPose | null;
 }
 
 export interface Fault {
@@ -233,6 +245,12 @@ export interface ComponentIO {
    * average (duty) from a DC level, which the averaged operating point alone cannot.
    */
   pwm(net: NetId): PwmOutput | null;
+  /**
+   * Drives MCU input pins wired to `net` to `level` at simulated `time` with CPU-cycle precision,
+   * bypassing per-slice thresholding — for timed outputs such as an ultrasonic echo pulse.
+   * Times already executed are applied at the next cycle.
+   */
+  scheduleMcuInput(net: NetId, level: Level, time: number): void;
   readonly solution: MnaSolution;
   readonly world: WorldModel | null;
   /** Tells the scheduler the component's stamp changed and the circuit must be re-solved. */

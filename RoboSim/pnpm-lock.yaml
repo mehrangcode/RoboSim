@@ -431,6 +431,12 @@ importers:
       '@robosim/component-buzzer-active':
         specifier: workspace:*
         version: link:../components/buzzer-active
+      '@robosim/component-chassis-2wd':
+        specifier: workspace:*
+        version: link:../components/chassis-2wd
+      '@robosim/component-hc-sr04':
+        specifier: workspace:*
+        version: link:../components/hc-sr04
       '@robosim/component-l298n':
         specifier: workspace:*
         version: link:../components/l298n
@@ -440,6 +446,9 @@ importers:
       '@robosim/component-led':
         specifier: workspace:*
         version: link:../components/led
+      '@robosim/component-line-3ch':
+        specifier: workspace:*
+        version: link:../components/line-3ch
       '@robosim/component-potentiometer':
         specifier: workspace:*
         version: link:../components/potentiometer
@@ -455,6 +464,9 @@ importers:
       '@robosim/component-switch':
         specifier: workspace:*
         version: link:../components/switch
+      '@robosim/component-tcrt5000':
+        specifier: workspace:*
+        version: link:../components/tcrt5000
       '@robosim/component-tt-motor':
         specifier: workspace:*
         version: link:../components/tt-motor
@@ -550,6 +562,53 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
+  packages/components/chassis-2wd:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/hc-sr04:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/board-avr-uno':
+        specifier: workspace:*
+        version: link:../../boards/avr-uno
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
   packages/components/l298n:
     dependencies:
       '@robosim/sim-core':
@@ -595,6 +654,28 @@ importers:
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
   packages/components/led:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/line-3ch:
     dependencies:
       '@robosim/sim-core':
         specifier: workspace:*
@@ -708,6 +789,28 @@ importers:
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
   packages/components/switch:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/tcrt5000:
     dependencies:
       '@robosim/sim-core':
         specifier: workspace:*

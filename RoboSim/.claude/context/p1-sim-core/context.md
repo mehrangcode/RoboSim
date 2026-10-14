@@ -2,7 +2,7 @@
 
 ## Status
 
-Slices 1–3 done 2026-10-14 (uncommitted). Slice 3 = electrical catalogue components + `packages/catalog` + `packages/test-fixtures` + `pnpm new:component`. `pnpm verify` 88/88, 237 tests. Next: slice 4: world/physics (planck.js), chassis, wheels coupled to `TtMotor.outputOmega()`/`loadTorqueNm`, TCRT5000, 3-ch line module, HC-SR04 (uses `io.edges`).
+Slices 1–3 done 2026-10-14 (uncommitted), incl. the full PRD §7.2 P1 basic set (18 catalogue ids; jumper wires = netlist edges). `pnpm verify` 104/104, 274 tests. Next: slice 4 — planck.js world implementing `WorldModel` (incl. `componentPose` from mount slots, floor raster 1 px = 1 mm, raycast vs bodies), chassis body from `chassisGeometry`, wheels ↔ `TtMotor.outputOmega()` / `loadTorqueNm`.
 
 ## Decisions
 
@@ -17,6 +17,7 @@ Slices 1–3 done 2026-10-14 (uncommitted). Slice 3 = electrical catalogue compo
 - Component packages never import each other (even in tests); cross-component scenarios live in `packages/catalog`.
 - L298N calibration: 1.6 V saturation + 0.5 Ω/leg (1.75 V @ 0.15 A, 2.1 V @ 0.5 A). Logic needs v5 ≥ 4.5 V; 78M05 needs VS ≥ 7 V, so 4×AA + regulator jumper browns out (by design).
 - Safety-rule candidates for slice 5: (a) L298N VS < 7 V with regulator jumper on; (b) ENA/ENB jumper installed while an MCU pin drives EN (pin fights the 5 V rail); (c) 4-leg button wired on the same side.
+- Sensors use `WorldModel.componentPose(id)`; bench fallback via inputs (`surface*`, `distanceCm`). HC-SR04 echo goes through `io.scheduleMcuInput` (cycle-exact); clamp to the *end* of the executed slice keeps the width exact.
 - SG90 sees pulses only when an MCU pin drives its signal net directly (edges are per MCU pin).
 
 ## Known issues

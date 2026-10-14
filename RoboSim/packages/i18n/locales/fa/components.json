@@ -18,6 +18,11 @@
       "name": "درایور موتور L298N"
     }
   },
+  "mechanical": {
+    "chassis-2wd": {
+      "name": "شاسی ربات دوچرخ"
+    }
+  },
   "passive": {
     "breadboard-full": {
       "name": "بردبورد کامل"
@@ -44,11 +49,20 @@
     }
   },
   "sensor": {
+    "hc-sr04": {
+      "name": "سنسور فراصوت HC-SR04"
+    },
     "ldr": {
       "name": "سنسور نور (LDR)"
     },
+    "line-3ch": {
+      "name": "سنسور خط ۳ کاناله"
+    },
     "push-button": {
       "name": "دکمه فشاری"
+    },
+    "tcrt5000": {
+      "name": "سنسور خط TCRT5000"
     }
   }
 }

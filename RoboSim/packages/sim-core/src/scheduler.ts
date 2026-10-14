@@ -4,6 +4,7 @@ import type {
   ComponentIO,
   ComponentModel,
   Fault,
+  Level,
   McuCore,
   MnaSolution,
   ModelContext,
@@ -97,6 +98,10 @@ class SimulationIO implements ComponentIO {
     return this.sim.pwmOn(net);
   }
 
+  scheduleMcuInput(net: NetId, level: Level, time: number): void {
+    this.sim.scheduleMcuInput(net, level, time);
+  }
+
   invalidate(): void {
     this.sim.invalidate();
   }
@@ -120,6 +125,7 @@ export class Simulation {
   private readonly sliceEdges = new Map<string, PinEdge[]>();
   private readonly pinsByNet = new Map<NetId, string[]>();
   private readonly byId = new Map<string, ComponentInstance>();
+  private readonly mcuElectrical: PinElectrical | null;
 
   constructor(options: SimulationOptions) {
     this.circuit = new MnaCircuit(options.netCount);
@@ -146,6 +152,7 @@ export class Simulation {
     }
 
     this.io = new SimulationIO(this, this.world);
+    this.mcuElectrical = options.mcu?.electrical ?? null;
     for (const c of this.components) this.byId.set(c.id, c);
     if (options.mcu) {
       const { core } = options.mcu;
@@ -166,6 +173,15 @@ export class Simulation {
     if (!c.model.input) throw new Error(`Component '${componentId}' (${c.model.type}) accepts no input`);
     c.model.input(name, value);
     this.dirty = true;
+  }
+
+  /** Cycle-precise MCU input on every pin wired to `net` (see ComponentIO.scheduleMcuInput). */
+  scheduleMcuInput(net: NetId, level: Level, time: number): void {
+    if (!this.bus || !this.mcuElectrical) return;
+    const core = this.bus.core;
+    const cycle = Math.max(core.cycle, Math.round(time * core.clockHz));
+    const volts = level === 1 ? this.mcuElectrical.vcc : 0;
+    for (const pin of this.pinsByNet.get(net) ?? []) core.scheduleInput(pin, { level, volts }, cycle);
   }
 
   /** PWM driven onto `net` by an MCU pin, or null. */

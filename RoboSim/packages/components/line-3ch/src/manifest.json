@@ -1,0 +1,26 @@
+{
+  "id": "sensor.line-3ch",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.line-3ch.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "left", "kind": "output" },
+    { "name": "center", "kind": "output" },
+    { "name": "right", "kind": "output" }
+  ],
+  "props": {
+    "spacingMm": { "type": "number", "default": 12, "min": 5, "max": 40, "unit": "mm" },
+    "threshold": { "type": "number", "default": 0.5, "min": 0.05, "max": 0.95 }
+  },
+  "inputs": [
+    { "name": "surfaceLeft", "type": "number", "default": 1, "min": 0, "max": 1 },
+    { "name": "surfaceCenter", "type": "number", "default": 1, "min": 0, "max": 1 },
+    { "name": "surfaceRight", "type": "number", "default": 1, "min": 0, "max": 1 }
+  ],
+  "massG": 6,
+  "limits": { "minVoltageV": 3.3, "maxVoltageV": 5.5 }
+}

@@ -32,15 +32,32 @@ describe('component catalog', () => {
     expect(() => findDefinition('actuator.flux-capacitor')).toThrow(/Unknown component/);
   });
 
-  it('offers the P1 basic set', () => {
-    expect(catalogFor('P1').map((d) => d.manifest.id)).toEqual(
-      expect.arrayContaining([
-        'power.battery-9v',
-        'driver.l298n',
-        'actuator.tt-motor',
-        'actuator.sg90-servo',
-        'actuator.led',
-      ]),
-    );
+  it('offers exactly the basic-tier P1 components of PRD §7.2', () => {
+    // Jumper wires are netlist edges, not models; the BOM counts them from project wires.
+    const prdP1Basic = [
+      'power.battery-9v',
+      'power.battery-4aa',
+      'power.switch',
+      'actuator.tt-motor',
+      'actuator.sg90-servo',
+      'actuator.led',
+      'actuator.buzzer-active',
+      'driver.l298n',
+      'sensor.hc-sr04',
+      'sensor.tcrt5000',
+      'sensor.line-3ch',
+      'sensor.push-button',
+      'sensor.ldr',
+      'passive.resistor',
+      'passive.potentiometer',
+      'passive.breadboard-half',
+      'passive.breadboard-full',
+      'mechanical.chassis-2wd',
+    ];
+    expect(
+      catalogFor('P1')
+        .map((d) => d.manifest.id)
+        .sort(),
+    ).toEqual([...prdP1Basic].sort());
   });
 });

@@ -18,6 +18,11 @@
       "name": "L298N motor driver"
     }
   },
+  "mechanical": {
+    "chassis-2wd": {
+      "name": "2WD robot chassis"
+    }
+  },
   "passive": {
     "breadboard-full": {
       "name": "Full breadboard"
@@ -44,11 +49,20 @@
     }
   },
   "sensor": {
+    "hc-sr04": {
+      "name": "HC-SR04 ultrasonic sensor"
+    },
     "ldr": {
       "name": "Light sensor (LDR)"
     },
+    "line-3ch": {
+      "name": "3-channel line sensor"
+    },
     "push-button": {
       "name": "Push button"
+    },
+    "tcrt5000": {
+      "name": "TCRT5000 line sensor"
     }
   }
 }

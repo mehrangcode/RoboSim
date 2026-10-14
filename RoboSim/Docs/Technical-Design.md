@@ -265,6 +265,9 @@ export interface ComponentDefinition {       // exported by every packages/compo
   create(): ComponentModel;
   internalConnections?(): [pin, pin][];       // same-conductor pins (breadboard strips) merged by the netlist
 }
+// WorldModel.componentPose(id) gives a mounted part's arena pose (null on the bench); sim-core/sensors.ts has the
+// shared optics (irReflectance, sonarRange). io.scheduleMcuInput(net, level, time) drives MCU inputs at an exact cycle
+// (e.g. an HC-SR04 echo), bypassing per-slice thresholding.
 // ComponentIO also offers io.pwm(net) (MCU PWM duty on a net) and io.edges(net) (cycle-stamped pin edges),
 // and ComponentModel.input(name, value) receives user interaction (button, pot, light level).
 

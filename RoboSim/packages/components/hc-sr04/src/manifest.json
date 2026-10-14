@@ -1,0 +1,20 @@
+{
+  "id": "sensor.hc-sr04",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.hc-sr04.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "trig", "kind": "digital" },
+    { "name": "echo", "kind": "output" },
+    { "name": "gnd", "kind": "ground" }
+  ],
+  "props": {
+    "timeoutMs": { "type": "number", "default": 38, "min": 10, "max": 200, "unit": "ms" }
+  },
+  "inputs": [{ "name": "distanceCm", "type": "number", "default": 100, "min": 0, "max": 1000 }],
+  "massG": 9,
+  "limits": { "minVoltageV": 4.5, "maxVoltageV": 5.5, "minRangeCm": 2, "maxRangeCm": 400 }
+}
