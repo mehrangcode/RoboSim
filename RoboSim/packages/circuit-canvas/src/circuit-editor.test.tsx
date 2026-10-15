@@ -74,6 +74,24 @@ describe('circuit editor', () => {
     expect(editor().doc.wires).toEqual([]);
   });
 
+  it('a part plugged into a breadboard is drawn above the holes and can be selected and dragged', () => {
+    let doc = addComponent(blankProject('t', ''), 'passive.breadboard-half', [32 * PITCH, 0]).doc;
+    doc = addComponent(doc, 'actuator.led', [46 * PITCH, 4 * PITCH]).doc;
+    const { editor, container } = setup(doc);
+    expect(editor().doc.components[1]?.seats).toBeDefined();
+    const hole = container.querySelector('[data-part="bb1"][data-pin="14b"]') as Element;
+    const led = container.querySelector('[data-part-body="led1"]') as Element;
+    // Later in the document = painted on top = receives the click.
+    expect(hole.compareDocumentPosition(led) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    fireEvent.pointerDown(led.firstElementChild as Element, { button: 0, clientX: 0, clientY: 0 });
+    expect(editor().selection.parts).toEqual(['led1']);
+    fireEvent.pointerMove(svg, { clientX: 400, clientY: 0 });
+    fireEvent.pointerUp(svg);
+    expect(editor().doc.wires).toEqual([]);
+    expect(editor().doc.components[1]?.x).not.toBe(46 * PITCH);
+  });
+
   it('colours a ground wire black and highlights the pin net on hover', () => {
     const { doc } = addComponent(blankProject('t', ''), 'actuator.led', [40 * PITCH, 4 * PITCH]);
     const { editor, pin } = setup(doc);
