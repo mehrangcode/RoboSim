@@ -109,6 +109,15 @@ gantt
   - **Lab:** a **Design a circuit** tab starts from an Uno + breadboard blink, opens any demo, and imports or exports the project JSON (autosaved in the browser). **Compile & run** compiles the sketch and simulates exactly the drawn circuit; a note appears when the drawing has changed since the run. Checked in Chrome with the Persian UI.
   - **Still open:** multi-select box, align, minimap, the 60 FPS @ 200 parts perf gate, the server projects API (save and versions), and a movable board.
 
+  **Slice 12 done (2026-10-15):** editor workspace (FR-WRK-01…03, FR-SIM-11).
+  - **Workspace:** `/editor` is the app's project screen: parts library with properties, circuit canvas, simulation view (robot projects), code, and a bottom dock with serial monitor, pin inspector, safety findings and the challenge. Panes resize with keyboard-accessible splitters (they mirror in RTL), collapse to rails, and the layout is saved in the browser. Drag-to-rearrange docking comes later.
+  - **Toolbar:** project name, New, Open demo, Import, Export, Save; Run/Pause, Step, Stop, Reset, speed 0.25–4×, and the real-time factor. Shortcuts: F5, Shift+F5, F10, F6, Ctrl+S and F1 (help).
+  - **Run model:** one Run button compiles only when the code changed (an unchanged demo runs without the build service), loads exactly the drawn project and starts it. Any edit while running stops the run, so the simulation always matches the drawing.
+  - **Inputs on the canvas:** while running, hold a push button, toggle a switch, or click a knob or sensor for sliders. LEDs, buttons, the servo horn, motor speed and the buzzer show live state, and damaged parts show an icon with text.
+  - **Small screens:** below 1024 px the panes become tabs; below 768 px the workspace is view-and-run only, with a banner.
+  - **Lab:** the Design tab moved into the workspace; every Lab demo has **Open in editor**. Checked in Chrome (Persian UI): compile and run, button held on the canvas, edit stops the run, demos open with confirmation, line follower in the arena pane, narrow view.
+  - **Still open:** drag-docking, Monaco (slice 13), 2D/3D toggle (slice 16), Versions/Share (P2).
+
 ### P2 — Individual product & commerce
 
 **Scope** (FR-WRK-04…06, FR-CIR-09, FR-COD-02, 05, 07, FR-BLD-07, FR-SIM-07 (plotter), 08, FR-SAF-03, 07, FR-BOM-*, FR-PRJ-01…04, 06, FR-LRN-01 (2 projects), FR-BIL-01…06, 09, FR-SHP-01…06, 08, FR-AI-01…05, 07…10, FR-I18N-05, FR-EXT-04, 05, FR-IAM-01…03, 04, 07, FR-ADM-01…06, 08, 10, FR-NTF-*, FR-ANL-01, 04)

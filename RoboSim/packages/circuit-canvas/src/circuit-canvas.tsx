@@ -1,4 +1,4 @@
-import { breadboardLayout } from '@robosim/catalog/manifests';
+import { breadboardLayout, findManifest } from '@robosim/catalog/manifests';
 import { BOARD_PART, type ComponentInstance, type PinRef } from '@robosim/shared';
 import {
   memo,
@@ -25,7 +25,18 @@ import {
   pinNamesOf,
   rotateComponents,
 } from './document.js';
-import { BOARD_FOOTPRINT, PITCH, footprintOf, pinPosition, place, snap, type Point } from './geometry.js';
+import {
+  BOARD_FOOTPRINT,
+  PITCH,
+  footprintOf,
+  pinPosition,
+  place,
+  placedBox,
+  snap,
+  type Point,
+} from './geometry.js';
+import { InputPopover } from './input-popover.js';
+import { interactionOf } from './interaction.js';
 import { CircuitNets } from './nets.js';
 import type { CircuitEditorState } from './use-circuit-editor.js';
 import { MAX_K, MIN_K, PART_DRAG_TYPE, WIRE_COLORS, contentBox, fitView, type View } from './view.js';
@@ -54,6 +65,9 @@ const ZOOM_BUTTONS = [
   { key: 'zoomFit', glyph: '⤢' },
 ] as const;
 
+/** Hit size of a breadboard hole: smaller than the pitch, so the board itself can be grabbed between holes. */
+const HOLE_HIT = PITCH * 0.7;
+
 const samePin = (a: PinRef | null, b: PinRef | null) => !!a && !!b && a.part === b.part && a.pin === b.pin;
 
 function pinFromTarget(target: EventTarget | null): PinRef | null {
@@ -66,25 +80,57 @@ function pinFromTarget(target: EventTarget | null): PinRef | null {
 const attr = (target: EventTarget | null, name: string): string | null =>
   (target as Element | null)?.closest?.(`[${name}]`)?.getAttribute(name) ?? null;
 
+/** edit: build the circuit · run: interact with parts of the running simulation · view: look only. */
+export type CanvasMode = 'edit' | 'run' | 'view';
+
 const PartNode = memo(function PartNode({
   c,
   dx,
   dy,
   selected,
   live,
+  cursor,
+  damagedLabel,
 }: {
   c: ComponentInstance;
   dx: number;
   dy: number;
   selected: boolean;
   live: unknown;
+  cursor: string;
+  /** Shown over the part when the damage model broke it (icon + text, FR-SIM-10). */
+  damagedLabel: string | null;
 }) {
   const fp = footprintOf(c.type, pinNamesOf(c.type));
   const transform = `translate(${c.x + dx} ${c.y + dy}) rotate(${c.rotation}) scale(${c.flipped ? -PITCH : PITCH} ${PITCH})`;
   const { x, y, w, h } = fp.box;
   return (
-    <g data-part-body={c.id} transform={transform} className="cursor-move">
+    <g data-part-body={c.id} transform={transform} className={cursor}>
       <PartArt type={c.type} props={c.props} live={live} label={c.id} />
+      {damagedLabel && (
+        <g pointerEvents="none">
+          <rect
+            x={x - 0.2}
+            y={y - 0.2}
+            width={w + 0.4}
+            height={h + 0.4}
+            fill="#fecaca88"
+            stroke="#dc2626"
+            strokeWidth={0.15}
+            strokeDasharray="0.6 0.3"
+          />
+          <text
+            x={x + w / 2}
+            y={y - 0.8}
+            fontSize={0.9}
+            textAnchor="middle"
+            fill="#b91c1c"
+            transform={c.flipped ? `translate(${2 * (x + w / 2)} 0) scale(-1 1)` : undefined}
+          >
+            {`💥 ${damagedLabel}`}
+          </text>
+        </g>
+      )}
       {selected && (
         <rect
           x={x - 0.3}
@@ -110,11 +156,19 @@ export function CircuitCanvas({
   editor,
   live,
   className,
+  mode = 'edit',
+  onInput,
+  damaged,
 }: {
   editor: CircuitEditorState;
   /** Live part states by component id (from the running simulation). */
   live?: Readonly<Record<string, unknown>> | undefined;
-  className?: string;
+  className?: string | undefined;
+  mode?: CanvasMode | undefined;
+  /** A user input to a part during a run (FR-SIM-11): button press, switch, knob, sensor level. */
+  onInput?: ((componentId: string, name: string, value: number | boolean) => void) | undefined;
+  /** Ids of parts the damage model has broken. */
+  damaged?: readonly string[] | undefined;
 }) {
   const { t } = useTranslation();
   const { doc, apply, selection, setSelection, viewCenterRef } = editor;
@@ -124,10 +178,42 @@ export function CircuitCanvas({
   const [drag, setDrag] = useState<Drag | null>(null);
   const [drawing, setDrawing] = useState<Drawing | null>(null);
   const [hover, setHover] = useState<{ pin: PinRef; at: Point } | null>(null);
+  /** Part whose input popover is open, and the button held down (run mode). */
+  const [inspecting, setInspecting] = useState<string | null>(null);
+  const [pressing, setPressing] = useState<string | null>(null);
+  /** Values sent to inputs the live state does not report (line-sensor surfaces…). */
+  const [sent, setSent] = useState<Readonly<Record<string, Readonly<Record<string, number | boolean>>>>>({});
   const nets = useMemo(() => new CircuitNets(doc), [doc]);
+  const editing = mode === 'edit';
+  const running = mode === 'run' && onInput !== undefined;
+  const [prevMode, setPrevMode] = useState(mode);
+  if (prevMode !== mode) {
+    setPrevMode(mode);
+    setInspecting(null);
+    setDrawing(null);
+    setSent({});
+  }
 
-  // Track the element size; fit the content once when the real size is first known.
+  const inputValue = (id: string, name: string, fallback: number | boolean): number | boolean => {
+    const own = sent[id]?.[name];
+    if (own !== undefined) return own;
+    const state = (live?.[id] ?? null) as Record<string, unknown> | null;
+    const v = state?.[name];
+    if (typeof v === 'number' || typeof v === 'boolean') return v;
+    return doc.components.find((c) => c.id === id)?.inputs?.[name] ?? fallback;
+  };
+  const sendInput = (id: string, name: string, value: number | boolean) => {
+    setSent((s) => ({ ...s, [id]: { ...s[id], [name]: value } }));
+    onInput?.(id, name, value);
+  };
+
+  // Track the element size; fit the content when the real size is first known (again after a
+  // project change, whose panes may resize the canvas).
   const fitted = useRef(false);
+  const docRef = useRef(doc);
+  useEffect(() => {
+    docRef.current = doc;
+  });
   useEffect(() => {
     const el = svg.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
@@ -137,13 +223,22 @@ export function CircuitCanvas({
       setSize({ width, height });
       if (!fitted.current) {
         fitted.current = true;
-        setView(fitView(contentBox(doc), width, height));
+        setView(fitView(contentBox(docRef.current), width, height));
       }
     });
     ro.observe(el);
     return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fit only on mount; later docs keep the view
   }, []);
+
+  // A different project (new / open / import): show all of it.
+  const [fittedGeneration, setFittedGeneration] = useState(editor.generation);
+  if (fittedGeneration !== editor.generation) {
+    setFittedGeneration(editor.generation);
+    setView(fitView(contentBox(doc), size.width, size.height));
+  }
+  useEffect(() => {
+    fitted.current = false;
+  }, [editor.generation]);
 
   useEffect(() => {
     viewCenterRef.current = [(size.width / 2 - view.x) / view.k, (size.height / 2 - view.y) / view.k];
@@ -220,6 +315,24 @@ export function CircuitCanvas({
     if (e.button !== 0 && e.button !== 1) return;
     svg.current?.focus();
     const at = toDoc(e.clientX, e.clientY);
+    if (!editing) {
+      const part = attr(e.target, 'data-part-body');
+      const c = part ? doc.components.find((v) => v.id === part) : undefined;
+      const how = c && running ? interactionOf(findManifest(c.type)?.inputs ?? []) : null;
+      if (c && how && e.button === 0) {
+        if (how.kind === 'momentary') {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+          setPressing(c.id);
+          sendInput(c.id, how.input, true);
+        } else if (how.kind === 'toggle') sendInput(c.id, how.input, !inputValue(c.id, how.input, false));
+        else setInspecting(c.id);
+        return;
+      }
+      setInspecting(null);
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      setDrag({ kind: 'pan', start: [e.clientX, e.clientY], view });
+      return;
+    }
     const pin = pinFromTarget(e.target);
     if (pin && e.button === 0) {
       e.stopPropagation();
@@ -281,6 +394,13 @@ export function CircuitCanvas({
   };
 
   const onPointerUp = () => {
+    if (pressing) {
+      const how = interactionOf(
+        findManifest(doc.components.find((c) => c.id === pressing)?.type ?? '')?.inputs ?? [],
+      );
+      if (how?.kind === 'momentary') sendInput(pressing, how.input, false);
+      setPressing(null);
+    }
     if (drag?.kind === 'parts' && drag.moved)
       apply((d) => moveComponents(d, drag.ids, drag.delta[0], drag.delta[1]));
     if (drag?.kind === 'bend') apply((d) => moveWirePoint(d, drag.wire, drag.index, drag.at));
@@ -308,6 +428,10 @@ export function CircuitCanvas({
   const onKeyDown = (e: KeyboardEvent<SVGSVGElement>) => {
     const mod = e.ctrlKey || e.metaKey;
     const ids = selection.parts;
+    if (!editing) {
+      if (e.key === 'Escape') setInspecting(null);
+      return;
+    }
     if (e.key === 'Escape') {
       setDrawing(null);
       setSelection({ parts: [], wire: null });
@@ -327,7 +451,7 @@ export function CircuitCanvas({
 
   const onDrop = (e: DragEvent<SVGSVGElement>) => {
     const type = e.dataTransfer.getData(PART_DRAG_TYPE);
-    if (!type) return;
+    if (!type || !editing) return;
     e.preventDefault();
     const at = toDoc(e.clientX, e.clientY);
     let id = '';
@@ -357,10 +481,35 @@ export function CircuitCanvas({
     }
   }
   const highlighted = hover ? nets.connectedTo(hover.pin) : [];
-  const ordered = [...doc.components].sort(
-    (a, b) => Number(!breadboardLayout(a.type)) - Number(!breadboardLayout(b.type)),
-  );
-  const selectedParts = new Set(selection.parts);
+  // Drawing order as on a real desk: breadboards, their holes, then the parts plugged into them,
+  // so a part on a breadboard is grabbed, not the hole underneath it.
+  const breadboards = doc.components.filter((c) => breadboardLayout(c.type));
+  const parts = doc.components.filter((c) => !breadboardLayout(c.type));
+  const selectedParts = new Set(editing ? selection.parts : []);
+  const broken = new Set(damaged ?? []);
+  const damagedText = t('editor:canvas.damaged');
+  const cursorOf = (c: ComponentInstance): string =>
+    editing
+      ? 'cursor-move'
+      : running && interactionOf(findManifest(c.type)?.inputs ?? [])
+        ? 'cursor-pointer'
+        : '';
+  const inspected = inspecting ? doc.components.find((c) => c.id === inspecting) : undefined;
+  const partNode = (c: ComponentInstance) => {
+    const [dx, dy] = shift(c.id);
+    return (
+      <PartNode
+        key={c.id}
+        c={c}
+        dx={dx}
+        dy={dy}
+        selected={selectedParts.has(c.id)}
+        live={live?.[c.id]}
+        cursor={cursorOf(c)}
+        damagedLabel={broken.has(c.id) ? damagedText : null}
+      />
+    );
+  };
 
   const wirePath = (pts: readonly Point[]) => pts.map((p, i) => `${i ? 'L' : 'M'} ${p[0]} ${p[1]}`).join(' ');
 
@@ -395,32 +544,27 @@ export function CircuitCanvas({
           <g transform={`scale(${PITCH})`}>
             <BoardArt />
           </g>
-          {ordered.map((c) => {
-            const [dx, dy] = shift(c.id);
+          {breadboards.map(partNode)}
+          {holes.map(({ ref, at }) => {
+            const hovered = samePin(ref, hover?.pin ?? null);
             return (
-              <PartNode
-                key={c.id}
-                c={c}
-                dx={dx}
-                dy={dy}
-                selected={selectedParts.has(c.id)}
-                live={live?.[c.id]}
+              <rect
+                key={`${ref.part}.${ref.pin}`}
+                data-part={ref.part}
+                data-pin={ref.pin}
+                x={at[0] - HOLE_HIT / 2}
+                y={at[1] - HOLE_HIT / 2}
+                width={HOLE_HIT}
+                height={HOLE_HIT}
+                fill={hovered ? '#0ea5e955' : 'transparent'}
+                stroke={hovered ? '#0ea5e9' : 'none'}
+                strokeWidth={0.25}
+                className={editing ? 'cursor-crosshair' : ''}
+                pointerEvents={editing ? undefined : 'none'}
               />
             );
           })}
-          {holes.map(({ ref, at }) => (
-            <rect
-              key={`${ref.part}.${ref.pin}`}
-              data-part={ref.part}
-              data-pin={ref.pin}
-              x={at[0] - PITCH / 2}
-              y={at[1] - PITCH / 2}
-              width={PITCH}
-              height={PITCH}
-              fill="transparent"
-              className="cursor-crosshair"
-            />
-          ))}
+          {parts.map(partNode)}
           {doc.wires.map((w) => {
             const a = pinAt(w.from);
             const b = pinAt(w.to);
@@ -431,7 +575,7 @@ export function CircuitCanvas({
                 : p,
             );
             const d = wirePath([a, ...points, b]);
-            const selected = selection.wire === w.id;
+            const selected = editing && selection.wire === w.id;
             return (
               <g key={w.id} data-wire={w.id} className="cursor-pointer">
                 <path d={d} fill="none" stroke="transparent" strokeWidth={2.4} />
@@ -481,7 +625,7 @@ export function CircuitCanvas({
               fill="transparent"
               stroke={samePin(ref, hover?.pin ?? null) ? '#0ea5e9' : 'transparent'}
               strokeWidth={0.3}
-              className="cursor-crosshair"
+              className={editing ? 'cursor-crosshair' : ''}
             />
           ))}
           {highlighted.map((ref) => {
@@ -539,8 +683,29 @@ export function CircuitCanvas({
           </button>
         ))}
       </div>
+      {inspected &&
+        (() => {
+          const box = placedBox(inspected, footprintOf(inspected.type, pinNamesOf(inspected.type)));
+          return (
+            <InputPopover
+              part={inspected}
+              inputs={findManifest(inspected.type)?.inputs ?? []}
+              value={(name, fallback) => inputValue(inspected.id, name, fallback)}
+              onChange={(name, value) => sendInput(inspected.id, name, value)}
+              onClose={() => setInspecting(null)}
+              left={Math.max(4, Math.min(size.width - 240, (box.x + box.w) * view.k + view.x + 8))}
+              top={Math.max(4, Math.min(size.height - 160, box.y * view.k + view.y))}
+            />
+          );
+        })()}
       <p id="circuit-canvas-help" className="absolute bottom-1 start-2 m-0 text-xs text-ink-muted">
-        {drawing ? t('editor:canvas.drawing') : t('editor:canvas.help')}
+        {mode === 'run'
+          ? t('editor:canvas.runHelp')
+          : mode === 'view'
+            ? t('editor:canvas.viewHelp')
+            : drawing
+              ? t('editor:canvas.drawing')
+              : t('editor:canvas.help')}
       </p>
     </div>
   );

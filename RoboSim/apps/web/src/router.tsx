@@ -16,7 +16,15 @@ const labRoute = createRoute({
   path: '/lab',
   component: lazyRouteComponent(() => import('./lab/lab-page.js'), 'LabPage'),
 });
-const routeTree = rootRoute.addChildren([homeRoute, labRoute]);
+// The editor workspace (FR-WRK-01): lazy like the Lab; `?demo=<scenario>` opens a built-in demo.
+const editorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/editor',
+  validateSearch: (search: Record<string, unknown>): { demo?: string } =>
+    typeof search['demo'] === 'string' ? { demo: search['demo'] } : {},
+  component: lazyRouteComponent(() => import('./editor/editor-page.js'), 'EditorPage'),
+});
+const routeTree = rootRoute.addChildren([homeRoute, editorRoute, labRoute]);
 
 export function createAppRouter(history?: RouterHistory) {
   return createRouter({ routeTree, ...(history ? { history } : {}) });

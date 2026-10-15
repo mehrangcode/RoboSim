@@ -17,7 +17,7 @@ void loop() {
 const g = (steps: number): number => steps * PITCH;
 
 /**
- * The Design tab's starting point: Uno, half breadboard, 220 Ω + LED plugged into the strips,
+ * A new project: Uno, half breadboard, 220 Ω + LED plugged into the strips,
  * jumpers from D13 to the resistor's strip and from the LED's strip over the − rail to GND.
  */
 export function starterProject(title: string): ProjectDocument {

@@ -3,7 +3,7 @@
 ## Status
 
 Slices 1–4 + Lab committed by user. Slices 5 (safety + damage) and 6 (success conditions + scoring + Lab challenge panel) done 2026-10-14, uncommitted. Slices 5–6 committed (`de81b4d`). Slices 7 (worker protocol), 8 (project document + loader) and 9 (grader + golden traces) done 2026-10-14, uncommitted. Slice 10 (build service, thin vertical) done 2026-10-15, uncommitted. Next: ask user.
-Slice 11 (circuit canvas, thin vertical) done 2026-10-15, uncommitted. Next: ask user.
+Slice 11 (circuit canvas, thin vertical) and slice 12 (editor workspace) done 2026-10-15, uncommitted. Next: ask user (proposed 13 Monaco + pin inspector).
 
 Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scoring included now; Lab pauses on decision and shows a result card; collision = any new contact with walls/obstacles.
 
@@ -72,3 +72,4 @@ Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scor
 - Slice 11 details: schema v2 `seats` (identity migration). Engine-free entries: `@robosim/component-*/manifest`, `@robosim/catalog/manifests` (parity test vs CATALOG), `@robosim/board-avr-uno/pins`; `pnpm new:component` scaffolds `manifest.ts`. Board fixed at canvas origin (not in the document). Lab Design tab: `design-panel.tsx` (autosave key `robosim.lab.design.v1`), starter in `design-starter.ts`; `SceneInfo.project` lets the tab open demos. Demo docs re-laid out on the grid (x/y only; goldens frozen, unchanged).
 - Browser check slice 11: `%TEMP%\robosim-cdp\shot11.mjs` (fa) — seats, hover net highlight, compile & run blink + LED glow, mouse drag unseats + undo, mouse wire with bend, ي/ك search, line-follower demo opens. Dev: `pnpm exec turbo run dev --filter=@robosim/api --filter=@robosim/web`.
 - Web initial JS 252.5 KB gz (+4.3 KB: editor strings in both locales).
+- Slice 12: `/editor` (apps/web/src/editor): editor-page, use-run (Run model), use-layout (+ size class via matchMedia), project-store (`robosim.editor.project.v1` = {project, pristine}; confirm before replacing a modified project), starter.ts (moved from the Lab), help-dialog. Lab Design tab removed; Lab panels (arena/pins/serial/findings/challenge/sketch) are reused from `src/lab`. Canvas `mode` edit/run/view + `interactionOf` (pressed → momentary, single boolean → toggle, else popover). `ResizeHandle` in @robosim/ui. Test helper `src/testing/fake-worker.ts`. Browser check: `%TEMP%\robosim-cdp\shot12.mjs`. Web initial JS 256.7 KB gz.

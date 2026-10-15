@@ -2,7 +2,8 @@
   "nav": {
     "home": "Home",
     "mainLabel": "Main navigation",
-    "lab": "Lab"
+    "lab": "Lab",
+    "editor": "Editor"
   },
   "home": {
     "title": "Build it virtually. Verify it. Then build it for real.",
@@ -24,8 +25,7 @@
       "arena": "Robot arena",
       "bench": "Component bench",
       "safety": "Safety",
-      "sketch": "Your code",
-      "design": "Design a circuit"
+      "sketch": "Your code"
     },
     "controls": {
       "label": "Simulation controls",
@@ -215,17 +215,71 @@
         "note": "Note"
       }
     },
-    "design": {
-      "hint": "Place parts from the library, plug them into the breadboard and wire them to the Uno. Then write the sketch and press Compile & run to simulate exactly this circuit. Your design is saved in this browser.",
-      "toolbar": "Project",
-      "new": "New project",
-      "demo": "Demo",
-      "open": "Open demo",
-      "import": "Import…",
-      "export": "Export project",
-      "importError": "Could not import this file: {message}",
-      "stale": "The circuit or code changed since this run: Compile & run to apply it.",
-      "starterTitle": "My circuit"
+    "openInEditor": "Open in editor →"
+  },
+  "editor": {
+    "title": "Editor",
+    "starterTitle": "My circuit",
+    "toolbar": "Project and simulation",
+    "titleLabel": "Project name",
+    "new": "New",
+    "demo": "Demo",
+    "open": "Open demo",
+    "import": "Import…",
+    "export": "Export",
+    "save": "Save",
+    "saved": "Saved in this browser.",
+    "saveFailed": "Could not save: browser storage is full or disabled.",
+    "confirmReplace": "Replace the current project? Its changes will be lost unless you export it first.",
+    "importError": "Could not import this file: {message}",
+    "dismiss": "Dismiss",
+    "building": "Compiling…",
+    "stop": "Stop",
+    "help": "Shortcuts",
+    "status": {
+      "building": "Compiling the sketch…",
+      "editing": "Editing · press Run (F5) to simulate",
+      "stoppedByEdit": "Stopped: the project changed. Press Run to build and start again."
+    },
+    "panes": "Panes",
+    "pane": {
+      "parts": "Parts",
+      "circuit": "Circuit",
+      "code": "Code",
+      "sim": "Simulation",
+      "monitor": "Monitor",
+      "hide": "Hide {pane}",
+      "show": "Show {pane}",
+      "resize": "Resize {pane}"
+    },
+    "sim": {
+      "bench": "This project has no arena: the circuit shows the parts running.",
+      "notRunning": "Press Run to see the robot in its arena."
+    },
+    "dock": {
+      "serial": "Serial monitor",
+      "pins": "Pins",
+      "safety": "Safety",
+      "challenge": "Challenge",
+      "notRunning": "Run the project to see live values here.",
+      "noSerial": "This sketch does not use Serial."
+    },
+    "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "run": "Run / pause",
+      "stop": "Stop and edit",
+      "step": "Step 1 ms (paused)",
+      "reset": "Restart the run",
+      "save": "Save in this browser",
+      "undo": "Undo",
+      "redo": "Redo",
+      "rotate": "Rotate the selected parts",
+      "flip": "Flip the selected parts",
+      "delete": "Delete the selection",
+      "cancel": "Cancel a wire, close a popup",
+      "help": "Show these shortcuts",
+      "close": "Close"
     }
   }
 }

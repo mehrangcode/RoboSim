@@ -90,3 +90,17 @@ User decisions: thin vertical; simple hand-made SVG art; breadboard insertion = 
 - [x] Tests + docs (TD §3/§4 deltas, ADR-005 note, Release Plan) + `pnpm verify` + browser check
 
 Next candidates: 12 Monaco editor + pin inspector · 13 3D renderer + mounting editor + arenas · canvas follow-ups (box select, align, minimap, 60 FPS gate, movable board) · server projects API · §6 queue half · Playwright golden leg.
+
+## Slice 12 — editor workspace (FR-WRK-01…03, FR-SIM-11) — done 2026-10-15 (uncommitted)
+
+User decisions: fixed arrangement with resizable + collapsible panes, layout saved in the browser (drag-docking later); one Run = compile if code/circuit changed (unchanged demos run their prebuilt firmware), any edit stops the run; inputs on the canvas parts while running (button press, switch toggle, popover sliders for knobs/sensors), live state on the art; /editor replaces the Lab's Design tab (Lab gets "Open in editor").
+
+- [x] circuit-canvas: `mode` edit/run/view; run-mode interactions + input popover; live art (button, servo, motor, buzzer, damaged badge)
+- [x] ui: `ResizeHandle` (separator role, keyboard, RTL-aware) + tests
+- [x] /editor route: toolbar (Run/Pause, Step, Stop, Reset, speed 0.25–4×, RTF, New/Open demo/Import/Export/Save, Help, shortcuts F5/Shift+F5/F10/Ctrl+S), panes (library+properties | canvas / simulation | code), bottom dock (Serial, Pins, Safety, Challenge), layout persistence
+- [x] Run state machine: build-if-needed, demo passthrough, edits stop, ready/expected scene
+- [x] Responsive: < 1024 px tabs, < 768 px view-and-run banner
+- [x] Lab: remove Design tab, "Open in editor" link; nav "Editor"; en + fa
+- [x] Tests + docs + `pnpm verify` + browser check
+
+Next: 13 Monaco editor + full pin inspector + serial baud/timestamps · 14 arena in workspace (follow, trail, overlays, start pose, more arenas) · 15 mounting editor · 16 3D · 17 canvas completion · 18 build service queue half · 19 hardening.

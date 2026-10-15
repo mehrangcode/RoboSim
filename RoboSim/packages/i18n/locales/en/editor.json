@@ -23,7 +23,10 @@
     "drawing": "Click to bend the wire, click a pin or hole to finish · Esc cancels",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomFit": "Zoom to fit"
+    "zoomFit": "Zoom to fit",
+    "runHelp": "Running: press buttons and switches on the parts, click a knob or sensor to adjust it · Stop to edit the circuit",
+    "viewHelp": "View only: editing needs a larger screen",
+    "damaged": "damaged"
   },
   "toolbar": "Edit",
   "actions": {
@@ -100,5 +103,23 @@
     "gearRatio": "Gear ratio",
     "gearEfficiency": "Gear efficiency",
     "timeConstantMs": "Time constant"
+  },
+  "inputs": {
+    "title": "Inputs of {part}",
+    "close": "Close"
+  },
+  "input": {
+    "charge": "Battery charge",
+    "distanceCm": "Distance (cm)",
+    "lux": "Light (lux)",
+    "surfaceLeft": "Surface under left sensor",
+    "surfaceCenter": "Surface under centre sensor",
+    "surfaceRight": "Surface under right sensor",
+    "surface": "Surface brightness",
+    "position": "Knob position",
+    "pressed": "Pressed",
+    "on": "On",
+    "loadTorqueNm": "Load torque (N·m)",
+    "stalled": "Shaft blocked"
   }
 }

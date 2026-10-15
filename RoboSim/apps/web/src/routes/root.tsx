@@ -25,6 +25,12 @@ export function RootLayout() {
             {t('shell:nav.home')}
           </Link>
           <Link
+            to="/editor"
+            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+          >
+            {t('shell:nav.editor')}
+          </Link>
+          <Link
             to="/lab"
             className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
           >

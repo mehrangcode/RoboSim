@@ -21,6 +21,9 @@
     "editor:option.",
     "editor:color.",
     "editor:library.category.",
-    "editor:canvas.zoom"
+    "editor:canvas.zoom",
+    "editor:input.",
+    "shell:editor.dock.",
+    "shell:editor.shortcuts."
   ]
 }

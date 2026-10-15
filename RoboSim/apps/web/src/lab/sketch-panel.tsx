@@ -22,14 +22,20 @@ export function SketchPanel({
   onRestore,
   state,
   modified,
+  fill = false,
+  title,
 }: {
   fileName: string;
   code: string;
   onChange: (code: string) => void;
-  onCompile: () => void;
-  onRestore: () => void;
+  /** Without these the panel has no buttons (the workspace compiles from its Run button). */
+  onCompile?: (() => void) | undefined;
+  onRestore?: (() => void) | undefined;
   state: BuildState;
   modified: boolean;
+  /** Fill the parent's height (workspace pane) instead of a fixed-height editor. */
+  fill?: boolean;
+  title?: string | undefined;
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
@@ -61,27 +67,34 @@ export function SketchPanel({
   const errors = diagnostics.filter((d) => d.severity === 'error').length;
 
   return (
-    <Card className="p-3">
+    <Card className={cn('p-3', fill && 'flex h-full min-h-0 flex-col rounded-none border-0')}>
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-semibold text-ink-muted">
-          {t('shell:lab.sketch.title')}{' '}
+          {title ?? t('shell:lab.sketch.title')}{' '}
           <span dir="ltr" className="font-mono">
             {fileName}
           </span>
         </h2>
         <div className="ms-auto flex gap-2">
-          <Button size="sm" variant="secondary" onClick={onRestore} disabled={!modified || building}>
-            {t('shell:lab.sketch.restore')}
-          </Button>
-          <Button size="sm" onClick={onCompile} disabled={building} aria-busy={building}>
-            {building ? t('shell:lab.sketch.compiling') : t('shell:lab.sketch.compile')}
-          </Button>
+          {onRestore && (
+            <Button size="sm" variant="secondary" onClick={onRestore} disabled={!modified || building}>
+              {t('shell:lab.sketch.restore')}
+            </Button>
+          )}
+          {onCompile && (
+            <Button size="sm" onClick={onCompile} disabled={building} aria-busy={building}>
+              {building ? t('shell:lab.sketch.compiling') : t('shell:lab.sketch.compile')}
+            </Button>
+          )}
         </div>
       </div>
       {/* Code is always LTR, also in the Persian UI. No ligatures: `<=` must not render as `≤`. */}
       <div
         dir="ltr"
-        className="flex h-72 overflow-hidden rounded-md border border-line font-mono text-xs leading-5 [font-variant-ligatures:none]"
+        className={cn(
+          'flex overflow-hidden rounded-md border border-line font-mono text-xs leading-5 [font-variant-ligatures:none]',
+          fill ? 'min-h-0 flex-1' : 'h-72',
+        )}
       >
         <div
           ref={gutter}
@@ -137,7 +150,10 @@ export function SketchPanel({
       </div>
 
       {diagnostics.length > 0 && (
-        <ul aria-label={t('shell:lab.sketch.diagnostics')} className="mt-2 flex flex-col gap-2">
+        <ul
+          aria-label={t('shell:lab.sketch.diagnostics')}
+          className={cn('mt-2 flex flex-col gap-2', fill && 'max-h-[40%] overflow-y-auto')}
+        >
           {diagnostics.map((d, k) => (
             <li key={k} className="rounded-md border border-line p-2 text-sm">
               <button

@@ -191,12 +191,12 @@ robosim/
 |---|---|---|
 | Routing | TanStack Router (code-based route tree, type-safe) | No generated route file, so typecheck needs no codegen step; route-level code splitting |
 | Server state | TanStack Query | Generated client from OpenAPI (§API-Spec) |
-| Editor state | Zustand stores per domain (`circuitStore`, `codeStore`, `simStore`, `uiStore`) | Collaboration mode binds stores to Yjs documents |
+| Editor state | Zustand stores per domain (`circuitStore`, `codeStore`, `simStore`, `uiStore`) | Collaboration mode binds stores to Yjs documents. *Current (slice 12):* the `/editor` workspace (`apps/web/src/editor`) keeps state in hooks: `useCircuitEditor` (document history), `useRun` (Run model), `useLayout` (pane sizes, `localStorage`); the project autosaves to `localStorage` until cloud projects (P2) |
 | Forms | react-hook-form + Zod (`packages/shared`) | Same schemas as API |
 | Circuit canvas | SVG rendered by React with memoized component nodes; pan/zoom by a single transform on the root group | [ADR-005](decisions.md#adr-005--svg-circuit-canvas); hit-testing via DOM, accessible component list mirrors canvas. *Current (slice 11):* `packages/circuit-canvas` — footprints and hand-drawn art on the 0.1" grid (document mm), pure document operations with undo/redo (200 steps), seats from geometry, `CircuitNets` (union-find, < 16 ms @ 200 parts / 400 wires), manifest-driven property panel, FA/EN library search. Reads the catalogue through the engine-free `@robosim/catalog/manifests` entry; editor state is a hook until the Zustand stores land |
 | Code editor | Monaco (lazy) | C++ grammar, Arduino completions from `packages/shared/arduino-api.json` |
 | Blocks | Blockly (lazy) | `packages/blockly-arduino` |
-| Simulation host | Dedicated module Web Worker | §5.8 protocol |
+| Simulation host | Dedicated module Web Worker | §5.8 protocol. *Workspace Run model (slice 12):* Run compiles when the project's code changed since the last build (an unchanged demo runs its prebuilt firmware via `load { scenario }`), then `load { project, firmware }` + `run`. Any edit to circuit or code while live stops the run (`pause`, back to edit mode). While live the canvas is in run mode: parts take inputs (button held, switch toggled, popover sliders from manifest `inputs`) and show live state |
 | 2D/3D | `renderer-2d` (Canvas 2D), `renderer-3d` (r3f + drei, lazy) | Both subscribe to the same snapshot buffer |
 | i18n | i18next + ICU, namespaces per feature | `dir` attribute on `<html>`; Tailwind logical utilities only |
 | Offline | Workbox service worker: app shell, fonts, component assets, last-used arenas; IndexedDB for projects, build cache | Background sync for pending saves |

@@ -16,6 +16,8 @@ export function useCircuitEditor(initial: ProjectDocument | (() => ProjectDocume
     startHistory(typeof initial === 'function' ? initial() : initial),
   );
   const [selection, setSelection] = useState<Selection>(NO_SELECTION);
+  /** Counts whole-document replacements (new / open / import): views re-fit to the new circuit. */
+  const [generation, setGeneration] = useState(0);
   /** Centre of the visible canvas (document mm), where library clicks drop new parts. */
   const viewCenterRef = useRef<Point>([60, 30]);
 
@@ -26,6 +28,7 @@ export function useCircuitEditor(initial: ProjectDocument | (() => ProjectDocume
   const reset = useCallback((doc: ProjectDocument) => {
     setHistory(startHistory(doc));
     setSelection(NO_SELECTION);
+    setGeneration((g) => g + 1);
   }, []);
   const doUndo = useCallback(() => setHistory(undo), []);
   const doRedo = useCallback(() => setHistory(redo), []);
@@ -42,8 +45,9 @@ export function useCircuitEditor(initial: ProjectDocument | (() => ProjectDocume
       selection,
       setSelection,
       viewCenterRef,
+      generation,
     }),
-    [history, apply, reset, doUndo, doRedo, selection],
+    [history, apply, reset, doUndo, doRedo, selection, generation],
   );
 }
 

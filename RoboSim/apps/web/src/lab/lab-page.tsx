@@ -9,11 +9,11 @@ import {
 } from '@robosim/sim-runtime/client';
 import { Button, SegmentedControl } from '@robosim/ui';
 import { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArenaView } from './arena-view.js';
 import { BenchView } from './bench-view.js';
 import { ChallengePanel } from './challenge-panel.js';
-import { DesignPanel, type DesignLoaded } from './design-panel.js';
 import { FindingsPanel } from './findings-panel.js';
 import { useFormat } from './format.js';
 import { PinTable } from './pin-table.js';
@@ -25,8 +25,8 @@ import { useSimulation, type WorkerLike } from './use-simulation.js';
 import { useVerifiedRun, type GradeWorkerLike } from './use-verified-run.js';
 import { VerifyPanel } from './verify-panel.js';
 
-type Tab = 'arena' | 'bench' | 'safety' | 'sketch' | 'design';
-const TABS = ['arena', 'bench', 'safety', 'sketch', 'design'] as const;
+type Tab = 'arena' | 'bench' | 'safety' | 'sketch';
+const TABS = ['arena', 'bench', 'safety', 'sketch'] as const;
 /** Demos whose circuit the sketch tab can run the learner's own code on. */
 const TEMPLATES = ['line-follower', ...BENCH_SCENARIOS] as const;
 type Template = (typeof TEMPLATES)[number];
@@ -51,18 +51,8 @@ export function LabPage({
   const [safety, setSafety] = useState<SafetyScenarioId>('led-no-resistor');
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>('1');
   const [template, setTemplate] = useState<Template>('blink');
-  const [designLoaded, setDesignLoaded] = useState<DesignLoaded>(null);
-  // The Design tab loads nothing by itself: it runs the designed project or an opened demo.
-  const scenario: ScenarioId | null =
-    tab === 'arena'
-      ? 'line-follower'
-      : tab === 'bench'
-        ? bench
-        : tab === 'safety'
-          ? safety
-          : tab === 'sketch'
-            ? template
-            : null;
+  const scenario: ScenarioId =
+    tab === 'arena' ? 'line-follower' : tab === 'bench' ? bench : tab === 'safety' ? safety : template;
 
   // Sketch tab: the template's own files, the learner's edits, and whether their firmware is running.
   const build = useBuild(compileSketch);
@@ -82,7 +72,6 @@ export function LabPage({
   useEffect(() => {
     clearVerified();
     clearBuild();
-    if (!scenario) return send({ type: 'control', action: 'pause' });
     send({ type: 'load', scenario });
     send({ type: 'control', action: 'run' });
   }, [scenario, send, clearVerified, clearBuild]);
@@ -136,13 +125,7 @@ export function LabPage({
   };
 
   const running = frame?.running ?? false;
-  const ready =
-    scene !== null &&
-    (tab === 'design'
-      ? designLoaded !== null && scene.scenario === (designLoaded === 'project' ? null : designLoaded)
-      : userRun
-        ? scene.scenario === null
-        : scene.scenario === scenario);
+  const ready = scene !== null && (userRun ? scene.scenario === null : scene.scenario === scenario);
 
   return (
     <div className="mx-auto max-w-6xl py-8">
@@ -156,7 +139,6 @@ export function LabPage({
           options={TABS.map((v) => ({ value: v, label: t(`shell:lab.tabs.${v}`) }))}
           onChange={(v) => {
             setUserRun(false);
-            setDesignLoaded(null);
             setTab(v);
           }}
         />
@@ -189,26 +171,11 @@ export function LabPage({
         )}
       </div>
       <p className="mt-3 text-sm text-ink-muted">
-        {tab === 'sketch'
-          ? t('shell:lab.sketch.hint')
-          : tab === 'design'
-            ? t('shell:lab.design.hint')
-            : t(`shell:lab.scenarioHint.${scenario}`)}
+        {tab === 'sketch' ? t('shell:lab.sketch.hint') : t(`shell:lab.scenarioHint.${scenario}`)}{' '}
+        <Link to="/editor" search={{ demo: scenario }} className="font-medium text-brand-600 hover:underline">
+          {t('shell:lab.openInEditor')}
+        </Link>
       </p>
-
-      {tab === 'design' && (
-        <DesignPanel
-          scene={scene}
-          frame={frame}
-          send={(m) => {
-            clearVerified();
-            send(m);
-          }}
-          loaded={designLoaded}
-          onLoad={setDesignLoaded}
-          compileSketch={compileSketch}
-        />
-      )}
 
       {tab === 'sketch' && mainFile && (
         <div className="mt-4">

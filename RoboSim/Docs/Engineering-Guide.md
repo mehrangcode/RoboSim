@@ -64,7 +64,8 @@ Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same
 | URL | Service | Available from |
 |---|---|---|
 | http://localhost:5173 | Web app | P0 |
-| http://localhost:5173/lab | Simulator Lab: live engine demos (arena, component bench, safety, your code) and the circuit canvas (Design tab) | P1 |
+| http://localhost:5173/editor | Editor workspace: build a circuit, write its code, run it (`?demo=<scenario>` opens a demo) | P1 |
+| http://localhost:5173/lab | Simulator Lab: engine demos per slice (arena, component bench, safety, your code), each with “Open in editor” | P1 |
 | http://localhost:5174 | Admin app | P0 |
 | http://localhost:3000/api/v1/health/ready | API readiness | P0 |
 | http://localhost:3000/api/v1/feature-flags | Evaluated feature flags | P0 |

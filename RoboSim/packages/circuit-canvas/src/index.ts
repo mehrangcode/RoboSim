@@ -1,5 +1,6 @@
 export { BoardArt, PartArt } from './art.js';
-export { CircuitCanvas } from './circuit-canvas.js';
+export { CircuitCanvas, type CanvasMode } from './circuit-canvas.js';
+export { interactionOf, type Interaction } from './interaction.js';
 export { resistorBands } from './colors.js';
 export { PART_DRAG_TYPE, WIRE_COLORS, contentBox } from './view.js';
 export { CircuitEditor } from './circuit-editor.js';

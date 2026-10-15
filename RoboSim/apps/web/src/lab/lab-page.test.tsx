@@ -1,24 +1,40 @@
 import {
-  SnapshotEncoder,
-  packSnapshot,
   type FindingView,
   type GradeJob,
   type InputLog,
   type Frame,
-  type MainToWorker,
   type SceneInfo,
-  type WorkerToMain,
 } from '@robosim/sim-runtime/client';
 import { blankProject } from '@robosim/circuit-canvas';
-import type { BuildResult, ProjectDocument } from '@robosim/shared';
+import type { BuildResult } from '@robosim/shared';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { initI18n } from '../lib/i18n.js';
+import { FakeWorker } from '../testing/fake-worker.js';
 import { LabPage } from './lab-page.js';
+
+// The Lab links to the editor; outside a router a plain anchor stands in for <Link>.
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    to,
+    search,
+    children,
+    className,
+  }: {
+    to: string;
+    search?: Record<string, string>;
+    children: ReactNode;
+    className?: string;
+  }) => (
+    <a href={`${to}?${new URLSearchParams(search).toString()}`} className={className}>
+      {children}
+    </a>
+  ),
+}));
 import type { CompileSketch } from './use-build.js';
-import type { WorkerLike } from './use-simulation.js';
 import type { GradeWorkerLike, VerifiedRun, VerifyReply } from './use-verified-run.js';
 
 /** Stand-in for the verify worker: records the job, lets the test answer it. */
@@ -35,34 +51,6 @@ class FakeGradeWorker implements GradeWorkerLike {
   }
   reply(msg: VerifyReply): void {
     act(() => this.onmessage?.({ data: msg } as MessageEvent<VerifyReply>));
-  }
-}
-
-/** In-memory stand-in for the simulation worker: records commands, lets the test push replies. */
-class FakeWorker implements WorkerLike {
-  sent: MainToWorker[] = [];
-  onmessage: ((event: MessageEvent<WorkerToMain>) => void) | null = null;
-  onerror: ((event: ErrorEvent) => void) | null = null;
-  postMessage(message: MainToWorker): void {
-    this.sent.push(message);
-  }
-  terminate(): void {}
-  private encoder = new SnapshotEncoder();
-  reply(msg: WorkerToMain): void {
-    act(() => this.onmessage?.({ data: msg } as MessageEvent<WorkerToMain>));
-  }
-  load(scene: SceneInfo, replaying = 0): void {
-    this.encoder = new SnapshotEncoder();
-    this.reply({ type: 'loaded', scene, seed: 1, engineVersion: 'test', replaying });
-  }
-  /** Publishes a frame the way SimHost does: events, dictionary, then a transferred snapshot. */
-  frame({ faults, findings, damaged, ...hot }: Frame): void {
-    this.reply({ type: 'findings', findings });
-    this.reply({ type: 'faults', faults });
-    this.reply({ type: 'damaged', damaged });
-    const e = this.encoder.encode(hot);
-    if (e.delta) this.reply({ type: 'dict', delta: e.delta });
-    this.reply({ type: 'snapshot', buffer: packSnapshot(e.count, e.values, e.tags) });
   }
 }
 
@@ -157,6 +145,19 @@ describe('Simulator Lab', () => {
     await user.click(screen.getByRole('button', { name: 'Got it' }));
     expect(screen.queryByText('Pin D2 is a floating input')).not.toBeInTheDocument();
     expect(screen.getByText('1 warning acknowledged')).toBeInTheDocument();
+  });
+
+  it('links each demo to the editor', async () => {
+    const { user } = await setup();
+    expect(screen.getByRole('link', { name: 'Open in editor →' })).toHaveAttribute(
+      'href',
+      '/editor?demo=line-follower',
+    );
+    await user.click(screen.getByRole('radio', { name: 'Component bench' }));
+    expect(screen.getByRole('link', { name: 'Open in editor →' })).toHaveAttribute(
+      'href',
+      '/editor?demo=blink',
+    );
   });
 
   it('loads and runs the line-follower arena by default', async () => {
@@ -494,84 +495,6 @@ describe('Simulator Lab', () => {
       const { user } = await openSketch(vi.fn<CompileSketch>().mockRejectedValue(new Error('HTTP 502')));
       await user.click(screen.getByRole('button', { name: 'Compile & run' }));
       expect(await screen.findByText('The build service could not be reached: HTTP 502')).toBeInTheDocument();
-    });
-  });
-
-  describe('design tab (circuit canvas)', () => {
-    const built: BuildResult = {
-      buildId: 'b1',
-      status: 'succeeded',
-      cacheHit: true,
-      artifact: {
-        id: 'b'.repeat(64),
-        format: 'ihex',
-        sha256: 'b'.repeat(64),
-        sizeBytes: 11,
-        flashPct: 3,
-        ramPct: 0.4,
-        url: '/api/v1/artifacts/bbb',
-      },
-      diagnostics: [],
-      durationMs: 5,
-    };
-
-    async function openDesign(compile: CompileSketch = vi.fn()) {
-      const t = await setup(compile);
-      await t.user.click(screen.getByRole('radio', { name: 'Design a circuit' }));
-      return t;
-    }
-
-    it('starts from the breadboard blink, compiles the designed project and runs exactly it', async () => {
-      const compile = vi.fn<CompileSketch>().mockResolvedValue({ result: built, hex: ':00000001FF\n' });
-      const { worker, user } = await openDesign(compile);
-      expect(worker.sent.at(-1)).toEqual({ type: 'control', action: 'pause' });
-      expect(screen.getByRole('application', { name: 'Circuit canvas' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: '3 parts' })).toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: 'Compile & run' }));
-      const load = await vi.waitFor(() => {
-        const m = worker.sent.find((x) => x.type === 'load' && 'project' in x);
-        expect(m).toBeDefined();
-        return m as Extract<typeof m, { project: ProjectDocument }>;
-      });
-      expect(load.project.components.map((c) => c.id)).toEqual(['bb1', 'r1', 'led1']);
-      expect(load.project.components[1]?.seats).toEqual({
-        a: { part: 'bb1', pin: '10a' },
-        b: { part: 'bb1', pin: '14a' },
-      });
-      expect(load.firmware).toEqual({ format: 'ihex', text: ':00000001FF\n', sha256: 'b'.repeat(64) });
-      expect(compile.mock.calls[0]?.[0].files[0]?.content).toMatch(/digitalWrite\(13, HIGH\)/);
-      worker.load({ ...benchScene, scenario: null, project: load.project });
-      worker.frame(frame());
-      expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
-      // Editing after the run says the simulation shows the previous version.
-      await user.click(screen.getByRole('button', { name: 'Add Push button' }));
-      expect(screen.getByText(/changed since this run/)).toBeInTheDocument();
-    });
-
-    it('opens a demo from the worker scene and autosaves the design in this browser', async () => {
-      const { worker, user } = await openDesign();
-      await user.selectOptions(screen.getByLabelText('Demo'), 'dimmer');
-      await user.click(screen.getByRole('button', { name: 'Open demo' }));
-      expect(worker.sent.slice(-2)).toEqual([
-        { type: 'load', scenario: 'dimmer' },
-        { type: 'control', action: 'run' },
-      ]);
-      const demo = { ...blankProject('Knob dims an LED', 'void setup() {}\nvoid loop() {}\n') };
-      worker.load({ ...benchScene, scenario: 'dimmer', title: demo.meta.title, project: demo });
-      expect(screen.getByRole('heading', { name: 'No parts yet' })).toBeInTheDocument();
-      expect(screen.getByLabelText('Arduino code')).toHaveValue('void setup() {}\nvoid loop() {}\n');
-      const saved = JSON.parse(localStorage.getItem('robosim.lab.design.v1') ?? '{}') as ProjectDocument;
-      expect(saved.meta.title).toBe('Knob dims an LED');
-    });
-
-    it('rejects an invalid import with the reason', async () => {
-      const { user } = await openDesign();
-      const input = screen.getByLabelText<HTMLInputElement>('Import…', { selector: 'input' });
-      await user.upload(
-        input,
-        new File(['{"schemaVersion": 2, "wires": 3}'], 'bad.json', { type: 'application/json' }),
-      );
-      expect(await screen.findByText(/Could not import this file/)).toBeInTheDocument();
     });
   });
 });

@@ -3,7 +3,18 @@ import type { Frame, SceneInfo } from '@robosim/sim-runtime/client';
 import { useEffect, useRef } from 'react';
 
 /** Canvas host for the 2D arena renderer; redraws on every frame and on resize. */
-export function ArenaView({ scene, frame, label }: { scene: SceneInfo; frame: Frame | null; label: string }) {
+export function ArenaView({
+  scene,
+  frame,
+  label,
+  className = 'aspect-[3/2] w-full rounded-lg border border-line',
+}: {
+  scene: SceneInfo;
+  frame: Frame | null;
+  label: string;
+  /** Size of the canvas; the renderer letterboxes the arena into it. */
+  className?: string;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<ArenaRenderer | null>(null);
   const frameRef = useRef<Frame | null>(null);
@@ -36,12 +47,5 @@ export function ArenaView({ scene, frame, label }: { scene: SceneInfo; frame: Fr
     rendererRef.current?.draw(frame?.robot ?? null, frame?.challenge ?? null);
   }, [frame]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      role="img"
-      aria-label={label}
-      className="aspect-[3/2] w-full rounded-lg border border-line bg-surface"
-    />
-  );
+  return <canvas ref={canvasRef} role="img" aria-label={label} className={`bg-surface ${className}`} />;
 }

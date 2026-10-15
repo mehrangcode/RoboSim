@@ -149,11 +149,27 @@ function Potentiometer() {
   );
 }
 
-function PushButton() {
+/** Live state fields, read defensively (the art also renders without a simulation). */
+const liveNumber = (live: unknown, key: string): number | null => {
+  const v = (live as Record<string, unknown> | null | undefined)?.[key];
+  return typeof v === 'number' ? v : null;
+};
+const liveFlag = (live: unknown, key: string): boolean =>
+  (live as Record<string, unknown> | null | undefined)?.[key] === true;
+
+function PushButton({ live }: ArtProps) {
+  const pressed = liveFlag(live, 'pressed');
   return (
     <>
       <rect x={-0.3} y={0.1} width={2.6} height={2.8} rx={0.2} fill="#374151" />
-      <circle cx={1} cy={1.5} r={0.85} fill="#111827" stroke="#9ca3af" strokeWidth={0.08} />
+      <circle
+        cx={1}
+        cy={1.5}
+        r={pressed ? 0.7 : 0.85}
+        fill={pressed ? '#0ea5e9' : '#111827'}
+        stroke="#9ca3af"
+        strokeWidth={0.08}
+      />
     </>
   );
 }
@@ -169,9 +185,23 @@ function Ldr() {
   );
 }
 
-function Buzzer() {
+function Buzzer({ live }: ArtProps) {
+  const sounding = liveFlag(live, 'sounding');
   return (
     <>
+      {sounding &&
+        [2.6, 3.2].map((r) => (
+          <circle
+            key={r}
+            cx={1.5}
+            cy={-2}
+            r={r}
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth={0.12}
+            opacity={0.8}
+          />
+        ))}
       <circle cx={1.5} cy={-2} r={2.05} fill="#111827" />
       <circle cx={1.5} cy={-2} r={0.35} fill="#4b5563" />
       <Label x={0.1} y={-3.4} size={0.8}>
@@ -291,7 +321,8 @@ function L298n(p: ArtProps) {
   );
 }
 
-function TtMotor() {
+function TtMotor({ live }: ArtProps) {
+  const rpm = liveNumber(live, 'rpm');
   return (
     <>
       <rect x={-10} y={-2.6} width={6.5} height={5.2} rx={0.4} fill="#facc15" />
@@ -299,14 +330,30 @@ function TtMotor() {
       <Leg from={[-0.6, -1]} to={[0, -1]} />
       <Leg from={[-0.6, 1]} to={[0, 1]} />
       <circle cx={-6.8} cy={0} r={0.8} fill="#fff" />
+      {rpm !== null && Math.abs(rpm) >= 0.5 && (
+        <Label x={-6.8} y={-3.4} size={0.8} fill="#111">
+          {`${Math.round(rpm)} rpm`}
+        </Label>
+      )}
     </>
   );
 }
 
-function Servo() {
+function Servo({ live }: ArtProps) {
+  // Horn seen from above: 0° points right, 180° left.
+  const a = ((liveNumber(live, 'angleDeg') ?? 90) * Math.PI) / 180;
   return (
     <>
       <rect x={-10} y={-1.8} width={6} height={5.6} rx={0.3} fill="#1d4ed8" />
+      <line
+        x1={-8.2}
+        y1={1}
+        x2={-8.2 + 2.6 * Math.cos(Math.PI - a)}
+        y2={1 - 2.6 * Math.sin(Math.PI - a)}
+        stroke="#f8fafc"
+        strokeWidth={0.7}
+        strokeLinecap="round"
+      />
       <circle cx={-8.2} cy={1} r={1.3} fill="#f8fafc" />
       {SERVO_LEADS.map(([c, y]) => (
         <path key={y} d={`M -4 ${y} H 0`} stroke={c} strokeWidth={0.3} />
