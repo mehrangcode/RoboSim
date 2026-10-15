@@ -17,6 +17,12 @@ const envSchema = z
     PUBLIC_DOCS_URL: z.url().default('https://docs.robosim.example'),
     FEATURE_FLAGS_OVERRIDE: z.string().default(''),
     FEATURE_FLAGS_CACHE_MS: z.coerce.number().int().min(0).default(30_000),
+    // Build service (Technical Design §6, ADR-022). `local` = avr-gcc in a Linux namespace sandbox on this host.
+    COMPILER_RUNTIME: z.enum(['local']).default('local'),
+    COMPILER_TOOLCHAIN_DIR: z.string().optional(),
+    COMPILER_CACHE_DIR: z.string().optional(),
+    COMPILER_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(2),
+    BUILD_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(20),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_DRIVER === 'postgres' && !env.DATABASE_URL) {
@@ -24,6 +30,14 @@ const envSchema = z
         code: 'custom',
         path: ['DATABASE_URL'],
         message: 'required when DATABASE_DRIVER=postgres',
+      });
+    }
+    if ((env.APP_ENV === 'production' || env.APP_ENV === 'staging') && env.COMPILER_RUNTIME === 'local') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['COMPILER_RUNTIME'],
+        message:
+          'the local build runtime is for development only; staging/production need the gVisor sandbox',
       });
     }
     if (env.APP_ENV === 'production' && env.DATABASE_DRIVER === 'pglite') {

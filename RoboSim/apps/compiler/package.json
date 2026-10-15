@@ -1,0 +1,35 @@
+{
+  "name": "@robosim/compiler",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "robosim-compile": "./dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "setup": "node scripts/setup-toolchain.ts",
+    "gen:demos": "node scripts/gen-demo-firmware.ts",
+    "compile": "node --enable-source-maps dist/main.js"
+  },
+  "dependencies": {
+    "@robosim/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@robosim/config": "workspace:*",
+    "@robosim/i18n": "workspace:*",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.12.0",
+    "typescript": "6.0.3",
+    "vitest": "^5.0.4"
+  }
+}

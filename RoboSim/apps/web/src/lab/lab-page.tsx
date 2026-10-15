@@ -5,6 +5,7 @@ import {
   type BenchScenarioId,
   type SafetyScenarioId,
   type ScenarioId,
+  type SourceFile,
 } from '@robosim/sim-runtime/client';
 import { Button, SegmentedControl } from '@robosim/ui';
 import { useEffect, useState } from 'react';
@@ -12,28 +13,36 @@ import { useTranslation } from 'react-i18next';
 import { ArenaView } from './arena-view.js';
 import { BenchView } from './bench-view.js';
 import { ChallengePanel } from './challenge-panel.js';
+import { DesignPanel, type DesignLoaded } from './design-panel.js';
 import { FindingsPanel } from './findings-panel.js';
 import { useFormat } from './format.js';
 import { PinTable } from './pin-table.js';
 import { SerialMonitor } from './serial-monitor.js';
+import { SketchPanel } from './sketch-panel.js';
 import { Telemetry } from './telemetry.js';
+import { useBuild, type CompileSketch } from './use-build.js';
 import { useSimulation, type WorkerLike } from './use-simulation.js';
 import { useVerifiedRun, type GradeWorkerLike } from './use-verified-run.js';
 import { VerifyPanel } from './verify-panel.js';
 
-type Tab = 'arena' | 'bench' | 'safety';
-const TABS = ['arena', 'bench', 'safety'] as const;
+type Tab = 'arena' | 'bench' | 'safety' | 'sketch' | 'design';
+const TABS = ['arena', 'bench', 'safety', 'sketch', 'design'] as const;
+/** Demos whose circuit the sketch tab can run the learner's own code on. */
+const TEMPLATES = ['line-follower', ...BENCH_SCENARIOS] as const;
+type Template = (typeof TEMPLATES)[number];
 const SPEEDS = ['0.5', '1', '2', '4'] as const;
 
 /** Simulator Lab: live engine demos, extended with every engine slice (Release Plan P1). */
 export function LabPage({
   createWorker,
   createGradeWorker,
+  compileSketch,
 }: {
   createWorker?: () => WorkerLike;
   createGradeWorker?: () => GradeWorkerLike;
+  compileSketch?: CompileSketch;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmt = useFormat();
   const { scene, frame, error, serial, replaying, send, exportLog } = useSimulation(createWorker);
   const verified = useVerifiedRun(createGradeWorker);
@@ -41,14 +50,59 @@ export function LabPage({
   const [bench, setBench] = useState<BenchScenarioId>('blink');
   const [safety, setSafety] = useState<SafetyScenarioId>('led-no-resistor');
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>('1');
-  const scenario: ScenarioId = tab === 'arena' ? 'line-follower' : tab === 'bench' ? bench : safety;
+  const [template, setTemplate] = useState<Template>('blink');
+  const [designLoaded, setDesignLoaded] = useState<DesignLoaded>(null);
+  // The Design tab loads nothing by itself: it runs the designed project or an opened demo.
+  const scenario: ScenarioId | null =
+    tab === 'arena'
+      ? 'line-follower'
+      : tab === 'bench'
+        ? bench
+        : tab === 'safety'
+          ? safety
+          : tab === 'sketch'
+            ? template
+            : null;
+
+  // Sketch tab: the template's own files, the learner's edits, and whether their firmware is running.
+  const build = useBuild(compileSketch);
+  const [originals, setOriginals] = useState<Partial<Record<Template, readonly SourceFile[]>>>({});
+  const [drafts, setDrafts] = useState<Partial<Record<Template, string>>>({});
+  const [userRun, setUserRun] = useState(false);
+  const mainFile = originals[template]?.find((f) => f.name.endsWith('.ino'));
+  const draft = drafts[template] ?? mainFile?.content ?? '';
+
+  // Remember each template's own files the first time its scene arrives (state derived during render).
+  const sceneTemplate = TEMPLATES.find((v) => v === scene?.scenario);
+  if (scene && sceneTemplate && !originals[sceneTemplate])
+    setOriginals({ ...originals, [sceneTemplate]: scene.code });
 
   const clearVerified = verified.clear;
+  const clearBuild = build.clear;
   useEffect(() => {
     clearVerified();
+    clearBuild();
+    if (!scenario) return send({ type: 'control', action: 'pause' });
     send({ type: 'load', scenario });
     send({ type: 'control', action: 'run' });
-  }, [scenario, send, clearVerified]);
+  }, [scenario, send, clearVerified, clearBuild]);
+
+  /** Compiles the edited sketch with the build service and runs the firmware on the template's circuit. */
+  const compileAndRun = async () => {
+    const files = (originals[template] ?? []).map((f) => (f === mainFile ? { ...f, content: draft } : f));
+    const compiled = await build.build({ board: 'avr-uno', files: [...files], libraries: [] }, i18n.language);
+    const artifact = compiled?.result.artifact;
+    if (!compiled?.hex || !artifact) return;
+    clearVerified();
+    setUserRun(true);
+    send({
+      type: 'load',
+      template,
+      files,
+      firmware: { format: 'ihex', text: compiled.hex, sha256: artifact.sha256 },
+    });
+    send({ type: 'control', action: 'run' });
+  };
 
   useEffect(() => send({ type: 'speed', value: Number(speed) }), [speed, send]);
 
@@ -82,7 +136,13 @@ export function LabPage({
   };
 
   const running = frame?.running ?? false;
-  const ready = scene?.scenario === scenario;
+  const ready =
+    scene !== null &&
+    (tab === 'design'
+      ? designLoaded !== null && scene.scenario === (designLoaded === 'project' ? null : designLoaded)
+      : userRun
+        ? scene.scenario === null
+        : scene.scenario === scenario);
 
   return (
     <div className="mx-auto max-w-6xl py-8">
@@ -94,7 +154,11 @@ export function LabPage({
           label={t('shell:lab.tabsLabel')}
           value={tab}
           options={TABS.map((v) => ({ value: v, label: t(`shell:lab.tabs.${v}`) }))}
-          onChange={setTab}
+          onChange={(v) => {
+            setUserRun(false);
+            setDesignLoaded(null);
+            setTab(v);
+          }}
         />
         {tab === 'bench' && (
           <SegmentedControl
@@ -112,8 +176,56 @@ export function LabPage({
             onChange={setSafety}
           />
         )}
+        {tab === 'sketch' && (
+          <SegmentedControl
+            label={t('shell:lab.sketch.templateLabel')}
+            value={template}
+            options={TEMPLATES.map((v) => ({ value: v, label: t(`shell:lab.scenario.${v}`) }))}
+            onChange={(v) => {
+              setUserRun(false);
+              setTemplate(v);
+            }}
+          />
+        )}
       </div>
-      <p className="mt-3 text-sm text-ink-muted">{t(`shell:lab.scenarioHint.${scenario}`)}</p>
+      <p className="mt-3 text-sm text-ink-muted">
+        {tab === 'sketch'
+          ? t('shell:lab.sketch.hint')
+          : tab === 'design'
+            ? t('shell:lab.design.hint')
+            : t(`shell:lab.scenarioHint.${scenario}`)}
+      </p>
+
+      {tab === 'design' && (
+        <DesignPanel
+          scene={scene}
+          frame={frame}
+          send={(m) => {
+            clearVerified();
+            send(m);
+          }}
+          loaded={designLoaded}
+          onLoad={setDesignLoaded}
+          compileSketch={compileSketch}
+        />
+      )}
+
+      {tab === 'sketch' && mainFile && (
+        <div className="mt-4">
+          <SketchPanel
+            fileName={mainFile.name}
+            code={draft}
+            onChange={(code) => setDrafts((d) => ({ ...d, [template]: code }))}
+            onCompile={() => void compileAndRun()}
+            onRestore={() => {
+              setDrafts(({ [template]: _, ...rest }) => rest);
+              build.clear();
+            }}
+            state={build.state}
+            modified={draft !== mainFile.content}
+          />
+        </div>
+      )}
 
       <div
         role="toolbar"
@@ -186,7 +298,11 @@ export function LabPage({
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_16rem]">
           <div>
             {scene.kind === 'arena' ? (
-              <ArenaView scene={scene} frame={frame} label={t(`shell:lab.scenario.${scenario}`)} />
+              <ArenaView
+                scene={scene}
+                frame={frame}
+                label={scene.scenario ? t(`shell:lab.scenario.${scene.scenario}`) : scene.title}
+              />
             ) : (
               <BenchView scene={scene} frame={frame} send={send} />
             )}

@@ -13,7 +13,7 @@ import type {
   ScenarioId,
   WorkerToMain,
 } from './protocol.js';
-import { buildRun, builtinSource, findingView, type Scenario } from './scenarios.js';
+import { buildRun, findingView, resolveSource, type Scenario } from './scenarios.js';
 import { SharedSnapshotWriter, packSnapshot } from './snapshot-channel.js';
 import { SnapshotEncoder } from './snapshot-codec.js';
 import { challengeView, damageView, pinViews, robotView } from './views.js';
@@ -73,7 +73,11 @@ export class SimHost {
       switch (msg.type) {
         case 'load':
           this.load(
-            'scenario' in msg ? { scenario: msg.scenario } : { project: msg.project, firmware: msg.firmware },
+            'scenario' in msg
+              ? { scenario: msg.scenario }
+              : 'template' in msg
+                ? { template: msg.template, files: msg.files, firmware: msg.firmware }
+                : { project: msg.project, firmware: msg.firmware },
             msg.seed ?? 1,
             msg.inputLog ?? [],
           );
@@ -154,10 +158,7 @@ export class SimHost {
       ...(challenge ? { stopWhen: () => challenge.isDecided } : {}),
     });
     const run: Run = {
-      source:
-        'scenario' in source
-          ? { scenario: source.scenario, ...builtinSource(source.scenario) }
-          : { scenario: null, project: source.project, firmware: source.firmware },
+      source: resolveSource(source),
       seed,
       scenario,
       pacer,

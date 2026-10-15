@@ -23,7 +23,9 @@
     "tabs": {
       "arena": "Robot arena",
       "bench": "Component bench",
-      "safety": "Safety"
+      "safety": "Safety",
+      "sketch": "Your code",
+      "design": "Design a circuit"
     },
     "controls": {
       "label": "Simulation controls",
@@ -192,6 +194,38 @@
       "speed": "Simulated {sim} s in {wall} s ({factor}× real time)",
       "trace": "{count, plural, one {Trace of # sample} other {Trace of # samples}}, SHA-256",
       "error": "Verification failed: {message}"
+    },
+    "sketch": {
+      "title": "Sketch",
+      "templateLabel": "Circuit",
+      "hint": "Edit the Arduino code of a demo circuit, compile it with the build service, and run your firmware on the same parts.",
+      "editor": "Arduino code",
+      "compile": "Compile & run",
+      "compiling": "Compiling…",
+      "restore": "Restore example",
+      "succeeded": "Built: {flash}% of flash, {ram}% of RAM, in {ms} ms. Running your firmware.",
+      "cached": "from cache",
+      "failed": "{count, plural, =0 {The build failed.} one {# error — fix it and compile again.} other {# errors — fix them and compile again.}}",
+      "unreachable": "The build service could not be reached: {message}",
+      "diagnostics": "Compiler messages",
+      "location": "{file}, line {line}, column {column}",
+      "severity": {
+        "error": "Error",
+        "warning": "Warning",
+        "note": "Note"
+      }
+    },
+    "design": {
+      "hint": "Place parts from the library, plug them into the breadboard and wire them to the Uno. Then write the sketch and press Compile & run to simulate exactly this circuit. Your design is saved in this browser.",
+      "toolbar": "Project",
+      "new": "New project",
+      "demo": "Demo",
+      "open": "Open demo",
+      "import": "Import…",
+      "export": "Export project",
+      "importError": "Could not import this file: {message}",
+      "stale": "The circuit or code changed since this run: Compile & run to apply it.",
+      "starterTitle": "My circuit"
     }
   }
 }

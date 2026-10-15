@@ -31,7 +31,10 @@ const files: Record<string, string> = {
       version: '0.1.0',
       private: true,
       type: 'module',
-      exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } },
+      exports: {
+        '.': { types: './dist/index.d.ts', default: './dist/index.js' },
+        './manifest': { types: './dist/manifest.d.ts', default: './dist/manifest.js' },
+      },
       files: ['dist'],
       scripts: {
         build: 'tsc -p tsconfig.build.json',
@@ -83,14 +86,21 @@ const files: Record<string, string> = {
     null,
     2,
   ),
-  'src/index.ts': `import type { ComponentDefinition, ComponentManifest } from '@robosim/sim-core';
+  'src/manifest.ts': `import type { ComponentManifest } from '@robosim/sim-core';
 import manifestJson from './manifest.json' with { type: 'json' };
-import { ${className}, type ${className}Props } from './model.js';
 
+/** Engine-free entry (\`./manifest\`): editors read the catalogue without loading the model. */
 // JSON imports widen tuples/unions; validateManifest() in the package tests checks the shape.
 export const manifest = manifestJson as unknown as ComponentManifest;
+export const manifests: readonly ComponentManifest[] = [manifest];
+`,
+  'src/index.ts': `import type { ComponentDefinition } from '@robosim/sim-core';
+import { manifest } from './manifest.js';
+import { ${className}, type ${className}Props } from './model.js';
+
 export const definition: ComponentDefinition<${className}Props> = { manifest, create: () => new ${className}() };
 export { ${className}, type ${className}Props } from './model.js';
+export { manifest } from './manifest.js';
 `,
   'src/model.ts': `import type { ComponentIO, ComponentModel, Fault, MnaStamper, ModelContext } from '@robosim/sim-core';
 
@@ -128,5 +138,7 @@ describe('${typeId}', () => {
 for (const [file, content] of Object.entries(files))
   writeFileSync(join(dir, file), content.endsWith('\n') ? content : content + '\n');
 console.warn(
-  `Created packages/components/${slug}. Next: add i18n key "${typeId}.name" (en + fa) and run pnpm install.`,
+  `Created packages/components/${slug}. Next: add i18n key "${typeId}.name" (en + fa), register it in ` +
+    `packages/catalog (src/index.ts and src/manifests.ts), give it a footprint + art in packages/circuit-canvas, ` +
+    `and run pnpm install.`,
 );

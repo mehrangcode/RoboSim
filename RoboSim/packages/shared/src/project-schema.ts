@@ -8,7 +8,7 @@ import { z } from 'zod';
  * Units: positions in mm, angles in degrees (editor-friendly); the loader converts them.
  */
 
-export const PROJECT_SCHEMA_VERSION = 1;
+export const PROJECT_SCHEMA_VERSION = 2;
 
 const id = z
   .string()
@@ -36,6 +36,8 @@ export const componentInstanceSchema = z.strictObject({
   inputs: z.record(z.string(), z.union([z.number(), z.boolean()])).optional(),
   /** Pose on the robot chassis (mm, degrees), robot frame: +x forward, +y left. */
   mount: mountSchema.optional(),
+  /** Legs plugged into another part's holes (a breadboard): own pin → that part's pin. Since v2. */
+  seats: z.record(z.string().min(1), pinRefSchema).optional(),
 });
 export type ComponentInstance = z.infer<typeof componentInstanceSchema>;
 
@@ -149,6 +151,16 @@ export const projectDocumentSchema = z
             path: ['wires', i, end, 'part'],
           });
     });
+    doc.components.forEach((c, i) => {
+      for (const [pin, hole] of Object.entries(c.seats ?? {})) {
+        if (!parts.has(hole.part) || hole.part === BOARD_PART || hole.part === c.id)
+          ctx.addIssue({
+            code: 'custom',
+            message: `pin '${pin}' cannot be seated in part '${hole.part}'`,
+            path: ['components', i, 'seats', pin, 'part'],
+          });
+      }
+    });
     if (doc.successConditions && !doc.arena) {
       const needsArena = JSON.stringify(doc.successConditions.condition).match(
         /"type":"(reachZone|laps|checkpointsInOrder|pushOut|noCollision|onLineRatio)"/,
@@ -166,7 +178,10 @@ export type ProjectDocument = z.infer<typeof projectDocumentSchema>;
 
 /** Upgrades a document of version `n` to `n + 1`. Pure; add one per schema change. */
 export type Migration = (doc: Record<string, unknown>) => Record<string, unknown>;
-export const PROJECT_MIGRATIONS: Readonly<Record<number, Migration>> = {};
+export const PROJECT_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  /** v2 adds optional `components[].seats`; v1 documents are valid as they are. */
+  1: (doc) => doc,
+};
 
 export class ProjectDocumentError extends Error {
   constructor(readonly issues: readonly string[]) {

@@ -15,6 +15,7 @@
   "payload_too_large": "The content is too large",
   "safety_errors_present": "Fix the safety errors first",
   "build_failed": "The code could not be compiled",
+  "compiler_unavailable": "The compiler is not available right now",
   "rate_limited": "Too many requests — please wait a moment",
   "build_quota_exceeded": "Today's build limit has been reached",
   "ai_credits_exhausted": "Your AI credits are used up",

@@ -14,6 +14,13 @@
     "shell:lab.findings.",
     "shell:lab.challenge.",
     "shell:lab.verify.outcome.",
-    "shell:lab.verify.match."
+    "shell:lab.verify.match.",
+    "build:explain.",
+    "shell:lab.sketch.severity.",
+    "editor:prop.",
+    "editor:option.",
+    "editor:color.",
+    "editor:library.category.",
+    "editor:canvas.zoom"
   ]
 }

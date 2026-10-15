@@ -114,6 +114,16 @@ User C++ is untrusted input executed by the compiler toolchain (preprocessor, co
 | Monitoring | Alerts on sandbox OOM/time-out spikes, unexpected syscalls (gVisor logs), egress attempts |
 | Verification | Security test suite in CI (network access, fork bomb, disk fill, huge diagnostics, `#include "/etc/passwd"`, recursive macros, linker scripts) must fail safely |
 
+*Development runtime ([ADR-022](decisions.md#adr-022--build-service-drives-avr-gcc-directly-linux-namespace-sandbox-for-development)).* With `COMPILER_RUNTIME=local` there is no gVisor. Each toolchain call runs in new unprivileged user, mount, PID and network namespaces:
+
+- **Network:** loopback only.
+- **Processes:** a private `/proc`.
+- **Filesystem:** the work dir is the only writable bind mount. The toolchain and prebuilt archives are read-only. `/home`, `/mnt`, `/root`, `/tmp`, `/var` and `/run` are hidden behind empty tmpfs, so the repository, `.env` and other processes' environments are unreachable.
+- **Limits:** `prlimit` caps address space at 1 GB, file size at 64 MB, CPU at 30 s and open files at 256. A wall-clock kill enforces the 30 s budget, and output is capped at 256 KB.
+- **Guards:** the source guards above run before gcc and also reject `.incbin`/`.include` assembler directives and macro includes.
+
+The API rejects this runtime when `APP_ENV` is `staging` or `production`. Tests cover these cases (`apps/compiler/test/compiler.test.ts`): no network, hidden home/project, private `/proc`, read-only toolchain, `/etc/passwd` and `..` includes, the time limit, and host paths stripped from diagnostics. Fork-bomb, disk-fill and recursive-macro cases are still open for the gVisor suite.
+
 The grader applies equivalent pod isolation (no network beyond Redis/object storage, limits, short-lived) even though firmware only runs inside the emulator.
 
 ## 6. Privacy and protection of minors
@@ -187,7 +197,7 @@ Export (JSON + `.robosim`, within 24 h automated), correction (profile), deletio
 | **Personal data protection** | Iran has no enacted comprehensive data protection statute at time of writing; the platform applies the principles in §6 (comparable to international norms) and will adapt when legislation is enacted **[confirm status]** | Legal |
 | **Content and minors** | Moderation (§3, FR-CMY-04), minors' defaults (§6.2), cooperation process for lawful requests documented | Trust & safety |
 | **Shipping** | Carrier terms, insurance of parcels, return logistics | Commerce |
-| **Software licences** | Third-party licence inventory (SBOM); avr8js/rp2040js (MIT), arduino-cli (GPL-3.0, used as a separate tool in the sandbox — not linked into proprietary code), Arduino cores and libraries (LGPL/GPL/MIT — distributed only inside the build image; source offer maintained), Blockly (Apache-2.0), three.js (MIT), Planck.js (MIT) | Engineering / legal |
+| **Software licences** | Third-party licence inventory (SBOM); avr8js/rp2040js (MIT), avr-gcc/binutils/avr-libc (GPL/LGPL/BSD, Ubuntu packages used as separate tools — not linked into proprietary code; ADR-022 replaced arduino-cli), Arduino cores and libraries (LGPL/GPL/MIT — distributed only inside the build image; source offer maintained), Blockly (Apache-2.0), three.js (MIT), Planck.js (MIT) | Engineering / legal |
 | **International users** | Paid plans only via Iranian payment or institutional contract; no targeting of EU residents; privacy policy explains processing location | Legal |
 
 ## 9. Cryptography and secrets

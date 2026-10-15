@@ -103,6 +103,70 @@ describe('project loader', () => {
     ]);
   });
 
+  /** Blink built on a half breadboard: legs seated in holes, jumpers from the board to strips and a rail. */
+  function blinkOnBreadboard(): ProjectDocument {
+    const d = blink().project;
+    const at = (part: string, pin: string) => ({ part, pin });
+    const jumper = (id: string, from: [string, string], to: [string, string]) => ({
+      id,
+      from: at(...from),
+      to: at(...to),
+      color: 'yellow',
+      points: [],
+    });
+    return {
+      ...d,
+      components: [
+        {
+          id: 'bb',
+          type: 'passive.breadboard-half',
+          typeVersion: '1.0.0',
+          x: 0,
+          y: 0,
+          rotation: 0,
+          flipped: false,
+          props: {},
+        },
+        ...d.components.map((c) =>
+          c.id === 'r1'
+            ? { ...c, seats: { a: at('bb', '10a'), b: at('bb', '14a') } }
+            : { ...c, seats: { a: at('bb', '14c'), k: at('bb', '17c') } },
+        ),
+      ],
+      wires: [
+        jumper('j1', ['board', 'D13'], ['bb', '10e']),
+        jumper('j2', ['bb', '17e'], ['bb', 'tn3']),
+        jumper('j3', ['bb', 'tn20'], ['board', 'GND1']),
+      ],
+    };
+  }
+
+  it('resolves breadboard strips and seated legs without adding nets for unused holes', () => {
+    const plain = buildRun(blink());
+    const onBoard = buildRun({ ...blink(), project: blinkOnBreadboard() });
+    expect(onBoard.scene.parts.map((p) => p.id)).toEqual(['r1', 'led']);
+    expect(onBoard.circuit.assembled.netCount).toBe(plain.circuit.assembled.netCount);
+    expect(onBoard.scene.staticFindings).toEqual(plain.scene.staticFindings);
+    for (const s of [plain, onBoard]) s.circuit.sim.run(1500);
+    expect(onBoard.circuit.sim.snapshot().components).toEqual(plain.circuit.sim.snapshot().components);
+  });
+
+  it('a leg in an unconnected strip stays floating; bad holes are reported', () => {
+    const doc = blinkOnBreadboard();
+    const unplugged = { ...doc, wires: doc.wires.filter((w) => w.id !== 'j1') };
+    const run = buildRun({ ...blink(), project: unplugged });
+    run.circuit.sim.run(1500);
+    expect(run.circuit.models['led']?.snapshot()).toMatchObject({ brightness: 0 });
+    expect(
+      problems(() => ({
+        ...doc,
+        components: doc.components.map((c) =>
+          c.id === 'led' ? { ...c, seats: { a: { part: 'bb', pin: '99z' } } } : c,
+        ),
+      })),
+    ).toEqual(["component led pin a: bb (passive.breadboard-half) has no pin '99z'"]);
+  });
+
   it('checks the arena, the robot drive and the success conditions', () => {
     expect(
       problems((d) => ({ ...d, arena: { arenaVersionId: 'moon', startPose: { x: 0, y: 0, heading: 0 } } })),

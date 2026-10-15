@@ -26,7 +26,7 @@ describe('grade', () => {
   it('runs to the time cap without a challenge and stamps serial output and findings with slices', () => {
     const serial = grade(job('serial', 2.5, [{ slice: 1500, kind: 'serial', text: 'hi' }]));
     expect(serial).toMatchObject({ outcome: 'unresolved', endSlice: 2500, challenge: null, score: null });
-    expect(serial.serial).toBe('RoboSim ready\r\ntick 0\r\ntick 1\r\nHItick 2\r\n');
+    expect(serial.serial).toBe('RoboSim ready\r\ntick 0\r\nHItick 1\r\n');
     expect(serial.trace.serial.find((c) => c.text.includes('H'))?.slice).toBeGreaterThan(1500);
 
     const motor = grade(job('motor-on-pin', 0.5));

@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./pins": {
+      "types": "./dist/pins.d.ts",
+      "default": "./dist/pins.js"
     }
   },
   "files": [

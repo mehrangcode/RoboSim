@@ -8,10 +8,10 @@
   "staticFindings": [],
   "damaged": {"parts":[],"pins":[]},
   "final": {"slice":3000,"pins":{"D13":{"mode":"output","level":1,"volts":4.705882352832988}},"parts":{"r1":{"currentMa":11.76470588197463,"powerMw":30.449826987661055,"damaged":false},"led":{"color":"green","currentMa":11.76470587985694,"brightness":0.588235293992847,"damaged":false}}},
-  "serial": "RoboSim ready\r\ntick 0\r\ntick 1\r\nHELLOtick 2\r\nOK",
+  "serial": "RoboSim ready\r\ntick 0\r\nHELLOtick 1\r\nOK",
   "trace": {
     "intervalSlices": 100,
-    "serial": [{"slice":1,"text":"RoboSim read"},{"slice":2,"text":"y\r\ntick 0\r\n"},{"slice":1008,"text":"tick 1\r\n"},{"slice":1501,"text":"HELLO"},{"slice":2013,"text":"ti"},{"slice":2014,"text":"ck 2\r\n"},{"slice":2101,"text":"OK"}],
+    "serial": [{"slice":1,"text":"RoboSim re"},{"slice":2,"text":"ady\r\n"},{"slice":1001,"text":"tick "},{"slice":1002,"text":"0\r\n"},{"slice":1501,"text":"HELLO"},{"slice":2002,"text":"tick 1\r\n"},{"slice":2101,"text":"OK"}],
     "findings": [],
     "samples": [
       {"slice":0,"pins":{"D13":{"mode":"input","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},

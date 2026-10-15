@@ -16,6 +16,8 @@
     "test": "turbo run test",
     "test:sim": "turbo run build --filter=@robosim/grader^... && pnpm --filter @robosim/grader run test:golden",
     "golden:update": "turbo run build --filter=@robosim/grader^... && pnpm --filter @robosim/grader run golden:update",
+    "compiler:setup": "pnpm --filter @robosim/compiler run setup",
+    "firmware:gen": "turbo run build --filter=@robosim/compiler && pnpm --filter @robosim/compiler run gen:demos",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "i18n:check": "pnpm --filter @robosim/i18n run check",

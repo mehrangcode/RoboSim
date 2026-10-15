@@ -1,7 +1,7 @@
-import type { ComponentDefinition, ComponentManifest } from '@robosim/sim-core';
-import manifestJson from './manifest.json' with { type: 'json' };
+import type { ComponentDefinition } from '@robosim/sim-core';
+import { manifest } from './manifest.js';
 import { Resistor, type ResistorProps } from './model.js';
 
-export const manifest = manifestJson as unknown as ComponentManifest;
 export const definition: ComponentDefinition<ResistorProps> = { manifest, create: () => new Resistor() };
 export { Resistor, type ResistorProps, type ResistorState } from './model.js';
+export { manifest } from './manifest.js';

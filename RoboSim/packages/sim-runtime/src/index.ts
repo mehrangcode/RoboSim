@@ -14,6 +14,8 @@ export {
   type TraceSample,
 } from './grade.js';
 export { ENGINE_PACKAGES, ENGINE_VERSION } from './engine-version.js';
+export { FIRMWARE_HEX } from './firmware/generated.js';
+export { FIRMWARE_SKETCHES, type FirmwareId } from './firmware/sketches.js';
 export { SnapshotDecoder, SnapshotEncoder, TAG, type DictDelta, type Path } from './snapshot-codec.js';
 export {
   SharedSnapshotReader,
@@ -25,6 +27,7 @@ export {
 export {
   ProjectLoadError,
   buildRun,
+  resolveSource,
   buildScenario,
   builtinSource,
   loadProject,

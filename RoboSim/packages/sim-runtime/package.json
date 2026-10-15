@@ -18,10 +18,9 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p scripts/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
-    "gen:firmware": "node scripts/gen-firmware.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@robosim/board-avr-uno": "workspace:*",
@@ -36,7 +35,6 @@
     "@robosim/config": "workspace:*",
     "@robosim/test-fixtures": "workspace:*",
     "@types/node": "^24.19.2",
-    "avr8js": "0.21.1",
     "eslint": "^10.12.0",
     "typescript": "6.0.3",
     "vitest": "^5.0.4"

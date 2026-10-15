@@ -51,10 +51,23 @@ export interface FirmwarePayload {
   readonly sha256: string;
 }
 
-/** What to simulate: a built-in Lab demo, or a project document with its firmware. */
+export interface SourceFile {
+  readonly name: string;
+  readonly content: string;
+}
+
+/**
+ * What to simulate: a built-in Lab demo, a project document with its firmware, or a built-in demo's
+ * circuit running the user's own code (the Lab's sketch tab: files + the firmware built from them).
+ */
 export type RunSource =
   | { readonly scenario: ScenarioId }
-  | { readonly project: ProjectDocument; readonly firmware: FirmwarePayload };
+  | { readonly project: ProjectDocument; readonly firmware: FirmwarePayload }
+  | {
+      readonly template: ScenarioId;
+      readonly files: readonly SourceFile[];
+      readonly firmware: FirmwarePayload;
+    };
 
 /**
  * Everything needed to reproduce a run bit for bit (Technical Design §5.9): the project and
@@ -139,6 +152,10 @@ export interface SceneInfo {
   readonly staticFindings: readonly FindingView[];
   /** The firmware talks over the UART: the Lab shows a Serial Monitor. */
   readonly serial: boolean;
+  /** The project's source files (what the firmware was built from). */
+  readonly code: readonly SourceFile[];
+  /** The loaded document itself, so an editor can open a demo (or the running project). */
+  readonly project: ProjectDocument;
 }
 
 export interface PinView {

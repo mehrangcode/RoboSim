@@ -1,0 +1,104 @@
+{
+  "library": {
+    "title": "Components",
+    "search": "Search parts (English or Persian)",
+    "add": "Add {name}",
+    "empty": "No part matches.",
+    "category": {
+      "label": "Category",
+      "all": "All",
+      "power": "Power",
+      "passive": "Passive",
+      "actuator": "Actuators",
+      "sensor": "Sensors",
+      "driver": "Drivers",
+      "display": "Displays",
+      "comms": "Communication",
+      "mechanical": "Mechanical"
+    }
+  },
+  "canvas": {
+    "label": "Circuit canvas",
+    "help": "Drag parts · click a pin to start a wire · wheel to zoom, drag the background to pan · R rotate, F flip, Delete, Ctrl+Z",
+    "drawing": "Click to bend the wire, click a pin or hole to finish · Esc cancels",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Zoom to fit"
+  },
+  "toolbar": "Edit",
+  "actions": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "rotate": "Rotate",
+    "flip": "Flip",
+    "duplicate": "Duplicate",
+    "delete": "Delete"
+  },
+  "parts": {
+    "title": "{count, plural, =0 {No parts yet} one {# part} other {# parts}}"
+  },
+  "props": {
+    "none": "Select a part or a wire on the canvas to edit it.",
+    "multiple": "{count, plural, one {# part selected} other {# parts selected}}",
+    "seated": "Plugged into {part}",
+    "notNumber": "Enter a number.",
+    "outOfRange": "Must be between {min} and {max} {unit}.",
+    "e12": "Standard value (E12)"
+  },
+  "wire": {
+    "title": "Wire {id}",
+    "color": "Colour"
+  },
+  "color": {
+    "red": "Red",
+    "black": "Black",
+    "yellow": "Yellow",
+    "green": "Green",
+    "blue": "Blue",
+    "orange": "Orange",
+    "white": "White",
+    "purple": "Purple"
+  },
+  "option": {
+    "red": "Red",
+    "yellow": "Yellow",
+    "green": "Green",
+    "blue": "Blue",
+    "white": "White"
+  },
+  "prop": {
+    "capacityMah": "Capacity",
+    "internalOhms": "Internal resistance",
+    "initialCharge": "Initial charge (0–1)",
+    "trackWidthMm": "Track width",
+    "wheelDiameterMm": "Wheel diameter",
+    "lengthMm": "Length",
+    "widthMm": "Width",
+    "bodyCenterXMm": "Body centre offset",
+    "casterXMm": "Caster position",
+    "bodyMassG": "Body mass",
+    "timeoutMs": "Echo timeout",
+    "regulatorJumper": "5 V regulator jumper fitted",
+    "enaJumper": "ENA jumper fitted",
+    "enbJumper": "ENB jumper fitted",
+    "r10LuxOhms": "Resistance at 10 lux",
+    "gamma": "Gamma",
+    "darkOhms": "Dark resistance",
+    "color": "Colour",
+    "spacingMm": "Sensor spacing",
+    "threshold": "Threshold (0–1)",
+    "ohms": "Resistance",
+    "powerRatingMw": "Power rating",
+    "initialAngleDeg": "Initial angle",
+    "minPulseUs": "Minimum pulse",
+    "maxPulseUs": "Maximum pulse",
+    "noise": "Noise",
+    "ratedVoltageV": "Rated voltage",
+    "noLoadRpm": "No-load speed",
+    "noLoadCurrentMa": "No-load current",
+    "stallCurrentMa": "Stall current",
+    "gearRatio": "Gear ratio",
+    "gearEfficiency": "Gear efficiency",
+    "timeConstantMs": "Time constant"
+  }
+}

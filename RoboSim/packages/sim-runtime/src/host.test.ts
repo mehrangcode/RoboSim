@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { SimClient } from './client.js';
 import { ENGINE_VERSION } from './engine-version.js';
+import { FIRMWARE_HEX } from './firmware/generated.js';
+import { FIRMWARE_SKETCHES } from './firmware/sketches.js';
 import { HeadlessRun } from './input-log.js';
 import type { Frame, InputLog, WorkerToMain } from './protocol.js';
 import { SimHost } from './host.js';
@@ -102,10 +104,11 @@ describe('SimHost', () => {
   it('servo: the pot turns the servo horn', () => {
     const h = harness();
     h.host.handle({ type: 'load', scenario: 'servo' });
-    h.host.handle({ type: 'input', componentId: 'pot', name: 'position', value: 1 }); // wiper at 0 V → 500 µs → 0°
+    // Wiper at 0 V → 500 µs requested; the Servo library clamps to its 544 µs minimum → ≈ 4° on the SG90.
+    h.host.handle({ type: 'input', componentId: 'pot', name: 'position', value: 1 });
     h.host.handle({ type: 'control', action: 'run' });
     h.advance(600);
-    expect((h.last()?.parts['servo'] as { angleDeg: number }).angleDeg).toBeLessThan(2);
+    expect((h.last()?.parts['servo'] as { angleDeg: number }).angleDeg).toBeCloseTo(4, 0);
   });
 
   it('line follower: ships the arena + robot scene and drives along the line', () => {
@@ -257,7 +260,7 @@ describe('SimHost worker protocol (slice 7)', () => {
     h.host.handle({ type: 'load', scenario: 'serial' });
     expect(h.scene()?.serial).toBe(true);
     h.host.handle({ type: 'control', action: 'run' });
-    h.advance(1200);
+    h.advance(2200); // first tick once millis() reaches 1000
     expect(h.client.serial).toMatch(/^RoboSim ready\r\ntick 0\r\ntick 1\r\n/);
     h.host.handle({ type: 'serial', text: 'hi!' });
     h.advance(100);
@@ -354,5 +357,31 @@ describe('SimHost worker protocol (slice 7)', () => {
     const t = h.last()?.simTime;
     h.advance(100);
     expect(h.last()?.simTime).toBe(t);
+  });
+});
+
+describe('SimHost user code on a demo circuit (slice 10)', () => {
+  const files = [{ name: 'sketch.ino', content: `${FIRMWARE_SKETCHES.dimmer.trim()}\n` }];
+  const firmware = { format: 'ihex', text: FIRMWARE_HEX.dimmer, sha256: 'test:dimmer' } as const;
+
+  it('shows the project code in the scene', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'blink' });
+    expect(h.scene()?.code).toEqual([{ name: 'sketch.ino', content: `${FIRMWARE_SKETCHES.blink.trim()}\n` }]);
+  });
+
+  it('runs the given files + firmware on the template circuit as a project of its own', () => {
+    const h = harness();
+    let log: InputLog | null = null;
+    h.client.onInputLog = (l) => (log = l);
+    // The dimmer sketch on the dimmer circuit, loaded as user code: the knob drives the LED's PWM.
+    h.host.handle({ type: 'load', template: 'dimmer', files, firmware });
+    expect(h.scene()).toMatchObject({ scenario: null, title: 'Knob dims an LED', code: files });
+    h.host.handle({ type: 'input', componentId: 'pot', name: 'position', value: 0.25 });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(100);
+    expect(h.last()?.pins['D6']?.duty).toBeCloseTo(0.75, 1);
+    h.host.handle({ type: 'exportLog' });
+    expect(log).toMatchObject({ scenario: null, firmware, project: { code: { files } } });
   });
 });

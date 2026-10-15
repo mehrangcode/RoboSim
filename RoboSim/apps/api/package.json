@@ -22,6 +22,7 @@
     "@opentelemetry/auto-instrumentations-node": "^0.81.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
     "@opentelemetry/sdk-node": "^0.223.0",
+    "@robosim/compiler": "workspace:*",
     "@robosim/i18n": "workspace:*",
     "@robosim/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",

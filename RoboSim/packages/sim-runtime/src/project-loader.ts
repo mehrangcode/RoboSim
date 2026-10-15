@@ -128,15 +128,73 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
   const wires: (readonly [string, string])[] = [];
   const ground: string[] = [];
   const mcuPins = new Set<string>();
-  for (const w of doc.wires) {
-    const a = terminal(w.from, `wire ${w.id}`);
-    const b = terminal(w.to, `wire ${w.id}`);
-    if (a === null || b === null) continue;
-    for (const t of [a, b]) if (t.startsWith('mcu.')) mcuPins.add(t.slice(4));
-    if (a === 'ground' && b === 'ground') continue;
+  const connect = (a: string, b: string): void => {
+    if (a === 'ground' && b === 'ground') return;
     if (a === 'ground') ground.push(b);
     else if (b === 'ground') ground.push(a);
     else wires.push([a, b]);
+  };
+  const engineTerminal = (ref: PinRef, where: string): string | null => {
+    const t = terminal(ref, where);
+    if (t?.startsWith('mcu.')) mcuPins.add(t.slice(4));
+    return t;
+  };
+
+  // Breadboards and other purely topological parts (internal conductors only) never reach the MNA:
+  // their holes are merged here, so unused strips cost nothing and only real terminals get nets.
+  const topological = new Set(
+    doc.components.filter((c) => defs.get(c.id)?.internalConnections).map((c) => c.id),
+  );
+  const strips = new UnionFind();
+  const hole = (ref: PinRef, where: string): string | null => {
+    const def = defs.get(ref.part) as ComponentDefinition;
+    if (def.manifest.pins.some((p) => p.name === ref.pin)) return `hole:${ref.part}.${ref.pin}`;
+    issues.push(`${where}: ${ref.part} (${def.manifest.id}) has no pin '${ref.pin}'`);
+    return null;
+  };
+  const node = (ref: PinRef, where: string): string | null => {
+    if (topological.has(ref.part)) return hole(ref, where);
+    const t = engineTerminal(ref, where);
+    return t === null ? null : `term:${t}`;
+  };
+
+  // Wires, then legs seated in another part's holes (FR-CIR-03).
+  const links: (readonly [PinRef, PinRef, string])[] = [
+    ...doc.wires.map((w) => [w.from, w.to, `wire ${w.id}`] as const),
+    ...doc.components.flatMap((c) =>
+      Object.entries(c.seats ?? {}).map(
+        ([pin, at]) => [{ part: c.id, pin }, at, `component ${c.id} pin ${pin}`] as const,
+      ),
+    ),
+  ];
+  for (const [from, to, where] of links) {
+    if (topological.has(from.part) || topological.has(to.part)) {
+      const a = node(from, where);
+      const b = node(to, where);
+      if (a !== null && b !== null) strips.union(a, b);
+      continue;
+    }
+    const a = engineTerminal(from, where);
+    const b = engineTerminal(to, where);
+    if (a !== null && b !== null) connect(a, b);
+  }
+  if (topological.size > 0) {
+    for (const id of topological)
+      for (const [a, b] of defs.get(id)?.internalConnections?.() ?? [])
+        strips.union(`hole:${id}.${a}`, `hole:${id}.${b}`);
+    // Chain the real terminals of every merged group, in the order they were first seen.
+    const groups = new Map<string, string[]>();
+    for (const key of strips.keys()) {
+      if (!key.startsWith('term:')) continue;
+      const root = strips.find(key);
+      groups.set(root, [...(groups.get(root) ?? []), key.slice(5)]);
+    }
+    for (const members of groups.values()) {
+      const [first, ...rest] = members.includes('ground')
+        ? ['ground', ...members.filter((m) => m !== 'ground')]
+        : members;
+      for (const t of rest) connect(first as string, t);
+    }
   }
 
   // Arena, robot, success conditions.
@@ -160,7 +218,9 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
   const robot = arena ? robotSpec(doc, defs, arena, issues) : null;
   if (issues.length > 0) throw new ProjectLoadError(issues);
 
-  const electrical = doc.components.filter((c) => (defs.get(c.id)?.manifest.pins.length ?? 0) > 0);
+  const electrical = doc.components.filter(
+    (c) => !topological.has(c.id) && (defs.get(c.id)?.manifest.pins.length ?? 0) > 0,
+  );
   const parts: CircuitSpec['parts'] = Object.fromEntries([
     ...electrical.map((c) => [
       c.id,
@@ -210,6 +270,8 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
     }),
     pins,
     serial: doc.code.files.some((f) => /\bSerial\s*\.\s*begin\s*\(/.test(f.content)),
+    code: doc.code.files,
+    project: doc,
     ...(arena && world ? { arena: arenaScene(arena, world) } : {}),
     ...(robot
       ? {
@@ -308,4 +370,27 @@ function arenaScene(arena: ArenaSpec, world: PlanckWorld): ArenaScene {
       radiusM: z.radiusM,
     })),
   };
+}
+
+/** Insertion-ordered union-find over string keys (tiny: one entry per used hole and terminal). */
+class UnionFind {
+  readonly #parent = new Map<string, string>();
+
+  keys(): IterableIterator<string> {
+    return this.#parent.keys();
+  }
+
+  find(key: string): string {
+    let root = this.#parent.get(key) ?? key;
+    if (!this.#parent.has(key)) this.#parent.set(key, key);
+    while (root !== this.#parent.get(root)) root = this.#parent.get(root) ?? root;
+    this.#parent.set(key, root);
+    return root;
+  }
+
+  union(a: string, b: string): void {
+    const ra = this.find(a);
+    const rb = this.find(b);
+    if (ra !== rb) this.#parent.set(rb, ra);
+  }
 }

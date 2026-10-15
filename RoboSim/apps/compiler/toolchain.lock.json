@@ -1,0 +1,27 @@
+{
+  "$comment": "Pinned build toolchain (Technical Design §6, ADR-022). Changing anything here changes every cache key. Fetched by `pnpm compiler:setup`; the compiler driver is ours (no arduino-cli: downloads.arduino.cc is unreachable from our network).",
+  "gcc": {
+    "avr-gcc": "7.3.0",
+    "apt": ["gcc-avr", "avr-libc", "binutils-avr"]
+  },
+  "core": {
+    "name": "arduino:avr",
+    "version": "1.8.6",
+    "git": "https://github.com/arduino/ArduinoCore-avr",
+    "commit": "42fa4a1ea1b1b11d1cc0a60298e529d37f9d14bd"
+  },
+  "libraries": [
+    {
+      "name": "Servo",
+      "version": "1.3.0",
+      "git": "https://github.com/arduino-libraries/Servo",
+      "commit": "2862ad9864d0dda5669b264857deafbba624940d"
+    },
+    {
+      "name": "NewPing",
+      "version": "1.9.7",
+      "tarball": "https://dl.registry.platformio.org/download/teckel12/library/NewPing/1.9.7/NewPing-1.9.7.tar.gz",
+      "sha256": "e7878b5b84de0ecb09f394141e025361e8d20758e8e8b210093169fa91801120"
+    }
+  ]
+}

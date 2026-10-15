@@ -2,7 +2,8 @@
 
 ## Status
 
-Slices 1–4 + Lab committed by user. Slices 5 (safety + damage) and 6 (success conditions + scoring + Lab challenge panel) done 2026-10-14, uncommitted. Slices 5–6 committed (`de81b4d`). Slices 7 (worker protocol), 8 (project document + loader) and 9 (grader + golden traces) done 2026-10-14, uncommitted. Next: ask user (build service proposed).
+Slices 1–4 + Lab committed by user. Slices 5 (safety + damage) and 6 (success conditions + scoring + Lab challenge panel) done 2026-10-14, uncommitted. Slices 5–6 committed (`de81b4d`). Slices 7 (worker protocol), 8 (project document + loader) and 9 (grader + golden traces) done 2026-10-14, uncommitted. Slice 10 (build service, thin vertical) done 2026-10-15, uncommitted. Next: ask user.
+Slice 11 (circuit canvas, thin vertical) done 2026-10-15, uncommitted. Next: ask user.
 
 Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scoring included now; Lab pauses on decision and shows a result card; collision = any new contact with walls/obstacles.
 
@@ -49,10 +50,25 @@ Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scor
 - Lab Verify: pause → exportLog → grade.worker.ts (lazy, own engine bundle) → compare final vs paused frame (pins, pose, challenge, serial tail; key-order-insensitive). Browser check: `%TEMP%\robosim-cdp\shot9.mjs` — identical at 0.31 s, 14.31 s, serial 4.01 s; ~5× RT in Chrome.
 - Web initial JS 242.0 KB gz (+0.5 KB strings).
 
+- Slice 10 (ADR-022): `downloads.arduino.cc` is HTTP 403 from our network → no arduino-cli. Toolchain = apt `gcc-avr` 7.3.0/`avr-libc`/`binutils-avr` + ArduinoCore-avr 1.8.6 (GitHub, commit-pinned) + Servo 1.3.0 (GitHub) + NewPing 1.9.7 (PlatformIO tarball, sha256) in `apps/compiler/toolchain.lock.json`; `pnpm compiler:setup` → `.local/toolchain`. User wants no Docker; full library support (core built-ins + Servo + NewPing, allow-list extensible).
+- Compiler driver (apps/compiler): own .ino preprocessor (prototype scanner instead of ctags, `#line`), platform.txt flags + LTO, prebuilt core.a/lib*.a per toolchain id in `.local/compiler-cache/prebuilt`, HEX normalised to LF (objcopy writes CRLF). Toolchain id = lock + `avr-gcc -v` + flags + DRIVER_VERSION.
+- Sandbox `local`: `unshare --user --map-root-user --net --mount --pid --fork --mount-proc` per gcc call; binds work→/srv, toolchain→/opt (ro), prebuilt→/media (ro); tmpfs over /home /root /mnt /tmp /var /run; prlimit as/fsize/cpu/nofile. CI needs `sysctl kernel.apparmor_restrict_unprivileged_userns=0` (Ubuntu 24.04). API refuses `local` in staging/production.
+- apps/compiler must not depend on sim-runtime (bootstrap loop when generated.ts is broken): gen script + drift test import sketches.ts/generated.ts by relative path.
+- Compiled demos changed behaviour vs the assembly: Servo lib clamps to 544 µs (≈4° at pot 0); serial first tick at 1000 ms; line-follower sketch had D10/IN4 floating (fixed: pins 5..10 OUTPUT). Lap still 14.47 s / 100. Goldens re-recorded without engineVersion bump (engine unchanged; only frozen job firmware).
+- Lab sketch tab: protocol `load { template, files, firmware }` (worker swaps code into the demo's document → scenario null) and `SceneInfo.code`; web stays engine-free. Editor disables font ligatures (`<=` showed as `≤`).
+- Browser check slice 10: `%TEMP%\robosim-cdp\shot10.mjs` (fa) — errors marked on lines 2/6 with FA explanations, blink@100 ms toggles D13, Verify ✓ identical, line follower compiled live laps at 14.47 s.
+- Web initial JS 248.2 KB gz (+6.2 KB: build explanation strings in both locales).
+
 ## Known issues
 
 - `~/src/robosim` deleted 2026-10-14 at user request.
 
 - ~~Flaky outbox test~~ fixed 2026-10-14: `uuidv7()` was random below 1 ms, so same-ms outbox events sorted randomly; now monotonic (RFC 9562 §6.2).
 - Dev runs from WSL only (`tools/require-wsl.ts` blocks Windows); local `.env` has `API_PORT=3001` (Windows `node app.js` holds 3000).
+- Build service open items: Redis queue/DRR/SSE/MinIO/quota/entitlements; idempotency + rate limit are in-process (per client IP until sessions); gVisor runtime; fork-bomb/disk-fill/recursive-macro sandbox tests.
 - `.github/workflows` sits under `RoboSim/`, so GitHub will not run it until the repo root (or workflow paths) is adjusted.
+
+- Slice 11: canvas in `packages/circuit-canvas` (already named in depcruise browser rule + TD §3 tree), source-exported like `@robosim/ui`. Coordinates mm, 0.1" (2.54 mm) grid; footprints/art live in circuit-canvas (not component packages) for now. Breadboards are topological in the loader (strips via union-find), so unused holes never become MNA nets.
+- Slice 11 details: schema v2 `seats` (identity migration). Engine-free entries: `@robosim/component-*/manifest`, `@robosim/catalog/manifests` (parity test vs CATALOG), `@robosim/board-avr-uno/pins`; `pnpm new:component` scaffolds `manifest.ts`. Board fixed at canvas origin (not in the document). Lab Design tab: `design-panel.tsx` (autosave key `robosim.lab.design.v1`), starter in `design-starter.ts`; `SceneInfo.project` lets the tab open demos. Demo docs re-laid out on the grid (x/y only; goldens frozen, unchanged).
+- Browser check slice 11: `%TEMP%\robosim-cdp\shot11.mjs` (fa) — seats, hover net highlight, compile & run blink + LED glow, mouse drag unseats + undo, mouse wire with bend, ي/ك search, line-follower demo opens. Dev: `pnpm exec turbo run dev --filter=@robosim/api --filter=@robosim/web`.
+- Web initial JS 252.5 KB gz (+4.3 KB: editor strings in both locales).

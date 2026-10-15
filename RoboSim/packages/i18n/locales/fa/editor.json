@@ -1,0 +1,104 @@
+{
+  "library": {
+    "title": "قطعه‌ها",
+    "search": "جست‌وجوی قطعه (فارسی یا انگلیسی)",
+    "add": "افزودن {name}",
+    "empty": "قطعه‌ای پیدا نشد.",
+    "category": {
+      "label": "دسته",
+      "all": "همه",
+      "power": "تغذیه",
+      "passive": "غیرفعال",
+      "actuator": "عملگرها",
+      "sensor": "حسگرها",
+      "driver": "درایورها",
+      "display": "نمایشگرها",
+      "comms": "ارتباطات",
+      "mechanical": "مکانیکی"
+    }
+  },
+  "canvas": {
+    "label": "بوم مدار",
+    "help": "قطعه‌ها را بکشید · برای شروع سیم روی یک پین کلیک کنید · با چرخ ماوس بزرگ‌نمایی کنید و با کشیدن زمینه جابه‌جا شوید · R چرخش، F قرینه، Delete حذف، Ctrl+Z واگرد",
+    "drawing": "برای خم کردن سیم کلیک کنید و با کلیک روی پین یا سوراخ آن را تمام کنید · Esc لغو",
+    "zoomIn": "بزرگ‌نمایی",
+    "zoomOut": "کوچک‌نمایی",
+    "zoomFit": "نمایش کامل مدار"
+  },
+  "toolbar": "ویرایش",
+  "actions": {
+    "undo": "واگرد",
+    "redo": "ازنو",
+    "rotate": "چرخش",
+    "flip": "قرینه",
+    "duplicate": "تکثیر",
+    "delete": "حذف"
+  },
+  "parts": {
+    "title": "{count, plural, =0 {هنوز قطعه‌ای نیست} other {# قطعه}}"
+  },
+  "props": {
+    "none": "برای ویرایش، یک قطعه یا سیم را روی بوم انتخاب کنید.",
+    "multiple": "{count, plural, other {# قطعه انتخاب شده}}",
+    "seated": "روی {part} نصب شده",
+    "notNumber": "یک عدد وارد کنید.",
+    "outOfRange": "باید بین {min} و {max} {unit} باشد.",
+    "e12": "مقدار استاندارد (E12)"
+  },
+  "wire": {
+    "title": "سیم {id}",
+    "color": "رنگ"
+  },
+  "color": {
+    "red": "قرمز",
+    "black": "مشکی",
+    "yellow": "زرد",
+    "green": "سبز",
+    "blue": "آبی",
+    "orange": "نارنجی",
+    "white": "سفید",
+    "purple": "بنفش"
+  },
+  "option": {
+    "red": "قرمز",
+    "yellow": "زرد",
+    "green": "سبز",
+    "blue": "آبی",
+    "white": "سفید"
+  },
+  "prop": {
+    "capacityMah": "ظرفیت",
+    "internalOhms": "مقاومت داخلی",
+    "initialCharge": "شارژ اولیه (۰ تا ۱)",
+    "trackWidthMm": "فاصلهٔ چرخ‌ها",
+    "wheelDiameterMm": "قطر چرخ",
+    "lengthMm": "طول",
+    "widthMm": "عرض",
+    "bodyCenterXMm": "جابه‌جایی مرکز بدنه",
+    "casterXMm": "محل چرخ هرزگرد",
+    "bodyMassG": "جرم بدنه",
+    "timeoutMs": "مهلت اکو",
+    "regulatorJumper": "جامپر رگولاتور ۵ ولت وصل است",
+    "enaJumper": "جامپر ENA وصل است",
+    "enbJumper": "جامپر ENB وصل است",
+    "r10LuxOhms": "مقاومت در ۱۰ لوکس",
+    "gamma": "گاما",
+    "darkOhms": "مقاومت در تاریکی",
+    "color": "رنگ",
+    "spacingMm": "فاصلهٔ حسگرها",
+    "threshold": "آستانه (۰ تا ۱)",
+    "ohms": "مقاومت",
+    "powerRatingMw": "توان نامی",
+    "initialAngleDeg": "زاویهٔ اولیه",
+    "minPulseUs": "کمینهٔ پالس",
+    "maxPulseUs": "بیشینهٔ پالس",
+    "noise": "نویز",
+    "ratedVoltageV": "ولتاژ نامی",
+    "noLoadRpm": "سرعت بی‌بار",
+    "noLoadCurrentMa": "جریان بی‌بار",
+    "stallCurrentMa": "جریان قفل",
+    "gearRatio": "نسبت گیربکس",
+    "gearEfficiency": "بازده گیربکس",
+    "timeConstantMs": "ثابت زمانی"
+  }
+}

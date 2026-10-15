@@ -9,12 +9,15 @@ import {
   type SceneInfo,
   type WorkerToMain,
 } from '@robosim/sim-runtime/client';
-import { act, render, screen } from '@testing-library/react';
+import { blankProject } from '@robosim/circuit-canvas';
+import type { BuildResult, ProjectDocument } from '@robosim/shared';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import { describe, expect, it, vi } from 'vitest';
 import { initI18n } from '../lib/i18n.js';
 import { LabPage } from './lab-page.js';
+import type { CompileSketch } from './use-build.js';
 import type { WorkerLike } from './use-simulation.js';
 import type { GradeWorkerLike, VerifiedRun, VerifyReply } from './use-verified-run.js';
 
@@ -70,6 +73,8 @@ const benchScene: SceneInfo = {
   staticFindings: [],
   pins: ['D2', 'D13'],
   serial: false,
+  code: [],
+  project: blankProject('Button + LED', ''),
   parts: [
     { id: 'led', type: 'actuator.led', inputs: [] },
     { id: 'btn', type: 'sensor.push-button', inputs: [{ name: 'pressed', type: 'boolean', default: false }] },
@@ -93,7 +98,7 @@ const frame = (over: Partial<Frame> = {}): Frame => ({
   ...over,
 });
 
-async function setup() {
+async function setup(compileSketch: CompileSketch = vi.fn()) {
   const i18n = await initI18n('en');
   const worker = new FakeWorker();
   const graders: FakeGradeWorker[] = [];
@@ -104,7 +109,11 @@ async function setup() {
   };
   render(
     <I18nextProvider i18n={i18n}>
-      <LabPage createWorker={() => worker} createGradeWorker={createGradeWorker} />
+      <LabPage
+        createWorker={() => worker}
+        createGradeWorker={createGradeWorker}
+        compileSketch={compileSketch}
+      />
     </I18nextProvider>,
   );
   return { worker, graders, user: userEvent.setup() };
@@ -384,5 +393,185 @@ describe('Simulator Lab', () => {
     const { worker } = await setup();
     worker.reply({ type: 'error', message: 'boom' });
     expect(screen.getByRole('alert')).toHaveTextContent('The simulation stopped: boom');
+  });
+
+  describe('sketch tab (build service)', () => {
+    const original = [
+      { name: 'sketch.ino', content: 'void setup() { pinMode(13, OUTPUT); }\nvoid loop() {}\n' },
+    ];
+    const edited = 'void setup() { pinMode(12, OUTPUT); }\nvoid loop() {}\n';
+    const built: BuildResult = {
+      buildId: 'b1',
+      status: 'succeeded',
+      cacheHit: false,
+      artifact: {
+        id: 'a'.repeat(64),
+        format: 'ihex',
+        sha256: 'a'.repeat(64),
+        sizeBytes: 11,
+        flashPct: 3,
+        ramPct: 0.4,
+        url: '/api/v1/artifacts/aaa',
+      },
+      diagnostics: [],
+      durationMs: 420,
+    };
+
+    async function openSketch(compile: CompileSketch) {
+      const t = await setup(compile);
+      await t.user.click(screen.getByRole('radio', { name: 'Your code' }));
+      expect(t.worker.sent).toContainEqual({ type: 'load', scenario: 'blink' });
+      t.worker.load({ ...benchScene, scenario: 'blink', code: original });
+      t.worker.frame(frame());
+      return t;
+    }
+
+    it('edits the demo code, compiles it and runs the firmware on the same circuit', async () => {
+      const compile = vi.fn<CompileSketch>().mockResolvedValue({ result: built, hex: ':00000001FF\n' });
+      const { worker, user } = await openSketch(compile);
+      const editor = screen.getByLabelText('Arduino code');
+      expect(editor).toHaveValue(original[0]?.content);
+      await user.clear(editor);
+      await user.click(editor);
+      await user.paste(edited);
+      await user.click(screen.getByRole('button', { name: 'Compile & run' }));
+      const files = [{ name: 'sketch.ino', content: edited }];
+      expect(compile).toHaveBeenCalledWith({ board: 'avr-uno', files, libraries: [] }, 'en');
+      await vi.waitFor(() =>
+        expect(worker.sent.slice(-2)).toEqual([
+          {
+            type: 'load',
+            template: 'blink',
+            files,
+            firmware: { format: 'ihex', text: ':00000001FF\n', sha256: 'a'.repeat(64) },
+          },
+          { type: 'control', action: 'run' },
+        ]),
+      );
+      expect(screen.getByText(/Built: 3\.0% of flash, 0\.4% of RAM/)).toBeInTheDocument();
+      worker.load({ ...benchScene, scenario: null, code: files });
+      worker.frame(frame());
+      expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+      // Back to the example: the edit is undone.
+      await user.click(screen.getByRole('button', { name: 'Restore example' }));
+      expect(screen.getByLabelText('Arduino code')).toHaveValue(original[0]?.content);
+    });
+
+    it('shows compiler errors on their line with a plain-language explanation, and does not run', async () => {
+      const failed: BuildResult = {
+        ...built,
+        status: 'failed',
+        artifact: undefined,
+        diagnostics: [
+          {
+            file: 'sketch.ino',
+            line: 2,
+            column: 1,
+            severity: 'error',
+            message: "expected ';' before '}' token",
+            explanationKey: 'missing_semicolon',
+          },
+        ],
+      };
+      const { worker, user } = await openSketch(vi.fn<CompileSketch>().mockResolvedValue({ result: failed }));
+      const sent = worker.sent.length;
+      await user.click(screen.getByRole('button', { name: 'Compile & run' }));
+      const list = await screen.findByRole('list', { name: 'Compiler messages' });
+      expect(within(list).getByText("expected ';' before '}' token")).toBeInTheDocument();
+      expect(within(list).getByText('sketch.ino, line 2, column 1')).toBeInTheDocument();
+      expect(
+        within(list).getByText(/A ; is missing at the end of the previous statement/),
+      ).toBeInTheDocument();
+      expect(screen.getByText('1 error — fix it and compile again.')).toBeInTheDocument();
+      expect(worker.sent.length).toBe(sent);
+      // Clicking the message selects the line in the editor.
+      await user.click(within(list).getByRole('button'));
+      const editor = screen.getByLabelText<HTMLTextAreaElement>('Arduino code');
+      expect(editor.value.slice(editor.selectionStart, editor.selectionEnd)).toBe('void loop() {}');
+    });
+
+    it('reports an unreachable build service', async () => {
+      const { user } = await openSketch(vi.fn<CompileSketch>().mockRejectedValue(new Error('HTTP 502')));
+      await user.click(screen.getByRole('button', { name: 'Compile & run' }));
+      expect(await screen.findByText('The build service could not be reached: HTTP 502')).toBeInTheDocument();
+    });
+  });
+
+  describe('design tab (circuit canvas)', () => {
+    const built: BuildResult = {
+      buildId: 'b1',
+      status: 'succeeded',
+      cacheHit: true,
+      artifact: {
+        id: 'b'.repeat(64),
+        format: 'ihex',
+        sha256: 'b'.repeat(64),
+        sizeBytes: 11,
+        flashPct: 3,
+        ramPct: 0.4,
+        url: '/api/v1/artifacts/bbb',
+      },
+      diagnostics: [],
+      durationMs: 5,
+    };
+
+    async function openDesign(compile: CompileSketch = vi.fn()) {
+      const t = await setup(compile);
+      await t.user.click(screen.getByRole('radio', { name: 'Design a circuit' }));
+      return t;
+    }
+
+    it('starts from the breadboard blink, compiles the designed project and runs exactly it', async () => {
+      const compile = vi.fn<CompileSketch>().mockResolvedValue({ result: built, hex: ':00000001FF\n' });
+      const { worker, user } = await openDesign(compile);
+      expect(worker.sent.at(-1)).toEqual({ type: 'control', action: 'pause' });
+      expect(screen.getByRole('application', { name: 'Circuit canvas' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: '3 parts' })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Compile & run' }));
+      const load = await vi.waitFor(() => {
+        const m = worker.sent.find((x) => x.type === 'load' && 'project' in x);
+        expect(m).toBeDefined();
+        return m as Extract<typeof m, { project: ProjectDocument }>;
+      });
+      expect(load.project.components.map((c) => c.id)).toEqual(['bb1', 'r1', 'led1']);
+      expect(load.project.components[1]?.seats).toEqual({
+        a: { part: 'bb1', pin: '10a' },
+        b: { part: 'bb1', pin: '14a' },
+      });
+      expect(load.firmware).toEqual({ format: 'ihex', text: ':00000001FF\n', sha256: 'b'.repeat(64) });
+      expect(compile.mock.calls[0]?.[0].files[0]?.content).toMatch(/digitalWrite\(13, HIGH\)/);
+      worker.load({ ...benchScene, scenario: null, project: load.project });
+      worker.frame(frame());
+      expect(screen.getByRole('button', { name: 'Pause' })).toBeEnabled();
+      // Editing after the run says the simulation shows the previous version.
+      await user.click(screen.getByRole('button', { name: 'Add Push button' }));
+      expect(screen.getByText(/changed since this run/)).toBeInTheDocument();
+    });
+
+    it('opens a demo from the worker scene and autosaves the design in this browser', async () => {
+      const { worker, user } = await openDesign();
+      await user.selectOptions(screen.getByLabelText('Demo'), 'dimmer');
+      await user.click(screen.getByRole('button', { name: 'Open demo' }));
+      expect(worker.sent.slice(-2)).toEqual([
+        { type: 'load', scenario: 'dimmer' },
+        { type: 'control', action: 'run' },
+      ]);
+      const demo = { ...blankProject('Knob dims an LED', 'void setup() {}\nvoid loop() {}\n') };
+      worker.load({ ...benchScene, scenario: 'dimmer', title: demo.meta.title, project: demo });
+      expect(screen.getByRole('heading', { name: 'No parts yet' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Arduino code')).toHaveValue('void setup() {}\nvoid loop() {}\n');
+      const saved = JSON.parse(localStorage.getItem('robosim.lab.design.v1') ?? '{}') as ProjectDocument;
+      expect(saved.meta.title).toBe('Knob dims an LED');
+    });
+
+    it('rejects an invalid import with the reason', async () => {
+      const { user } = await openDesign();
+      const input = screen.getByLabelText<HTMLInputElement>('Import…', { selector: 'input' });
+      await user.upload(
+        input,
+        new File(['{"schemaVersion": 2, "wires": 3}'], 'bad.json', { type: 'application/json' }),
+      );
+      expect(await screen.findByText(/Could not import this file/)).toBeInTheDocument();
+    });
   });
 });

@@ -27,6 +27,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: AVR toolchain + pinned Arduino core/libraries (build service, ADR-022)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq gcc-avr avr-libc binutils-avr
+          # Ubuntu 24.04 blocks unprivileged user namespaces by default; the build sandbox needs them.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          pnpm compiler:setup
       - name: Format
         run: pnpm format:check
       - name: Build shared packages

@@ -1,10 +1,8 @@
-import type { ComponentDefinition, ComponentManifest } from '@robosim/sim-core';
-import json4aa from './manifest-4aa.json' with { type: 'json' };
-import json9v from './manifest-9v.json' with { type: 'json' };
+import type { ComponentDefinition } from '@robosim/sim-core';
+import { manifest4aa, manifest9v } from './manifest.js';
 import { Battery, type BatteryProps } from './model.js';
 
-export const manifest9v = json9v as unknown as ComponentManifest;
-export const manifest4aa = json4aa as unknown as ComponentManifest;
+export { manifest4aa, manifest9v } from './manifest.js';
 
 export const battery9v: ComponentDefinition<BatteryProps> = {
   manifest: manifest9v,

@@ -18,6 +18,7 @@ export const ERROR_STATUS = {
   payload_too_large: 413,
   safety_errors_present: 422,
   build_failed: 422,
+  compiler_unavailable: 503,
   rate_limited: 429,
   build_quota_exceeded: 429,
   ai_credits_exhausted: 429,

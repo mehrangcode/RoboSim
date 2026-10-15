@@ -1,3 +1,4 @@
+export * from './build-schema.js';
 export * from './entitlements.js';
 export * from './errors.js';
 export * from './feature-flags.js';

@@ -134,7 +134,7 @@ robosim/
 │   │                           # billing, entitlements, commerce, ai, notifications,
 │   │                           # analytics, admin, audit, content, search, lti
 │   ├── realtime/               # Hocuspocus collaboration server
-│   ├── compiler/               # Build dispatcher + worker + sandbox image (Dockerfile)
+│   ├── compiler/               # Arduino build driver (avr-gcc), sandbox runner, CLI; toolchain.lock.json pins core + libraries
 │   ├── grader/                 # Headless verified-run service; golden/ holds the golden-trace jobs + results
 │   └── exporter/               # PDF/XLSX/CSV export service
 ├── packages/
@@ -193,7 +193,7 @@ robosim/
 | Server state | TanStack Query | Generated client from OpenAPI (§API-Spec) |
 | Editor state | Zustand stores per domain (`circuitStore`, `codeStore`, `simStore`, `uiStore`) | Collaboration mode binds stores to Yjs documents |
 | Forms | react-hook-form + Zod (`packages/shared`) | Same schemas as API |
-| Circuit canvas | SVG rendered by React with memoized component nodes; pan/zoom by a single transform on the root group | [ADR-005](decisions.md#adr-005--svg-circuit-canvas); hit-testing via DOM, accessible component list mirrors canvas |
+| Circuit canvas | SVG rendered by React with memoized component nodes; pan/zoom by a single transform on the root group | [ADR-005](decisions.md#adr-005--svg-circuit-canvas); hit-testing via DOM, accessible component list mirrors canvas. *Current (slice 11):* `packages/circuit-canvas` — footprints and hand-drawn art on the 0.1" grid (document mm), pure document operations with undo/redo (200 steps), seats from geometry, `CircuitNets` (union-find, < 16 ms @ 200 parts / 400 wires), manifest-driven property panel, FA/EN library search. Reads the catalogue through the engine-free `@robosim/catalog/manifests` entry; editor state is a hook until the Zustand stores land |
 | Code editor | Monaco (lazy) | C++ grammar, Arduino completions from `packages/shared/arduino-api.json` |
 | Blocks | Blockly (lazy) | `packages/blockly-arduino` |
 | Simulation host | Dedicated module Web Worker | §5.8 protocol |
@@ -470,6 +470,34 @@ sequenceDiagram
 | Scaling | KEDA scales workers on queue depth; warm pool target = p50 arrival rate × 10 s |
 | Failure | Sandbox crash → retry once on a fresh sandbox; then `build_internal_error` with correlation ID |
 
+*Current implementation (P1 slice 10, thin vertical, [ADR-022](decisions.md#adr-022--build-service-drives-avr-gcc-directly-linux-namespace-sandbox-for-development)):*
+
+- **Compiler.** `apps/compiler` is a library plus CLI (`robosim-compile <main.ino> [files…] [--out firmware.hex] [--json]`). It drives avr-gcc 7.3.0 directly, without arduino-cli, against the pinned Arduino AVR core 1.8.6.
+  - **Libraries:** the core's built-ins (EEPROM, HID, SPI, SoftwareSerial, Wire), plus Servo 1.3.0 and NewPing 1.9.7, all in `toolchain.lock.json` and fetched by `pnpm compiler:setup`.
+  - **Pipeline:**
+    1. Validate (`buildRequestSchema` in `packages/shared`).
+    2. Normalise and compute the cache key: sha256 of sources, main file, FQBN, declared libraries and toolchain id. The toolchain id covers the lock, the gcc build, the flags and the driver version.
+    3. Apply the source guards.
+    4. Preprocess the `.ino` files: merge them, add `#include <Arduino.h>`, insert prototypes before the first function definition, and emit `#line` directives.
+    5. Resolve libraries from `#include`s, transitively. Declared libraries must match the pinned version.
+    6. Compile each translation unit with the `platform.txt` flags (LTO, `-Wall` on user code).
+    7. Link against prebuilt `core.a` and library archives, built once per toolchain id.
+    8. Produce HEX (normalised to LF), a size report (flash/RAM of 32 256 / 2 048 B), and a low-memory warning at ≥ 75 % RAM.
+  - **Caching:** results and artifacts are content-addressed in `.local/compiler-cache`. Timeouts are never cached.
+  - **Performance:** a cold user build takes ≈ 0.1–0.5 s once the archives exist.
+- **Sandbox (`COMPILER_RUNTIME=local`).** Every gcc/ld invocation runs under `unshare` in new user, mount, PID and network namespaces, with `prlimit` limits and a wall-clock kill (Security §5 has the full list). The API refuses this runtime in staging and production.
+- **Diagnostics.** gcc and ld output is parsed into `{file, line, column, severity, message, explanationKey}`.
+  - User files keep their names. Toolchain paths are shortened (`arduino:avr/…`, `avr-libc/…`), so host paths never reach clients.
+  - 59 catalogued beginner errors map to `build:explain.<key>` (FA/EN). A content test proves each key with a real gcc message and checks both locales (FR-COD-03 AC2).
+- **API.** `build-gateway` provides `POST /api/v1/builds` and `GET /api/v1/artifacts/:id`.
+  - `POST /builds` is synchronous and always returns `200 BuildResult`, since a failed build is a result.
+  - It requires an `Idempotency-Key` UUID. A replay returns the original result; the same key with another body returns 409.
+  - It sends `RateLimit-*` headers, at 20 per minute per client; over the limit it returns `429` with `Retry-After`.
+  - The compiler starts lazily. A missing toolchain gives `503 compiler_unavailable`, and the API's other routes keep working.
+  - `GET /artifacts/:id` serves the HEX by sha256, immutable.
+  - Not yet built: Redis queue and fair share, SSE, MinIO, entitlements/quota, and per-user scoping (until sessions land, scoping is per client IP).
+- **Demo firmware.** The Lab's built-in demos are compiled from their sketches (`packages/sim-runtime/src/firmware/sketches.ts` → `generated.ts`, `pnpm firmware:gen`). A compiler test fails if the committed HEX drifts from its sketch.
+
 ## 7. Backend (`apps/api`)
 
 ### 7.1 Module structure
@@ -673,7 +701,8 @@ type ProjectDocument = {
   board: { id: string; version: string };
   components: Array<{ id: string; type: string; typeVersion: string; x: number; y: number;
                       rotation: 0 | 90 | 180 | 270; flipped: boolean; props: Record<string, unknown>;
-                      mount?: { x: number; y: number; z: number; yaw: number } }>;
+                      mount?: { x: number; y: number; z: number; yaw: number };
+                      seats?: Record<string, PinRef> }>;   // v2: legs plugged into breadboard holes
   wires: Array<{ id: string; from: PinRef; to: PinRef; color: string; points: Array<[number, number]> }>;
   code: { language: 'cpp' | 'blocks'; files: Array<{ name: string; content: string }>; blocksXml?: string };
   libraries: Array<{ name: string; version: string }>;
@@ -689,7 +718,9 @@ type ProjectDocument = {
 - `PinRef = { part, pin }`. The board is part `board`: MCU pins (`D0…D13`, `A0…A5`) are wired as is, `GND1…3` are ground, and `5V` is the rail stand-in. `3V3` and `VIN` are rejected until the board power tree is in the netlist.
 - Additions to the sketch above: `arena` is optional (bench projects have none). A component's `inputs` holds its interaction state at power-on (a switch left ON, a knob position), applied before slice 0 and not logged. Units are mm for `x`, `y` and `mount`, and degrees for `rotation`, `mount.yaw` and `startPose.heading`.
 - `loadProject(document, firmware, seed)` checks every component against the catalogue at its exact `typeVersion`. Components without pins (the chassis) stay out of the circuit. The robot is built from the chassis plus every mounted part: the payload is their mass plus the Uno, and the TT motor with `mount.y > 0` drives the left wheel. The loader also validates success conditions against the arena and runs static safety analysis. It reports all problems at once (`ProjectLoadError`).
-- Firmware is not part of the document: `load` takes `{ project, firmware }`, where the firmware is an Intel HEX payload that the build service will produce. The Lab's built-in demos are documents, each with its Arduino sketch and pre-assembled firmware. Loading them through the loader gives bit-identical runs to the former hand-built scenarios.
+- *Schema v2 (slice 11):* `components[].seats` maps a part's own pin to another part's pin (a breadboard hole): the leg is plugged in there. The circuit canvas writes it whenever a seatable part's leg lands exactly on a hole; the v1 → v2 migration is the identity. Seats into `board` or into the part itself are rejected.
+- Breadboards (any part whose definition has `internalConnections`) are topological only: the loader merges their holes with union-find over wires and seats and chains the real terminals of each merged group, so unused strips never become MNA nets. Projects without a breadboard keep exactly their previous wiring order (golden traces unchanged).
+- Firmware is not part of the document: `load` takes `{ project, firmware }`, where the firmware is the Intel HEX the build service produced (§6). The Lab's built-in demos are documents, each with its Arduino sketch and the firmware compiled from it. `load { template, files, firmware }` runs a demo's circuit with the user's own files and firmware (the Lab's sketch tab), and `SceneInfo.code` carries the project's files to the UI.
 
 ## 9. Billing, entitlements, and payments
 

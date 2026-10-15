@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@robosim/circuit-canvas": "workspace:*",
     "@robosim/i18n": "workspace:*",
     "@robosim/renderer-2d": "workspace:*",
     "@robosim/shared": "workspace:*",

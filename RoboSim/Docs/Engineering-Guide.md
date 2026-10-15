@@ -40,6 +40,8 @@ corepack enable
 pnpm install
 sed -e 's/^DATABASE_DRIVER=postgres/DATABASE_DRIVER=pglite/' \
     -e 's#^PGLITE_DATA_DIR=.*#PGLITE_DATA_DIR=../../.local/pglite#' .env.example > .env
+sudo apt install -y gcc-avr avr-libc binutils-avr   # AVR toolchain for the build service (ADR-022)
+pnpm compiler:setup                  # pinned Arduino core + libraries → .local/toolchain
 pnpm build                           # shared packages + apps (first time)
 pnpm db:seed                         # demo users and feature flags
 pnpm dev                             # web (5173), admin (5174), api (3000)
@@ -62,7 +64,7 @@ Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same
 | URL | Service | Available from |
 |---|---|---|
 | http://localhost:5173 | Web app | P0 |
-| http://localhost:5173/lab | Simulator Lab: live engine demos (arena + component bench) | P1 |
+| http://localhost:5173/lab | Simulator Lab: live engine demos (arena, component bench, safety, your code) and the circuit canvas (Design tab) | P1 |
 | http://localhost:5174 | Admin app | P0 |
 | http://localhost:3000/api/v1/health/ready | API readiness | P0 |
 | http://localhost:3000/api/v1/feature-flags | Evaluated feature flags | P0 |
@@ -82,7 +84,9 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `REDIS_URL` | `redis://localhost:6379` | Valkey |
 | `S3_ENDPOINT` / `S3_BUCKET` | `http://localhost:9000` / `robosim-dev` | Object storage |
 | `BAO_ADDR` | `http://localhost:8200` | OpenBao (dev mode) |
-| `COMPILER_RUNTIME` | `docker` (dev) · `gvisor` (staging/prod) | Sandbox runtime; dev uses plain Docker with the same limits except gVisor |
+| `COMPILER_RUNTIME` | `local` (dev) · `gvisor` (staging/prod) | Build sandbox. `local` runs avr-gcc in Linux namespaces on the host ([ADR-022](decisions.md#adr-022--build-service-drives-avr-gcc-directly-linux-namespace-sandbox-for-development)); refused in staging/production |
+| `COMPILER_TOOLCHAIN_DIR` / `COMPILER_CACHE_DIR` | `.local/toolchain` / `.local/compiler-cache` | Pinned core + libraries (`pnpm compiler:setup`); content-addressed builds |
+| `COMPILER_MAX_CONCURRENCY` · `BUILD_RATE_LIMIT_PER_MIN` | `2` · `20` | Parallel builds per API process; builds per client per minute |
 | `PAYMENT_PROVIDER` | `fake` | `fake` simulates success/failure/timeout; `zarinpal_sandbox` in staging |
 | `SMS_PROVIDER` / `EMAIL_PROVIDER` | `console` / `smtp` (Mailpit) | Notifications |
 | `AI_DEFAULT_PROVIDER` | `ollama` | Server-level default provider in dev |
@@ -103,6 +107,9 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm test:e2e` | Playwright E2E (EN + FA projects, Chrome + Firefox) |
 | `pnpm test:sim` | Simulation conformance + golden traces (Node and browser; browser leg planned) |
 | `pnpm golden:update` | Record missing golden traces, or re-record after an `engineVersion` bump (refuses otherwise) |
+| `pnpm compiler:setup` | Fetch the pinned Arduino core and libraries (`apps/compiler/toolchain.lock.json`) into `.local/toolchain`; checks avr-gcc |
+| `pnpm firmware:gen` | Recompile the Lab demo sketches (`packages/sim-runtime/src/firmware/sketches.ts`) into `generated.ts` |
+| `pnpm --filter @robosim/compiler compile <main.ino> [files…]` | Compile a sketch from the command line (diagnostics with explanation keys, `--out firmware.hex`) |
 | `pnpm bench` | Performance benchmarks (§17 of Technical Design) |
 | `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |
 | `pnpm i18n:check` | Missing/unused keys, ICU syntax, FA/EN parity |

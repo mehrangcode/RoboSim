@@ -125,6 +125,20 @@ describe('project document schema', () => {
     ).not.toEqual([]);
   });
 
+  it('accepts legs seated in another part and rejects impossible seats', () => {
+    const seated = (seats: Record<string, { part: string; pin: string }>) => {
+      const doc = valid();
+      const [r1, sw] = doc.components;
+      return { ...doc, components: [{ ...r1, seats }, sw] };
+    };
+    expect(issues(seated({ a: { part: 'sw', pin: 'a' } }))).toEqual([]);
+    expect(issues(seated({ a: { part: 'nope', pin: '1a' } }))).toEqual([
+      "components.0.seats.a.part: pin 'a' cannot be seated in part 'nope'",
+    ]);
+    expect(issues(seated({ a: { part: 'board', pin: 'D13' } }))).toHaveLength(1);
+    expect(issues(seated({ a: { part: 'r1', pin: 'b' } }))).toHaveLength(1);
+  });
+
   it('rejects non-objects and versions it cannot read', () => {
     expect(issues(null)).toEqual(['document must be an object']);
     expect(issues({ ...valid(), schemaVersion: 0 })).toEqual(['schemaVersion must be a positive integer']);
@@ -149,6 +163,11 @@ describe('project document migrations', () => {
       schemaVersion: 3,
       renamed: 'y',
     });
+  });
+
+  it('upgrades a v1 document (no seats) to the current version unchanged', () => {
+    const v1 = { ...valid(), schemaVersion: 1 };
+    expect(parseProjectDocument(v1)).toEqual(valid());
   });
 
   it('fails loudly on a gap in the chain', () => {

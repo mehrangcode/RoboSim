@@ -63,3 +63,30 @@ User decisions: grader = library + CLI (no queue yet); golden traces bit-exact i
 - [x] Tests + docs (TD §11.1, EG, Release Plan) + `pnpm verify` + browser check
 
 Next candidates: 10 build service · 11 circuit canvas · 12 code editor/pin inspector · 13 3D renderer + mounting editor + arenas · Playwright golden leg (Chrome/Firefox).
+
+## Slice 10 — build service, thin vertical (TD §6) — done 2026-10-15 (uncommitted)
+
+User decisions: no Docker; `downloads.arduino.cc` is 403 (geo-blocked) → no arduino-cli. Toolchain = Ubuntu apt `gcc-avr` 7.3.0 / `avr-libc` / `binutils-avr` + ArduinoCore-avr 1.8.6 from GitHub, driven directly by `apps/compiler` (ADR). Scope = thin vertical (compiler + sync `POST /builds` + Lab sketch → Compile → Run; queue/SSE/MinIO/quota later). Core + libs fetched by `pnpm compiler:setup` into `.local/toolchain/` (pinned SHAs). Libraries: Servo, NewPing, core built-ins (SoftwareSerial, Wire, SPI, EEPROM) — full support, allow-list extensible. Built-in demos switch to HEX compiled from their .ino (golden re-record + engineVersion bump).
+
+- [x] `compiler:setup` script: pinned clones + SHA check + toolchain check
+- [x] `apps/compiler`: input validation, .ino preprocessing (prototypes, `#line`), cached core.a/lib objects, link, HEX + size report, diagnostics parser + explanation keys, content-addressed cache
+- [x] API `build-gateway` module: `POST /api/v1/builds` (sync, Idempotency-Key, rate limit, lazy compiler → 503) + `GET /api/v1/artifacts/:id`
+- [x] Demo firmware compiled from .ino (`pnpm firmware:gen`) + golden re-record (no engineVersion bump: engine unchanged, only the frozen jobs' firmware)
+- [x] Lab: "Your code" tab (template circuit → edit → Compile & run → diagnostics + explanations → run on same circuit); en + fa
+- [x] Tests + docs (ADR-022, TD §6 delta, EG, Security §5, Release Plan) + CI toolchain step + `pnpm verify` + browser check
+
+Next candidates: §6 second half (Redis queue, DRR fair share, SSE, MinIO, quota — needs infra) · 11 circuit canvas · 12 code editor/pin inspector · 13 3D renderer + mounting editor + arenas · Playwright golden leg.
+
+## Slice 11 — circuit canvas, thin vertical (FR-CIR-01..06, 10; ADR-005) — done 2026-10-15 (uncommitted)
+
+User decisions: thin vertical; simple hand-made SVG art; breadboard insertion = explicit `seats` (schema v2, identity migration); persistence = localStorage autosave + JSON import/export (server projects API later); UI = new Lab **Design** tab (library | canvas | properties → code → Compile & run).
+
+- [x] Schema v2: `ComponentInstance.seats?: { [pin]: PinRef }`, migration 1→2, cross-checks; tests
+- [x] Loader: seats → connections; topological parts (breadboards, `internalConnections`) resolved by union-find, never MNA nets (unchanged wiring order without them → goldens identical)
+- [x] Engine-free subpaths: `@robosim/component-*/manifest`, `@robosim/catalog/manifests`, `@robosim/board-avr-uno/pins`
+- [x] `packages/circuit-canvas`: footprints + SVG art (0.1" grid), document reducer + undo/redo (≥100), seats from geometry, nets (hover highlight, < 16 ms @ 200 parts), canvas (pan/zoom/fit, drag, rotate/flip/delete, wires with bends + colours, pin tooltip), library (FA/EN search, Persian normalisation, categories), property panel (manifest-driven, E12 for resistors, validation), accessible parts list
+- [x] SceneInfo.project (open a demo in the editor); demo documents laid out for the canvas; starter = Uno + half breadboard + LED blink
+- [x] Lab Design tab: new / open demo / import / export / autosave; sketch editor on the document's code; Compile & run on the designed circuit; en + fa
+- [x] Tests + docs (TD §3/§4 deltas, ADR-005 note, Release Plan) + `pnpm verify` + browser check
+
+Next candidates: 12 Monaco editor + pin inspector · 13 3D renderer + mounting editor + arenas · canvas follow-ups (box select, align, minimap, 60 FPS gate, movable board) · server projects API · §6 queue half · Playwright golden leg.

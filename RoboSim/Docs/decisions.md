@@ -172,3 +172,26 @@
 - **Decision.** Pin planck **1.5.0** and keep a committed pnpm patch (`patches/planck@1.5.0.patch`, registered under `patchedDependencies`). It replaces the 8 trig bindings in `dist/planck.mjs` and `dist/planck.js` with lazy calls to `globalThis.__robosimDmath`, which `sim-core/src/world/planck-world.ts` sets to the fdlibm-derived `dmath` functions. The unused `random()` utility is left alone; the engine never calls it.
 - **Consequences.** Upgrading planck means regenerating the patch (`pnpm patch planck@<v>`, apply the same 8 substitutions, `pnpm patch-commit`). A test fails if planck stops calling the routed functions. The global hook only affects the dedicated simulation worker or grader process.
 
+## ADR-022 — Build service drives avr-gcc directly; Linux-namespace sandbox for development
+
+- **Context.** §6 planned `arduino-cli` inside a gVisor container. From our network, `downloads.arduino.cc` (package index, toolchains, cores, ctags) answers HTTP 403, so `arduino-cli core install` cannot complete, on developer machines or in an image build. GitHub, the PlatformIO registry, and Ubuntu's apt mirrors are reachable. The team also does not want Docker in local development. The engine already needed real compiled firmware for the built-in demos (they were hand-assembled until P1 slice 10).
+- **Decision.** `apps/compiler` is its own Arduino build driver. avr-gcc 7.3.0, avr-libc and binutils come from Ubuntu (`gcc-avr`, `avr-libc`, `binutils-avr`). The Arduino AVR core 1.8.6 and the extra libraries (Servo 1.3.0, NewPing 1.9.7) are pinned in `apps/compiler/toolchain.lock.json`, by git commit or tarball SHA-256, and fetched by `pnpm compiler:setup` into `.local/toolchain`. The driver reproduces what arduino-cli does for the Uno:
+  - It merges the `.ino` files with `#include <Arduino.h>` and generated prototypes, with `#line` directives. The prototype scanner replaces ctags.
+  - It uses the same `platform.txt` flags, including LTO.
+  - It links against prebuilt `core.a` and per-library archives.
+  - It resolves libraries from `#include`s.
+  - It produces HEX with a size report.
+  - The toolchain id (lock, gcc build, driver version) is part of every cache key.
+
+  User builds run under `COMPILER_RUNTIME=local`. Each gcc/ld call runs in fresh unprivileged user, mount, PID and network namespaces (`unshare`):
+  - There is no network (loopback only) and `/proc` is private.
+  - The work dir is the only writable mount. The toolchain and prebuilt archives are read-only.
+  - `/home`, `/mnt`, `/root`, `/tmp`, `/var` and `/run` are empty tmpfs.
+  - `prlimit` caps memory, CPU, file size and open files, and a wall-clock kill enforces the 30 s budget.
+  - Source guards (Security §5) reject absolute or `..` includes, macro includes, `#include_next`/`#import`, `.incbin`/`.include` and null bytes before gcc runs.
+- **Consequences.**
+  - The API refuses `COMPILER_RUNTIME=local` in staging and production. Hosted environments still need the gVisor runtime (§6), which will run this same driver in its image, without arduino-cli.
+  - `pnpm compiler:setup` plus the apt packages are a one-time developer step and a CI step. Ubuntu 24.04 needs `kernel.apparmor_restrict_unprivileged_userns=0` for the sandbox.
+  - Edge cases that arduino-cli's ctags handles differently (functions declared inside macros, templates) need a manual forward declaration.
+  - Adding a library means adding a pinned entry to the lock and re-running setup. Adding a board means a `BOARDS` entry plus its core.
+

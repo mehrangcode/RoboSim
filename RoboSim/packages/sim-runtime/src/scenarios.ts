@@ -11,7 +11,7 @@ import {
   type Wire,
 } from '@robosim/shared';
 import { FIRMWARE_HEX } from './firmware/generated.js';
-import type { FirmwareId } from './firmware/sources.js';
+import { FIRMWARE_SKETCHES as SKETCH, type FirmwareId } from './firmware/sketches.js';
 import { loadProject, type Scenario } from './project-loader.js';
 import type { FirmwarePayload, RunSource, ScenarioId } from './protocol.js';
 
@@ -19,8 +19,8 @@ export { findingView, loadProject, ProjectLoadError, UNO_BOARD, type Scenario } 
 
 /*
  * The Lab's built-in demos as project documents (Technical Design §8.10), exactly what the editor
- * will save. Each ships the Arduino sketch its pre-assembled firmware stands for; the build service
- * will compile the sketch instead.
+ * will save. Each ships its Arduino sketch (firmware/sketches.ts) and the HEX the build service
+ * compiled from it (firmware/generated.ts, `pnpm firmware:gen`).
  */
 
 type Placement = Partial<Pick<ComponentInstance, 'props' | 'inputs' | 'mount'>>;
@@ -66,11 +66,14 @@ function project(
   };
 }
 
+/** Canvas position on the 0.1" grid (the board sits at the origin, 27 × 21 grid steps). */
+const g = (steps: number): number => steps * 2.54;
+
 /** Uno D13 → 220 Ω → LED → GND. */
 const ledOn = (pin: string, color: string, gnd = 'GND1') => ({
   parts: [
-    part('r1', 'passive.resistor', 120, 40, { props: { ohms: 220 } }),
-    part('led', 'actuator.led', 200, 40, { props: { color } }),
+    part('r1', 'passive.resistor', g(32), g(4), { props: { ohms: 220 } }),
+    part('led', 'actuator.led', g(38), g(4), { props: { color } }),
   ],
   wires: [
     [`board.${pin}`, 'r1.a'],
@@ -80,58 +83,13 @@ const ledOn = (pin: string, color: string, gnd = 'GND1') => ({
 });
 
 const knob = {
-  parts: [part('pot', 'passive.potentiometer', 120, 160)],
+  parts: [part('pot', 'passive.potentiometer', g(32), g(16))],
   wires: [
     ['board.5V', 'pot.a'],
     ['pot.wiper', 'board.A0'],
     ['pot.b', 'board.GND2'],
   ] as const,
 };
-
-const SKETCH = {
-  blink: `
-void setup() { pinMode(13, OUTPUT); }
-void loop() { digitalWrite(13, !digitalRead(13)); delay(500); }`,
-  button: `
-void setup() { pinMode(2, INPUT_PULLUP); pinMode(13, OUTPUT); }
-void loop() { digitalWrite(13, !digitalRead(2)); }`,
-  dimmer: `
-void setup() { pinMode(6, OUTPUT); }
-void loop() { analogWrite(6, analogRead(A0) / 4); }`,
-  servo: `
-#include <Servo.h>
-Servo servo;
-void setup() { servo.attach(9); }
-void loop() { servo.writeMicroseconds(500 + 2 * analogRead(A0)); }`,
-  serial: `
-void setup() { Serial.begin(115200); Serial.println("RoboSim ready"); pinMode(13, OUTPUT); }
-int n = 0;
-unsigned long last = 0;
-void loop() {
-  if (millis() - last >= 1000) { last = millis(); Serial.print("tick "); Serial.println(n++ % 10); }
-  if (Serial.available()) { Serial.write(toupper(Serial.read())); digitalWrite(13, !digitalRead(13)); }
-}`,
-  fighting: `
-void setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); digitalWrite(2, HIGH); digitalWrite(3, LOW); }
-void loop() {}`,
-  pinHigh: `
-void setup() { pinMode(9, OUTPUT); digitalWrite(9, HIGH); }
-void loop() {}`,
-  floating: `
-void setup() { pinMode(2, INPUT); pinMode(13, OUTPUT); }
-void loop() { digitalWrite(13, !digitalRead(2)); }`,
-  lineFollower: `
-// L/C/R line sensor on D2/D3/D4 (HIGH = black); L298N ENA/ENB on D5/D6, IN1 D7, IN3 D9.
-void setup() {
-  for (int p = 5; p <= 9; p++) pinMode(p, OUTPUT);
-  analogWrite(5, 150); analogWrite(6, 150);
-}
-void loop() {
-  if (digitalRead(2)) { digitalWrite(7, LOW); digitalWrite(9, HIGH); }        // line on the left: turn left
-  else if (digitalRead(4)) { digitalWrite(7, HIGH); digitalWrite(9, LOW); }   // on the right: turn right
-  else if (digitalRead(3)) { digitalWrite(7, HIGH); digitalWrite(9, HIGH); }  // centred: straight
-}`,
-} as const satisfies Partial<Record<FirmwareId, string>>;
 
 function lineFollower(): ProjectDocument {
   const chassis = findDefinition('mechanical.chassis-2wd');
@@ -146,16 +104,19 @@ function lineFollower(): ProjectDocument {
     'Line follower',
     SKETCH.lineFollower,
     [
-      part('chassis', 'mechanical.chassis-2wd', 400, 300),
-      part('bat', 'power.battery-4aa', 60, 60, { mount: { ...deck, x: deck.x - 30 } }),
-      part('sw', 'power.switch', 60, 160, { inputs: { on: true } }),
-      part('drv', 'driver.l298n', 200, 120, {
+      part('chassis', 'mechanical.chassis-2wd', g(-36), g(12)),
+      part('bat', 'power.battery-4aa', g(66), g(30), { mount: { ...deck, x: deck.x - 30 } }),
+      part('sw', 'power.switch', g(32), g(30), { inputs: { on: true } }),
+      part('drv', 'driver.l298n', g(32), g(-24), {
         props: { enaJumper: false, enbJumper: false, regulatorJumper: false },
         mount: deck,
       }),
-      part('motorL', 'actuator.tt-motor', 340, 60, { mount: slot('motor-left') }),
-      part('motorR', 'actuator.tt-motor', 340, 180, { mount: slot('motor-right') }),
-      part('line', 'sensor.line-3ch', 200, 260, { props: { spacingMm: 12 }, mount: slot('front-bracket') }),
+      part('motorL', 'actuator.tt-motor', g(28), g(-17), { mount: slot('motor-left') }),
+      part('motorR', 'actuator.tt-motor', g(62), g(-17), { mount: slot('motor-right') }),
+      part('line', 'sensor.line-3ch', g(40), g(42), {
+        props: { spacingMm: 12 },
+        mount: slot('front-bracket'),
+      }),
     ],
     wires(
       ['bat.pos', 'sw.a'],
@@ -192,7 +153,7 @@ function lineFollower(): ProjectDocument {
 function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: FirmwareId }> {
   const blink = ledOn('D13', 'red');
   const button = ledOn('D13', 'green');
-  const btn = part('btn', 'sensor.push-button', 120, 160);
+  const btn = part('btn', 'sensor.push-button', g(32), g(12));
   const dimmer = ledOn('D6', 'yellow', 'GND1');
   const fighting = ledOn('D2', 'green');
   return {
@@ -224,8 +185,8 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
         SKETCH.servo,
         [
           ...knob.parts,
-          part('servo', 'actuator.sg90-servo', 220, 60),
-          part('pack', 'power.battery-4aa', 320, 160),
+          part('servo', 'actuator.sg90-servo', g(50), g(6)),
+          part('pack', 'power.battery-4aa', g(50), g(20)),
         ],
         wires(
           ...knob.wires,
@@ -245,7 +206,7 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
       project: project(
         'LED without resistor',
         SKETCH.blink,
-        [part('led', 'actuator.led', 160, 40)],
+        [part('led', 'actuator.led', g(36), g(4))],
         wires(['board.D13', 'led.a'], ['led.k', 'board.GND1']),
       ),
       firmware: 'blink',
@@ -263,7 +224,7 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
       project: project(
         'Motor on a pin',
         SKETCH.pinHigh,
-        [part('motor', 'actuator.tt-motor', 160, 60)],
+        [part('motor', 'actuator.tt-motor', g(44), g(10))],
         wires(['board.D9', 'motor.m1'], ['motor.m2', 'board.GND1']),
       ),
       firmware: 'pinHigh',
@@ -292,13 +253,29 @@ export function builtinSource(id: ScenarioId): { project: ProjectDocument; firmw
   };
 }
 
+/** Any run source as document + firmware; only an unmodified built-in keeps its scenario id. */
+export function resolveSource(source: RunSource): {
+  scenario: ScenarioId | null;
+  project: ProjectDocument;
+  firmware: FirmwarePayload;
+} {
+  if ('scenario' in source) return { scenario: source.scenario, ...builtinSource(source.scenario) };
+  if ('template' in source) {
+    const { project } = builtinSource(source.template);
+    return {
+      scenario: null,
+      project: { ...project, code: { ...project.code, files: source.files.map((f) => ({ ...f })) } },
+      firmware: source.firmware,
+    };
+  }
+  return { scenario: null, project: source.project, firmware: source.firmware };
+}
+
 /** Validates (and migrates) the document, then loads it; built-ins keep their scenario id. */
 export function buildRun(source: RunSource, seed = 1): Scenario {
-  const { project, firmware } = 'scenario' in source ? builtinSource(source.scenario) : source;
+  const { scenario: id, project, firmware } = resolveSource(source);
   const scenario = loadProject(parseProjectDocument(project), firmware, seed);
-  return 'scenario' in source
-    ? { ...scenario, scene: { ...scenario.scene, scenario: source.scenario } }
-    : scenario;
+  return id ? { ...scenario, scene: { ...scenario.scene, scenario: id } } : scenario;
 }
 
 export function buildScenario(id: ScenarioId, seed = 1): Scenario {
