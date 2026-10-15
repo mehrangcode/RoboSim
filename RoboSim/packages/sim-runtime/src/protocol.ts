@@ -1,16 +1,25 @@
-/** Worker protocol of the Simulator Lab (Technical Design §5.8, postMessage variant). */
+/**
+ * Worker protocol (Technical Design §5.8). Hot state (time, parts, pins, robot, challenge) travels as
+ * binary snapshots — a shared double buffer, or transferable buffers without cross-origin isolation;
+ * discrete happenings (serial output, findings, faults, damage) travel as events.
+ */
+import type { ProjectDocument } from '@robosim/shared';
+import type { DictDelta } from './snapshot-codec.js';
 
-export type BenchScenarioId = 'blink' | 'button' | 'dimmer' | 'servo';
+export type BenchScenarioId = 'blink' | 'button' | 'dimmer' | 'servo' | 'serial';
 export type SafetyScenarioId = 'led-no-resistor' | 'outputs-fighting' | 'motor-on-pin' | 'floating-input';
 export type ScenarioId = 'line-follower' | BenchScenarioId | SafetyScenarioId;
 
-export const BENCH_SCENARIOS: readonly BenchScenarioId[] = ['blink', 'button', 'dimmer', 'servo'];
+export const BENCH_SCENARIOS: readonly BenchScenarioId[] = ['blink', 'button', 'dimmer', 'servo', 'serial'];
 export const SAFETY_SCENARIOS: readonly SafetyScenarioId[] = [
   'led-no-resistor',
   'outputs-fighting',
   'motor-on-pin',
   'floating-input',
 ];
+/** Longest verified run in simulated seconds (Technical Design §11.1). */
+export const MAX_SIM_SECONDS = 300;
+
 export const SCENARIOS: readonly ScenarioId[] = ['line-follower', ...BENCH_SCENARIOS, ...SAFETY_SCENARIOS];
 
 /** A safety finding as shown in the Lab (FR-SAF-06); texts come from i18n `<messageKey>.title|why|fix`. */
@@ -24,8 +33,52 @@ export interface FindingView {
   readonly params: Readonly<Record<string, string | number>>;
 }
 
+/** A user interaction, stamped with the slice it was applied at (the simulation was at that slice). */
+export type InputLogEntry =
+  | {
+      readonly slice: number;
+      readonly kind: 'component';
+      readonly componentId: string;
+      readonly name: string;
+      readonly value: number | boolean;
+    }
+  | { readonly slice: number; readonly kind: 'serial'; readonly text: string };
+
+/** A compiled program for the board; the build service produces it (Intel HEX for the Uno). */
+export interface FirmwarePayload {
+  readonly format: 'ihex';
+  readonly text: string;
+  readonly sha256: string;
+}
+
+/** What to simulate: a built-in Lab demo, or a project document with its firmware. */
+export type RunSource =
+  | { readonly scenario: ScenarioId }
+  | { readonly project: ProjectDocument; readonly firmware: FirmwarePayload };
+
+/**
+ * Everything needed to reproduce a run bit for bit (Technical Design §5.9): the project and
+ * firmware themselves, so an exported log replays anywhere with the same engine version.
+ */
+export interface InputLog {
+  readonly engineVersion: string;
+  /** Set when the run was a built-in demo. */
+  readonly scenario: ScenarioId | null;
+  readonly project: ProjectDocument;
+  readonly firmware: FirmwarePayload;
+  readonly seed: number;
+  readonly entries: readonly InputLogEntry[];
+  /** Slice the run had reached when the log was exported (a verified run can stop there). */
+  readonly endSlice?: number;
+}
+
 export type MainToWorker =
-  | { readonly type: 'load'; readonly scenario: ScenarioId; readonly seed?: number }
+  | (RunSource & {
+      readonly type: 'load';
+      readonly seed?: number;
+      /** Replays these inputs at their recorded slices. */
+      readonly inputLog?: readonly InputLogEntry[];
+    })
   | { readonly type: 'control'; readonly action: 'run' | 'pause' | 'reset' | 'step' }
   | { readonly type: 'speed'; readonly value: number }
   | {
@@ -33,7 +86,11 @@ export type MainToWorker =
       readonly componentId: string;
       readonly name: string;
       readonly value: number | boolean;
-    };
+    }
+  /** Bytes for the MCU's UART RX (Serial Monitor), UTF-8 encoded. */
+  | { readonly type: 'serial'; readonly text: string }
+  /** Asks for the input log of the current run (answered with `inputLog`). */
+  | { readonly type: 'exportLog' };
 
 export interface PartInfo {
   readonly id: string;
@@ -69,7 +126,9 @@ export interface RobotScene {
 }
 
 export interface SceneInfo {
-  readonly scenario: ScenarioId;
+  /** The built-in demo, or null for a project load. */
+  readonly scenario: ScenarioId | null;
+  readonly title: string;
   readonly kind: 'arena' | 'bench';
   readonly parts: readonly PartInfo[];
   /** MCU pins shown in the pin table. */
@@ -78,6 +137,8 @@ export interface SceneInfo {
   readonly robot?: RobotScene;
   /** Wiring findings computed before running (FR-SAF-01). */
   readonly staticFindings: readonly FindingView[];
+  /** The firmware talks over the UART: the Lab shows a Serial Monitor. */
+  readonly serial: boolean;
 }
 
 export interface PinView {
@@ -89,6 +150,13 @@ export interface PinView {
   readonly duty?: number;
 }
 
+/** The part of a {@link Frame} carried by binary snapshots. */
+export type HotFrame = Pick<
+  Frame,
+  'seq' | 'simTime' | 'rtf' | 'running' | 'parts' | 'pins' | 'robot' | 'challenge'
+>;
+
+/** What the UI renders: the latest snapshot merged with the state carried by events. */
 export interface Frame {
   readonly seq: number;
   readonly simTime: number;
@@ -136,7 +204,28 @@ export interface ChallengeView {
   readonly nextZone: string | null;
 }
 
+export type Fault = Frame['faults'][number];
+export type Damage = Frame['damaged'];
+
 export type WorkerToMain =
-  | { readonly type: 'loaded'; readonly scene: SceneInfo }
-  | { readonly type: 'frame'; readonly frame: Frame }
+  | {
+      readonly type: 'loaded';
+      readonly scene: SceneInfo;
+      readonly seed: number;
+      readonly engineVersion: string;
+      /** Number of input-log entries being replayed (0 for a live run). */
+      readonly replaying: number;
+    }
+  /** Shared snapshot buffer of the current run; replaced when snapshots outgrow it. */
+  | { readonly type: 'channel'; readonly buffer: SharedArrayBuffer }
+  /** One snapshot as a transferred buffer (no cross-origin isolation). */
+  | { readonly type: 'snapshot'; readonly buffer: ArrayBuffer }
+  /** Snapshot dictionary additions; always posted before the snapshot that needs them. */
+  | { readonly type: 'dict'; readonly delta: DictDelta }
+  | { readonly type: 'serial'; readonly text: string }
+  /** All findings latched so far (sorted), sent when one was added. */
+  | { readonly type: 'findings'; readonly findings: readonly FindingView[] }
+  | { readonly type: 'faults'; readonly faults: readonly Fault[] }
+  | { readonly type: 'damaged'; readonly damaged: Damage }
+  | { readonly type: 'inputLog'; readonly log: InputLog }
   | { readonly type: 'error'; readonly message: string };

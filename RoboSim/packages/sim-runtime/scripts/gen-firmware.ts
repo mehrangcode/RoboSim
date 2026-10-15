@@ -11,8 +11,13 @@ for (const [id, source] of Object.entries(FIRMWARE_SOURCES)) {
   if (errors.length > 0) throw new Error(`${id}: ${errors.join('; ')}`);
   out[id] = toIntelHex(bytes);
 }
+// Same shape Prettier gives it (single quotes, value on its own line past printWidth 110).
 const body = Object.entries(out)
-  .map(([id, hex]) => `  ${id}: ${JSON.stringify(hex)},`)
+  .map(([id, hex]) => {
+    const value = `'${hex.replaceAll('\n', '\\n')}'`;
+    const line = `  ${id}: ${value},`;
+    return line.length <= 110 ? line : `  ${id}:\n    ${value},`;
+  })
   .join('\n');
 writeFileSync(
   join(import.meta.dirname, '../src/firmware/generated.ts'),

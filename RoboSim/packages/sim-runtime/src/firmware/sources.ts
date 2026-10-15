@@ -3,6 +3,12 @@
  * `pnpm --filter @robosim/sim-runtime gen:firmware` assembles these into `generated.ts`; a test
  * fails if the two drift apart. (Real sketches arrive with the build service.)
  */
+/** `Serial.print(text)` unrolled: one `ldi` + `rcall tx` per character. */
+const print = (text: string): string =>
+  [...text]
+    .map((c) => `      ldi r24, 0x${c.charCodeAt(0).toString(16).padStart(2, '0')}\n      rcall tx`)
+    .join('\n');
+
 export const FIRMWARE_SOURCES = {
   /** digitalWrite(13, !digitalRead(13)); delay(500); */
   blink: `
@@ -147,6 +153,71 @@ export const FIRMWARE_SOURCES = {
       sbic 0x09, 2
       cbi 0x05, 5
       rjmp loop
+  `,
+  /**
+   * Serial.begin(115200); Serial.println("RoboSim ready");
+   * every second: Serial.print("tick "); Serial.println(n++ % 10);
+   * meanwhile echo every received byte upper-cased and toggle D13.
+   */
+  serial: `
+      ldi r16, 0x08
+      out 0x3e, r16        ; SPH
+      ldi r16, 0xff
+      out 0x3d, r16        ; SPL = RAMEND
+      ldi r16, 0x02
+      sts 0xc0, r16        ; UCSR0A: U2X0
+      ldi r16, 0
+      sts 0xc5, r16        ; UBRR0H
+      ldi r16, 16
+      sts 0xc4, r16        ; UBRR0L = 16 → 115200 baud (U2X)
+      ldi r16, 0x06
+      sts 0xc2, r16        ; UCSR0C: 8N1
+      ldi r16, 0x18
+      sts 0xc1, r16        ; UCSR0B: RXEN0 | TXEN0
+      ldi r16, 0x20
+      out 0x04, r16        ; DDRB: D13 output
+      ldi r17, 0x30        ; tick digit '0'
+${print('RoboSim ready\r\n')}
+    loop:
+${print('tick ')}
+      mov r24, r17
+      rcall tx
+${print('\r\n')}
+      inc r17
+      cpi r17, 0x3a
+      brne wait
+      ldi r17, 0x30
+    wait:
+      ldi r18, 35          ; 35 × 256 × 256 × 7 cycles ≈ 1 s
+    w1: ldi r19, 0
+    w2: ldi r20, 0
+    w3: lds r21, 0xc0      ; UCSR0A
+      sbrc r21, 7          ; RXC0: byte received
+      rcall echo
+      dec r20
+      brne w3
+      dec r19
+      brne w2
+      dec r18
+      brne w1
+      rjmp loop
+    echo:
+      lds r24, 0xc6        ; UDR0
+      cpi r24, 0x61
+      brlo e1
+      cpi r24, 0x7b
+      brsh e1
+      subi r24, 0x20       ; a–z → A–Z
+    e1: rcall tx
+      ldi r22, 0x20
+      out 0x03, r22        ; toggle D13
+      ret
+    tx:
+      lds r25, 0xc0
+      sbrs r25, 5          ; UDRE0: transmit buffer empty
+      rjmp tx
+      sts 0xc6, r24
+      ret
   `,
 } as const;
 

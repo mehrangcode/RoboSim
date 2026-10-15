@@ -1,4 +1,4 @@
-import type { ChallengeNodeView, ChallengeView, MainToWorker } from '@robosim/sim-runtime';
+import type { ChallengeNodeView, ChallengeView, MainToWorker } from '@robosim/sim-runtime/client';
 import { Button, Card, cn } from '@robosim/ui';
 import { useTranslation } from 'react-i18next';
 

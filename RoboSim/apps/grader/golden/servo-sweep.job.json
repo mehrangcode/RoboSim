@@ -1,0 +1,174 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "servo",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "pot",
+          "type": "passive.potentiometer",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 160,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "servo",
+          "type": "actuator.sg90-servo",
+          "typeVersion": "1.0.0",
+          "x": 220,
+          "y": 60,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "pack",
+          "type": "power.battery-4aa",
+          "typeVersion": "1.0.0",
+          "x": 320,
+          "y": 160,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "pot",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "pot",
+            "pin": "wiper"
+          },
+          "to": {
+            "part": "board",
+            "pin": "A0"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "pot",
+            "pin": "b"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "servo",
+            "pin": "signal"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "pack",
+            "pin": "pos"
+          },
+          "to": {
+            "part": "servo",
+            "pin": "vcc"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "servo",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "pack",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "#include <Servo.h>\nServo servo;\nvoid setup() { servo.attach(9); }\nvoid loop() { servo.writeMicroseconds(500 + 2 * analogRead(A0)); }\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Knob turns a servo"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":1000000002E004B90CE9009387000FE30093860037\n:1000100002E8009380000AE10093810000E400936D\n:100020007C0007EC00937A0010917A0016FDFCCF5B\n:100030002091780030917900220F331F220F331F57\n:0E00400028513C4F3093890020938800EACF6E\n:00000001FF\n",
+      "sha256": "demo:servo"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 100,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 0
+      },
+      {
+        "slice": 900,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 1
+      }
+    ]
+  },
+  "maxSimSeconds": 2
+}

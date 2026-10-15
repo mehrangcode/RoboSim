@@ -5,3 +5,4 @@ Docs
 **/drizzle/migrations/**
 **/routeTree.gen.ts
 .claude
+apps/grader/golden

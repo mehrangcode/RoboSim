@@ -1,5 +1,5 @@
 import { Card, cn } from '@robosim/ui';
-import type { Frame } from '@robosim/sim-runtime';
+import type { Frame } from '@robosim/sim-runtime/client';
 import { useTranslation } from 'react-i18next';
 import { useFormat } from './format.js';
 

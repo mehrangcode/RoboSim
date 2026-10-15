@@ -101,7 +101,8 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm test` | Unit tests (Vitest) |
 | `pnpm test:int` | Integration tests against real services via Testcontainers (P1; until then DB integration tests run on PGlite inside `pnpm test`) |
 | `pnpm test:e2e` | Playwright E2E (EN + FA projects, Chrome + Firefox) |
-| `pnpm test:sim` | Simulation conformance + golden traces (Node and browser) |
+| `pnpm test:sim` | Simulation conformance + golden traces (Node and browser; browser leg planned) |
+| `pnpm golden:update` | Record missing golden traces, or re-record after an `engineVersion` bump (refuses otherwise) |
 | `pnpm bench` | Performance benchmarks (§17 of Technical Design) |
 | `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |
 | `pnpm i18n:check` | Missing/unused keys, ICU syntax, FA/EN parity |

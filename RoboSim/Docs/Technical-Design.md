@@ -135,7 +135,7 @@ robosim/
 │   │                           # analytics, admin, audit, content, search, lti
 │   ├── realtime/               # Hocuspocus collaboration server
 │   ├── compiler/               # Build dispatcher + worker + sandbox image (Dockerfile)
-│   ├── grader/                 # Headless verified-run service
+│   ├── grader/                 # Headless verified-run service; golden/ holds the golden-trace jobs + results
 │   └── exporter/               # PDF/XLSX/CSV export service
 ├── packages/
 │   ├── shared/                 # Domain types, Zod schemas, API contracts, error codes, project schema + migrations
@@ -162,7 +162,7 @@ robosim/
 │   ├── i18n/                   # en/ and fa/ namespaces, ICU messages, key linter
 │   ├── content/                # Built-in arenas, guided projects, courses (JSON + assets), content schema
 │   ├── catalog/                # Registry of all component definitions (worker + grader) + cross-component tests
-│   ├── test-fixtures/          # Test bench (part.pin wiring), AVR assembler firmware, golden circuits/traces
+│   ├── test-fixtures/          # Test bench (part.pin wiring), AVR assembler firmware, golden circuits
 │   └── config/                 # tsconfig, eslint, prettier, dependency-cruiser presets
 ├── infra/
 │   ├── docker/                 # docker-compose.yml for local dev (WSL2-compatible)
@@ -412,7 +412,12 @@ Types at GA: `reachZone`, `laps`, `checkpointsInOrder`, `timeLimit`, `noCollisio
 
 Without cross-origin isolation (rare embed cases) snapshots fall back to transferable `ArrayBuffer` messages.
 
-*Current implementation (Simulator Lab):* `packages/sim-runtime` holds the worker-side `SimHost` (scenario loading, pacing, frames ≤ 30 Hz over `postMessage`) and the message types; `apps/web/src/lab/sim.worker.ts` hosts it. The `SharedArrayBuffer` snapshot path replaces the frame messages when the editor arrives.
+*Current implementation (`packages/sim-runtime`):*
+
+- **Snapshots** (`snapshot-codec`, `snapshot-channel`): the hot state — time, RTF, running flag, part states, pin table, robot pose and sensors, challenge view — is flattened into leaf paths. Each path owns a Float64 slot plus a tag byte (number, null, boolean, string id, empty array/object, absent). Paths and strings form an append-only dictionary, posted as `dict` before the first snapshot that needs it, so steady-state snapshots carry only numbers. With cross-origin isolation, `SimHost` writes into a double-buffered `SharedArrayBuffer` (per-half seqlock and publish counter via `Atomics`; the UI polls once per animation frame and never reads a torn half). A new buffer is posted as `channel` per run or when snapshots outgrow it. Without isolation, each snapshot is a transferred `ArrayBuffer` (`snapshot`). Snapshots go out at most every 33 ms of wall time.
+- **Events**: `serial` (UTF-8 text), `findings` (the full sorted latched list, whenever it grows), `faults`, `damaged` (on change), `inputLog` (answer to `exportLog`), `error`. RTF and the challenge view ride in the snapshot because they change continuously. `SimClient` (`@robosim/sim-runtime/client`, engine-free) merges both into the UI's `Frame`.
+- **Input log** (`input-log`): live `input` / `serial` messages are applied between slices and stamped with the current slice. `load { inputLog }` replays entries after that slice's observers, at the same point in the loop, so the replay is identical to the live run. `HeadlessRun` runs a log without a wall clock (the grader's loop). `loaded` echoes `seed` and `engineVersion` (`ENGINE_VERSION`, kept in sync with package versions by a test).
+- `load` takes a built-in demo id or `{ project, firmware }` (§8.10). An exported input log carries the project and firmware itself, so it replays anywhere with the same engine version (`HeadlessRun`). `control` covers `run · pause · step · reset`, and speed is its own `speed` message; `stop` arrives with the editor.
 
 ### 5.9 Determinism
 
@@ -422,6 +427,8 @@ Without cross-origin isolation (rare embed cases) snapshots fall back to transfe
 4. Stable iteration order (arrays, never object key order or `Set` of objects for logic).
 5. Every run records `engineVersion` (package version of sim-core + boards + components). The grader keeps the last 6 engine versions deployable so regrades reproduce the original result.
 6. Golden-trace tests in CI compare browser (Playwright) and Node runs for the fixture suite.
+
+*Current implementation:* golden traces run in Node (`pnpm test:sim`, also part of `pnpm test`). Each fixture in `apps/grader/src/golden.ts` has a frozen job (`golden/<name>.job.json`: project, firmware, seed, input log) and a committed result (`golden/<name>.result.json`, one trace sample per line). Comparison is exact: JSON numbers round-trip doubles, so equal JSON means bit-identical runs, and a failure names the first diverging sample. `pnpm golden:update` records missing fixtures and re-records after an `engineVersion` bump; it refuses to overwrite a changed result under the same engine version. Fixtures: line-follower lap, blink, button presses, dimmer knob, servo sweep, serial echo, motor on a pin (damage), outputs fighting. The Chrome/Firefox (Playwright) leg is still open.
 
 ## 6. Build service (`apps/compiler`)
 
@@ -676,6 +683,14 @@ type ProjectDocument = {
 };
 ```
 
+*Current implementation (`packages/shared/src/project-schema.ts`, loader in `packages/sim-runtime/src/project-loader.ts`):*
+
+- `parseProjectDocument` runs forward migrations (`PROJECT_MIGRATIONS`, one per schema version), then strict Zod validation. Unknown keys, duplicate ids, dangling wire ends and arena-only conditions without an arena are rejected. `successConditions` has its own schema, the JSON form of `ChallengeSpec` (§5.7), so the API can validate documents without the engine.
+- `PinRef = { part, pin }`. The board is part `board`: MCU pins (`D0…D13`, `A0…A5`) are wired as is, `GND1…3` are ground, and `5V` is the rail stand-in. `3V3` and `VIN` are rejected until the board power tree is in the netlist.
+- Additions to the sketch above: `arena` is optional (bench projects have none). A component's `inputs` holds its interaction state at power-on (a switch left ON, a knob position), applied before slice 0 and not logged. Units are mm for `x`, `y` and `mount`, and degrees for `rotation`, `mount.yaw` and `startPose.heading`.
+- `loadProject(document, firmware, seed)` checks every component against the catalogue at its exact `typeVersion`. Components without pins (the chassis) stay out of the circuit. The robot is built from the chassis plus every mounted part: the payload is their mass plus the Uno, and the TT motor with `mount.y > 0` drives the left wheel. The loader also validates success conditions against the arena and runs static safety analysis. It reports all problems at once (`ProjectLoadError`).
+- Firmware is not part of the document: `load` takes `{ project, firmware }`, where the firmware is an Intel HEX payload that the build service will produce. The Lab's built-in demos are documents, each with its Arduino sketch and pre-assembled firmware. Loading them through the loader gives bit-identical runs to the former hand-built scenarios.
+
 ## 9. Billing, entitlements, and payments
 
 ### 9.1 Entitlement resolution
@@ -736,6 +751,8 @@ sequenceDiagram
 3. Outputs: `result` (per-condition outcomes, metrics), `score`, trace (pose at 10 Hz, gzip, object storage), replay (seed + input log).
 4. Grader pods: no network except Redis and object storage; 1 vCPU, 1 GB, wall timeout 300 s (unpaced runs execute several times faster than real time); firmware executes only inside the emulator.
 5. Throughput target: 40 submissions graded in < 5 min p95 (most runs finish in a few seconds of CPU).
+
+*Current implementation (skeleton, P1):* `grade(job)` lives in `packages/sim-runtime` (DOM- and Node-free) so the grader and the Lab's verify worker share it. A job is a self-contained input log (project, firmware, seed, inputs, `engineVersion`, optional `endSlice`) plus `maxSimSeconds` (≤ 300). Resolving stored ids into that log is P3 work. `grade` rejects other engine versions (`EngineVersionMismatchError`), then runs slice by slice until the challenge decides (the same decisive slice as the live pacer's `stopWhen`) or the cap. It returns the outcome (`success` · `failure` · `unresolved`), score, challenge view, static findings, damage, the final state, all serial output, and the trace. The trace has samples every 100 slices plus the final slice: robot pose, pin views, and part states. Serial chunks and runtime findings are stamped with their slice. `traceDigest` is the SHA-256 of the trace JSON. Pin, robot, and challenge views come from the same functions the worker host uses (`views.ts`), so a verified run compares field for field with a paused live frame. `apps/grader` is a CLI for now (`robosim-grade <job.json> [--max-seconds N] [--out result.json] [--trace trace.json.gz]`; exit 0 graded, 1 challenge failed, 2 invalid job or engine error), with Zod validation of the job. The Redis queue, pods, and storage arrive with learning (P3). The Lab's **Verify run** pauses the live run, grades its input log up to the same slice in a separate worker, and reports whether the result is identical.
 
 ### 11.2 LTI 1.3
 

@@ -1,313 +1,306 @@
-import { UNO_ELECTRICAL, avrUno } from '@robosim/board-avr-uno';
 import { findDefinition } from '@robosim/catalog';
 import { chassisGeometry, type Chassis2wdProps } from '@robosim/component-chassis-2wd';
 import { ovalArena, ovalChallenge } from '@robosim/content';
-import { RUNTIME_RULES, STATIC_RULES } from '@robosim/safety-rules';
+import { resolveProps } from '@robosim/sim-core';
 import {
-  ChallengeTracker,
-  PlanckWorld,
-  SafetyMonitor,
-  analyzeCircuit,
-  resolveProps,
-  type BoardInfo,
-  type Finding,
-  type FirmwareImage,
-  type RobotSpec,
-} from '@robosim/sim-core';
-import { unoFiveVolt } from './board-rail.js';
-import { buildCircuit, type Circuit, type CircuitSpec } from './circuit.js';
+  PROJECT_SCHEMA_VERSION,
+  parseProjectDocument,
+  type ComponentInstance,
+  type PinRef,
+  type ProjectDocument,
+  type Wire,
+} from '@robosim/shared';
 import { FIRMWARE_HEX } from './firmware/generated.js';
 import type { FirmwareId } from './firmware/sources.js';
-import type {
-  ArenaScene,
-  BenchScenarioId,
-  FindingView,
-  PartInfo,
-  RobotScene,
-  SafetyScenarioId,
-  ScenarioId,
-  SceneInfo,
-} from './protocol.js';
+import { loadProject, type Scenario } from './project-loader.js';
+import type { FirmwarePayload, RunSource, ScenarioId } from './protocol.js';
 
-export interface Scenario {
-  readonly circuit: Circuit;
-  readonly world: PlanckWorld | null;
-  readonly scene: SceneInfo;
-  /** Runtime safety: latched findings + damage model, observing every slice. */
-  readonly safety: SafetyMonitor;
-  /** Arena challenge (FR-ARN-11), when the scenario has one. */
-  readonly challenge?: ChallengeTracker;
+export { findingView, loadProject, ProjectLoadError, UNO_BOARD, type Scenario } from './project-loader.js';
+
+/*
+ * The Lab's built-in demos as project documents (Technical Design §8.10), exactly what the editor
+ * will save. Each ships the Arduino sketch its pre-assembled firmware stands for; the build service
+ * will compile the sketch instead.
+ */
+
+type Placement = Partial<Pick<ComponentInstance, 'props' | 'inputs' | 'mount'>>;
+
+function part(id: string, type: string, x: number, y: number, extra: Placement = {}): ComponentInstance {
+  return { id, type, typeVersion: '1.0.0', x, y, rotation: 0, flipped: false, props: {}, ...extra };
 }
 
-export const UNO_BOARD: BoardInfo = {
-  pins: avrUno.pins,
-  electrical: UNO_ELECTRICAL,
-  packageMaxCurrentMa: avrUno.power.mcuPackageMaxCurrentMa,
+const ref = (t: string): PinRef => {
+  const dot = t.indexOf('.');
+  return { part: t.slice(0, dot), pin: t.slice(dot + 1) };
 };
 
-export function findingView(f: Finding): FindingView {
+/** Wires from `part.pin` pairs; black when one end is a board GND pin. */
+function wires(...pairs: readonly (readonly [string, string])[]): Wire[] {
+  return pairs.map(([from, to], i) => ({
+    id: `w${i + 1}`,
+    from: ref(from),
+    to: ref(to),
+    color: `${from} ${to}`.includes('board.GND') ? 'black' : 'yellow',
+    points: [],
+  }));
+}
+
+const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+function project(
+  title: string,
+  sketch: string,
+  components: ComponentInstance[],
+  wiring: Wire[],
+  extra: Pick<ProjectDocument, 'arena' | 'successConditions'> = {},
+): ProjectDocument {
   return {
-    ruleId: f.ruleId,
-    severity: f.severity,
-    kind: f.kind,
-    componentIds: f.componentIds,
-    pinIds: f.pinIds,
-    messageKey: f.messageKey,
-    params: f.params,
+    schemaVersion: PROJECT_SCHEMA_VERSION,
+    board: { id: 'avr-uno', version: '1.0.0' },
+    components,
+    wires: wiring,
+    code: { language: 'cpp', files: [{ name: 'sketch.ino', content: sketch.trim() + '\n' }] },
+    libraries: [],
+    ...extra,
+    meta: { title },
   };
 }
 
-/** Static analysis before running + runtime monitor attached to the simulation (Technical Design §5.6). */
-function withSafety(
-  base: Omit<Scenario, 'safety' | 'scene'> & { scene: Omit<SceneInfo, 'staticFindings'> },
-): Scenario {
-  const staticFindings = analyzeCircuit(base.circuit.assembled, STATIC_RULES, UNO_BOARD).map(findingView);
-  const safety = new SafetyMonitor(base.circuit.sim, base.circuit.assembled, UNO_BOARD, RUNTIME_RULES);
-  base.circuit.sim.addObserver(safety);
-  return { ...base, safety, scene: { ...base.scene, staticFindings } };
+/** Uno D13 → 220 Ω → LED → GND. */
+const ledOn = (pin: string, color: string, gnd = 'GND1') => ({
+  parts: [
+    part('r1', 'passive.resistor', 120, 40, { props: { ohms: 220 } }),
+    part('led', 'actuator.led', 200, 40, { props: { color } }),
+  ],
+  wires: [
+    [`board.${pin}`, 'r1.a'],
+    ['r1.b', 'led.a'],
+    ['led.k', `board.${gnd}`],
+  ] as const,
+});
+
+const knob = {
+  parts: [part('pot', 'passive.potentiometer', 120, 160)],
+  wires: [
+    ['board.5V', 'pot.a'],
+    ['pot.wiper', 'board.A0'],
+    ['pot.b', 'board.GND2'],
+  ] as const,
+};
+
+const SKETCH = {
+  blink: `
+void setup() { pinMode(13, OUTPUT); }
+void loop() { digitalWrite(13, !digitalRead(13)); delay(500); }`,
+  button: `
+void setup() { pinMode(2, INPUT_PULLUP); pinMode(13, OUTPUT); }
+void loop() { digitalWrite(13, !digitalRead(2)); }`,
+  dimmer: `
+void setup() { pinMode(6, OUTPUT); }
+void loop() { analogWrite(6, analogRead(A0) / 4); }`,
+  servo: `
+#include <Servo.h>
+Servo servo;
+void setup() { servo.attach(9); }
+void loop() { servo.writeMicroseconds(500 + 2 * analogRead(A0)); }`,
+  serial: `
+void setup() { Serial.begin(115200); Serial.println("RoboSim ready"); pinMode(13, OUTPUT); }
+int n = 0;
+unsigned long last = 0;
+void loop() {
+  if (millis() - last >= 1000) { last = millis(); Serial.print("tick "); Serial.println(n++ % 10); }
+  if (Serial.available()) { Serial.write(toupper(Serial.read())); digitalWrite(13, !digitalRead(13)); }
+}`,
+  fighting: `
+void setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); digitalWrite(2, HIGH); digitalWrite(3, LOW); }
+void loop() {}`,
+  pinHigh: `
+void setup() { pinMode(9, OUTPUT); digitalWrite(9, HIGH); }
+void loop() {}`,
+  floating: `
+void setup() { pinMode(2, INPUT); pinMode(13, OUTPUT); }
+void loop() { digitalWrite(13, !digitalRead(2)); }`,
+  lineFollower: `
+// L/C/R line sensor on D2/D3/D4 (HIGH = black); L298N ENA/ENB on D5/D6, IN1 D7, IN3 D9.
+void setup() {
+  for (int p = 5; p <= 9; p++) pinMode(p, OUTPUT);
+  analogWrite(5, 150); analogWrite(6, 150);
 }
+void loop() {
+  if (digitalRead(2)) { digitalWrite(7, LOW); digitalWrite(9, HIGH); }        // line on the left: turn left
+  else if (digitalRead(4)) { digitalWrite(7, HIGH); digitalWrite(9, LOW); }   // on the right: turn right
+  else if (digitalRead(3)) { digitalWrite(7, HIGH); digitalWrite(9, HIGH); }  // centred: straight
+}`,
+} as const satisfies Partial<Record<FirmwareId, string>>;
 
-function firmware(id: FirmwareId): FirmwareImage {
-  const hex = FIRMWARE_HEX[id];
-  return { format: 'ihex', bytes: Uint8Array.from(hex, (c) => c.charCodeAt(0)), sha256: `demo:${id}` };
-}
-
-const def = findDefinition;
-const LINE_SPACING_MM = 12;
-
-function partInfos(spec: CircuitSpec): PartInfo[] {
-  return Object.entries(spec.parts)
-    .filter(([, p]) => p.def !== unoFiveVolt)
-    .map(([id, p]) => ({ id, type: p.def.manifest.id, inputs: p.def.manifest.inputs }));
-}
-
-function bench(id: BenchScenarioId | SafetyScenarioId, seed: number): Scenario {
-  const firmwareFor: Record<BenchScenarioId | SafetyScenarioId, FirmwareId> = {
-    blink: 'blink',
-    button: 'button',
-    dimmer: 'dimmer',
-    servo: 'servo',
-    'led-no-resistor': 'blink',
-    'outputs-fighting': 'fighting',
-    'motor-on-pin': 'pinHigh',
-    'floating-input': 'floating',
-  };
-  const core = avrUno.createCore(firmware(firmwareFor[id]));
-  const led = (pin: string, color = 'red') => ({
-    parts: {
-      r1: { def: def('passive.resistor'), props: { ohms: 220 } },
-      led: { def: def('actuator.led'), props: { color } },
-    },
-    wires: [
-      [`mcu.${pin}`, 'r1.a'],
-      ['r1.b', 'led.a'],
-    ] as const,
-    ground: ['led.k'],
-  });
-  const pot = {
-    parts: { pot: { def: def('passive.potentiometer') }, rail: { def: unoFiveVolt } },
-    wires: [
-      ['rail.pos', 'pot.a'],
-      ['pot.wiper', 'mcu.A0'],
-    ] as const,
-    ground: ['pot.b', 'rail.neg'],
-  };
-  let spec: CircuitSpec;
-  switch (id) {
-    case 'blink': {
-      const l = led('D13');
-      spec = {
-        parts: l.parts,
-        wires: [...l.wires],
-        ground: l.ground,
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['D13'] },
-      };
-      break;
-    }
-    case 'button': {
-      const l = led('D13', 'green');
-      spec = {
-        parts: { ...l.parts, btn: { def: def('sensor.push-button') } },
-        wires: [...l.wires, ['btn.b1', 'mcu.D2']],
-        ground: [...l.ground, 'btn.a1'],
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['D2', 'D13'] },
-      };
-      break;
-    }
-    case 'dimmer': {
-      const l = led('D6', 'yellow');
-      spec = {
-        parts: { ...pot.parts, ...l.parts },
-        wires: [...pot.wires, ...l.wires],
-        ground: [...pot.ground, ...l.ground],
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['A0', 'D6'] },
-      };
-      break;
-    }
-    case 'servo':
-      // A stalled SG90 draws up to 650 mA — more than the Uno's 5 V pin (500 mA) can give
-      // (SAF-SUPPLY-OVERLOAD), so the servo gets its own 4×AA pack with a common ground.
-      spec = {
-        parts: {
-          ...pot.parts,
-          servo: { def: def('actuator.sg90-servo') },
-          pack: { def: def('power.battery-4aa') },
-        },
-        wires: [...pot.wires, ['mcu.D9', 'servo.signal'], ['pack.pos', 'servo.vcc']],
-        ground: [...pot.ground, 'servo.gnd', 'pack.neg'],
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['A0', 'D9'] },
-      };
-      break;
-    case 'led-no-resistor':
-      spec = {
-        parts: { led: { def: def('actuator.led') } },
-        wires: [['mcu.D13', 'led.a']],
-        ground: ['led.k'],
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['D13'] },
-      };
-      break;
-    case 'outputs-fighting': {
-      const l = led('D2', 'green');
-      spec = {
-        parts: l.parts,
-        wires: [...l.wires, ['mcu.D2', 'mcu.D3']],
-        ground: l.ground,
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['D2', 'D3'] },
-      };
-      break;
-    }
-    case 'motor-on-pin':
-      spec = {
-        parts: { motor: { def: def('actuator.tt-motor') } },
-        wires: [['mcu.D9', 'motor.m1']],
-        ground: ['motor.m2'],
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['D9'] },
-      };
-      break;
-    case 'floating-input': {
-      const l = led('D13', 'green');
-      spec = {
-        parts: { ...l.parts, btn: { def: def('sensor.push-button') } },
-        wires: [...l.wires, ['btn.b1', 'mcu.D2']],
-        ground: [...l.ground, 'btn.a1'],
-        mcu: { core, electrical: UNO_ELECTRICAL, pins: ['D2', 'D13'] },
-      };
-      break;
-    }
-  }
-  return withSafety({
-    circuit: buildCircuit({ ...spec, seed }),
-    world: null,
-    scene: { scenario: id, kind: 'bench', parts: partInfos(spec), pins: spec.mcu.pins },
-  });
-}
-
-/** Display raster at 2 mm/px: a quarter of the memory of the 1 mm physics raster. */
-function displayFloor(world: PlanckWorld): ArenaScene['floor'] {
-  const src = world.floor;
-  const widthPx = Math.ceil(src.widthPx / 2);
-  const heightPx = Math.ceil(src.heightPx / 2);
-  const data = new Uint8Array(widthPx * heightPx);
-  for (let y = 0; y < heightPx; y++) {
-    for (let x = 0; x < widthPx; x++) data[y * widthPx + x] = src.data[2 * y * src.widthPx + 2 * x] ?? 255;
-  }
-  return { widthPx, heightPx, data };
-}
-
-function lineFollower(seed: number): Scenario {
-  const chassis = def('mechanical.chassis-2wd');
+function lineFollower(): ProjectDocument {
+  const chassis = findDefinition('mechanical.chassis-2wd');
   const geometry = chassisGeometry(resolveProps(chassis.manifest) as unknown as Chassis2wdProps);
-  const front = geometry.mountSlots.find((s) => s.id === 'front-bracket');
-  const mass = (id: string) => def(id).manifest.massG / 1000;
-  const robot: RobotSpec = {
-    id: 'robot',
-    geometry,
-    payloadKg:
-      mass('power.battery-4aa') +
-      2 * mass('actuator.tt-motor') +
-      mass('driver.l298n') +
-      mass('sensor.line-3ch') +
-      0.025,
-    mounts: { line: { xMm: front?.xMm ?? 65, yMm: 0, heightMm: front?.heightMm ?? 5 } },
-    drives: { left: 'motorL', right: 'motorR' },
-    start: ovalArena.start,
+  const slot = (id: string) => {
+    const s = geometry.mountSlots.find((m) => m.id === id);
+    if (!s) throw new Error(`chassis has no slot '${id}'`);
+    return { x: s.xMm, y: s.yMm, z: s.heightMm, yaw: 0 };
   };
-  const world = new PlanckWorld(ovalArena, [robot]);
-  const pins = ['D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10'];
-  const spec: CircuitSpec = {
-    parts: {
-      bat: { def: def('power.battery-4aa') },
-      sw: { def: def('power.switch') },
-      drv: {
-        def: def('driver.l298n'),
+  const deck = slot('deck');
+  return project(
+    'Line follower',
+    SKETCH.lineFollower,
+    [
+      part('chassis', 'mechanical.chassis-2wd', 400, 300),
+      part('bat', 'power.battery-4aa', 60, 60, { mount: { ...deck, x: deck.x - 30 } }),
+      part('sw', 'power.switch', 60, 160, { inputs: { on: true } }),
+      part('drv', 'driver.l298n', 200, 120, {
         props: { enaJumper: false, enbJumper: false, regulatorJumper: false },
-      },
-      motorL: { def: def('actuator.tt-motor') },
-      motorR: { def: def('actuator.tt-motor') },
-      line: { def: def('sensor.line-3ch'), props: { spacingMm: LINE_SPACING_MM } },
-      rail: { def: unoFiveVolt },
-    },
-    wires: [
+        mount: deck,
+      }),
+      part('motorL', 'actuator.tt-motor', 340, 60, { mount: slot('motor-left') }),
+      part('motorR', 'actuator.tt-motor', 340, 180, { mount: slot('motor-right') }),
+      part('line', 'sensor.line-3ch', 200, 260, { props: { spacingMm: 12 }, mount: slot('front-bracket') }),
+    ],
+    wires(
       ['bat.pos', 'sw.a'],
       ['sw.b', 'drv.vs'],
-      ['rail.pos', 'drv.v5'],
-      ['rail.pos', 'line.vcc'],
-      ['mcu.D5', 'drv.ena'],
-      ['mcu.D6', 'drv.enb'],
-      ['mcu.D7', 'drv.in1'],
-      ['mcu.D8', 'drv.in2'],
-      ['mcu.D9', 'drv.in3'],
-      ['mcu.D10', 'drv.in4'],
+      ['board.5V', 'drv.v5'],
+      ['board.5V', 'line.vcc'],
+      ['board.D5', 'drv.ena'],
+      ['board.D6', 'drv.enb'],
+      ['board.D7', 'drv.in1'],
+      ['board.D8', 'drv.in2'],
+      ['board.D9', 'drv.in3'],
+      ['board.D10', 'drv.in4'],
       ['drv.out1', 'motorL.m1'],
       ['drv.out2', 'motorL.m2'],
       ['drv.out3', 'motorR.m1'],
       ['drv.out4', 'motorR.m2'],
-      ['line.left', 'mcu.D2'],
-      ['line.center', 'mcu.D3'],
-      ['line.right', 'mcu.D4'],
-    ],
-    ground: ['bat.neg', 'drv.gnd', 'rail.neg', 'line.gnd'],
-    mcu: { core: avrUno.createCore(firmware('lineFollower')), electrical: UNO_ELECTRICAL, pins },
-    world,
-    seed,
-  };
-  const circuit = buildCircuit(spec);
-  circuit.sim.input('sw', 'on', true);
-  const challenge = new ChallengeTracker(circuit.sim, world, ovalArena, ovalChallenge);
-  circuit.sim.addObserver(challenge);
-  const robotScene: RobotScene = {
-    footprint: geometry.footprint,
-    wheels: geometry.wheels.map((w) => ({ x: w.position.x, y: w.position.y, radiusM: w.radiusM })),
-    caster: geometry.caster,
-  };
-  return withSafety({
-    circuit,
-    world,
-    challenge,
-    scene: {
-      scenario: 'line-follower',
-      kind: 'arena',
-      parts: partInfos(spec),
-      pins,
+      ['line.left', 'board.D2'],
+      ['line.center', 'board.D3'],
+      ['line.right', 'board.D4'],
+      ['bat.neg', 'board.GND1'],
+      ['drv.gnd', 'board.GND2'],
+      ['line.gnd', 'board.GND3'],
+    ),
+    {
       arena: {
-        widthM: ovalArena.widthM,
-        heightM: ovalArena.heightM,
-        floor: displayFloor(world),
-        zones: (ovalArena.zones ?? []).map((z) => ({
-          id: z.id,
-          kind: z.kind,
-          x: z.center.x,
-          y: z.center.y,
-          radiusM: z.radiusM,
-        })),
+        arenaVersionId: 'oval',
+        startPose: { x: ovalArena.start.x, y: ovalArena.start.y, heading: 0 },
       },
-      robot: robotScene,
+      successConditions: clone(ovalChallenge) as ProjectDocument['successConditions'],
     },
-  });
+  );
+}
+
+function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: FirmwareId }> {
+  const blink = ledOn('D13', 'red');
+  const button = ledOn('D13', 'green');
+  const btn = part('btn', 'sensor.push-button', 120, 160);
+  const dimmer = ledOn('D6', 'yellow', 'GND1');
+  const fighting = ledOn('D2', 'green');
+  return {
+    'line-follower': { project: lineFollower(), firmware: 'lineFollower' },
+    blink: { project: project('Blink', SKETCH.blink, blink.parts, wires(...blink.wires)), firmware: 'blink' },
+    button: {
+      project: project(
+        'Button + LED',
+        SKETCH.button,
+        [...button.parts, btn],
+        wires(...button.wires, ['btn.b1', 'board.D2'], ['btn.a1', 'board.GND2']),
+      ),
+      firmware: 'button',
+    },
+    dimmer: {
+      project: project(
+        'Knob dims an LED',
+        SKETCH.dimmer,
+        [...knob.parts, ...dimmer.parts],
+        wires(...knob.wires, ...dimmer.wires),
+      ),
+      firmware: 'dimmer',
+    },
+    // A stalled SG90 draws up to 650 mA — more than the Uno's 5 V pin (500 mA) can give
+    // (SAF-SUPPLY-OVERLOAD), so the servo gets its own 4×AA pack with a common ground.
+    servo: {
+      project: project(
+        'Knob turns a servo',
+        SKETCH.servo,
+        [
+          ...knob.parts,
+          part('servo', 'actuator.sg90-servo', 220, 60),
+          part('pack', 'power.battery-4aa', 320, 160),
+        ],
+        wires(
+          ...knob.wires,
+          ['board.D9', 'servo.signal'],
+          ['pack.pos', 'servo.vcc'],
+          ['servo.gnd', 'board.GND1'],
+          ['pack.neg', 'board.GND3'],
+        ),
+      ),
+      firmware: 'servo',
+    },
+    serial: {
+      project: project('Serial Monitor', SKETCH.serial, button.parts, wires(...button.wires)),
+      firmware: 'serial',
+    },
+    'led-no-resistor': {
+      project: project(
+        'LED without resistor',
+        SKETCH.blink,
+        [part('led', 'actuator.led', 160, 40)],
+        wires(['board.D13', 'led.a'], ['led.k', 'board.GND1']),
+      ),
+      firmware: 'blink',
+    },
+    'outputs-fighting': {
+      project: project(
+        'Outputs fighting',
+        SKETCH.fighting,
+        fighting.parts,
+        wires(...fighting.wires, ['board.D2', 'board.D3']),
+      ),
+      firmware: 'fighting',
+    },
+    'motor-on-pin': {
+      project: project(
+        'Motor on a pin',
+        SKETCH.pinHigh,
+        [part('motor', 'actuator.tt-motor', 160, 60)],
+        wires(['board.D9', 'motor.m1'], ['motor.m2', 'board.GND1']),
+      ),
+      firmware: 'pinHigh',
+    },
+    'floating-input': {
+      project: project(
+        'Floating input',
+        SKETCH.floating,
+        [...button.parts, btn],
+        wires(...button.wires, ['btn.b1', 'board.D2'], ['btn.a1', 'board.GND2']),
+      ),
+      firmware: 'floating',
+    },
+  };
+}
+
+let cache: ReturnType<typeof builtins> | null = null;
+
+/** Built-in demo as document + firmware (what an exported input log carries). */
+export function builtinSource(id: ScenarioId): { project: ProjectDocument; firmware: FirmwarePayload } {
+  cache ??= builtins();
+  const b = cache[id];
+  return {
+    project: clone(b.project),
+    firmware: { format: 'ihex', text: FIRMWARE_HEX[b.firmware], sha256: `demo:${b.firmware}` },
+  };
+}
+
+/** Validates (and migrates) the document, then loads it; built-ins keep their scenario id. */
+export function buildRun(source: RunSource, seed = 1): Scenario {
+  const { project, firmware } = 'scenario' in source ? builtinSource(source.scenario) : source;
+  const scenario = loadProject(parseProjectDocument(project), firmware, seed);
+  return 'scenario' in source
+    ? { ...scenario, scene: { ...scenario.scene, scenario: source.scenario } }
+    : scenario;
 }
 
 export function buildScenario(id: ScenarioId, seed = 1): Scenario {
-  return id === 'line-follower' ? lineFollower(seed) : bench(id, seed);
+  return buildRun({ scenario: id }, seed);
 }
-
-export { LINE_SPACING_MM };

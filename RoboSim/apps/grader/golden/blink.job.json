@@ -1,0 +1,101 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "blink",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "r1",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "led",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "red"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D13"
+          },
+          "to": {
+            "part": "r1",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "r1",
+            "pin": "b"
+          },
+          "to": {
+            "part": "led",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "led",
+            "pin": "k"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { pinMode(13, OUTPUT); }\nvoid loop() { digitalWrite(13, !digitalRead(13)); delay(500); }\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Blink"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":1000000000E204B903B929E230E040E04A95F1F793\n:0A0010003A95D9F72A95C1F7F5CF0C\n:00000001FF\n",
+      "sha256": "demo:blink"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 2.5
+}

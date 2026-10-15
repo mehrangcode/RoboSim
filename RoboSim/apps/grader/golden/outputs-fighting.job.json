@@ -1,0 +1,114 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "outputs-fighting",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "r1",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "led",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "green"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "to": {
+            "part": "r1",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "r1",
+            "pin": "b"
+          },
+          "to": {
+            "part": "led",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "led",
+            "pin": "k"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D3"
+          },
+          "color": "yellow",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { pinMode(2, OUTPUT); pinMode(3, OUTPUT); digitalWrite(2, HIGH); digitalWrite(3, LOW); }\nvoid loop() {}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Outputs fighting"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":0A0000000CE00AB904E00BB9FFCFD1\n:00000001FF\n",
+      "sha256": "demo:fighting"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 1
+}

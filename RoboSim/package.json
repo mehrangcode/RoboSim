@@ -14,6 +14,8 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:sim": "turbo run build --filter=@robosim/grader^... && pnpm --filter @robosim/grader run test:golden",
+    "golden:update": "turbo run build --filter=@robosim/grader^... && pnpm --filter @robosim/grader run golden:update",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "i18n:check": "pnpm --filter @robosim/i18n run check",

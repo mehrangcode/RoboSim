@@ -2,7 +2,7 @@
 
 ## Status
 
-Slices 1–4 + Lab committed by user. Slices 5 (safety + damage) and 6 (success conditions + scoring + Lab challenge panel) done 2026-10-14, uncommitted. Next: slice 7 — worker protocol (§5.8: SharedArrayBuffer snapshots, event stream, input log).
+Slices 1–4 + Lab committed by user. Slices 5 (safety + damage) and 6 (success conditions + scoring + Lab challenge panel) done 2026-10-14, uncommitted. Slices 5–6 committed (`de81b4d`). Slices 7 (worker protocol), 8 (project document + loader) and 9 (grader + golden traces) done 2026-10-14, uncommitted. Next: ask user (build service proposed).
 
 Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scoring included now; Lab pauses on decision and shows a result card; collision = any new contact with walls/obstacles.
 
@@ -31,6 +31,23 @@ Slice 6 decisions (user): on-line = robot geometry (axle midpoint ±25 mm); scor
 
 - Safety: framework in sim-core/src/safety; rules in packages/safety-rules (one package). Static analysis solves fresh model instances (power-on + per-pin drive probes); sensor-output nets are skipped for drive probes until code analysis (P2).
 - Servo demo rewired to its own 4×AA: SG90 stall 650 mA > Uno 5 V 500 mA (SAF-SUPPLY-OVERLOAD, PRD example).
+
+- Slice 7: snapshot = flattened hot frame (Float64 + tag per path, append-only dict of paths/strings). Challenge + RTF ride in the snapshot (timeLimit changes every slice); findings/faults/damage/serial are events. SAB double buffer + seqlock; new SAB per run. Main thread imports only `@robosim/sim-runtime/client` (engine-free).
+- Input log: live inputs stamped with `sim.slice`; replay applies after slice N's observers (InputLogger is the last observer) → identical to live (test compares every live frame with `HeadlessRun`). Reset after a replay = fresh live run.
+- `ENGINE_VERSION` in sim-runtime/src/engine-version.ts; a test pins it to package.json versions (all components share one version).
+- gen-firmware emits Prettier-stable output (single quotes, wrap > 110 cols).
+- Browser check slice 7: `%TEMP%\robosim-cdp\shot7.mjs` (fa labels; profile is in Persian) — COI true, serial echo + replay verified.
+- Bundle: web initial 241.5 KB gz; growth since slice 4 is locale strings only (both locales bundled eagerly).
+
+- Slice 8: schema in packages/shared/src/project-schema.ts (strict Zod; superRefine cross-checks run only when structure is valid). PinRef {part,pin}; board = part 'board' (MCU pins, GND1-3 → ground, 5V → rail stand-in id '5V-rail'; 3V3/VIN rejected). Additions vs TD sketch: optional arena, per-component `inputs` (power-on state), mm/deg units.
+- Loader: pinless components (chassis) stay out of the circuit; robot = chassis + mounted parts, payload = mounted masses + Uno 25 g, left motor = mount.y > 0. Built-in demos are documents in sim-runtime/src/scenarios.ts; verified bit-identical to the old hand-built scenarios (throwaway comparison, 15 s line-follower lap).
+- InputLog now carries project + firmware (+ scenario id for built-ins) → self-contained replays.
+- Worker bundle 88 → 119 KB gz (zod in the worker; lazy /lab only). Follow-up: zod/mini.
+
+- Slice 9: `grade()` lives in sim-runtime (`grade.ts`), not apps/grader, because the Lab verify worker needs it and browser code may not import apps/grader (arch rule). Views (pins/robot/challenge/damage) moved to `views.ts`, shared by host + grader. Job = InputLog (+ new optional `endSlice`, set on export) + maxSimSeconds ≤ 300 (`MAX_SIM_SECONDS` in protocol.ts so the client can import it).
+- Golden files: apps/grader/golden/<name>.job.json (frozen project + firmware) + .result.json (one sample per line; prettier-ignored). Exact JSON compare. `pnpm golden:update` writes only missing/bumped; same-version drift fails. Verified: 1-ulp pose change at slice 5000 is caught. Line-follower lap result ≈ 205 KB.
+- Lab Verify: pause → exportLog → grade.worker.ts (lazy, own engine bundle) → compare final vs paused frame (pins, pose, challenge, serial tail; key-order-insensitive). Browser check: `%TEMP%\robosim-cdp\shot9.mjs` — identical at 0.31 s, 14.31 s, serial 4.01 s; ~5× RT in Chrome.
+- Web initial JS 242.0 KB gz (+0.5 KB strings).
 
 ## Known issues
 

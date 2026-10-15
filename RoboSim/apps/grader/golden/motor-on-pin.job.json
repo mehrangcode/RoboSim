@@ -1,0 +1,74 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "motor-on-pin",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "motor",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 160,
+          "y": 60,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "motor",
+            "pin": "m2"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { pinMode(9, OUTPUT); digitalWrite(9, HIGH); }\nvoid loop() {}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Motor on a pin"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":0800000002E004B905B9FFCFCD\n:00000001FF\n",
+      "sha256": "demo:pinHigh"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 1
+}

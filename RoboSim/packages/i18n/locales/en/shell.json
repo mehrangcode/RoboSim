@@ -31,13 +31,17 @@
       "pause": "Pause",
       "reset": "Reset",
       "step": "Step 10 ms",
-      "speed": "Speed"
+      "speed": "Speed",
+      "replay": "Replay run",
+      "exportLog": "Export input log",
+      "verify": "Verify run"
     },
     "status": {
       "time": "Sim time {seconds} s",
       "rtf": "{factor}× real time",
       "paused": "Paused",
-      "loading": "Loading the engine…"
+      "loading": "Loading the engine…",
+      "replaying": "{count, plural, one {replaying # input} other {replaying # inputs}}"
     },
     "scenarioLabel": "Demo",
     "scenario": {
@@ -49,7 +53,8 @@
       "led-no-resistor": "LED without resistor",
       "outputs-fighting": "Outputs fighting",
       "motor-on-pin": "Motor on a pin",
-      "floating-input": "Floating input"
+      "floating-input": "Floating input",
+      "serial": "Serial Monitor"
     },
     "scenarioHint": {
       "line-follower": "Arduino Uno + L298N + two TT motors + 3-channel line sensor on 4×AA. The firmware follows the black line around the oval.",
@@ -60,7 +65,8 @@
       "led-no-resistor": "An LED straight on D13 with no resistor. The checker flags it before you run; run it and watch the pin and the LED burn out.",
       "outputs-fighting": "D2 and D3 are wired together; the sketch drives D2 HIGH and D3 LOW — a short circuit through both pins.",
       "motor-on-pin": "A TT motor straight on D9. Motors need a driver: the pin cannot supply the current.",
-      "floating-input": "A button on D2 to GND, but the sketch uses INPUT without a pull-up: released, the pin floats."
+      "floating-input": "A button on D2 to GND, but the sketch uses INPUT without a pull-up: released, the pin floats.",
+      "serial": "The sketch prints a greeting and a tick every second over Serial at 115200 baud, and echoes what you send in capitals (D13 toggles on every byte)."
     },
     "telemetry": {
       "title": "Telemetry",
@@ -159,6 +165,33 @@
         "points": "{points, number}/{weight, number}"
       },
       "again": "Run again"
+    },
+    "serial": {
+      "title": "Serial Monitor",
+      "output": "Serial output",
+      "empty": "Nothing received yet.",
+      "input": "Text to send",
+      "placeholder": "Type and press Enter",
+      "send": "Send"
+    },
+    "verify": {
+      "title": "Verified run",
+      "hint": "Re-runs this run headless and unpaced, the way the grader does. Only verified runs count for grades; runs in the browser are unofficial.",
+      "grading": "Grading…",
+      "outcome": {
+        "success": "Challenge complete",
+        "failure": "Challenge failed",
+        "unresolved": "No decision — ran to {seconds} s"
+      },
+      "score": "Score {total}/{max}",
+      "match": {
+        "identical": "Identical to your run at {seconds} s",
+        "differs": "Differs from your run at {seconds} s",
+        "moved": "Your run has moved on — pause it to compare"
+      },
+      "speed": "Simulated {sim} s in {wall} s ({factor}× real time)",
+      "trace": "{count, plural, one {Trace of # sample} other {Trace of # samples}}, SHA-256",
+      "error": "Verification failed: {message}"
     }
   }
 }

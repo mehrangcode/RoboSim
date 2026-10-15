@@ -1,4 +1,4 @@
-import type { FindingView } from '@robosim/sim-runtime';
+import type { FindingView } from '@robosim/sim-runtime/client';
 import { Button, Card, SegmentedControl, cn } from '@robosim/ui';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,10 +1,11 @@
 import {
   BENCH_SCENARIOS,
+  MAX_SIM_SECONDS,
   SAFETY_SCENARIOS,
   type BenchScenarioId,
   type SafetyScenarioId,
   type ScenarioId,
-} from '@robosim/sim-runtime';
+} from '@robosim/sim-runtime/client';
 import { Button, SegmentedControl } from '@robosim/ui';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,30 +15,71 @@ import { ChallengePanel } from './challenge-panel.js';
 import { FindingsPanel } from './findings-panel.js';
 import { useFormat } from './format.js';
 import { PinTable } from './pin-table.js';
+import { SerialMonitor } from './serial-monitor.js';
 import { Telemetry } from './telemetry.js';
 import { useSimulation, type WorkerLike } from './use-simulation.js';
+import { useVerifiedRun, type GradeWorkerLike } from './use-verified-run.js';
+import { VerifyPanel } from './verify-panel.js';
 
 type Tab = 'arena' | 'bench' | 'safety';
 const TABS = ['arena', 'bench', 'safety'] as const;
 const SPEEDS = ['0.5', '1', '2', '4'] as const;
 
 /** Simulator Lab: live engine demos, extended with every engine slice (Release Plan P1). */
-export function LabPage({ createWorker }: { createWorker?: () => WorkerLike }) {
+export function LabPage({
+  createWorker,
+  createGradeWorker,
+}: {
+  createWorker?: () => WorkerLike;
+  createGradeWorker?: () => GradeWorkerLike;
+}) {
   const { t } = useTranslation();
   const fmt = useFormat();
-  const { scene, frame, error, send } = useSimulation(createWorker);
+  const { scene, frame, error, serial, replaying, send, exportLog } = useSimulation(createWorker);
+  const verified = useVerifiedRun(createGradeWorker);
   const [tab, setTab] = useState<Tab>('arena');
   const [bench, setBench] = useState<BenchScenarioId>('blink');
   const [safety, setSafety] = useState<SafetyScenarioId>('led-no-resistor');
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>('1');
   const scenario: ScenarioId = tab === 'arena' ? 'line-follower' : tab === 'bench' ? bench : safety;
 
+  const clearVerified = verified.clear;
   useEffect(() => {
+    clearVerified();
     send({ type: 'load', scenario });
     send({ type: 'control', action: 'run' });
-  }, [scenario, send]);
+  }, [scenario, send, clearVerified]);
 
   useEffect(() => send({ type: 'speed', value: Number(speed) }), [speed, send]);
+
+  /** Saves the input log of this run: with the same engine version it reproduces the run exactly. */
+  const download = async () => {
+    const log = await exportLog();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `robosim-${log.scenario}-seed${log.seed}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** Re-runs this scenario from the start, replaying every input at the slice it happened. */
+  const replay = async () => {
+    const log = await exportLog();
+    const source = log.scenario
+      ? { scenario: log.scenario }
+      : { project: log.project, firmware: log.firmware };
+    send({ type: 'load', ...source, seed: log.seed, inputLog: log.entries });
+    send({ type: 'control', action: 'run' });
+  };
+
+  /** Pauses, then grades this run up to the same slice in a worker of its own, as the grader would. */
+  const verify = async () => {
+    send({ type: 'control', action: 'pause' });
+    const log = await exportLog();
+    if (!log.endSlice) return;
+    verified.verify({ log, maxSimSeconds: Math.min(log.endSlice / 1000, MAX_SIM_SECONDS) });
+  };
 
   const running = frame?.running ?? false;
   const ready = scene?.scenario === scenario;
@@ -101,6 +143,20 @@ export function LabPage({ createWorker }: { createWorker?: () => WorkerLike }) {
         >
           {t('shell:lab.controls.step')}
         </Button>
+        <Button size="sm" variant="secondary" onClick={() => void replay()} disabled={!ready}>
+          {t('shell:lab.controls.replay')}
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => void download()} disabled={!ready}>
+          {t('shell:lab.controls.exportLog')}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void verify()}
+          disabled={!ready || !frame?.simTime || verified.state.status === 'grading'}
+        >
+          {t('shell:lab.controls.verify')}
+        </Button>
         <SegmentedControl
           label={t('shell:lab.controls.speed')}
           value={speed}
@@ -110,11 +166,13 @@ export function LabPage({ createWorker }: { createWorker?: () => WorkerLike }) {
         <p role="status" aria-live="off" className="ms-auto text-sm tabular-nums text-ink-muted">
           {!ready
             ? t('shell:lab.status.loading')
-            : `${t('shell:lab.status.time', { seconds: fmt(frame?.simTime ?? 0, 2) })} · ${
+            : [
+                t('shell:lab.status.time', { seconds: fmt(frame?.simTime ?? 0, 2) }),
                 running
                   ? t('shell:lab.status.rtf', { factor: fmt(frame?.rtf ?? 0, 2) })
-                  : t('shell:lab.status.paused')
-              }`}
+                  : t('shell:lab.status.paused'),
+                ...(replaying > 0 ? [t('shell:lab.status.replaying', { count: replaying })] : []),
+              ].join(' · ')}
         </p>
       </div>
 
@@ -132,8 +190,14 @@ export function LabPage({ createWorker }: { createWorker?: () => WorkerLike }) {
             ) : (
               <BenchView scene={scene} frame={frame} send={send} />
             )}
+            {scene.serial && (
+              <div className="mt-4">
+                <SerialMonitor output={serial} send={send} />
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-3">
+            <VerifyPanel state={verified.state} frame={frame} serial={serial} />
             {frame?.challenge && <ChallengePanel challenge={frame.challenge} send={send} />}
             {scene.kind === 'arena' && <Telemetry frame={frame} />}
             <PinTable scene={scene} frame={frame} />

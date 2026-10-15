@@ -3,4 +3,5 @@ export * from './errors.js';
 export * from './feature-flags.js';
 export * from './ids.js';
 export * from './locale.js';
+export * from './project-schema.js';
 export * from './workspace.js';

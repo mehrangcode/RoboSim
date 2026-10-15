@@ -1,0 +1,172 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "dimmer",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "pot",
+          "type": "passive.potentiometer",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 160,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "r1",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "led",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "yellow"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "pot",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "pot",
+            "pin": "wiper"
+          },
+          "to": {
+            "part": "board",
+            "pin": "A0"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "pot",
+            "pin": "b"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "D6"
+          },
+          "to": {
+            "part": "r1",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "r1",
+            "pin": "b"
+          },
+          "to": {
+            "part": "led",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "led",
+            "pin": "k"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { pinMode(6, OUTPUT); }\nvoid loop() { analogWrite(6, analogRead(A0) / 4); }\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Knob dims an LED"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":1000000000E40AB903E804BD03E005BD00E600937F\n:100010007C0007EC00937A0010917A0016FDFCCF6B\n:080020002091790027BDF5CF06\n:00000001FF\n",
+      "sha256": "demo:dimmer"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 200,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 0.25
+      },
+      {
+        "slice": 700,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 0.75
+      },
+      {
+        "slice": 1100,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 1
+      }
+    ]
+  },
+  "maxSimSeconds": 1.5
+}

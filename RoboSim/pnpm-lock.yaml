@@ -328,6 +328,31 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
+  apps/grader:
+    dependencies:
+      '@robosim/sim-runtime':
+        specifier: workspace:*
+        version: link:../../packages/sim-runtime
+      zod:
+        specifier: ^4.6.6
+        version: 4.6.6
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@types/node':
+        specifier: ^24.19.2
+        version: 24.19.2
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
   apps/web:
     dependencies:
       '@robosim/i18n':
@@ -1044,6 +1069,9 @@ importers:
       '@robosim/safety-rules':
         specifier: workspace:*
         version: link:../safety-rules
+      '@robosim/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@robosim/sim-core':
         specifier: workspace:*
         version: link:../sim-core

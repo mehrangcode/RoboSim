@@ -12,6 +12,8 @@
     "shell:lab.telemetry.",
     "safety:",
     "shell:lab.findings.",
-    "shell:lab.challenge."
+    "shell:lab.challenge.",
+    "shell:lab.verify.outcome.",
+    "shell:lab.verify.match."
   ]
 }

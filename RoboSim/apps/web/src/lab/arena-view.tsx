@@ -1,5 +1,5 @@
 import { ArenaRenderer } from '@robosim/renderer-2d';
-import type { Frame, SceneInfo } from '@robosim/sim-runtime';
+import type { Frame, SceneInfo } from '@robosim/sim-runtime/client';
 import { useEffect, useRef } from 'react';
 
 /** Canvas host for the 2D arena renderer; redraws on every frame and on resize. */

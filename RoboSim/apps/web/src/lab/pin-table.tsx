@@ -1,4 +1,4 @@
-import type { Frame, SceneInfo } from '@robosim/sim-runtime';
+import type { Frame, SceneInfo } from '@robosim/sim-runtime/client';
 import { Card } from '@robosim/ui';
 import { useTranslation } from 'react-i18next';
 import { useFormat } from './format.js';

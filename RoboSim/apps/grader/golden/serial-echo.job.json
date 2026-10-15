@@ -1,0 +1,112 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "serial",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "r1",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "led",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "green"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D13"
+          },
+          "to": {
+            "part": "r1",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "r1",
+            "pin": "b"
+          },
+          "to": {
+            "part": "led",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "led",
+            "pin": "k"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { Serial.begin(115200); Serial.println(\"RoboSim ready\"); pinMode(13, OUTPUT); }\nint n = 0;\nunsigned long last = 0;\nvoid loop() {\n  if (millis() - last >= 1000) { last = millis(); Serial.print(\"tick \"); Serial.println(n++ % 10); }\n  if (Serial.available()) { Serial.write(toupper(Serial.read())); digitalWrite(13, !digitalRead(13)); }\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Serial Monitor"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":1000000008E00EBF0FEF0DBF02E00093C00000E05C\n:100010000093C50000E10093C40006E00093C20015\n:1000200008E10093C10000E204B910E382E549D081\n:100030008FE647D082E645D08FE643D083E541D0B6\n:1000400089E63FD08DE63DD080E23BD082E739D0D3\n:1000500085E637D081E635D084E633D089E731D0E4\n:100060008DE02FD08AE02DD084E72BD089E629D0EF\n:1000700083E627D08BE625D080E223D0812F21D0C4\n:100080008DE01FD08AE01DD013951A3309F410E3D8\n:1000900023E230E040E05091C00057FD07D04A9580\n:1000A000D1F73A95B9F72A95A1F7DECF8091C6002E\n:1000B000813618F08B3708F4805203D060E263B9C0\n:1000C00008959091C00095FFFCCF8093C6000895DD\n:00000001FF\n",
+      "sha256": "demo:serial"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 1500,
+        "kind": "serial",
+        "text": "hello"
+      },
+      {
+        "slice": 2100,
+        "kind": "serial",
+        "text": "Ok"
+      }
+    ]
+  },
+  "maxSimSeconds": 3
+}

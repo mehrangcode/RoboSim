@@ -1,0 +1,166 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "button",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "r1",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "led",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 40,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "green"
+          }
+        },
+        {
+          "id": "btn",
+          "type": "sensor.push-button",
+          "typeVersion": "1.0.0",
+          "x": 120,
+          "y": 160,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D13"
+          },
+          "to": {
+            "part": "r1",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "r1",
+            "pin": "b"
+          },
+          "to": {
+            "part": "led",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "led",
+            "pin": "k"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "btn",
+            "pin": "b1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "btn",
+            "pin": "a1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { pinMode(2, INPUT_PULLUP); pinMode(13, OUTPUT); }\nvoid loop() { digitalWrite(13, !digitalRead(2)); }\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Button + LED"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":1000000000E204B914E01BB94A9B2D9A4A992D9835\n:02001000FBCF24\n:00000001FF\n",
+      "sha256": "demo:button"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 300,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": true
+      },
+      {
+        "slice": 800,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": false
+      },
+      {
+        "slice": 1200,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": true
+      },
+      {
+        "slice": 1210,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": false
+      }
+    ]
+  },
+  "maxSimSeconds": 1.5
+}

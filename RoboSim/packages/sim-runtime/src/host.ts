@@ -1,107 +1,223 @@
-import { UNO_ELECTRICAL } from '@robosim/board-avr-uno';
-import { Pacer, dmath, type ChallengeResult, type McuCore, type NodeView } from '@robosim/sim-core';
-import { ovalArena } from '@robosim/content';
-import type { ChallengeView, Frame, MainToWorker, PinView, WorkerToMain } from './protocol.js';
-import { LINE_SPACING_MM, buildScenario, findingView, type Scenario } from './scenarios.js';
+import { Pacer } from '@robosim/sim-core';
+import type { ProjectDocument } from '@robosim/shared';
+import { ENGINE_VERSION } from './engine-version.js';
+import { InputLogger, type LiveInput } from './input-log.js';
+import type {
+  Damage,
+  FirmwarePayload,
+  RunSource,
+  Fault,
+  HotFrame,
+  InputLogEntry,
+  MainToWorker,
+  ScenarioId,
+  WorkerToMain,
+} from './protocol.js';
+import { buildRun, builtinSource, findingView, type Scenario } from './scenarios.js';
+import { SharedSnapshotWriter, packSnapshot } from './snapshot-channel.js';
+import { SnapshotEncoder } from './snapshot-codec.js';
+import { challengeView, damageView, pinViews, robotView } from './views.js';
 
-/** Frames to the UI at most this often (wall ms); the simulation itself is unaffected. */
+/** Snapshots to the UI at most this often (wall ms); the simulation itself is unaffected. */
 const FRAME_INTERVAL_MS = 33;
 
+export interface SimHostOptions {
+  /** Publish snapshots through a shared buffer (needs cross-origin isolation); else transfer them. */
+  readonly shared?: boolean;
+}
+
+interface Run {
+  /** What was loaded, resolved to document + firmware (built-ins keep their id). */
+  readonly source: {
+    readonly scenario: ScenarioId | null;
+    readonly project: ProjectDocument;
+    readonly firmware: FirmwarePayload;
+  };
+  readonly seed: number;
+  readonly scenario: Scenario;
+  readonly pacer: Pacer;
+  readonly logger: InputLogger;
+  readonly encoder: SnapshotEncoder;
+  writer: SharedSnapshotWriter | null;
+  serialOut: string;
+  /** Last event payloads sent, to post only changes. */
+  sentFindings: number;
+  sentFaults: string;
+  sentDamage: string;
+}
+
 /**
- * Worker-side driver of the Lab: owns the scenario, paces it against wall-clock time and publishes
- * frames. DOM-free (the worker injects `post` and `now`), so it also runs under Node tests.
+ * Worker-side driver (Technical Design §5.8): owns the run, paces it against wall-clock time,
+ * records the input log and publishes binary snapshots plus events. DOM-free (the worker injects
+ * `post` and `now`), so it also runs under Node tests.
  */
 export class SimHost {
-  private scenario: Scenario | null = null;
-  private pacer: Pacer | null = null;
+  private run: Run | null = null;
   private running = false;
   private speed = 1;
   private seq = 0;
   private lastFrameWall = -Infinity;
   private lastFrameSim = 0;
-  private loaded: { id: Parameters<typeof buildScenario>[0]; seed: number } | null = null;
+  private readonly shared: boolean;
 
   constructor(
     private readonly post: (msg: WorkerToMain, transfer?: ArrayBuffer[]) => void,
     private readonly now: () => number,
-  ) {}
+    options: SimHostOptions = {},
+  ) {
+    this.shared = options.shared ?? false;
+  }
 
   handle(msg: MainToWorker): void {
-    try {
+    this.guard(() => {
       switch (msg.type) {
         case 'load':
-          this.load(msg.scenario, msg.seed ?? 1);
+          this.load(
+            'scenario' in msg ? { scenario: msg.scenario } : { project: msg.project, firmware: msg.firmware },
+            msg.seed ?? 1,
+            msg.inputLog ?? [],
+          );
           break;
         case 'control':
           this.control(msg.action);
           break;
         case 'speed':
           this.speed = msg.value;
-          this.pacer?.setSpeed(msg.value);
+          this.run?.pacer.setSpeed(msg.value);
           break;
         case 'input':
-          this.scenario?.circuit.sim.input(msg.componentId, msg.name, msg.value);
-          if (!this.running) this.publish(true);
+          this.input({ kind: 'component', componentId: msg.componentId, name: msg.name, value: msg.value });
+          break;
+        case 'serial':
+          this.input({ kind: 'serial', text: msg.text });
+          break;
+        case 'exportLog':
+          if (this.run)
+            this.post({
+              type: 'inputLog',
+              log: {
+                engineVersion: ENGINE_VERSION,
+                ...this.run.source,
+                seed: this.run.seed,
+                entries: [...this.run.logger.entries],
+                endSlice: this.run.scenario.circuit.sim.slice,
+              },
+            });
           break;
       }
-    } catch (e) {
-      this.post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
-    }
+    });
   }
 
   /** Called by the worker loop (~every 16 ms). */
   tick(): void {
-    if (this.running) {
-      this.pacer?.tick();
-      // The pacer stops on the decisive slice (stopWhen); mirror that as a paused run.
-      if (this.scenario?.challenge?.isDecided) {
-        this.running = false;
-        this.publish(true);
-        return;
+    this.guard(() => {
+      const run = this.run;
+      if (run && this.running) {
+        run.pacer.tick();
+        // The pacer stops on the decisive slice (stopWhen); mirror that as a paused run.
+        if (run.scenario.challenge?.isDecided) {
+          this.running = false;
+          this.publish(true);
+          return;
+        }
       }
-    }
-    this.publish(false);
+      this.publish(false);
+    });
   }
 
-  private load(id: Parameters<typeof buildScenario>[0], seed: number): void {
-    this.scenario = buildScenario(id, seed);
-    this.loaded = { id, seed };
-    const challenge = this.scenario.challenge;
-    this.pacer = new Pacer(this.scenario.circuit.sim, {
+  private guard(fn: () => void): void {
+    try {
+      fn();
+    } catch (e) {
+      this.running = false;
+      this.run?.pacer.pause();
+      this.post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
+  private input(input: LiveInput): void {
+    if (!this.run) return;
+    this.run.logger.live(input);
+    if (!this.running) this.publish(true);
+  }
+
+  private load(source: RunSource, seed: number, replay: readonly InputLogEntry[]): void {
+    this.run = null;
+    this.running = false;
+    const scenario = buildRun(source, seed);
+    const logger = new InputLogger(scenario, replay);
+    scenario.circuit.sim.addObserver(logger); // last: replayed inputs land where live ones did
+    const challenge = scenario.challenge;
+    const pacer = new Pacer(scenario.circuit.sim, {
       now: this.now,
       speed: this.speed,
       ...(challenge ? { stopWhen: () => challenge.isDecided } : {}),
     });
-    this.running = false;
+    const run: Run = {
+      source:
+        'scenario' in source
+          ? { scenario: source.scenario, ...builtinSource(source.scenario) }
+          : { scenario: null, project: source.project, firmware: source.firmware },
+      seed,
+      scenario,
+      pacer,
+      logger,
+      encoder: new SnapshotEncoder(),
+      writer: null,
+      serialOut: '',
+      sentFindings: 0,
+      sentFaults: '[]',
+      sentDamage: JSON.stringify(NO_DAMAGE),
+    };
+    if (scenario.scene.serial) {
+      const utf8 = new TextDecoder();
+      scenario.circuit.sim.mcu?.uart(0).onData((bytes) => {
+        run.serialOut += utf8.decode(bytes, { stream: true });
+      });
+    }
+    this.run = run;
     this.lastFrameSim = 0;
-    const floor = this.scenario.scene.arena?.floor.data;
-    this.post({ type: 'loaded', scene: this.scenario.scene }, floor ? [floor.slice().buffer] : []);
+    const floor = scenario.scene.arena?.floor.data;
+    this.post(
+      {
+        type: 'loaded',
+        scene: scenario.scene,
+        seed,
+        engineVersion: ENGINE_VERSION,
+        replaying: replay.length,
+      },
+      floor ? [floor.slice().buffer] : [],
+    );
     this.publish(true);
   }
 
   private control(action: 'run' | 'pause' | 'reset' | 'step'): void {
-    if (!this.scenario || !this.pacer) return;
-    if (action === 'reset' && this.loaded) {
-      this.load(this.loaded.id, this.loaded.seed);
+    const run = this.run;
+    if (!run) return;
+    if (action === 'reset') {
+      // Reset starts a fresh live run; replaying a log is an explicit `load`.
+      const { scenario, project, firmware } = run.source;
+      this.load(scenario ? { scenario } : { project, firmware }, run.seed, []);
       return;
     }
     if (action === 'run') {
       this.running = true;
-      this.pacer.start();
+      run.pacer.start();
     } else if (action === 'pause') {
       this.running = false;
-      this.pacer.pause();
+      run.pacer.pause();
     } else {
-      this.scenario.circuit.sim.run(10);
+      run.scenario.circuit.sim.run(10);
     }
     this.publish(true);
   }
 
   private publish(force: boolean): void {
-    const s = this.scenario;
-    if (!s) return;
+    const run = this.run;
+    if (!run) return;
     const wall = this.now();
     if (!force && wall - this.lastFrameWall < FRAME_INTERVAL_MS) return;
+    const s = run.scenario;
     const sim = s.circuit.sim;
     const snap = sim.snapshot();
     const dtWall = (wall - this.lastFrameWall) / 1000;
@@ -110,106 +226,54 @@ export class SimHost {
     this.lastFrameWall = wall;
     this.lastFrameSim = snap.simTime;
 
+    // Events first: the UI merges them into the frame built from the snapshot that follows.
+    if (run.serialOut) {
+      this.post({ type: 'serial', text: run.serialOut });
+      run.serialOut = '';
+    }
+    const findings = s.safety.findings();
+    if (findings.length !== run.sentFindings) {
+      run.sentFindings = findings.length;
+      this.post({ type: 'findings', findings: findings.map(findingView) });
+    }
+    const faults: Fault[] = snap.faults.map((f) => ({ code: f.code, componentId: f.componentId }));
+    const faultsKey = JSON.stringify(faults);
+    if (faultsKey !== run.sentFaults) {
+      run.sentFaults = faultsKey;
+      this.post({ type: 'faults', faults });
+    }
+    const damaged = damageView(s);
+    const damageKey = JSON.stringify(damaged);
+    if (damageKey !== run.sentDamage) {
+      run.sentDamage = damageKey;
+      this.post({ type: 'damaged', damaged });
+    }
+
     const parts: Record<string, unknown> = {};
     for (const c of snap.components) if (c.state !== null) parts[c.id] = c.state;
-    const frame: Frame = {
+    const hot: HotFrame = {
       seq: ++this.seq,
       simTime: snap.simTime,
       rtf,
       running: this.running,
       parts,
-      pins: this.pinViews(s),
-      faults: snap.faults.map((f) => ({ code: f.code, componentId: f.componentId })),
-      findings: s.safety.findings().map(findingView),
-      damaged: {
-        parts: snap.components
-          .filter((c) => (c.state as { damaged?: boolean } | null)?.damaged === true)
-          .map((c) => c.id),
-        pins: s.scene.pins.filter((p) => sim.mcuBus?.isPinDamaged(p)),
-      },
-      ...(s.world ? { robot: this.robotView(s) } : {}),
-      ...(s.challenge ? { challenge: challengeView(s.challenge.result()) } : {}),
+      pins: pinViews(s),
+      ...(s.world ? { robot: robotView(s) } : {}),
+      ...(s.challenge ? { challenge: challengeView(s.challenge.result(), s.arena) } : {}),
     };
-    this.post({ type: 'frame', frame });
-  }
-
-  private pinViews(s: Scenario): Record<string, PinView> {
-    const outputs = this.core(s).pinOutputs();
-    const solution = s.circuit.sim.currentSolution;
-    const views: Record<string, PinView> = {};
-    for (const pin of s.scene.pins) {
-      const o = outputs.get(pin);
-      if (!o) continue;
-      const volts = solution.voltage(s.circuit.net(`mcu.${pin}`));
-      // Inputs show what the MCU reads (Uno VIH 3 V / VIL 1.5 V); in-between keeps the driven bit.
-      const level =
-        o.mode === 'output'
-          ? o.level
-          : volts >= UNO_ELECTRICAL.vih
-            ? 1
-            : volts <= UNO_ELECTRICAL.vil
-              ? 0
-              : o.level;
-      views[pin] = o.pwm
-        ? { mode: o.mode, level, volts, duty: o.pwm.dutyRatio }
-        : { mode: o.mode, level, volts };
+    const encoded = run.encoder.encode(hot);
+    if (encoded.delta) this.post({ type: 'dict', delta: encoded.delta });
+    if (this.shared) {
+      if (!run.writer || encoded.count > run.writer.capacity) {
+        run.writer = new SharedSnapshotWriter(Math.max(256, encoded.count * 2));
+        this.post({ type: 'channel', buffer: run.writer.buffer });
+      }
+      run.writer.write(encoded.count, encoded.values, encoded.tags);
+    } else {
+      const buffer = packSnapshot(encoded.count, encoded.values, encoded.tags);
+      this.post({ type: 'snapshot', buffer }, [buffer]);
     }
-    return views;
-  }
-
-  private core(s: Scenario): McuCore {
-    const core = s.circuit.sim.mcu;
-    if (!core) throw new Error('scenario has no MCU');
-    return core;
-  }
-
-  private robotView(s: Scenario): NonNullable<Frame['robot']> {
-    const body = s.world?.bodies()[0];
-    const pose = s.world?.componentPose('line');
-    const line = s.circuit.models['line']?.snapshot() as { outputs?: Record<string, 0 | 1> } | undefined;
-    const sensors = pose
-      ? (['left', 'center', 'right'] as const).map((ch, i) => {
-          const y = (1 - i) * LINE_SPACING_MM * 1e-3;
-          return {
-            x: pose.position.x - dmath.sin(pose.angle) * y,
-            y: pose.position.y + dmath.cos(pose.angle) * y,
-            black: line?.outputs?.[ch] === 1,
-          };
-        })
-      : [];
-    return { x: body?.position.x ?? 0, y: body?.position.y ?? 0, angle: body?.angle ?? 0, sensors };
   }
 }
 
-const CHECKPOINTS = (ovalArena.zones ?? []).filter((z) => z.kind === 'checkpoint').map((z) => z.id);
-const START = (ovalArena.zones ?? []).find((z) => z.kind === 'start')?.id ?? null;
-
-function findNode(n: NodeView, type: string): NodeView | null {
-  if (n.type === type) return n;
-  for (const c of n.children ?? []) {
-    const hit = findNode(c, type);
-    if (hit) return hit;
-  }
-  return null;
-}
-
-function challengeView(r: ChallengeResult): ChallengeView {
-  const laps = findNode(r.tree, 'laps');
-  const index = Number(laps?.params['checkpoint'] ?? 0);
-  const done = laps?.status === 'met';
-  return {
-    id: r.challengeId,
-    status: r.status,
-    decidedAt: r.decidedAt,
-    tree: r.tree,
-    score: r.score
-      ? {
-          total: r.score.total,
-          max: r.score.max,
-          lines: r.score.lines.map((l) => ({ type: l.type, weight: l.weight, points: l.points })),
-        }
-      : null,
-    visitedZones: done ? [...CHECKPOINTS] : CHECKPOINTS.slice(0, index),
-    nextZone: done ? null : (CHECKPOINTS[index] ?? START),
-  };
-}
+const NO_DAMAGE: Damage = { parts: [], pins: [] };

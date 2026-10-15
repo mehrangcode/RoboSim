@@ -1,27 +1,52 @@
 import { describe, expect, it } from 'vitest';
-import type { Frame, SceneInfo, WorkerToMain } from './protocol.js';
+import { SimClient } from './client.js';
+import { ENGINE_VERSION } from './engine-version.js';
+import { HeadlessRun } from './input-log.js';
+import type { Frame, InputLog, WorkerToMain } from './protocol.js';
 import { SimHost } from './host.js';
 
-function harness() {
+/** Host + client wired back to back, as worker and UI are; `shared` picks the snapshot transport. */
+function harness(shared = false) {
   let wall = 0;
   const messages: WorkerToMain[] = [];
-  const host = new SimHost(
-    (m) => messages.push(m),
+  const client = new SimClient();
+  const frames: Frame[] = [];
+  const engine = new SimHost(
+    (m) => {
+      messages.push(m);
+      if (client.receive(m) && client.frame && client.frame !== frames.at(-1)) frames.push(client.frame);
+    },
     () => wall,
+    { shared },
   );
-  const frames = () =>
-    messages
-      .filter((m): m is Extract<WorkerToMain, { type: 'frame' }> => m.type === 'frame')
-      .map((m) => m.frame);
-  const scene = () => (messages.find((m) => m.type === 'loaded') as { scene: SceneInfo } | undefined)?.scene;
-  /** Advance wall time in 16 ms worker ticks. */
+  const poll = () => {
+    if (client.poll() && client.frame) frames.push(client.frame);
+  };
+  // The UI polls the shared buffer every animation frame: model that as a poll after each command.
+  const host = {
+    handle: (m: Parameters<SimHost['handle']>[0]) => {
+      engine.handle(m);
+      poll();
+    },
+  };
+  const scene = () => client.scene ?? undefined;
+  /** Advance wall time in 16 ms worker ticks; the UI polls the shared buffer after each. */
   const advance = (ms: number) => {
     for (let t = 0; t < ms; t += 16) {
       wall += 16;
-      host.tick();
+      engine.tick();
+      poll();
     }
   };
-  return { host, messages, frames, scene, advance, last: (): Frame | undefined => frames().at(-1) };
+  return {
+    host,
+    client,
+    messages,
+    frames,
+    scene,
+    advance,
+    last: (): Frame | undefined => client.frame ?? undefined,
+  };
 }
 
 describe('SimHost', () => {
@@ -184,5 +209,150 @@ describe('SimHost challenge (slice 6)', () => {
     expect(f?.challenge?.score?.total).toBeGreaterThan(95);
     h.host.handle({ type: 'control', action: 'reset' });
     expect(h.last()?.challenge?.status).toBe('running');
+  });
+});
+
+describe('SimHost worker protocol (slice 7)', () => {
+  it('shared-buffer and transferred snapshots deliver identical frames', () => {
+    const run = (shared: boolean) => {
+      const h = harness(shared);
+      h.host.handle({ type: 'load', scenario: 'line-follower' });
+      h.host.handle({ type: 'control', action: 'run' });
+      h.advance(400);
+      h.host.handle({ type: 'control', action: 'pause' });
+      return h;
+    };
+    const shared = run(true);
+    const transfer = run(false);
+    expect(shared.messages.some((m) => m.type === 'channel')).toBe(true);
+    expect(shared.messages.some((m) => m.type === 'snapshot')).toBe(false);
+    expect(transfer.messages.some((m) => m.type === 'channel')).toBe(false);
+    expect(shared.last()).toEqual(transfer.last());
+    expect(shared.last()?.challenge?.tree.type).toBeTruthy(); // strings survive the dictionary
+  });
+
+  it('posts the dictionary once; later snapshots are numbers only', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'button' });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(300);
+    const dicts = h.messages.flatMap((m) => (m.type === 'dict' ? [m.delta] : []));
+    expect(dicts.filter((d) => d.paths.length > 0)).toHaveLength(1);
+    expect(dicts.slice(1).flatMap((d) => d.strings)).toEqual(['input_pullup', 'output']); // pin modes after boot
+    expect(h.messages.filter((m) => m.type === 'snapshot').length).toBeGreaterThan(5);
+  });
+
+  it('events carry findings and damage only when they change', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'outputs-fighting' });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(300);
+    expect(h.messages.filter((m) => m.type === 'damaged')).toHaveLength(1);
+    expect(h.messages.filter((m) => m.type === 'findings').length).toBeGreaterThan(0);
+    expect(h.last()?.damaged.pins).toEqual(['D2', 'D3']);
+  });
+
+  it('serial demo: greets, ticks every second and echoes input upper-cased', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'serial' });
+    expect(h.scene()?.serial).toBe(true);
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(1200);
+    expect(h.client.serial).toMatch(/^RoboSim ready\r\ntick 0\r\ntick 1\r\n/);
+    h.host.handle({ type: 'serial', text: 'hi!' });
+    h.advance(100);
+    expect(h.client.serial).toContain('HI!');
+    expect(h.client.serial.endsWith('HI!') || /HI!(\r\ntick \d\r\n)?$/.test(h.client.serial)).toBe(true);
+  });
+
+  it('exports the input log with engine version, scenario and seed', () => {
+    const h = harness();
+    let log: InputLog | null = null;
+    h.client.onInputLog = (l) => (log = l);
+    h.host.handle({ type: 'load', scenario: 'button', seed: 7 });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(100);
+    h.host.handle({ type: 'input', componentId: 'btn', name: 'pressed', value: true });
+    h.host.handle({ type: 'exportLog' });
+    expect(log).toEqual({
+      engineVersion: ENGINE_VERSION,
+      scenario: 'button',
+      project: expect.objectContaining({ meta: { title: 'Button + LED' } }),
+      firmware: { format: 'ihex', text: expect.stringMatching(/^:/), sha256: 'demo:button' },
+      seed: 7,
+      entries: [
+        { kind: 'component', componentId: 'btn', name: 'pressed', value: true, slice: expect.any(Number) },
+      ],
+      endSlice: expect.any(Number),
+    });
+    // Nothing ran between the input and the export: the log ends where the input was stamped.
+    const exported = log as InputLog | null;
+    expect(exported?.endSlice).toBe(exported?.entries[0]?.slice);
+    expect(exported?.endSlice).toBeGreaterThan(0);
+  });
+
+  it('a replayed run is identical to the live run, slice for slice', () => {
+    // Live: inputs land at whatever slice wall-clock pacing happened to reach.
+    const live = harness();
+    let log: InputLog | null = null;
+    live.client.onInputLog = (l) => (log = l);
+    live.host.handle({ type: 'load', scenario: 'serial', seed: 3 });
+    live.host.handle({ type: 'control', action: 'run' });
+    live.advance(170);
+    live.host.handle({ type: 'serial', text: 'abc' });
+    live.advance(90);
+    live.host.handle({ type: 'control', action: 'pause' });
+    live.host.handle({ type: 'serial', text: 'xyz' }); // while paused
+    live.host.handle({ type: 'control', action: 'run' });
+    live.advance(300);
+    live.host.handle({ type: 'exportLog' });
+    const recorded = log as InputLog | null;
+    expect(recorded?.entries).toHaveLength(2);
+
+    // Replay through the host (paced differently) and headless: same frames at the same slices.
+    const replay = harness();
+    replay.host.handle({ type: 'load', scenario: 'serial', seed: 3, inputLog: recorded?.entries ?? [] });
+    expect(replay.client.replaying).toBe(2);
+    replay.host.handle({ type: 'speed', value: 2 });
+    replay.host.handle({ type: 'control', action: 'run' });
+    replay.advance(400);
+    expect(replay.client.serial.startsWith(live.client.serial)).toBe(true);
+
+    const headless = new HeadlessRun({ scenario: 'serial' }, 3, recorded?.entries ?? []);
+    for (const f of live.frames.filter((x) => x.simTime > 0)) {
+      headless.runTo(Math.round(f.simTime * 1000));
+      const snap = headless.scenario.circuit.sim.snapshot();
+      const parts = Object.fromEntries(
+        snap.components.filter((c) => c.state !== null).map((c) => [c.id, c.state]),
+      );
+      expect(parts, `slice ${Math.round(f.simTime * 1000)}`).toEqual(f.parts);
+    }
+  });
+
+  it('reset after a replay starts a fresh live run', () => {
+    const h = harness();
+    h.host.handle({
+      type: 'load',
+      scenario: 'button',
+      inputLog: [{ slice: 5, kind: 'component', componentId: 'btn', name: 'pressed', value: true }],
+    });
+    expect(h.client.replaying).toBe(1);
+    h.host.handle({ type: 'control', action: 'reset' });
+    expect(h.client.replaying).toBe(0);
+  });
+
+  it('a broken replay entry surfaces as an error and pauses the run', () => {
+    const h = harness();
+    h.host.handle({
+      type: 'load',
+      scenario: 'button',
+      inputLog: [{ slice: 20, kind: 'component', componentId: 'ghost', name: 'pressed', value: true }],
+    });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(100);
+    expect(h.client.error).toMatch(/ghost/);
+    const t = h.last()?.simTime;
+    h.advance(100);
+    expect(h.last()?.simTime).toBe(t);
   });
 });

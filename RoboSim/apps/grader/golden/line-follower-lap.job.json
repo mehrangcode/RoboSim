@@ -1,0 +1,453 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.1.0",
+    "scenario": "line-follower",
+    "project": {
+      "schemaVersion": 1,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "chassis",
+          "type": "mechanical.chassis-2wd",
+          "typeVersion": "1.0.0",
+          "x": 400,
+          "y": 300,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "bat",
+          "type": "power.battery-4aa",
+          "typeVersion": "1.0.0",
+          "x": 60,
+          "y": 60,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": -60,
+            "y": 0,
+            "z": 45,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "sw",
+          "type": "power.switch",
+          "typeVersion": "1.0.0",
+          "x": 60,
+          "y": 160,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "inputs": {
+            "on": true
+          }
+        },
+        {
+          "id": "drv",
+          "type": "driver.l298n",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 120,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "enaJumper": false,
+            "enbJumper": false,
+            "regulatorJumper": false
+          },
+          "mount": {
+            "x": -30,
+            "y": 0,
+            "z": 45,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "motorL",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 340,
+          "y": 60,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 0,
+            "y": 45,
+            "z": 20,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "motorR",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 340,
+          "y": 180,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 0,
+            "y": -45,
+            "z": 20,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "line",
+          "type": "sensor.line-3ch",
+          "typeVersion": "1.0.0",
+          "x": 200,
+          "y": 260,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "spacingMm": 12
+          },
+          "mount": {
+            "x": 65,
+            "y": 0,
+            "z": 5,
+            "yaw": 0
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "bat",
+            "pin": "pos"
+          },
+          "to": {
+            "part": "sw",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "sw",
+            "pin": "b"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "vs"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "v5"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "line",
+            "pin": "vcc"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "board",
+            "pin": "D5"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "ena"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "board",
+            "pin": "D6"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "enb"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "board",
+            "pin": "D7"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "board",
+            "pin": "D8"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in3"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "board",
+            "pin": "D10"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in4"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "drv",
+            "pin": "out1"
+          },
+          "to": {
+            "part": "motorL",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "drv",
+            "pin": "out2"
+          },
+          "to": {
+            "part": "motorL",
+            "pin": "m2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "drv",
+            "pin": "out3"
+          },
+          "to": {
+            "part": "motorR",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "drv",
+            "pin": "out4"
+          },
+          "to": {
+            "part": "motorR",
+            "pin": "m2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w15",
+          "from": {
+            "part": "line",
+            "pin": "left"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w16",
+          "from": {
+            "part": "line",
+            "pin": "center"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D3"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w17",
+          "from": {
+            "part": "line",
+            "pin": "right"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D4"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w18",
+          "from": {
+            "part": "bat",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w19",
+          "from": {
+            "part": "drv",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w20",
+          "from": {
+            "part": "line",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// L/C/R line sensor on D2/D3/D4 (HIGH = black); L298N ENA/ENB on D5/D6, IN1 D7, IN3 D9.\nvoid setup() {\n  for (int p = 5; p <= 9; p++) pinMode(p, OUTPUT);\n  analogWrite(5, 150); analogWrite(6, 150);\n}\nvoid loop() {\n  if (digitalRead(2)) { digitalWrite(7, LOW); digitalWrite(9, HIGH); }        // line on the left: turn left\n  else if (digitalRead(4)) { digitalWrite(7, HIGH); digitalWrite(9, LOW); }   // on the right: turn right\n  else if (digitalRead(3)) { digitalWrite(7, HIGH); digitalWrite(9, HIGH); }  // centred: straight\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "arena": {
+        "arenaVersionId": "oval",
+        "startPose": {
+          "x": 0.8999999999999999,
+          "y": 0.30000000000000004,
+          "heading": 0
+        }
+      },
+      "successConditions": {
+        "id": "oval-one-lap",
+        "condition": {
+          "all": [
+            {
+              "type": "laps",
+              "count": 1
+            },
+            {
+              "type": "timeLimit",
+              "seconds": 60
+            },
+            {
+              "type": "noCollision",
+              "tolerance": 0
+            },
+            {
+              "type": "onLineRatio",
+              "min": 0.85
+            }
+          ]
+        },
+        "score": [
+          {
+            "type": "laps",
+            "weight": 60
+          },
+          {
+            "type": "timeBonus",
+            "under": 45,
+            "weight": 25
+          },
+          {
+            "type": "onLineRatio",
+            "weight": 15
+          }
+        ]
+      },
+      "meta": {
+        "title": "Line follower"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":1000000000EE0AB907E004B906E907BD08BD03EA36\n:1000100004BD03E005BD4A9908C04C9909C04B993D\n:1000200001C0F9CF5F9A299AF6CF5F98299AF3CF4A\n:060030005F9A2998F0CF51\n:00000001FF\n",
+      "sha256": "demo:lineFollower"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 60
+}
