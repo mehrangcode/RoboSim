@@ -16,7 +16,7 @@ import type {
 import { buildRun, findingView, resolveSource, type Scenario } from './scenarios.js';
 import { SharedSnapshotWriter, packSnapshot } from './snapshot-channel.js';
 import { SnapshotEncoder } from './snapshot-codec.js';
-import { challengeView, damageView, pinViews, robotView } from './views.js';
+import { ALL_MCU_PINS, challengeView, damageView, pinViews, robotView } from './views.js';
 
 /** Snapshots to the UI at most this often (wall ms); the simulation itself is unaffected. */
 const FRAME_INTERVAL_MS = 33;
@@ -39,7 +39,8 @@ interface Run {
   readonly logger: InputLogger;
   readonly encoder: SnapshotEncoder;
   writer: SharedSnapshotWriter | null;
-  serialOut: string;
+  /** Serial bytes not yet posted, grouped by slice and baud. */
+  serialOut: { slice: number; baud: number; bytes: number[] }[];
   /** Last event payloads sent, to post only changes. */
   sentFindings: number;
   sentFaults: string;
@@ -165,17 +166,19 @@ export class SimHost {
       logger,
       encoder: new SnapshotEncoder(),
       writer: null,
-      serialOut: '',
+      serialOut: [],
       sentFindings: 0,
       sentFaults: '[]',
       sentDamage: JSON.stringify(NO_DAMAGE),
     };
-    if (scenario.scene.serial) {
-      const utf8 = new TextDecoder();
-      scenario.circuit.sim.mcu?.uart(0).onData((bytes) => {
-        run.serialOut += utf8.decode(bytes, { stream: true });
-      });
-    }
+    const uart = scenario.scene.serial ? scenario.circuit.sim.mcu?.uart(0) : undefined;
+    uart?.onData((bytes) => {
+      const slice = scenario.circuit.sim.slice;
+      const baud = uart.baud();
+      const last = run.serialOut.at(-1);
+      if (last?.slice === slice && last.baud === baud) last.bytes.push(...bytes);
+      else run.serialOut.push({ slice, baud, bytes: [...bytes] });
+    });
     this.run = run;
     this.lastFrameSim = 0;
     const floor = scenario.scene.arena?.floor.data;
@@ -228,9 +231,17 @@ export class SimHost {
     this.lastFrameSim = snap.simTime;
 
     // Events first: the UI merges them into the frame built from the snapshot that follows.
-    if (run.serialOut) {
-      this.post({ type: 'serial', text: run.serialOut });
-      run.serialOut = '';
+    if (run.serialOut.length) {
+      const chunks = run.serialOut.map((c) => ({
+        slice: c.slice,
+        baud: c.baud,
+        bytes: Uint8Array.from(c.bytes),
+      }));
+      run.serialOut = [];
+      this.post(
+        { type: 'serial', chunks },
+        chunks.map((c) => c.bytes.buffer),
+      );
     }
     const findings = s.safety.findings();
     if (findings.length !== run.sentFindings) {
@@ -258,7 +269,7 @@ export class SimHost {
       rtf,
       running: this.running,
       parts,
-      pins: pinViews(s),
+      pins: pinViews(s, ALL_MCU_PINS),
       ...(s.world ? { robot: robotView(s) } : {}),
       ...(s.challenge ? { challenge: challengeView(s.challenge.result(), s.arena) } : {}),
     };

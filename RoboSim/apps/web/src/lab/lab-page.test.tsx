@@ -253,6 +253,7 @@ describe('Simulator Lab', () => {
   });
 
   it('serial demo: shows the firmware output and sends a typed line', async () => {
+    localStorage.removeItem('robosim.serial.v1');
     const { worker, user } = await setup();
     await user.click(screen.getByRole('radio', { name: 'Component bench' }));
     await user.click(screen.getByRole('radio', { name: 'Serial Monitor' }));
@@ -266,11 +267,40 @@ describe('Simulator Lab', () => {
     });
     worker.frame(frame());
     expect(screen.getByLabelText('Serial output')).toHaveTextContent('Nothing received yet.');
-    worker.reply({ type: 'serial', text: 'RoboSim ready\r\ntick 0\r\n' });
+    // Serial.begin(9600) on a 16 MHz Uno really runs at 9615 baud.
+    const bytes = (s: string) => new TextEncoder().encode(s);
+    worker.reply({
+      type: 'serial',
+      chunks: [
+        { slice: 2, baud: 9615, bytes: bytes('RoboSim ready\r\n') },
+        { slice: 1000, baud: 9615, bytes: bytes('tick 0\r\n') },
+      ],
+    });
     expect(screen.getByLabelText('Serial output')).toHaveTextContent('RoboSim ready tick 0');
     await user.type(screen.getByLabelText('Text to send'), 'hi{Enter}');
     expect(worker.sent.at(-1)).toEqual({ type: 'serial', text: 'hi\n' });
     expect(screen.getByLabelText('Text to send')).toHaveValue('');
+
+    await user.click(screen.getByRole('checkbox', { name: 'Timestamps' }));
+    expect(screen.getByLabelText('Serial output')).toHaveTextContent(
+      '00:00.002 -> RoboSim ready 00:01.000 -> tick 0',
+    );
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Line ending' }), 'No line ending');
+    await user.type(screen.getByLabelText('Text to send'), 'x{Enter}');
+    expect(worker.sent.at(-1)).toEqual({ type: 'serial', text: 'x' });
+
+    // Wrong baud: garbled like real hardware, with a hint and a one-click fix (FR-SIM-07).
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Baud' }), '115200');
+    expect(
+      screen.getByText(/Your code sends at 9600 baud but the monitor is set to 115200/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Serial output')).not.toHaveTextContent('RoboSim ready');
+    await user.click(screen.getByRole('button', { name: 'Switch to 9600' }));
+    expect(screen.getByLabelText('Serial output')).toHaveTextContent('RoboSim ready');
+    expect(screen.queryByText(/Your code sends at/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.getByLabelText('Serial output')).toHaveTextContent('Nothing received yet.');
   });
 
   it('replay: fetches the input log and reloads the scenario with it', async () => {

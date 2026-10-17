@@ -103,7 +103,13 @@
       "pin": "Pin",
       "mode": "Mode",
       "value": "Value",
-      "duty": "PWM {value}%"
+      "duty": "PWM {value}%",
+      "pwm": "PWM {duty}% · {freq} Hz",
+      "voltage": "Voltage",
+      "unwired": "not connected",
+      "floating": "floating",
+      "showUnwired": "Show unconnected pins",
+      "adc": "ADC {value}"
     },
     "pinMode": {
       "input": "input",
@@ -174,7 +180,20 @@
       "empty": "Nothing received yet.",
       "input": "Text to send",
       "placeholder": "Type and press Enter",
-      "send": "Send"
+      "send": "Send",
+      "baud": "Baud",
+      "lineEnding": "Line ending",
+      "ending": {
+        "none": "No line ending",
+        "nl": "New line",
+        "cr": "Carriage return",
+        "both": "Both NL & CR"
+      },
+      "timestamps": "Timestamps",
+      "autoscroll": "Autoscroll",
+      "clear": "Clear",
+      "mismatch": "Your code sends at {sketch} baud but the monitor is set to {monitor}, so the text looks garbled — just like on a real board.",
+      "useBaud": "Switch to {baud}"
     },
     "verify": {
       "title": "Verified run",
@@ -281,5 +300,24 @@
       "help": "Show these shortcuts",
       "close": "Close"
     }
+  },
+  "code": {
+    "files": "Sketch files",
+    "newFile": "New file",
+    "newFileName": "New file name",
+    "rename": "Rename",
+    "renameTo": "New name",
+    "create": "Create",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "keep": "Keep",
+    "confirmDelete": "Delete {name}? This cannot be undone.",
+    "errors": "{count} errors",
+    "nameError": {
+      "invalid": "Use letters, digits, - or _ and end the name in .h, .hpp, .c or .cpp.",
+      "duplicate": "A file with this name already exists.",
+      "tooMany": "A sketch can have at most {max} files."
+    },
+    "fileNamePlaceholder": "motor.h"
   }
 }

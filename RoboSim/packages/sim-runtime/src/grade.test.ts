@@ -85,7 +85,7 @@ describe('grade', () => {
     expect(r.endSlice).toBe(Math.round(live.simTime * 1000));
     expect(log.endSlice).toBe(r.endSlice);
     expect(r.final.robot).toEqual([live.robot.x, live.robot.y, live.robot.angle]);
-    expect(r.final.pins).toEqual(live.pins);
+    expect(r.final.pins).toEqual(Object.fromEntries(Object.entries(live.pins).filter(([, p]) => !p.unwired)));
     expect(r.challenge?.tree).toEqual(live.challenge?.tree);
   }, 30_000);
 });

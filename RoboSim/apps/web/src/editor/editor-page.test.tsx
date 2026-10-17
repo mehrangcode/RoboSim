@@ -1,7 +1,7 @@
 import { blankProject, addComponent, PITCH } from '@robosim/circuit-canvas';
 import type { BuildResult, ProjectDocument } from '@robosim/shared';
 import type { Frame, SceneInfo } from '@robosim/sim-runtime/client';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -117,6 +117,63 @@ describe('editor workspace', () => {
     expect(status()).toHaveTextContent('Stopped: the project changed');
     await user.click(screen.getByRole('button', { name: 'Run' }));
     expect(compile).toHaveBeenCalledTimes(2);
+  });
+
+  it('multi-file sketch: a new header tab is saved and built with the .ino (US-COD-01 AC2)', async () => {
+    const { compile, loads, user } = await setup();
+    await user.click(screen.getByRole('button', { name: 'New file' }));
+    const name = screen.getByLabelText('New file name');
+    await user.type(name, 'other.ino');
+    expect(screen.getByRole('alert')).toHaveTextContent('end the name in .h, .hpp, .c or .cpp');
+    await user.clear(name);
+    await user.type(name, 'motor.h{Enter}');
+    expect(screen.getByRole('tab', { name: 'motor.h' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByLabelText<HTMLTextAreaElement>('Arduino code').value).toBe('#pragma once\n\n');
+    await user.type(screen.getByLabelText('Arduino code'), 'const int MOTOR = 9;');
+
+    await user.click(screen.getByRole('button', { name: 'New file' }));
+    await user.type(screen.getByLabelText('New file name'), 'MOTOR.H');
+    expect(screen.getByRole('alert')).toHaveTextContent('A file with this name already exists.');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+    const files = vi.mocked(compile).mock.calls[0]?.[0].files ?? [];
+    expect(files.map((f) => f.name).sort()).toEqual(['motor.h', 'sketch.ino']);
+    expect(files.find((f) => f.name === 'motor.h')?.content).toContain('const int MOTOR = 9;');
+    const load = loads().at(-1) as { project: ProjectDocument };
+    expect(load.project.code.files).toHaveLength(2);
+
+    // Rename, then delete after confirming; the .ino can be neither.
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+    const rename = screen.getByLabelText('New name');
+    await user.clear(rename);
+    await user.type(rename, 'drive.h{Enter}');
+    expect(screen.getByRole('tab', { name: 'drive.h' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('Delete drive.h?');
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
+    expect(screen.queryByRole('tab', { name: 'drive.h' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'sketch.ino' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('button', { name: 'Rename' })).not.toBeInTheDocument();
+  });
+
+  it('diagnostics in another file open that file (FR-COD-03)', async () => {
+    const { artifact: _, ...noArtifact } = built;
+    const failed: BuildResult = {
+      ...noArtifact,
+      status: 'failed',
+      diagnostics: [
+        { file: 'motor.h', line: 1, column: 1, severity: 'error', message: "'x' does not name a type" },
+      ],
+    };
+    const { user } = await setup(vi.fn<CompileSketch>().mockResolvedValue({ result: failed }));
+    await user.click(screen.getByRole('button', { name: 'New file' }));
+    await user.type(screen.getByLabelText('New file name'), 'motor.h{Enter}');
+    await user.click(screen.getByRole('tab', { name: 'sketch.ino' }));
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+    expect(screen.getByRole('tab', { name: /motor\.h/ })).toHaveTextContent('● 1');
+    await user.click(screen.getByRole('button', { name: /does not name a type/ }));
+    expect(screen.getByRole('tab', { name: /motor\.h/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('Pause/resume and Stop → Run do not rebuild an unchanged project', async () => {

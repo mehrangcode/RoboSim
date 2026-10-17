@@ -8,7 +8,7 @@ export const ENGINE_PACKAGES = {
   'board-avr-uno': '0.1.0',
   components: '0.1.0',
   'safety-rules': '0.1.0',
-  'sim-runtime': '0.1.0',
+  'sim-runtime': '0.2.0',
 } as const;
 
 export const ENGINE_VERSION = Object.entries(ENGINE_PACKAGES)

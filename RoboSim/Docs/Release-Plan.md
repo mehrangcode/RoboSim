@@ -118,6 +118,13 @@ gantt
   - **Lab:** the Design tab moved into the workspace; every Lab demo has **Open in editor**. Checked in Chrome (Persian UI): compile and run, button held on the canvas, edit stops the run, demos open with confirmation, line follower in the arena pane, narrow view.
   - **Still open:** drag-docking, Monaco (slice 13), 2D/3D toggle (slice 16), Versions/Share (P2).
 
+  **Slice 13 done (2026-10-17):** code editor, pin inspector and serial monitor (FR-COD-01, 03; FR-SIM-06; FR-SIM-07 monitor).
+  - **Code editor:** Monaco, lazy-loaded and self-hosted (≈ 0.87 MB gz, initial JS unchanged at 256 KB gz). Arduino-aware highlighting, basic completions for the core API, Serial, Servo, NewPing and String (`Serial.` lists Serial's methods), find/replace, bracket matching and folding. It is always LTR, with no ligatures. Sketches can have several files: add, rename and delete `.h`/`.cpp` tabs, and all files build together (US-COD-01 AC2). Compile errors are underlined in their file, tabs show error counts, and clicking an explanation opens the right file and line. The Lab's **Your code** tab uses the same editor.
+  - **Pin inspector:** every Uno pin with mode (including pull-up), level, PWM duty **and frequency** (`analogWrite(5, 64)` → 25 % at 977 Hz, US-SIM-02 AC1), voltage, and the `analogRead` value on A0–A5. Unconnected pins are dimmed and can be hidden; floating inputs are flagged.
+  - **Serial monitor:** baud selection, line ending (none / NL / CR / both), simulated-time timestamps, autoscroll, clear. The monitor decodes the raw UART bytes at its own baud: when it differs from `Serial.begin`, the output is garbled exactly as on a real board, with a bilingual hint and a one-click switch to the sketch's rate.
+  - **Engine:** `sim-runtime` 0.2.0 (pin views carry `freqHz`; goldens re-recorded, otherwise identical). Checked in Chrome (Persian UI): completions, a header tab, an inline error with its explanation, garbled → clean serial with timestamps, PWM Hz on the dimmer, the Lab editor.
+  - **Still open:** hover docs in FA/EN and the library manager (FR-COD-02, 07, P2); the plotter (P2); characters sent at a mismatched baud are not garbled on the way in.
+
 ### P2 — Individual product & commerce
 
 **Scope** (FR-WRK-04…06, FR-CIR-09, FR-COD-02, 05, 07, FR-BLD-07, FR-SIM-07 (plotter), 08, FR-SAF-03, 07, FR-BOM-*, FR-PRJ-01…04, 06, FR-LRN-01 (2 projects), FR-BIL-01…06, 09, FR-SHP-01…06, 08, FR-AI-01…05, 07…10, FR-I18N-05, FR-EXT-04, 05, FR-IAM-01…03, 04, 07, FR-ADM-01…06, 08, 10, FR-NTF-*, FR-ANL-01, 04)

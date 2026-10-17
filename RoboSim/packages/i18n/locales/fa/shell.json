@@ -103,7 +103,13 @@
       "pin": "پایه",
       "mode": "حالت",
       "value": "مقدار",
-      "duty": "PWM {value}٪"
+      "duty": "PWM {value}٪",
+      "pwm": "PWM {duty}٪ · {freq} هرتز",
+      "voltage": "ولتاژ",
+      "unwired": "وصل نیست",
+      "floating": "شناور",
+      "showUnwired": "نمایش پایه‌های وصل‌نشده",
+      "adc": "ADC {value}"
     },
     "pinMode": {
       "input": "ورودی",
@@ -174,7 +180,20 @@
       "empty": "هنوز چیزی دریافت نشده است.",
       "input": "متن برای ارسال",
       "placeholder": "بنویسید و Enter را بزنید",
-      "send": "ارسال"
+      "send": "ارسال",
+      "baud": "نرخ باود",
+      "lineEnding": "پایان خط",
+      "ending": {
+        "none": "بدون پایان خط",
+        "nl": "خط جدید",
+        "cr": "بازگشت به ابتدای خط",
+        "both": "هر دو (NL و CR)"
+      },
+      "timestamps": "نمایش زمان",
+      "autoscroll": "پیمایش خودکار",
+      "clear": "پاک کردن",
+      "mismatch": "کد شما با نرخ {sketch} باود می‌فرستد ولی مانیتور روی {monitor} است؛ برای همین متن درهم دیده می‌شود — درست مثل برد واقعی.",
+      "useBaud": "تغییر به {baud}"
     },
     "verify": {
       "title": "اجرای تأییدشده",
@@ -281,5 +300,24 @@
       "help": "نمایش این میان‌برها",
       "close": "بستن"
     }
+  },
+  "code": {
+    "files": "فایل‌های کد",
+    "newFile": "فایل جدید",
+    "newFileName": "نام فایل جدید",
+    "rename": "تغییر نام",
+    "renameTo": "نام جدید",
+    "create": "ساختن",
+    "cancel": "انصراف",
+    "delete": "حذف",
+    "keep": "نگه‌داشتن",
+    "confirmDelete": "{name} حذف شود؟ این کار برگشت‌پذیر نیست.",
+    "errors": "{count} خطا",
+    "nameError": {
+      "invalid": "فقط حروف انگلیسی، رقم، - یا _ و پسوند ‎.h، ‎.hpp، ‎.c یا ‎.cpp مجاز است.",
+      "duplicate": "فایلی با این نام وجود دارد.",
+      "tooMany": "هر کد حداکثر {max} فایل می‌تواند داشته باشد."
+    },
+    "fileNamePlaceholder": "motor.h"
   }
 }

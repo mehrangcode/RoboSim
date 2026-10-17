@@ -140,6 +140,25 @@ describe('AvrUnoCore', () => {
     expect(() => c.uart(1)).toThrow();
   });
 
+  it('reports the USART baud rate from UBRR0 and U2X0 (0 while TX is off)', () => {
+    const c = core(`
+      ldi r16, 207
+      sts 0xC4, r16          ; UBRR0L (Serial.begin(9600) at 16 MHz)
+      ldi r16, 0x02
+      sts 0xC0, r16          ; UCSR0A: U2X0
+    wait: dec r17
+      brne wait
+      ldi r16, 0x08
+      sts 0xC1, r16          ; UCSR0B: TXEN0
+    halt: rjmp halt
+    `);
+    expect(c.uart(0).baud()).toBe(0);
+    c.run(20);
+    expect(c.uart(0).baud()).toBe(0);
+    c.run(2_000);
+    expect(c.uart(0).baud()).toBe(Math.floor(16e6 / (8 * 208)));
+  });
+
   it('feeds scheduled analog voltages into the ADC', () => {
     const c = core(`
       ldi r16, 0x40

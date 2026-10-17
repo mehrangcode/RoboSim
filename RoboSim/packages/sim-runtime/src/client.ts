@@ -10,6 +10,7 @@ import type {
 } from './protocol.js';
 import { SharedSnapshotReader, unpackSnapshot, type SnapshotData } from './snapshot-channel.js';
 import { SnapshotDecoder } from './snapshot-codec.js';
+import { SerialLog } from './serial.js';
 
 /** Serial Monitor keeps this much of the output (characters). */
 export const SERIAL_TAIL_CHARS = 8192;
@@ -25,13 +26,17 @@ export class SimClient {
   scene: SceneInfo | null = null;
   frame: Frame | null = null;
   error: string | null = null;
+  /** Firmware output decoded as sent (UTF-8, newest {@link SERIAL_TAIL_CHARS}). */
   serial = '';
+  /** Raw UART output with slices and baud rates, for the Serial Monitor. */
+  serialLog = new SerialLog();
   engineVersion: string | null = null;
   /** Input-log entries being replayed by the current run (0 = live run). */
   replaying = 0;
   /** Called with the input log the worker sent in answer to `exportLog`. */
   onInputLog: ((log: InputLog) => void) | null = null;
 
+  private utf8 = new TextDecoder();
   private decoder = new SnapshotDecoder();
   private reader: SharedSnapshotReader | null = null;
   private hot: HotFrame | null = null;
@@ -47,6 +52,8 @@ export class SimClient {
         this.replaying = msg.replaying;
         this.error = null;
         this.serial = '';
+        this.serialLog = new SerialLog();
+        this.utf8 = new TextDecoder();
         this.decoder = new SnapshotDecoder();
         this.reader = null;
         this.hot = null;
@@ -64,7 +71,9 @@ export class SimClient {
         this.decoder.apply(msg.delta);
         return false;
       case 'serial':
-        this.serial = (this.serial + msg.text).slice(-SERIAL_TAIL_CHARS);
+        for (const c of msg.chunks) this.serial += this.utf8.decode(c.bytes, { stream: true });
+        this.serial = this.serial.slice(-SERIAL_TAIL_CHARS);
+        this.serialLog.append(msg.chunks);
         return true;
       case 'findings':
         this.findings = msg.findings;
@@ -106,6 +115,8 @@ export class SimClient {
 export { BENCH_SCENARIOS, MAX_SIM_SECONDS, SAFETY_SCENARIOS, SCENARIOS } from './protocol.js';
 // Encoding side, for stand-in workers in UI tests.
 export { SnapshotEncoder } from './snapshot-codec.js';
+export { SERIAL_BAUD_RATES, SerialLog, decodeSerial, resample, standardBaud } from './serial.js';
+export type { DecodedSerial, SerialLine } from './serial.js';
 export { packSnapshot } from './snapshot-channel.js';
 export type * from './protocol.js';
 // Types only: grading itself runs in a worker (`grade` from the engine entry).

@@ -8,6 +8,8 @@
     "shell:lab.scenarioHint.",
     "shell:lab.bridge.",
     "shell:lab.pinMode.",
+    "shell:lab.serial.ending.",
+    "shell:code.nameError.",
     "shell:lab.tabs.",
     "shell:lab.telemetry.",
     "safety:",

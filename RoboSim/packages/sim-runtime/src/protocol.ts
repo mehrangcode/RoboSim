@@ -158,13 +158,26 @@ export interface SceneInfo {
   readonly project: ProjectDocument;
 }
 
+/** Bytes the firmware transmitted during one slice at one baud rate (0 = transmitter off). */
+export interface SerialChunk {
+  readonly slice: number;
+  readonly baud: number;
+  readonly bytes: Uint8Array;
+}
+
 export interface PinView {
   readonly mode: 'input' | 'input_pullup' | 'output';
   /** Driven level for outputs; level the MCU reads (VIL/VIH thresholds) for inputs. */
   readonly level: 0 | 1;
   /** Pin voltage (V). */
   readonly volts: number;
+  /** PWM duty ratio (0–1) and frequency (Hz) while a timer drives the pin. */
   readonly duty?: number;
+  readonly freqHz?: number;
+  /** Nothing is wired to the pin: values are the MCU's ideal ones. */
+  readonly unwired?: true;
+  /** An input with no pull-up and nothing driving it: its reading is undefined on real hardware. */
+  readonly floating?: true;
 }
 
 /** The part of a {@link Frame} carried by binary snapshots. */
@@ -239,7 +252,8 @@ export type WorkerToMain =
   | { readonly type: 'snapshot'; readonly buffer: ArrayBuffer }
   /** Snapshot dictionary additions; always posted before the snapshot that needs them. */
   | { readonly type: 'dict'; readonly delta: DictDelta }
-  | { readonly type: 'serial'; readonly text: string }
+  /** UART output since the last frame, as raw bytes so the monitor can decode at its own baud. */
+  | { readonly type: 'serial'; readonly chunks: readonly SerialChunk[] }
   /** All findings latched so far (sorted), sent when one was added. */
   | { readonly type: 'findings'; readonly findings: readonly FindingView[] }
   | { readonly type: 'faults'; readonly faults: readonly Fault[] }

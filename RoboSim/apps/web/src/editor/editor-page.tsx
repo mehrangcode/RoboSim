@@ -6,7 +6,7 @@ import {
   type CanvasMode,
 } from '@robosim/circuit-canvas';
 import { ProjectDocumentError, parseProjectDocument, type ProjectDocument } from '@robosim/shared';
-import { SCENARIOS, type ScenarioId } from '@robosim/sim-runtime/client';
+import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, cn } from '@robosim/ui';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -28,7 +28,7 @@ import {
   mainFile,
   runKey,
   saveStored,
-  withCode,
+  withFiles,
 } from './project-store.js';
 import { starterProject } from './starter.js';
 import { useLayout, useSizeClass, type Pane } from './use-layout.js';
@@ -111,11 +111,11 @@ export function EditorPage({
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { demo?: string };
   const sim = useSimulation(createWorker);
-  const { scene, frame, serial, send } = sim;
+  const { scene, frame, serialLog, clearSerial, send } = sim;
   const [stored] = useState(loadStored);
   const editor = useCircuitEditor(() => stored?.project ?? starterProject(t('shell:editor.starterTitle')));
   const { doc, reset } = editor;
-  const [code, setCode] = useState(() => mainFile(doc)?.content ?? '');
+  const [files, setFiles] = useState<readonly SourceFile[]>(() => doc.code.files);
   const [pristine, setPristine] = useState(() => stored?.pristine ?? runKey(doc));
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>('1');
   const [demoChoice, setDemoChoice] = useState<ScenarioId>('blink');
@@ -129,7 +129,7 @@ export function EditorPage({
   const { layout, resize, toggle } = useLayout();
   const size = useSizeClass();
   const run = useRun({ send, scene, compileSketch, locale: i18n.language });
-  const current = withCode(doc, code);
+  const current = withFiles(doc, files);
   const running = frame?.running ?? false;
 
   // Autosave on every change; an edit while running stops the run.
@@ -145,7 +145,7 @@ export function EditorPage({
     if (runKey(current) !== pristine && !window.confirm(t('shell:editor.confirmReplace'))) return false;
     if (run.phase !== 'edit') run.stop();
     reset(next);
-    setCode(mainFile(next)?.content ?? '');
+    setFiles(next.code.files);
     setPristine(runKey(next));
     run.setDemo(demoId ? { id: demoId, key: runKey(next) } : null);
     run.clearBuild();
@@ -249,11 +249,11 @@ export function EditorPage({
     <SketchPanel
       fill
       title={t('shell:editor.pane.code')}
-      fileName={main.name}
-      code={code}
-      onChange={setCode}
+      files={files}
+      onChange={(name, content) => setFiles((fs) => fs.map((f) => (f.name === name ? { ...f, content } : f)))}
+      onFilesChange={setFiles}
       state={run.build}
-      modified={code !== main.content}
+      modified={current !== doc}
     />
   ) : null;
   const canvas = (
@@ -308,7 +308,7 @@ export function EditorPage({
         {!live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : dockTab === 'pins' ? (
-          <PinTable scene={scene} frame={live} />
+          <PinTable bare scene={scene} frame={live} />
         ) : dockTab === 'safety' ? (
           <FindingsPanel
             findings={findings}
@@ -317,7 +317,7 @@ export function EditorPage({
         ) : dockTab === 'challenge' && live.challenge ? (
           <ChallengePanel challenge={live.challenge} send={send} />
         ) : scene.serial ? (
-          <SerialMonitor output={serial} send={send} />
+          <SerialMonitor bare log={serialLog} send={send} onClear={clearSerial} />
         ) : (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.noSerial')}</p>
         )}

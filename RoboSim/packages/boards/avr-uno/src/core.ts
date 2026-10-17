@@ -146,6 +146,10 @@ export class AvrUnoCore implements McuCore {
     if (index !== 0) throw new Error(`ATmega328P has one USART, got index ${index}`);
     return {
       write: (bytes) => this.rxQueue.push(...bytes),
+      baud: () => {
+        const usart = this.machine.usart;
+        return usart.txEnable ? usart.baudRate : 0;
+      },
       onData: (cb) => {
         this.uartListeners.add(cb);
         return () => this.uartListeners.delete(cb);

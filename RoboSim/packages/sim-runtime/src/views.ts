@@ -1,5 +1,11 @@
-import { UNO_ELECTRICAL } from '@robosim/board-avr-uno';
-import { dmath, type ArenaSpec, type ChallengeResult, type NodeView } from '@robosim/sim-core';
+import { UNO_ELECTRICAL, UNO_MCU_PINS } from '@robosim/board-avr-uno';
+import {
+  dmath,
+  type ArenaSpec,
+  type PinOutput,
+  type ChallengeResult,
+  type NodeView,
+} from '@robosim/sim-core';
 import type { ChallengeView, Damage, HotFrame, PinView } from './protocol.js';
 import type { Scenario } from './scenarios.js';
 
@@ -8,13 +14,21 @@ import type { Scenario } from './scenarios.js';
  * verified run and the live run it checks describe the same state the same way.
  */
 
-export function pinViews(s: Scenario): Record<string, PinView> {
+/** Every Uno I/O pin, for the live pin inspector (FR-SIM-06); traces keep to the wired ones. */
+export const ALL_MCU_PINS: readonly string[] = UNO_MCU_PINS.map((p) => p.id);
+
+export function pinViews(s: Scenario, pins: readonly string[] = s.scene.pins): Record<string, PinView> {
   const core = s.circuit.sim.mcu;
   if (!core) throw new Error('scenario has no MCU');
   const outputs = core.pinOutputs();
   const solution = s.circuit.sim.currentSolution;
   const views: Record<string, PinView> = {};
-  for (const pin of s.scene.pins) {
+  const wired = new Set(s.scene.pins);
+  for (const pin of pins) {
+    if (!wired.has(pin)) {
+      views[pin] = unwiredPinView(outputs.get(pin));
+      continue;
+    }
     const o = outputs.get(pin);
     if (!o) continue;
     const volts = solution.voltage(s.circuit.net(`mcu.${pin}`));
@@ -28,10 +42,33 @@ export function pinViews(s: Scenario): Record<string, PinView> {
             ? 0
             : o.level;
     views[pin] = o.pwm
-      ? { mode: o.mode, level, volts, duty: o.pwm.dutyRatio }
+      ? { mode: o.mode, level, volts, duty: o.pwm.dutyRatio, freqHz: o.pwm.freqHz }
       : { mode: o.mode, level, volts };
   }
   return views;
+}
+
+/**
+ * A pin with nothing attached carries no circuit net: an output sits at its ideal level (PWM at its
+ * average), a pull-up reads HIGH at 5 V, and a plain input floats (shown LOW, 0 V, flagged).
+ */
+function unwiredPinView(o: PinOutput | undefined): PinView {
+  const vcc = UNO_ELECTRICAL.vcc;
+  if (!o) return { mode: 'input', level: 0, volts: 0, unwired: true, floating: true };
+  if (o.mode === 'output') {
+    return o.pwm
+      ? {
+          mode: o.mode,
+          level: o.level,
+          volts: vcc * o.pwm.dutyRatio,
+          duty: o.pwm.dutyRatio,
+          freqHz: o.pwm.freqHz,
+          unwired: true,
+        }
+      : { mode: o.mode, level: o.level, volts: o.level * vcc, unwired: true };
+  }
+  if (o.mode === 'input_pullup') return { mode: o.mode, level: 1, volts: vcc, unwired: true };
+  return { mode: o.mode, level: 0, volts: 0, unwired: true, floating: true };
 }
 
 export function robotView(s: Scenario): NonNullable<HotFrame['robot']> {

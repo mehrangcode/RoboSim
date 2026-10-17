@@ -1,4 +1,5 @@
 import { parseProjectDocument, type ProjectDocument } from '@robosim/shared';
+import type { SourceFile } from '@robosim/sim-runtime/client';
 
 /*
  * The workspace project lives in this browser until accounts and cloud projects arrive (P2).
@@ -43,14 +44,12 @@ export function saveStored(stored: StoredProject): boolean {
 /** The main sketch file (`.ino`), if any. */
 export const mainFile = (doc: ProjectDocument) => doc.code.files.find((f) => f.name.endsWith('.ino'));
 
-/** The document with its main sketch replaced by `code`. */
-export function withCode(doc: ProjectDocument, code: string): ProjectDocument {
-  const main = mainFile(doc);
-  if (!main || main.content === code) return doc;
-  return {
-    ...doc,
-    code: { ...doc.code, files: doc.code.files.map((f) => (f === main ? { ...f, content: code } : f)) },
-  };
+/** The document with its sketch files replaced by `files` (itself when nothing changed). */
+export function withFiles(doc: ProjectDocument, files: readonly SourceFile[]): ProjectDocument {
+  const same =
+    files.length === doc.code.files.length &&
+    files.every((f, i) => f.name === doc.code.files[i]?.name && f.content === doc.code.files[i]?.content);
+  return same ? doc : { ...doc, code: { ...doc.code, files: files.map((f) => ({ ...f })) } };
 }
 
 /** Saves a JSON file through a temporary link. */

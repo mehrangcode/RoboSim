@@ -6,6 +6,7 @@ import { FIRMWARE_SKETCHES } from './firmware/sketches.js';
 import { HeadlessRun } from './input-log.js';
 import type { Frame, InputLog, WorkerToMain } from './protocol.js';
 import { SimHost } from './host.js';
+import { decodeSerial, standardBaud } from './serial.js';
 
 /** Host + client wired back to back, as worker and UI are; `shared` picks the snapshot transport. */
 function harness(shared = false) {
@@ -266,6 +267,33 @@ describe('SimHost worker protocol (slice 7)', () => {
     h.advance(100);
     expect(h.client.serial).toContain('HI!');
     expect(h.client.serial.endsWith('HI!') || /HI!(\r\ntick \d\r\n)?$/.test(h.client.serial)).toBe(true);
+  });
+
+  it('serial events carry the bytes with their slice and the sketch baud rate (FR-SIM-07)', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'serial' });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(1200);
+    const chunks = h.client.serialLog.chunks;
+    expect(chunks.length).toBeGreaterThan(0);
+    expect(new Set(chunks.map((c) => standardBaud(c.baud)))).toEqual(new Set([115200])); // Serial.begin(115200)
+    const lines = decodeSerial(chunks, 115200).lines;
+    expect(lines.map((l) => l.text)).toEqual(['RoboSim ready', 'tick 0']);
+    expect(lines[1]?.slice).toBeGreaterThanOrEqual(1000);
+    expect(decodeSerial(chunks, 9600)).toMatchObject({ sketchBaud: 115200, mismatch: true });
+  });
+
+  it('pin inspector: every Uno pin, PWM duty and frequency, unwired pins flagged (US-SIM-02 AC1)', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'dimmer' });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(200);
+    const pins = h.last()?.pins ?? {};
+    expect(Object.keys(pins)).toHaveLength(20);
+    // analogWrite on D6 → timer0 fast PWM, 16 MHz / 64 / 256.
+    expect(pins.D6).toMatchObject({ mode: 'output', duty: expect.any(Number), freqHz: 16e6 / 64 / 256 });
+    expect(pins.D6?.unwired).toBeUndefined();
+    expect(pins.D2).toMatchObject({ mode: 'input', unwired: true, floating: true });
   });
 
   it('exports the input log with engine version, scenario and seed', () => {

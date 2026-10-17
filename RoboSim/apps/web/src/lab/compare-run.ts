@@ -21,7 +21,8 @@ export function compareWithLive(
 ): 'identical' | 'differs' | 'moved' {
   if (!frame || frame.running || Math.round(frame.simTime * 1000) !== run.endSlice) return 'moved';
   const live = {
-    pins: frame.pins,
+    // Traces hold the wired pins only; the live frame adds unwired ones for the pin inspector.
+    pins: Object.fromEntries(Object.entries(frame.pins).filter(([, p]) => !p.unwired)),
     robot: frame.robot ? [frame.robot.x, frame.robot.y, frame.robot.angle] : null,
     challenge: frame.challenge
       ? [frame.challenge.status, frame.challenge.decidedAt, frame.challenge.score]

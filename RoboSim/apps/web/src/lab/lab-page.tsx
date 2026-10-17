@@ -44,7 +44,8 @@ export function LabPage({
 }) {
   const { t, i18n } = useTranslation();
   const fmt = useFormat();
-  const { scene, frame, error, serial, replaying, send, exportLog } = useSimulation(createWorker);
+  const { scene, frame, error, serial, serialLog, clearSerial, replaying, send, exportLog } =
+    useSimulation(createWorker);
   const verified = useVerifiedRun(createGradeWorker);
   const [tab, setTab] = useState<Tab>('arena');
   const [bench, setBench] = useState<BenchScenarioId>('blink');
@@ -61,6 +62,7 @@ export function LabPage({
   const [userRun, setUserRun] = useState(false);
   const mainFile = originals[template]?.find((f) => f.name.endsWith('.ino'));
   const draft = drafts[template] ?? mainFile?.content ?? '';
+  const sketchFiles = (originals[template] ?? []).map((f) => (f === mainFile ? { ...f, content: draft } : f));
 
   // Remember each template's own files the first time its scene arrives (state derived during render).
   const sceneTemplate = TEMPLATES.find((v) => v === scene?.scenario);
@@ -78,7 +80,7 @@ export function LabPage({
 
   /** Compiles the edited sketch with the build service and runs the firmware on the template's circuit. */
   const compileAndRun = async () => {
-    const files = (originals[template] ?? []).map((f) => (f === mainFile ? { ...f, content: draft } : f));
+    const files = sketchFiles;
     const compiled = await build.build({ board: 'avr-uno', files: [...files], libraries: [] }, i18n.language);
     const artifact = compiled?.result.artifact;
     if (!compiled?.hex || !artifact) return;
@@ -180,9 +182,11 @@ export function LabPage({
       {tab === 'sketch' && mainFile && (
         <div className="mt-4">
           <SketchPanel
-            fileName={mainFile.name}
-            code={draft}
-            onChange={(code) => setDrafts((d) => ({ ...d, [template]: code }))}
+            files={sketchFiles}
+            // Demo sketches are one .ino; the Lab edits just that (multi-file projects live in /editor).
+            onChange={(name, code) =>
+              name === mainFile.name && setDrafts((d) => ({ ...d, [template]: code }))
+            }
             onCompile={() => void compileAndRun()}
             onRestore={() => {
               setDrafts(({ [template]: _, ...rest }) => rest);
@@ -275,7 +279,7 @@ export function LabPage({
             )}
             {scene.serial && (
               <div className="mt-4">
-                <SerialMonitor output={serial} send={send} />
+                <SerialMonitor log={serialLog} send={send} onClear={clearSerial} />
               </div>
             )}
           </div>

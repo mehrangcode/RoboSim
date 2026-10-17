@@ -30,7 +30,7 @@ class FixedCore implements McuCore {
     return () => undefined;
   }
   uart(): UartPort {
-    return { write: () => undefined, onData: () => () => undefined };
+    return { write: () => undefined, baud: () => 0, onData: () => () => undefined };
   }
   reset(): void {
     this.cycle = 0;

@@ -1,3 +1,4 @@
+export * from './arduino-api.js';
 export * from './build-schema.js';
 export * from './entitlements.js';
 export * from './errors.js';

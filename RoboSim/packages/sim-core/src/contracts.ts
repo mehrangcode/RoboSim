@@ -41,6 +41,8 @@ export interface PinDrive {
 
 export interface UartPort {
   write(bytes: Uint8Array): void;
+  /** Current baud rate from the USART registers (0 while the transmitter is off). */
+  baud(): number;
   onData(cb: (bytes: Uint8Array) => void): Unsubscribe;
 }
 

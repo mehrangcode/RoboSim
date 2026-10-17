@@ -104,3 +104,27 @@ User decisions: fixed arrangement with resizable + collapsible panes, layout sav
 - [x] Tests + docs + `pnpm verify` + browser check
 
 Next: 13 Monaco editor + full pin inspector + serial baud/timestamps · 14 arena in workspace (follow, trail, overlays, start pose, more arenas) · 15 mounting editor · 16 3D · 17 canvas completion · 18 build service queue half · 19 hardening.
+
+## Slice 13 — Monaco editor + pin inspector + serial monitor (FR-COD-01, 03; FR-SIM-06, 07 monitor) — done 2026-10-17 (uncommitted)
+
+User decisions: scope = Monaco + pins + serial (FR-COD-06 later); baud mismatch → garbled bytes + bilingual hint (like hardware); Monaco = C++ + Arduino highlighting, inline diagnostics, basic English core-API completions (hover docs P2); one lazy code editor shared by /editor and Lab.
+
+- [x] Engine: USART baud from UBRR/U2X in serial events; PWM frequency (timer prescaler/TOP) in pin view; pin mode incl. INPUT_PULLUP
+- [x] Serial monitor: baud select, garble on mismatch + hint, line ending (none/NL/CR/both), timestamps, autoscroll, clear
+- [x] Pin inspector: every pin — mode, level, PWM duty + Hz, analog volts; filter used pins
+- [x] `@robosim/code-editor` (or web module): lazy Monaco 0.57, self-hosted worker, Arduino tokens, diagnostics markers, completions, LTR always, multi-file tabs (.ino/.h/.cpp add/rename/delete)
+- [x] Wire into /editor and Lab sketch tab; en + fa strings
+- [x] Tests + docs (TD/Release Plan) + `pnpm verify` + bundle check (Monaco lazy) + browser check
+
+Next candidates: 14 arena in workspace (follow, trail, overlays, start pose, more arenas) · 15 mounting editor · 16 3D · 17 canvas completion · 18 build service queue half · FR-COD-06 tree-sitter pin analysis · 19 hardening.
+
+## Slice 14 — arena in the workspace (FR-ARN-05, 06, 07; US-ARN-04, 05) — in progress 2026-10-17
+
+User decisions: all 5 arena families (line tracks: oval, figure-eight, 90° turns, gaps; obstacle course; maze; sumo ring; open floor), each with a default challenge + thumbnail rendered from the spec; overlays (sensor points/rays/readings, wheel speeds) in the live frame only — no grader trace change, no engineVersion bump; start pose = drag + rotate handle while stopped (Shift snaps 15°), numeric x/y/heading, reject overlap with walls/obstacles, reset to arena default, saved in the project; switching arena adopts the arena's default challenge + start pose (confirm if conditions were modified).
+
+- [ ] content: arena registry (id → spec + default challenge + FA/EN names), new arenas + tests (start pose valid, challenge validates against arena)
+- [ ] loader resolves `arenaVersionId` via registry; existing oval goldens unchanged
+- [ ] engine: overlay data in live frame (line sample points + readings, ultrasonic ray + distance, wheel speeds)
+- [ ] renderer-2d: zoom/pan/fit, follow robot, trail toggle, overlays, obstacles, start-pose editing hit-testing, thumbnail render
+- [ ] /editor: arena picker with thumbnails, view toolbar (follow/trail/overlays/fit), start-pose editing + numeric fields + reset; en + fa
+- [ ] Tests + docs (TD/Release Plan/README) + `pnpm verify` + browser check

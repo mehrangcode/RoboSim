@@ -62,11 +62,18 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     [client, send],
   );
 
+  const clearSerial = useCallback(() => {
+    client.serialLog.clear();
+    rerender();
+  }, [client]);
+
   return {
     scene: client.scene,
     frame: client.frame,
     error: client.error,
     serial: client.serial,
+    serialLog: client.serialLog,
+    clearSerial,
     replaying: client.replaying,
     send,
     exportLog,

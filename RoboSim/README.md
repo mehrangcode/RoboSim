@@ -23,38 +23,40 @@
 
 ### ✅ Available now
 
-| Feature | What you get |
-|---|---|
-| 🧩 **Circuit editor** | SVG breadboard editor: drag parts on a 0.1" grid, rotate, flip, duplicate; pin-to-pin wiring with bend points and colours; hovering a pin highlights its whole net; 200-step undo/redo |
-| 📚 **Parts library** | Searchable in Persian and English at the same time; property panel driven by part manifests (E12 resistor picker, value ranges, switches) |
-| 🖥️ **Editor workspace** (`/editor`) | Parts library, circuit canvas, code pane, simulation view, and a bottom dock (serial monitor, pin inspector, safety findings, challenge). Resizable panes that mirror in RTL; layout saved in the browser |
-| ⚙️ **Build service** | Compiles Arduino sketches with avr-gcc against the pinned Arduino AVR core, in a sandbox, with plain-language diagnostics |
-| 🔬 **MCU simulation** | Cycle-accurate ATmega328P (Arduino Uno) emulation with PWM, USART, and ADC, running in a Web Worker |
-| ⚡ **Electrical model** | Netlist-based solver (MNA) with diodes, pull-ups, and output resistance |
-| 🚗 **Physics arena** | Deterministic 2D physics: wheel traction, walls, pushable obstacles, line sensors, and ultrasonic ranging. The starter line follower laps the oval arena |
-| 🎮 **Live interaction** | While running, hold buttons, toggle switches, and turn knobs on the canvas; LEDs glow, the servo horn turns, motors spin |
-| 🛡️ **Safety checker** | Static and runtime rules flag wiring that would damage real parts (over-current, outputs fighting, floating inputs…), with *why* and *how to fix* in both languages. Damaged parts are shown on the canvas |
-| 🏁 **Challenges** | Declarative success conditions (reach a zone, laps, checkpoints, time limit, no collision, serial output…) with a live checklist and weighted score |
-| 🔁 **Replay & verify** | Every run records an input log; replays are bit-identical. **Verify run** re-grades the run headlessly and confirms the result |
-| 🧪 **Simulator Lab** (`/lab`) | Demos: blink, button, knob → LED/servo, serial monitor, line follower, and miswired safety cases, each with **Open in editor** |
-| 🌐 **Bilingual UI** | Full English / Persian with RTL layout, Persian digits, and ي/ك normalization |
-| 📁 **Projects** | Versioned project document format; import/export as JSON with autosave in the browser |
+| Feature                             | What you get                                                                                                                                                                                                                |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🧩 **Circuit editor**               | SVG breadboard editor: drag parts on a 0.1" grid, rotate, flip, duplicate; pin-to-pin wiring with bend points and colours; hovering a pin highlights its whole net; 200-step undo/redo                                      |
+| 📚 **Parts library**                | Searchable in Persian and English at the same time; property panel driven by part manifests (E12 resistor picker, value ranges, switches)                                                                                   |
+| 🖥️ **Editor workspace** (`/editor`) | Parts library, circuit canvas, code pane, simulation view, and a bottom dock (serial monitor, pin inspector, safety findings, challenge). Resizable panes that mirror in RTL; layout saved in the browser                   |
+| ✍️ **Code editor**                  | Monaco with Arduino highlighting and completions, multi-file sketches (`.ino` + `.h`/`.cpp` tabs), compile errors underlined in place with a plain-language explanation; always LTR                                         |
+| 🔎 **Debugging**                    | Pin inspector for every Uno pin (mode, level, PWM duty and frequency, voltage, `analogRead` value); serial monitor with baud selection, line endings and timestamps — a wrong baud garbles the text just like real hardware |
+| ⚙️ **Build service**                | Compiles Arduino sketches with avr-gcc against the pinned Arduino AVR core, in a sandbox, with plain-language diagnostics                                                                                                   |
+| 🔬 **MCU simulation**               | Cycle-accurate ATmega328P (Arduino Uno) emulation with PWM, USART, and ADC, running in a Web Worker                                                                                                                         |
+| ⚡ **Electrical model**             | Netlist-based solver (MNA) with diodes, pull-ups, and output resistance                                                                                                                                                     |
+| 🚗 **Physics arena**                | Deterministic 2D physics: wheel traction, walls, pushable obstacles, line sensors, and ultrasonic ranging. The starter line follower laps the oval arena                                                                    |
+| 🎮 **Live interaction**             | While running, hold buttons, toggle switches, and turn knobs on the canvas; LEDs glow, the servo horn turns, motors spin                                                                                                    |
+| 🛡️ **Safety checker**               | Static and runtime rules flag wiring that would damage real parts (over-current, outputs fighting, floating inputs…), with _why_ and _how to fix_ in both languages. Damaged parts are shown on the canvas                  |
+| 🏁 **Challenges**                   | Declarative success conditions (reach a zone, laps, checkpoints, time limit, no collision, serial output…) with a live checklist and weighted score                                                                         |
+| 🔁 **Replay & verify**              | Every run records an input log; replays are bit-identical. **Verify run** re-grades the run headlessly and confirms the result                                                                                              |
+| 🧪 **Simulator Lab** (`/lab`)       | Demos: blink, button, knob → LED/servo, serial monitor, line follower, and miswired safety cases, each with **Open in editor**                                                                                              |
+| 🌐 **Bilingual UI**                 | Full English / Persian with RTL layout, Persian digits, and ي/ك normalization                                                                                                                                               |
+| 📁 **Projects**                     | Versioned project document format; import/export as JSON with autosave in the browser                                                                                                                                       |
 
 ### 🔩 Supported hardware (simulated)
 
-| Category | Parts |
-|---|---|
-| Board | Arduino Uno R3 (ATmega328P) |
-| Power | 9 V battery, 4×AA pack, on/off switch |
-| Actuators | LED, TT gear motor, SG90 servo, active buzzer |
-| Drivers | L298N |
-| Sensors | HC-SR04 ultrasonic, TCRT5000, 3-channel line module, push button, LDR |
-| Passive | Resistor, potentiometer, half/full breadboard, jumper wires |
-| Mechanical | 2-wheel differential chassis with caster |
+| Category   | Parts                                                                 |
+| ---------- | --------------------------------------------------------------------- |
+| Board      | Arduino Uno R3 (ATmega328P)                                           |
+| Power      | 9 V battery, 4×AA pack, on/off switch                                 |
+| Actuators  | LED, TT gear motor, SG90 servo, active buzzer                         |
+| Drivers    | L298N                                                                 |
+| Sensors    | HC-SR04 ultrasonic, TCRT5000, 3-channel line module, push button, LDR |
+| Passive    | Resistor, potentiometer, half/full breadboard, jumper wires           |
+| Mechanical | 2-wheel differential chassis with caster                              |
 
 ### 🗺️ Planned
 
-Monaco code editor · block-based coding · 2D/3D view toggle · user accounts and cloud projects · versions and sharing · BOM, wiring guide, and one-click kit purchase · classes, assignments, and autograding · LMS (LTI 1.3) and SSO · community gallery and competitions · AI assistant · upload to a real board · Arduino Nano, Mega, and Raspberry Pi Pico.
+block-based coding · 2D/3D view toggle · user accounts and cloud projects · versions and sharing · BOM, wiring guide, and one-click kit purchase · classes, assignments, and autograding · LMS (LTI 1.3) and SSO · community gallery and competitions · AI assistant · upload to a real board · Arduino Nano, Mega, and Raspberry Pi Pico.
 
 Full scope: [PRD](Docs/PRD.md) · timeline: [Release Plan](Docs/Release-Plan.md).
 
@@ -80,16 +82,16 @@ One **netlist** drives simulation, safety, and the parts list; one **world model
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Monorepo | pnpm workspaces + Turborepo |
-| Language | TypeScript |
-| Frontend | React, Vite, SVG / Canvas 2D |
-| MCU emulation | avr8js |
-| Physics | planck.js (patched for determinism) |
-| Backend | Node.js, Drizzle ORM, PostgreSQL (PGlite in dev) |
+| Layer         | Technology                                          |
+| ------------- | --------------------------------------------------- |
+| Monorepo      | pnpm workspaces + Turborepo                         |
+| Language      | TypeScript                                          |
+| Frontend      | React, Vite, SVG / Canvas 2D                        |
+| MCU emulation | avr8js                                              |
+| Physics       | planck.js (patched for determinism)                 |
+| Backend       | Node.js, Drizzle ORM, PostgreSQL (PGlite in dev)    |
 | Build service | avr-gcc + Arduino AVR core, Linux-namespace sandbox |
-| Testing | Vitest, golden simulation traces, Playwright |
+| Testing       | Vitest, golden simulation traces, Playwright        |
 
 ---
 
@@ -97,13 +99,13 @@ One **netlist** drives simulation, safety, and the parts list; one **world model
 
 ### Prerequisites
 
-| Tool | Version | Notes |
-|---|---|---|
-| OS | **Linux or Windows 11 + WSL2** (Ubuntu 24.04) | On Windows, run every command **inside WSL**. Native PowerShell/cmd is blocked on purpose |
-| Node.js | **≥ 24** | via `fnm` or `nvm` |
-| pnpm | pinned in `package.json` | via Corepack: `corepack enable` |
-| AVR toolchain | `gcc-avr`, `avr-libc`, `binutils-avr` | Needed by the build service to compile sketches |
-| Docker *(optional)* | Compose v2 | Only for full local infrastructure (Mode B) |
+| Tool                | Version                                       | Notes                                                                                     |
+| ------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| OS                  | **Linux or Windows 11 + WSL2** (Ubuntu 24.04) | On Windows, run every command **inside WSL**. Native PowerShell/cmd is blocked on purpose |
+| Node.js             | **≥ 24**                                      | via `fnm` or `nvm`                                                                        |
+| pnpm                | pinned in `package.json`                      | via Corepack: `corepack enable`                                                           |
+| AVR toolchain       | `gcc-avr`, `avr-libc`, `binutils-avr`         | Needed by the build service to compile sketches                                           |
+| Docker _(optional)_ | Compose v2                                    | Only for full local infrastructure (Mode B)                                               |
 
 ### 1. Clone and install
 
@@ -141,13 +143,13 @@ pnpm db:seed               # demo users and feature flags
 pnpm dev                   # start everything with hot reload
 ```
 
-| App | URL |
-|---|---|
-| Web app | http://localhost:5173 |
-| Editor workspace | http://localhost:5173/editor |
-| Simulator Lab | http://localhost:5173/lab |
-| Admin | http://localhost:5174 |
-| API | http://localhost:3000 (or your `API_PORT`) |
+| App              | URL                                        |
+| ---------------- | ------------------------------------------ |
+| Web app          | http://localhost:5173                      |
+| Editor workspace | http://localhost:5173/editor               |
+| Simulator Lab    | http://localhost:5173/lab                  |
+| Admin            | http://localhost:5174                      |
+| API              | http://localhost:3000 (or your `API_PORT`) |
 
 ### Optional: full local infrastructure (Docker)
 
@@ -161,31 +163,31 @@ pnpm dev
 
 ### Troubleshooting
 
-| Problem | Fix |
-|---|---|
-| `RoboSim must be run from WSL` | Open a WSL terminal and run the command there |
+| Problem                                       | Fix                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `RoboSim must be run from WSL`                | Open a WSL terminal and run the command there                                |
 | Hot reload is slow under `/mnt/c` or `/mnt/d` | Expected: Vite uses polling there. Clone inside the WSL filesystem for speed |
-| API changes not picked up | Restart `pnpm dev` (no file-change events on `/mnt/*`) |
-| `EADDRINUSE :3000` | Set `API_PORT` in `.env` |
+| API changes not picked up                     | Restart `pnpm dev` (no file-change events on `/mnt/*`)                       |
+| `EADDRINUSE :3000`                            | Set `API_PORT` in `.env`                                                     |
 
 ---
 
 ## Common commands
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Run all apps with hot reload |
-| `pnpm dev --filter web` | Run one app (plus its dependencies) |
-| `pnpm build` | Build everything (cached by Turborepo) |
-| `pnpm test` | Unit tests (Vitest) |
-| `pnpm test:sim` | Simulation golden-trace tests |
-| `pnpm lint` · `pnpm typecheck` · `pnpm format` | ESLint, `tsc --noEmit`, Prettier |
-| `pnpm verify` | Everything CI runs: format, i18n, architecture, lint, typecheck, test, build, bundle budget |
-| `pnpm i18n:check` | Check EN/FA translation parity |
-| `pnpm arch:check` | Check package boundary rules |
-| `pnpm --filter @robosim/compiler compile <main.ino>` | Compile a sketch from the command line |
-| `pnpm new:component <slug> <type-id> <category> <Class>` | Scaffold a new simulated component |
-| `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed` | Database migrations and seed data |
+| Command                                                  | Description                                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                               | Run all apps with hot reload                                                                |
+| `pnpm dev --filter web`                                  | Run one app (plus its dependencies)                                                         |
+| `pnpm build`                                             | Build everything (cached by Turborepo)                                                      |
+| `pnpm test`                                              | Unit tests (Vitest)                                                                         |
+| `pnpm test:sim`                                          | Simulation golden-trace tests                                                               |
+| `pnpm lint` · `pnpm typecheck` · `pnpm format`           | ESLint, `tsc --noEmit`, Prettier                                                            |
+| `pnpm verify`                                            | Everything CI runs: format, i18n, architecture, lint, typecheck, test, build, bundle budget |
+| `pnpm i18n:check`                                        | Check EN/FA translation parity                                                              |
+| `pnpm arch:check`                                        | Check package boundary rules                                                                |
+| `pnpm --filter @robosim/compiler compile <main.ino>`     | Compile a sketch from the command line                                                      |
+| `pnpm new:component <slug> <type-id> <category> <Class>` | Scaffold a new simulated component                                                          |
+| `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed`  | Database migrations and seed data                                                           |
 
 ---
 
@@ -223,18 +225,18 @@ RoboSim/
 
 ## Documentation
 
-| Document | Contents |
-|---|---|
-| [Docs/README.md](Docs/README.md) | Documentation map, glossary, and identifiers |
-| [BRD](Docs/BRD.md) | Business case and Mehrtronic positioning |
-| [PRD](Docs/PRD.md) | Features, personas, and requirements |
-| [User Stories](Docs/User-Stories.md) | Epics and acceptance criteria |
-| [Technical Design](Docs/Technical-Design.md) | Architecture, simulation engine, services, data model |
-| [API Spec](Docs/API-Spec.md) | REST/WebSocket contracts |
-| [Security, Privacy & Compliance](Docs/Security-Privacy-Compliance.md) | Threat model, sandboxing, privacy |
-| [Engineering Guide](Docs/Engineering-Guide.md) | Dev setup, conventions, testing, CI |
-| [Release Plan](Docs/Release-Plan.md) | Phases, progress, and timeline |
-| [Decisions](Docs/decisions.md) | Architecture Decision Records |
+| Document                                                              | Contents                                              |
+| --------------------------------------------------------------------- | ----------------------------------------------------- |
+| [Docs/README.md](Docs/README.md)                                      | Documentation map, glossary, and identifiers          |
+| [BRD](Docs/BRD.md)                                                    | Business case and Mehrtronic positioning              |
+| [PRD](Docs/PRD.md)                                                    | Features, personas, and requirements                  |
+| [User Stories](Docs/User-Stories.md)                                  | Epics and acceptance criteria                         |
+| [Technical Design](Docs/Technical-Design.md)                          | Architecture, simulation engine, services, data model |
+| [API Spec](Docs/API-Spec.md)                                          | REST/WebSocket contracts                              |
+| [Security, Privacy & Compliance](Docs/Security-Privacy-Compliance.md) | Threat model, sandboxing, privacy                     |
+| [Engineering Guide](Docs/Engineering-Guide.md)                        | Dev setup, conventions, testing, CI                   |
+| [Release Plan](Docs/Release-Plan.md)                                  | Phases, progress, and timeline                        |
+| [Decisions](Docs/decisions.md)                                        | Architecture Decision Records                         |
 
 ## Contributing
 
