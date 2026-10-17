@@ -47,6 +47,7 @@
     }
   ],
   "massG": 3,
+  "mounting": { "lengthMm": 32, "widthMm": 14, "heightMm": 8 },
   "limits": {
     "minVoltageV": 3.3,
     "maxVoltageV": 5.5,

@@ -8,7 +8,7 @@ import { z } from 'zod';
  * Units: positions in mm, angles in degrees (editor-friendly); the loader converts them.
  */
 
-export const PROJECT_SCHEMA_VERSION = 2;
+export const PROJECT_SCHEMA_VERSION = 3;
 
 const id = z
   .string()
@@ -103,7 +103,12 @@ export const successConditionsSchema = z.strictObject({
 export const projectDocumentSchema = z
   .strictObject({
     schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
-    board: z.strictObject({ id: z.string().min(1), version: z.string().min(1) }),
+    board: z.strictObject({
+      id: z.string().min(1),
+      version: z.string().min(1),
+      /** Pose on the robot chassis, like a component's `mount`. Since v3. */
+      mount: mountSchema.optional(),
+    }),
     components: z.array(componentInstanceSchema),
     wires: z.array(wireSchema),
     code: z.strictObject({
@@ -181,6 +186,8 @@ export type Migration = (doc: Record<string, unknown>) => Record<string, unknown
 export const PROJECT_MIGRATIONS: Readonly<Record<number, Migration>> = {
   /** v2 adds optional `components[].seats`; v1 documents are valid as they are. */
   1: (doc) => doc,
+  /** v3 adds optional `board.mount`; v2 documents are valid as they are. */
+  2: (doc) => doc,
 };
 
 export class ProjectDocumentError extends Error {

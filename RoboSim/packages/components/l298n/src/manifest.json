@@ -75,6 +75,7 @@
   },
   "inputs": [],
   "massG": 30,
+  "mounting": { "lengthMm": 43, "widthMm": 43, "heightMm": 27 },
   "limits": {
     "maxVsV": 35,
     "maxChannelCurrentMa": 2000,

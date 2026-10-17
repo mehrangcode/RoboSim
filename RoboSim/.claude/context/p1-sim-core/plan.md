@@ -118,13 +118,27 @@ User decisions: scope = Monaco + pins + serial (FR-COD-06 later); baud mismatch 
 
 Next candidates: 14 arena in workspace (follow, trail, overlays, start pose, more arenas) · 15 mounting editor · 16 3D · 17 canvas completion · 18 build service queue half · FR-COD-06 tree-sitter pin analysis · 19 hardening.
 
-## Slice 14 — arena in the workspace (FR-ARN-05, 06, 07; US-ARN-04, 05) — in progress 2026-10-17
+## Slice 14 — arena in the workspace (FR-ARN-05, 06, 07; US-ARN-04, 05) — done 2026-10-17 (uncommitted)
 
 User decisions: all 5 arena families (line tracks: oval, figure-eight, 90° turns, gaps; obstacle course; maze; sumo ring; open floor), each with a default challenge + thumbnail rendered from the spec; overlays (sensor points/rays/readings, wheel speeds) in the live frame only — no grader trace change, no engineVersion bump; start pose = drag + rotate handle while stopped (Shift snaps 15°), numeric x/y/heading, reject overlap with walls/obstacles, reset to arena default, saved in the project; switching arena adopts the arena's default challenge + start pose (confirm if conditions were modified).
 
-- [ ] content: arena registry (id → spec + default challenge + FA/EN names), new arenas + tests (start pose valid, challenge validates against arena)
-- [ ] loader resolves `arenaVersionId` via registry; existing oval goldens unchanged
-- [ ] engine: overlay data in live frame (line sample points + readings, ultrasonic ray + distance, wheel speeds)
-- [ ] renderer-2d: zoom/pan/fit, follow robot, trail toggle, overlays, obstacles, start-pose editing hit-testing, thumbnail render
-- [ ] /editor: arena picker with thumbnails, view toolbar (follow/trail/overlays/fit), start-pose editing + numeric fields + reset; en + fa
-- [ ] Tests + docs (TD/Release Plan/README) + `pnpm verify` + browser check
+- [x] content: arena registry (id → spec + default challenge + FA/EN names), new arenas + tests (start pose valid, challenge validates against arena)
+- [x] loader resolves `arenaVersionId` via registry; existing oval goldens unchanged
+- [x] engine: overlay data in live frame (line sample points + readings, ultrasonic ray + distance, wheel speeds)
+- [x] renderer-2d: zoom/pan/fit, follow robot, trail toggle, overlays, obstacles, start-pose editing hit-testing, thumbnail render
+- [x] /editor: arena picker with thumbnails, view toolbar (follow/trail/overlays/fit), start-pose editing + numeric fields + reset; en + fa
+- [x] Tests + docs (TD/Release Plan/README) + `pnpm verify` + browser check
+
+Next candidates: 15 mounting editor (FR-ARN-09) · 16 3D view (FR-ARN-08) · obstacle-avoider / maze / sumo demo firmware · 17 canvas completion · 18 build service queue half · FR-COD-06 · 19 hardening.
+
+## Slice 15 — mounting editor (FR-ARN-09; US-ARN-06) — done 2026-10-17 (uncommitted)
+
+User decisions: real point masses (mount positions → COM, inertia, axle/caster load split; goldens re-recorded + engineVersion bump); free placement (1 mm grid, Shift free, magnet snap to chassis slots, yaw handle 15° snap, numeric x/y/height/yaw; sensors may overhang the front within a limit; overlap warns, off-chassis refused); Robot tab in the centre pane (Circuit | Robot toggle, top-down chassis + tray of unmounted mountable parts, mount fields in properties); wheels = chassis props (track width, wheel diameter) editable from the Robot view, motors one per side by y.
+
+- [x] Manifests: mass + mounting footprint for mountable parts; shared engine-free mount rules (bounds, overlap, snap) 
+- [x] Physics: per-part point masses → COM, inertia, axle/caster load; loader passes masses; engineVersion bump + goldens re-recorded
+- [x] Robot view: top-down chassis, drag/snap/rotate, tray, numeric fields, wheel props; en + fa
+- [x] Editor wiring (Circuit | Robot toggle), arena view reflects mounts; Lab visible demo
+- [x] Tests + docs (TD/Release Plan/README/EG) + `pnpm verify` + browser check
+
+Next candidates: 16 3D view (FR-ARN-08, US-ARN-02, US-ARN-06 AC1 3D half) · obstacle-avoider / maze / sumo demo firmware · 17 canvas completion · 18 build service queue half · FR-COD-06 · 19 hardening.

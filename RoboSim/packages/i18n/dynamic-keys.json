@@ -26,6 +26,11 @@
     "editor:canvas.zoom",
     "editor:input.",
     "shell:editor.dock.",
-    "shell:editor.shortcuts."
+    "shell:editor.shortcuts.",
+    "shell:arenas.",
+    "shell:arena.family.",
+    "shell:robot.slot.",
+    "shell:robot.sides.",
+    "shell:robot.field."
   ]
 }

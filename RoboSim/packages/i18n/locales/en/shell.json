@@ -269,7 +269,8 @@
       "monitor": "Monitor",
       "hide": "Hide {pane}",
       "show": "Show {pane}",
-      "resize": "Resize {pane}"
+      "resize": "Resize {pane}",
+      "robot": "Robot"
     },
     "sim": {
       "bench": "This project has no arena: the circuit shows the parts running.",
@@ -299,7 +300,8 @@
       "cancel": "Cancel a wire, close a popup",
       "help": "Show these shortcuts",
       "close": "Close"
-    }
+    },
+    "centreView": "Centre pane view"
   },
   "code": {
     "files": "Sketch files",
@@ -319,5 +321,139 @@
       "tooMany": "A sketch can have at most {max} files."
     },
     "fileNamePlaceholder": "motor.h"
+  },
+  "arena": {
+    "view": {
+      "label": "Arena: {name}",
+      "toolbar": "Arena view",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit",
+      "follow": "Follow",
+      "trail": "Trail",
+      "overlays": "Sensors"
+    },
+    "units": {
+      "cm": "{value} cm",
+      "mps": "{value} m/s",
+      "noEcho": "no echo"
+    },
+    "pose": {
+      "title": "Start pose",
+      "x": "x (cm)",
+      "y": "y (cm)",
+      "heading": "Heading (°)",
+      "reset": "Arena start",
+      "hint": "Drag the robot to move it, the orange handle to turn it (Shift: 15° steps).",
+      "outside": "The robot would hang off the mat.",
+      "obstacle": "The robot would overlap “{id}”."
+    },
+    "picker": {
+      "choose": "Arena…",
+      "button": "Arena: {name}",
+      "title": "Choose an arena",
+      "none": "No arena",
+      "noneDescription": "Bench only: the circuit runs without a robot world.",
+      "noChallenge": "free driving",
+      "close": "Close",
+      "confirmReplace": "Switching arenas replaces your success conditions with the new arena's. Continue?"
+    },
+    "family": {
+      "line": "Line track",
+      "obstacles": "Obstacles",
+      "maze": "Maze",
+      "sumo": "Sumo",
+      "open": "Open floor"
+    }
+  },
+  "arenas": {
+    "oval": {
+      "name": "Oval",
+      "goal": "1 lap in under 60 s"
+    },
+    "oval-gaps": {
+      "name": "Oval with gaps",
+      "goal": "1 lap in under 60 s, across the gaps"
+    },
+    "square": {
+      "name": "90° turns",
+      "goal": "1 lap in under 90 s"
+    },
+    "figure-eight": {
+      "name": "Figure eight",
+      "goal": "1 lap in under 90 s"
+    },
+    "obstacle-course": {
+      "name": "Obstacle course",
+      "goal": "reach the goal in under 2 min"
+    },
+    "maze": {
+      "name": "Maze",
+      "goal": "reach the goal in under 4 min"
+    },
+    "sumo": {
+      "name": "Sumo ring",
+      "goal": "push the block out in under 60 s"
+    },
+    "open-floor": {
+      "name": "Open floor"
+    }
+  },
+  "robot": {
+    "view": "Robot from above (front up)",
+    "noChassis": "This project has no chassis. Add a 2WD chassis from the parts library to build a robot.",
+    "board": "Arduino Uno",
+    "partLabel": "{name}: x {x} mm, y {y} mm, height {z} mm, {yaw}°",
+    "rotateHandle": "Drag to turn (Shift: 1° steps)",
+    "hint": "Drag to move · handle turns · Shift: free · arrows nudge · R turns · Delete removes",
+    "selectHint": "Select a part on the chassis to place it exactly.",
+    "tray": "Not on the robot",
+    "trayEmpty": "Every part that can be mounted is on the robot.",
+    "mount": "Mount",
+    "unmount": "Take off",
+    "boardDefault": "Default position",
+    "notMounted": "Not on the robot.",
+    "side": "Side",
+    "sides": {
+      "left": "Left",
+      "right": "Right"
+    },
+    "pose": "Mount position",
+    "field": {
+      "x": "x (mm, forward)",
+      "y": "y (mm, left)",
+      "z": "Height (mm)",
+      "yaw": "Turn (°)",
+      "trackWidthMm": "Track width (mm)",
+      "wheelDiameterMm": "Wheel diameter (mm)"
+    },
+    "wheels": "Wheels",
+    "range": "Allowed range: {min}–{max}",
+    "mass": {
+      "title": "Mass distribution",
+      "total": "Total",
+      "center": "Centre of mass",
+      "xy": "x {x}, y {y} mm",
+      "axle": "On drive wheels"
+    },
+    "unit": {
+      "g": "{value} g",
+      "percent": "{value} %"
+    },
+    "warnings": "Check",
+    "motorsNeeded": "Mount one TT motor on each side, or the robot cannot drive.",
+    "overlap": "{a} and {b} take the same space.",
+    "problem": {
+      "offChassis": "That is off the chassis. Sensors may stick out up to 6 cm at the front; other parts stay on the plate.",
+      "height": "Height must be between 0 and {max} mm."
+    },
+    "slot": {
+      "motor-left": "Left motor",
+      "motor-right": "Right motor",
+      "front-bracket": "Front bracket (line sensors)",
+      "front-top": "Front top (ultrasonic)",
+      "deck": "Deck"
+    },
+    "onRobot": "On the robot"
   }
 }

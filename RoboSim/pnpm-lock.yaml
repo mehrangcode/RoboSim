@@ -383,9 +383,21 @@ importers:
 
   apps/web:
     dependencies:
+      '@robosim/board-avr-uno':
+        specifier: workspace:*
+        version: link:../../packages/boards/avr-uno
+      '@robosim/catalog':
+        specifier: workspace:*
+        version: link:../../packages/catalog
       '@robosim/circuit-canvas':
         specifier: workspace:*
         version: link:../../packages/circuit-canvas
+      '@robosim/component-chassis-2wd':
+        specifier: workspace:*
+        version: link:../../packages/components/chassis-2wd
+      '@robosim/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@robosim/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -395,6 +407,9 @@ importers:
       '@robosim/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../packages/sim-core
       '@robosim/sim-runtime':
         specifier: workspace:*
         version: link:../../packages/sim-runtime
@@ -1022,6 +1037,9 @@ importers:
         specifier: workspace:*
         version: link:../sim-core
     devDependencies:
+      '@robosim/component-chassis-2wd':
+        specifier: workspace:*
+        version: link:../components/chassis-2wd
       '@robosim/config':
         specifier: workspace:*
         version: link:../config

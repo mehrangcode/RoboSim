@@ -47,6 +47,10 @@ export function validateManifest(m: ComponentManifest): string[] {
   const pinNames = m.pins.map((p) => p.name);
   if (new Set(pinNames).size !== pinNames.length) errors.push('duplicate pin names');
   if (!(m.massG >= 0)) errors.push('massG must be ≥ 0');
+  if (m.mounting) {
+    for (const [key, v] of Object.entries(m.mounting))
+      if (!(v > 0)) errors.push(`mounting.${key} must be > 0`);
+  }
   for (const [key, spec] of Object.entries(m.props)) {
     try {
       checkProp(m.id, key, spec, spec.default);

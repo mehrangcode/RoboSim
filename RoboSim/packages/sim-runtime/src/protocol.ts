@@ -118,11 +118,45 @@ export interface PartInfo {
   }[];
 }
 
+/** Floor paint, as in the arena spec (luminance 0 = black … 1 = white). */
+export type FloorPaint =
+  | {
+      readonly kind: 'polyline';
+      readonly points: readonly { readonly x: number; readonly y: number }[];
+      readonly closed?: boolean;
+      readonly widthMm: number;
+      readonly value: number;
+    }
+  | {
+      readonly kind: 'rect';
+      readonly min: { readonly x: number; readonly y: number };
+      readonly max: { readonly x: number; readonly y: number };
+      readonly value: number;
+    }
+  | {
+      readonly kind: 'circle';
+      readonly center: { readonly x: number; readonly y: number };
+      readonly radiusM: number;
+      readonly value: number;
+    };
+
+/** The arena as vectors (metres, y up): what the 2D view and the arena picker draw. */
 export interface ArenaScene {
   readonly widthM: number;
   readonly heightM: number;
-  /** Display raster (grayscale, row 0 = arena bottom). */
-  readonly floor: { readonly widthPx: number; readonly heightPx: number; readonly data: Uint8Array };
+  readonly floor: { readonly background: number; readonly strokes: readonly FloorPaint[] };
+  readonly perimeterWalls: boolean;
+  /** Walls and blocks at their initial pose; dynamic ones move (live poses in `Frame.obstacles`). */
+  readonly obstacles: readonly {
+    readonly id: string;
+    readonly shape:
+      | { readonly kind: 'box'; readonly widthM: number; readonly heightM: number }
+      | { readonly kind: 'circle'; readonly radiusM: number };
+    readonly x: number;
+    readonly y: number;
+    readonly angle: number;
+    readonly dynamic: boolean;
+  }[];
   readonly zones: readonly {
     readonly id: string;
     readonly kind: string;
@@ -136,6 +170,16 @@ export interface RobotScene {
   readonly footprint: readonly { readonly x: number; readonly y: number }[];
   readonly wheels: readonly { readonly x: number; readonly y: number; readonly radiusM: number }[];
   readonly caster: { readonly x: number; readonly y: number };
+  /** Parts mounted on the chassis, in the robot frame (m, rad): where overlays draw sensor readings. */
+  readonly mounts: readonly {
+    readonly id: string;
+    readonly type: string;
+    readonly x: number;
+    readonly y: number;
+    readonly angle: number;
+  }[];
+  /** Centre of mass in the robot frame (m), from where everything is mounted (FR-ARN-09). */
+  readonly centerOfMass?: { readonly x: number; readonly y: number };
 }
 
 export interface SceneInfo {
@@ -183,7 +227,7 @@ export interface PinView {
 /** The part of a {@link Frame} carried by binary snapshots. */
 export type HotFrame = Pick<
   Frame,
-  'seq' | 'simTime' | 'rtf' | 'running' | 'parts' | 'pins' | 'robot' | 'challenge'
+  'seq' | 'simTime' | 'rtf' | 'running' | 'parts' | 'pins' | 'robot' | 'obstacles' | 'challenge'
 >;
 
 /** What the UI renders: the latest snapshot merged with the state carried by events. */
@@ -202,6 +246,10 @@ export interface Frame {
     /** Line-sensor spots in world coordinates with their digital reading (1 = black). */
     readonly sensors: readonly { readonly x: number; readonly y: number; readonly black: boolean }[];
   };
+  /** Live poses of pushable arena objects (live view only; traces do not carry them). */
+  readonly obstacles?: Readonly<
+    Record<string, { readonly x: number; readonly y: number; readonly angle: number }>
+  >;
   readonly faults: readonly { readonly code: string; readonly componentId: string }[];
   /** Runtime findings latched so far (FR-SAF-04). */
   readonly findings: readonly FindingView[];

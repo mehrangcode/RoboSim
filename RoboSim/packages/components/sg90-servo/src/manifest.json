@@ -44,6 +44,7 @@
   },
   "inputs": [],
   "massG": 9,
+  "mounting": { "lengthMm": 32, "widthMm": 12.5, "heightMm": 30 },
   "limits": {
     "maxVoltageV": 6.5,
     "minVoltageV": 3.5,

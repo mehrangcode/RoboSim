@@ -11,6 +11,14 @@
     "./manifest": {
       "types": "./dist/manifest.d.ts",
       "default": "./dist/manifest.js"
+    },
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "default": "./dist/geometry.js"
+    },
+    "./mounting": {
+      "types": "./dist/mounting.d.ts",
+      "default": "./dist/mounting.js"
     }
   },
   "files": [

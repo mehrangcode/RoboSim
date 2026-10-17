@@ -29,6 +29,7 @@ export { Pacer, type PacerOptions, type TickResult } from './pacer.js';
 export { resolveProps, validateManifest, type PropValue } from './manifest.js';
 export { irReflectance, irSpotRadiusMm, sonarRange, toWorld, SPEED_OF_SOUND_M_S } from './sensors.js';
 export { PlanckWorld } from './world/planck-world.js';
+export { boxInertia, plateCentroid, robotMass, type PointMass, type RobotMass } from './world/mass.js';
 export { floorAt, rasterizeFloor, type FloorRaster } from './world/floor.js';
 export {
   DEFAULT_PHYSICS,

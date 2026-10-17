@@ -12,6 +12,7 @@ import {
 } from '../contracts.js';
 import { atan2, cos, sin } from '../dmath/index.js';
 import { floorAt, rasterizeFloor, type FloorRaster } from './floor.js';
+import { robotMass } from './mass.js';
 import { DEFAULT_PHYSICS, type ArenaSpec, type PhysicsParams, type RobotSpec } from './types.js';
 
 declare global {
@@ -240,19 +241,16 @@ export class PlanckWorld implements WorldModel {
       friction: 0.3,
     });
 
-    const centroid = g.footprint.reduce(
-      (a, p) => ({ x: a.x + p.x / g.footprint.length, y: a.y + p.y / g.footprint.length }),
-      { x: 0, y: 0 },
-    );
-    const mass = g.bodyMassKg + spec.payloadKg;
-    // Payload treated as spread like the plate: scale the plate inertia by the mass ratio.
-    const inertia = g.bodyInertiaKgM2 * (mass / g.bodyMassKg);
-    body.setMassData({ mass, center: new PVec2(centroid.x, centroid.y), I: inertia });
+    const mass = robotMass(g, spec.payload);
+    body.setMassData({
+      mass: mass.massKg,
+      center: new PVec2(mass.center.x, mass.center.y),
+      I: mass.inertiaKgM2,
+    });
 
     // Static load split between the drive axle (x = 0) and the caster by the lever rule.
-    const weight = mass * this.params.gravity;
-    const xc = g.caster.x;
-    const axleShare = xc === 0 ? 1 : clamp((centroid.x - xc) / (0 - xc), 0, 1);
+    const weight = mass.massKg * this.params.gravity;
+    const axleShare = mass.axleShare;
     const wheels: Wheel[] = g.wheels.map((w) => ({
       side: w.side,
       local: new PVec2(w.position.x, w.position.y),

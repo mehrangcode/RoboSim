@@ -45,13 +45,14 @@ export interface ArenaSpec {
   readonly obstacles?: readonly ObstacleSpec[];
   /** Default robot start pose. */
   readonly start: Pose2;
-  /** Named circular regions for success conditions (checkpoints, goals, start box). */
+  /** Named circular regions for success conditions (checkpoints, goals, start box, areas). */
   readonly zones?: readonly ArenaZone[];
 }
 
 export interface ArenaZone {
   readonly id: string;
-  readonly kind: 'start' | 'checkpoint' | 'goal';
+  /** `area`: a region a condition refers to (the sumo ring for `pushOut`), not a place to drive to. */
+  readonly kind: 'start' | 'checkpoint' | 'goal' | 'area';
   readonly center: Vec2;
   readonly radiusM: number;
 }
@@ -70,6 +71,15 @@ export interface RobotGeometry {
   readonly bodyInertiaKgM2: number;
 }
 
+/** A mounted part's mass at its position in the robot frame (m; +x forward, +y left). */
+export interface PointMass {
+  readonly x: number;
+  readonly y: number;
+  readonly massKg: number;
+  /** The part's own inertia about its centre (kg·m²), e.g. m(l² + w²)/12 for its footprint box. */
+  readonly inertiaKgM2?: number;
+}
+
 export interface MountSpec {
   readonly xMm: number;
   readonly yMm: number;
@@ -80,8 +90,8 @@ export interface MountSpec {
 export interface RobotSpec {
   readonly id: string;
   readonly geometry: RobotGeometry;
-  /** Mass of everything mounted on the chassis (kg), lumped at the plate centre. */
-  readonly payloadKg: number;
+  /** Everything mounted on the chassis (board, parts, what is plugged into them) as point masses. */
+  readonly payload: readonly PointMass[];
   /** Component id → mount in the robot frame. */
   readonly mounts: Readonly<Record<string, MountSpec>>;
   /** Component ids of the motors driving each wheel. */

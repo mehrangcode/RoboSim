@@ -73,3 +73,9 @@ export const UNO_PINS: readonly BoardPinDef[] = [
   power('GND2', 'GND', 0, 1000),
   power('GND3', 'GND', 0, 1000),
 ];
+
+/** The board as a mounted body (FR-ARN-09): Uno R3 PCB outline, 25 g. */
+export const UNO_BODY = {
+  massG: 25,
+  mounting: { lengthMm: 68.6, widthMm: 53.4, heightMm: 15 },
+} as const;

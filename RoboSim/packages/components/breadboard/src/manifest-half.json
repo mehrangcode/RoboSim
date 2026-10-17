@@ -9,5 +9,6 @@
   "props": {},
   "inputs": [],
   "massG": 40,
+  "mounting": { "lengthMm": 82.5, "widthMm": 54.5, "heightMm": 9 },
   "limits": { "maxCurrentMa": 1000 }
 }

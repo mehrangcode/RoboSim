@@ -1,7 +1,8 @@
-import { UNO_ELECTRICAL, UNO_MCU_PINS, avrUno } from '@robosim/board-avr-uno';
+import { UNO_BODY, UNO_ELECTRICAL, UNO_MCU_PINS, avrUno } from '@robosim/board-avr-uno';
 import { findDefinition } from '@robosim/catalog';
 import { chassisGeometry, type Chassis2wdProps } from '@robosim/component-chassis-2wd';
-import { ARENAS } from '@robosim/content';
+import { mountProblem } from '@robosim/component-chassis-2wd/mounting';
+import { ARENAS, startPoseProblem } from '@robosim/content';
 import { RUNTIME_RULES, STATIC_RULES } from '@robosim/safety-rules';
 import {
   ChallengeTracker,
@@ -16,6 +17,9 @@ import {
   type ComponentDefinition,
   type Finding,
   type MountSpec,
+  boxInertia,
+  robotMass,
+  type PointMass,
   type PropValue,
   type RobotSpec,
 } from '@robosim/sim-core';
@@ -51,8 +55,6 @@ export const UNO_BOARD: BoardInfo = {
   packageMaxCurrentMa: avrUno.power.mcuPackageMaxCurrentMa,
 };
 
-/** Arduino Uno R3 with headers; rides on the robot when there is one. */
-const UNO_MASS_KG = 0.025;
 /** Part id of the 5 V rail stand-in (not a document component, so it cannot collide). */
 const RAIL = '5V-rail';
 const MCU_PINS = new Set(UNO_MCU_PINS.map((p) => p.id));
@@ -69,6 +71,11 @@ export function findingView(f: Finding): FindingView {
     params: f.params,
   };
 }
+
+const MOUNT_PROBLEM = {
+  offChassis: 'mounted off the chassis',
+  height: 'mount height must be 0–150 mm',
+} as const;
 
 /** Degrees → radians; exact for multiples of 90° (heading / 180 is exact, × π is one rounding). */
 const radians = (deg: number): number => (deg / 180) * Math.PI;
@@ -216,6 +223,11 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
       }),
     );
   const robot = arena ? robotSpec(doc, defs, arena, issues) : null;
+  if (arena && robot) {
+    const problem = startPoseProblem(arena, robot.geometry.footprint, arena.start);
+    if (problem?.kind === 'outside') issues.push('the start pose puts the robot off the arena');
+    if (problem?.kind === 'obstacle') issues.push(`the start pose overlaps '${problem.id}'`);
+  }
   if (issues.length > 0) throw new ProjectLoadError(issues);
 
   const electrical = doc.components.filter(
@@ -272,7 +284,7 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
     serial: doc.code.files.some((f) => /\bSerial\s*\.\s*begin\s*\(/.test(f.content)),
     code: doc.code.files,
     project: doc,
-    ...(arena && world ? { arena: arenaScene(arena, world) } : {}),
+    ...(arena ? { arena: arenaScene(arena) } : {}),
     ...(robot
       ? {
           robot: {
@@ -283,6 +295,14 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
               radiusM: w.radiusM,
             })),
             caster: robot.geometry.caster,
+            centerOfMass: robotMass(robot.geometry, robot.payload).center,
+            mounts: Object.entries(robot.mounts).map(([id, m]) => ({
+              id,
+              type: defs.get(id)?.manifest.id ?? '',
+              x: m.xMm / 1000,
+              y: m.yMm / 1000,
+              angle: m.angle ?? 0,
+            })),
           },
         }
       : {}),
@@ -318,13 +338,24 @@ function robotSpec(
     return null;
   }
   const body = chassis[0] as (typeof chassis)[number];
-  const geometry = chassisGeometry(
-    resolveProps(
-      (defs.get(body.id) as ComponentDefinition).manifest,
-      body.props as Record<string, PropValue>,
-    ) as unknown as Chassis2wdProps,
-  );
+  const props = resolveProps(
+    (defs.get(body.id) as ComponentDefinition).manifest,
+    body.props as Record<string, PropValue>,
+  ) as unknown as Chassis2wdProps;
+  const geometry = chassisGeometry(props);
   const mounted = doc.components.filter((c) => c.mount && c.id !== body.id);
+  for (const c of mounted) {
+    const m = c.mount as NonNullable<typeof c.mount>;
+    const manifest = defs.get(c.id)?.manifest;
+    if (!manifest) continue; // reported above
+    if (!manifest.mounting) issues.push(`component '${c.id}': ${c.type} cannot be mounted on the chassis`);
+    const problem = mountProblem(props, m, manifest.category === 'sensor');
+    if (problem)
+      issues.push(`component '${c.id}': ${MOUNT_PROBLEM[problem]} (x ${m.x}, y ${m.y}, z ${m.z} mm)`);
+  }
+  const boardMount = doc.board.mount ?? { x: props.bodyCenterXMm, y: 0, z: 0, yaw: 0 };
+  const boardProblem = mountProblem(props, boardMount, false);
+  if (boardProblem) issues.push(`board: ${MOUNT_PROBLEM[boardProblem]}`);
   const motors = mounted.filter((c) => c.type === 'actuator.tt-motor');
   const left = motors.filter((m) => (m.mount?.y ?? 0) > 0);
   const right = motors.filter((m) => (m.mount?.y ?? 0) < 0);
@@ -337,31 +368,55 @@ function robotSpec(
     const m = c.mount as NonNullable<typeof c.mount>;
     mounts[c.id] = { xMm: m.x, yMm: m.y, heightMm: m.z, ...(m.yaw !== 0 ? { angle: radians(m.yaw) } : {}) };
   }
-  const payloadKg =
-    mounted.reduce((kg, c) => kg + (defs.get(c.id)?.manifest.massG ?? 0) / 1000, 0) + UNO_MASS_KG;
+  // Mass distribution (FR-ARN-09): every mounted part where it sits; parts plugged into a mounted
+  // part (an LED on a mounted breadboard) ride at their host's mount.
+  const at = (
+    m: { x: number; y: number },
+    massG: number,
+    box?: { lengthMm: number; widthMm: number },
+  ): PointMass => ({
+    x: m.x / 1000,
+    y: m.y / 1000,
+    massKg: massG / 1000,
+    ...(box ? { inertiaKgM2: boxInertia(massG / 1000, box.lengthMm, box.widthMm) } : {}),
+  });
+  const byId = new Map(doc.components.map((c) => [c.id, c]));
+  const payload: PointMass[] = [at(boardMount, UNO_BODY.massG, UNO_BODY.mounting)];
+  for (const c of doc.components) {
+    if (c.id === body.id) continue;
+    const manifest = defs.get(c.id)?.manifest;
+    if (!manifest) continue;
+    if (c.mount) payload.push(at(c.mount, manifest.massG, manifest.mounting));
+    else {
+      const host = byId.get(Object.values(c.seats ?? {})[0]?.part ?? '');
+      if (host?.mount && host.id !== body.id) payload.push(at(host.mount, manifest.massG));
+    }
+  }
   return {
     id: 'robot',
     geometry,
-    payloadKg,
+    payload,
     mounts,
     drives: { left: (left[0] as (typeof left)[number]).id, right: (right[0] as (typeof right)[number]).id },
     start: arena.start,
   };
 }
 
-/** Display raster at 2 mm/px: a quarter of the memory of the 1 mm physics raster. */
-function arenaScene(arena: ArenaSpec, world: PlanckWorld): ArenaScene {
-  const src = world.floor;
-  const widthPx = Math.ceil(src.widthPx / 2);
-  const heightPx = Math.ceil(src.heightPx / 2);
-  const data = new Uint8Array(widthPx * heightPx);
-  for (let y = 0; y < heightPx; y++) {
-    for (let x = 0; x < widthPx; x++) data[y * widthPx + x] = src.data[2 * y * src.widthPx + 2 * x] ?? 255;
-  }
+/** Vector arena for the 2D view: the renderer paints the floor itself (crisp at any zoom). */
+function arenaScene(arena: ArenaSpec): ArenaScene {
   return {
     widthM: arena.widthM,
     heightM: arena.heightM,
-    floor: { widthPx, heightPx, data },
+    floor: arena.floor,
+    perimeterWalls: arena.perimeterWalls !== false,
+    obstacles: (arena.obstacles ?? []).map((o) => ({
+      id: o.id,
+      shape: o.shape,
+      x: o.pose.x,
+      y: o.pose.y,
+      angle: o.pose.angle,
+      dynamic: o.dynamic === true,
+    })),
     zones: (arena.zones ?? []).map((z) => ({
       id: z.id,
       kind: z.kind,

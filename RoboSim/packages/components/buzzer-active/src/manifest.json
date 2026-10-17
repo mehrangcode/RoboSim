@@ -18,6 +18,7 @@
   "props": {},
   "inputs": [],
   "massG": 2,
+  "mounting": { "lengthMm": 12, "widthMm": 12, "heightMm": 9.5 },
   "limits": {
     "ratedVoltageV": 5,
     "minVoltageV": 3,

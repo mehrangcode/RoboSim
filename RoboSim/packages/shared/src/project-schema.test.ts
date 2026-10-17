@@ -170,6 +170,12 @@ describe('project document migrations', () => {
     expect(parseProjectDocument(v1)).toEqual(valid());
   });
 
+  it('upgrades a v2 document (no board mount) and accepts a mounted board in v3', () => {
+    expect(parseProjectDocument({ ...valid(), schemaVersion: 2 })).toEqual(valid());
+    const mounted = { ...valid(), board: { ...valid().board, mount: { x: -30, y: 0, z: 75, yaw: 0 } } };
+    expect(parseProjectDocument(mounted).board.mount).toEqual({ x: -30, y: 0, z: 75, yaw: 0 });
+  });
+
   it('fails loudly on a gap in the chain', () => {
     expect(() => migrateDocument({ schemaVersion: 1 }, 3, { 2: chain[2] })).toThrow(
       /no migration from schemaVersion 1/,

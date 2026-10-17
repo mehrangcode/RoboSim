@@ -1,12 +1,20 @@
 {
   "name": "@robosim/sim-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./dmath": {
+      "types": "./dist/dmath/index.d.ts",
+      "default": "./dist/dmath/index.js"
+    },
+    "./mass": {
+      "types": "./dist/world/mass.d.ts",
+      "default": "./dist/world/mass.js"
     }
   },
   "files": [

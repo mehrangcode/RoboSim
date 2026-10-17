@@ -11,7 +11,7 @@ import { Button, SegmentedControl } from '@robosim/ui';
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ArenaView } from './arena-view.js';
+import { ArenaView } from '../arena/arena-view.js';
 import { BenchView } from './bench-view.js';
 import { ChallengePanel } from './challenge-panel.js';
 import { FindingsPanel } from './findings-panel.js';
@@ -268,10 +268,12 @@ export function LabPage({
       {ready && scene && (
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_16rem]">
           <div>
-            {scene.kind === 'arena' ? (
+            {scene.kind === 'arena' && scene.arena ? (
               <ArenaView
-                scene={scene}
+                arena={scene.arena}
+                robot={scene.robot ?? null}
                 frame={frame}
+                project={scene.project}
                 label={scene.scenario ? t(`shell:lab.scenario.${scene.scenario}`) : scene.title}
               />
             ) : (

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { BUILTIN_ARENAS } from '@robosim/content';
 import type { ProjectDocument } from '@robosim/shared';
 import { SimClient } from './client.js';
 import { HeadlessRun } from './input-log.js';
 import { SimHost } from './host.js';
 import type { InputLog, WorkerToMain } from './protocol.js';
+import { obstacleViews } from './views.js';
 import { ProjectLoadError, buildRun, builtinSource, loadProject } from './scenarios.js';
 
 const blink = () => builtinSource('blink');
@@ -182,6 +184,40 @@ describe('project loader', () => {
     ).toEqual([expect.stringContaining('mars')]);
   });
 
+  it('rejects a start pose off the mat or on an obstacle', () => {
+    const at = (arenaVersionId: string, x: number, y: number) => (d: ProjectDocument) => {
+      const { successConditions: _conditions, ...rest } = d;
+      return { ...rest, arena: { arenaVersionId, startPose: { x, y, heading: 0 } } };
+    };
+    expect(problems(at('oval', 0.02, 0.8), lineFollower())).toEqual([
+      'the start pose puts the robot off the arena',
+    ]);
+    expect(problems(at('obstacle-course', 0.95, 0.8), lineFollower())).toEqual([
+      "the start pose overlaps 'block-1'",
+    ]);
+  });
+
+  it('runs the line-follower robot on every built-in arena with its default challenge', () => {
+    const base = lineFollower();
+    const { successConditions: _conditions, ...project } = base.project;
+    for (const a of BUILTIN_ARENAS) {
+      const { x, y, angle } = a.spec.start;
+      const run = buildRun({
+        ...base,
+        project: {
+          ...project,
+          arena: { arenaVersionId: a.id, startPose: { x, y, heading: (angle / Math.PI) * 180 } },
+          ...(a.challenge ? { successConditions: a.challenge as ProjectDocument['successConditions'] } : {}),
+        },
+      });
+      for (let i = 0; i < 200; i++) run.circuit.sim.step();
+      expect(run.world?.bodies()[0]?.position.x, a.id).toBeCloseTo(x, 1);
+      expect(run.scene.arena?.obstacles.length, a.id).toBe(a.spec.obstacles?.length ?? 0);
+      expect(run.challenge?.result().status ?? 'none', a.id).not.toBe('failure');
+      if (a.id === 'sumo') expect(obstacleViews(run)['opponent']).toMatchObject({ x: 1.35, y: 1 });
+    }
+  });
+
   it('turns the start heading (degrees) into the robot pose', () => {
     const base = lineFollower();
     const run = buildRun({
@@ -192,6 +228,64 @@ describe('project loader', () => {
       },
     });
     expect(run.world?.bodies()[0]).toMatchObject({ position: { x: 1, y: 0.5 }, angle: Math.PI / 2 });
+  });
+
+  /** The line follower with one part's mount changed. */
+  const remount = (id: string, change: (m: { x: number; y: number; z: number; yaw: number }) => object) => {
+    const base = lineFollower();
+    return {
+      ...base,
+      project: {
+        ...base.project,
+        components: base.project.components.map((c) =>
+          c.id === id && c.mount ? { ...c, mount: { ...c.mount, ...change(c.mount) } } : c,
+        ),
+      },
+    };
+  };
+
+  it('US-ARN-06 AC1 moving the line sensor 2 cm forward moves where it samples', () => {
+    const before = buildRun(lineFollower()).world?.componentPose('line');
+    const after = buildRun(remount('line', (m) => ({ x: m.x + 20 }))).world?.componentPose('line');
+    // The oval start faces +x.
+    expect((after?.position.x ?? 0) - (before?.position.x ?? 0)).toBeCloseTo(0.02, 12);
+    expect(after?.position.y).toBe(before?.position.y);
+  });
+
+  it('FR-ARN-09 mounting moves the centre of mass: the same run drives differently', () => {
+    const drive = (source: ReturnType<typeof lineFollower>) => {
+      const run = buildRun(source);
+      run.circuit.sim.run(1500);
+      return run.world?.bodies()[0];
+    };
+    const stock = drive(lineFollower());
+    expect(drive(lineFollower())).toEqual(stock); // deterministic
+    expect(drive(remount('bat', (m) => ({ x: m.x + 120 })))).not.toEqual(stock);
+  }, 30_000);
+
+  it('refuses parts mounted off the chassis or that cannot be mounted', () => {
+    const issues = (source: ReturnType<typeof lineFollower>) => problems((d) => d, source);
+    expect(issues(remount('bat', () => ({ x: 500 })))).toEqual([
+      "component 'bat': mounted off the chassis (x 500, y 0, z 45 mm)",
+    ]);
+    expect(issues(remount('line', (m) => ({ x: m.x + 40 })))).toEqual([]); // sensors may overhang the front
+    expect(issues(remount('drv', () => ({ z: 400 })))[0]).toMatch(/mount height/);
+    const base = lineFollower();
+    const board = {
+      ...base,
+      project: { ...base.project, board: { ...base.project.board, mount: { x: 0, y: 200, z: 0, yaw: 0 } } },
+    };
+    expect(issues(board)).toEqual(['board: mounted off the chassis']);
+    const chassis = {
+      ...base,
+      project: {
+        ...base.project,
+        components: base.project.components.map((c) =>
+          c.id === 'chassis' ? { ...c, mount: { x: 0, y: 0, z: 0, yaw: 0 } } : c,
+        ),
+      },
+    };
+    expect(issues(chassis)).toEqual([]); // the chassis' own mount is ignored
   });
 });
 

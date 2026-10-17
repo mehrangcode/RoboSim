@@ -116,8 +116,13 @@ describe('SimHost', () => {
     const h = harness();
     h.host.handle({ type: 'load', scenario: 'line-follower' });
     const scene = h.scene();
-    expect(scene?.arena?.floor.widthPx).toBe(1200);
+    expect(scene?.arena?.floor.strokes).toHaveLength(1);
+    expect(scene?.arena?.perimeterWalls).toBe(true);
     expect(scene?.robot?.wheels).toHaveLength(2);
+    expect(scene?.robot?.mounts.find((m) => m.id === 'line')).toMatchObject({
+      type: 'sensor.line-3ch',
+      y: 0,
+    });
     h.host.handle({ type: 'speed', value: 4 });
     h.host.handle({ type: 'control', action: 'run' });
     h.advance(500); // 2 s simulated at 4×

@@ -1,6 +1,6 @@
 {
   "log": {
-    "engineVersion": "sim-core@0.1.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.2.0",
+    "engineVersion": "sim-core@0.2.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.3.0",
     "scenario": "outputs-fighting",
     "project": {
       "schemaVersion": 1,

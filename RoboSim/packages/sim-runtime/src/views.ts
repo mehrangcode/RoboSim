@@ -92,6 +92,16 @@ export function robotView(s: Scenario): NonNullable<HotFrame['robot']> {
   return { x: body?.position.x ?? 0, y: body?.position.y ?? 0, angle: body?.angle ?? 0, sensors };
 }
 
+/** Live poses of the pushable arena objects (the robot is reported by {@link robotView}). */
+export function obstacleViews(s: Scenario): NonNullable<HotFrame['obstacles']> {
+  const robots = new Set(['robot']);
+  const poses: Record<string, { x: number; y: number; angle: number }> = {};
+  for (const b of s.world?.bodies() ?? []) {
+    if (!robots.has(b.id)) poses[b.id] = { x: b.position.x, y: b.position.y, angle: b.angle };
+  }
+  return poses;
+}
+
 /** Damaged parts and MCU pins (FR-SIM-10). */
 export function damageView(s: Scenario): Damage {
   const sim = s.circuit.sim;
@@ -132,7 +142,15 @@ export function challengeView(r: ChallengeResult, arena: ArenaSpec | null): Chal
           lines: r.score.lines.map((l) => ({ type: l.type, weight: l.weight, points: l.points })),
         }
       : null,
-    visitedZones: done ? [...checkpoints] : checkpoints.slice(0, index),
-    nextZone: done ? null : (checkpoints[index] ?? start),
+    ...(laps
+      ? {
+          visitedZones: done ? [...checkpoints] : checkpoints.slice(0, index),
+          nextZone: done ? null : (checkpoints[index] ?? start),
+        }
+      : // Not a lap race: point at the goal (obstacle course, maze) until the run is decided.
+        {
+          visitedZones: [],
+          nextZone: r.status === 'running' ? (zones.find((z) => z.kind === 'goal')?.id ?? null) : null,
+        }),
   };
 }

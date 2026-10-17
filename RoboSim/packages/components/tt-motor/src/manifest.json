@@ -79,6 +79,7 @@
     }
   ],
   "massG": 29,
+  "mounting": { "lengthMm": 70, "widthMm": 22.5, "heightMm": 19 },
   "limits": {
     "maxVoltageV": 9,
     "stallCurrentMa": 1200,

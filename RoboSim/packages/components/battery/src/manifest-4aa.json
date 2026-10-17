@@ -47,6 +47,7 @@
     }
   ],
   "massG": 110,
+  "mounting": { "lengthMm": 62, "widthMm": 58, "heightMm": 15 },
   "limits": {
     "maxCurrentMa": 3000
   },

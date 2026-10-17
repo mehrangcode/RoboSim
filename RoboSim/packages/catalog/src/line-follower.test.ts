@@ -60,16 +60,23 @@ const mass = (id: string) => findDefinition(id).manifest.massG / 1000;
 const UNO_MASS_KG = 0.025;
 
 function starterRobot(duty: number) {
-  const front = geometry.mountSlots.find((s) => s.id === 'front-bracket');
+  const slot = (id: string) => geometry.mountSlots.find((s) => s.id === id);
+  const front = slot('front-bracket');
+  const left = slot('motor-left');
+  const right = slot('motor-right');
+  const deck = slot('deck') ?? { xMm: 0 };
   const robot: RobotSpec = {
     id: 'robot',
     geometry,
-    payloadKg:
-      mass('power.battery-4aa') +
-      2 * mass('actuator.tt-motor') +
-      mass('driver.l298n') +
-      mass('sensor.line-3ch') +
-      UNO_MASS_KG,
+    // Point masses where the starter robot carries them (deck, motor slots, front bracket).
+    payload: [
+      { x: deck.xMm / 1000 - 0.03, y: 0, massKg: mass('power.battery-4aa') },
+      { x: 0, y: (left?.yMm ?? 0) / 1000, massKg: mass('actuator.tt-motor') },
+      { x: 0, y: (right?.yMm ?? 0) / 1000, massKg: mass('actuator.tt-motor') },
+      { x: deck.xMm / 1000, y: 0, massKg: mass('driver.l298n') },
+      { x: (front?.xMm ?? 65) / 1000, y: 0, massKg: mass('sensor.line-3ch') },
+      { x: deck.xMm / 1000, y: 0, massKg: UNO_MASS_KG },
+    ],
     mounts: { line: { xMm: front?.xMm ?? 65, yMm: 0, heightMm: front?.heightMm ?? 5 } },
     drives: { left: 'motorL', right: 'motorR' },
     start: ovalArena.start,

@@ -9,9 +9,24 @@ import { ProjectDocumentError, parseProjectDocument, type ProjectDocument } from
 import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, cn } from '@robosim/ui';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { findArena } from '@robosim/content/arenas';
+import type { Pose } from '@robosim/renderer-2d';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArenaView } from '../lab/arena-view.js';
+import {
+  arenaViewOf,
+  conditionsModified,
+  hasChassis,
+  poseOf,
+  poseProblem,
+  robotOf,
+  startPoseOf,
+  withArena,
+} from '../arena/arena-model.js';
+import { ArenaPicker } from '../arena/arena-picker.js';
+import { ArenaView } from '../arena/arena-view.js';
+import { RobotView } from '../robot/robot-view.js';
+import { StartPoseFields } from '../arena/start-pose-fields.js';
 import { ChallengePanel } from '../lab/challenge-panel.js';
 import { FindingsPanel } from '../lab/findings-panel.js';
 import { useFormat } from '../lab/format.js';
@@ -36,7 +51,8 @@ import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
 type DockTab = 'serial' | 'pins' | 'safety' | 'challenge';
-type MobileTab = 'parts' | 'circuit' | 'code' | 'sim' | 'monitor';
+type MobileTab = 'parts' | 'circuit' | 'robot' | 'code' | 'sim' | 'monitor';
+type CentreView = 'circuit' | 'robot';
 
 /** A pane with a title bar and a collapse button. */
 function PaneFrame({
@@ -124,7 +140,9 @@ export function EditorPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [dockTab, setDockTab] = useState<DockTab>('serial');
   const [mobileTab, setMobileTab] = useState<MobileTab>('circuit');
+  const [centre, setCentre] = useState<CentreView>('circuit');
   const [help, setHelp] = useState(false);
+  const [arenaPicker, setArenaPicker] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const { layout, resize, toggle } = useLayout();
   const size = useSizeClass();
@@ -223,6 +241,22 @@ export function EditorPage({
 
   const live = run.ready ? frame : null;
   const canvasMode: CanvasMode = run.phase === 'live' ? 'run' : size === 'narrow' ? 'view' : 'edit';
+
+  // Arena (FR-ARN-05/06): picked from the built-ins; the start pose is edited on the stopped view.
+  const docRobot = useMemo(() => robotOf(doc), [doc]);
+  const docArena = doc.arena ? findArena(doc.arena.arenaVersionId) : undefined;
+  const docArenaView = useMemo(() => (docArena ? arenaViewOf(docArena) : null), [docArena]);
+  const startPose = poseOf(doc);
+  const arenaId = doc.arena?.arenaVersionId ?? null;
+  const checkPose = (p: Pose) => (arenaId && docRobot ? poseProblem(arenaId, docRobot, p) : null);
+  const setStartPose = (p: Pose) =>
+    editor.apply((d) => (d.arena ? { ...d, arena: { ...d.arena, startPose: startPoseOf(p) } } : d));
+  const pickArena = (id: string | null) => {
+    setArenaPicker(false);
+    if (id === arenaId) return;
+    if (conditionsModified(doc) && !window.confirm(t('shell:arena.picker.confirmReplace'))) return;
+    editor.apply((d) => withArena(d, id));
+  };
   const findings = live && scene ? [...scene.staticFindings, ...live.findings] : [];
   const status =
     run.phase === 'building'
@@ -236,9 +270,10 @@ export function EditorPage({
           ? t('shell:editor.status.stoppedByEdit')
           : t('shell:editor.status.editing');
 
-  const titles: Record<Pane | 'canvas', string> = {
+  const titles: Record<Pane | 'canvas' | 'robot', string> = {
     left: t('shell:editor.pane.parts'),
     canvas: t('shell:editor.pane.circuit'),
+    robot: t('shell:editor.pane.robot'),
     code: t('shell:editor.pane.code'),
     sim: t('shell:editor.pane.sim'),
     dock: t('shell:editor.pane.monitor'),
@@ -266,6 +301,21 @@ export function EditorPage({
       className="h-full rounded-none border-0"
     />
   );
+  // Mounting editor (FR-ARN-09): the centre pane shows the circuit or the robot from above.
+  const robotProject = hasChassis(doc);
+  const showRobot = robotProject && centre === 'robot';
+  const robotPane = <RobotView editor={editor} disabled={canvasMode !== 'edit'} />;
+  const centreSwitch = robotProject && (
+    <SegmentedControl
+      label={t('shell:editor.centreView')}
+      value={centre}
+      options={(['circuit', 'robot'] as const).map((v) => ({
+        value: v,
+        label: v === 'robot' ? titles.robot : titles.canvas,
+      }))}
+      onChange={setCentre}
+    />
+  );
   const leftPane = (
     <div className="flex h-full flex-col gap-3 p-2">
       <div className="flex max-h-[55%] min-h-0 flex-col">
@@ -277,8 +327,39 @@ export function EditorPage({
     </div>
   );
   const simPane =
-    live && scene?.kind === 'arena' ? (
-      <ArenaView scene={scene} frame={live} label={scene.title} className="block h-full w-full" />
+    live && scene?.kind === 'arena' && scene.arena ? (
+      <ArenaView
+        arena={scene.arena}
+        robot={scene.robot ?? null}
+        frame={live}
+        project={scene.project}
+        label={scene.title}
+        className="block h-full w-full"
+      />
+    ) : docArena && docArenaView && startPose ? (
+      <ArenaView
+        key={docArena.id}
+        arena={docArenaView}
+        robot={docRobot}
+        edit={
+          canvasMode === 'edit' && docRobot
+            ? { pose: startPose, check: checkPose, onChange: setStartPose }
+            : null
+        }
+        label={t('shell:arena.view.label', { name: t(`shell:arenas.${docArena.id}.name`) })}
+        className="block h-full w-full"
+        footer={
+          docRobot && (
+            <StartPoseFields
+              pose={startPose}
+              disabled={canvasMode !== 'edit'}
+              check={checkPose}
+              onChange={setStartPose}
+              onReset={() => setStartPose(docArena.spec.start)}
+            />
+          )
+        }
+      />
     ) : (
       <p className="p-3 text-sm text-ink-muted">
         {doc.arena ? t('shell:editor.sim.notRunning') : t('shell:editor.sim.bench')}
@@ -386,6 +467,19 @@ export function EditorPage({
           <Button size="sm" variant="secondary" onClick={save}>
             {t('shell:editor.save')}
           </Button>
+          {hasChassis(doc) && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setArenaPicker(true)}
+              disabled={canvasMode !== 'edit'}
+              aria-haspopup="dialog"
+            >
+              {docArena
+                ? t('shell:arena.picker.button', { name: t(`shell:arenas.${docArena.id}.name`) })
+                : t('shell:arena.picker.choose')}
+            </Button>
+          )}
         </>
       )}
       <span aria-hidden className="mx-1 h-5 w-px bg-line" />
@@ -468,11 +562,26 @@ export function EditorPage({
   );
 
   const frameClass = '-m-6 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden';
-  const helpDialog = help && <HelpDialog onClose={() => setHelp(false)} />;
+  const helpDialog = (
+    <>
+      {help && <HelpDialog onClose={() => setHelp(false)} />}
+      {arenaPicker && (
+        <ArenaPicker
+          current={arenaId}
+          robot={docRobot}
+          onPick={pickArena}
+          onClose={() => setArenaPicker(false)}
+        />
+      )}
+    </>
+  );
 
   if (size !== 'wide') {
+    const robotTab: MobileTab[] = robotProject ? ['robot'] : [];
     const tabs: MobileTab[] =
-      size === 'narrow' ? ['circuit', 'sim', 'monitor'] : ['parts', 'circuit', 'code', 'sim', 'monitor'];
+      size === 'narrow'
+        ? ['circuit', ...robotTab, 'sim', 'monitor']
+        : ['parts', 'circuit', ...robotTab, 'code', 'sim', 'monitor'];
     const tab = tabs.includes(mobileTab) ? mobileTab : 'circuit';
     return (
       <div className={frameClass}>
@@ -493,11 +602,13 @@ export function EditorPage({
               label:
                 v === 'circuit'
                   ? titles.canvas
-                  : v === 'parts'
-                    ? titles.left
-                    : v === 'monitor'
-                      ? titles.dock
-                      : titles[v],
+                  : v === 'robot'
+                    ? titles.robot
+                    : v === 'parts'
+                      ? titles.left
+                      : v === 'monitor'
+                        ? titles.dock
+                        : titles[v],
             }))}
             onChange={setMobileTab}
           />
@@ -505,13 +616,15 @@ export function EditorPage({
         <div className="min-h-0 flex-1 overflow-auto">
           {tab === 'circuit'
             ? canvas
-            : tab === 'parts'
-              ? leftPane
-              : tab === 'code'
-                ? codePane
-                : tab === 'sim'
-                  ? simPane
-                  : dock}
+            : tab === 'robot'
+              ? robotPane
+              : tab === 'parts'
+                ? leftPane
+                : tab === 'code'
+                  ? codePane
+                  : tab === 'sim'
+                    ? simPane
+                    : dock}
         </div>
         {helpDialog}
       </div>
@@ -547,10 +660,11 @@ export function EditorPage({
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <PaneFrame
-            title={titles.canvas}
+            title={showRobot ? titles.robot : titles.canvas}
             className="flex-1"
             actions={
               <>
+                {centreSwitch}
                 <button
                   type="button"
                   onClick={editor.undo}
@@ -570,7 +684,7 @@ export function EditorPage({
               </>
             }
           >
-            {canvas}
+            {showRobot ? robotPane : canvas}
           </PaneFrame>
           {doc.arena &&
             (collapsed.sim ? (

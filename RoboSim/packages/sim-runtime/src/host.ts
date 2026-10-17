@@ -16,7 +16,7 @@ import type {
 import { buildRun, findingView, resolveSource, type Scenario } from './scenarios.js';
 import { SharedSnapshotWriter, packSnapshot } from './snapshot-channel.js';
 import { SnapshotEncoder } from './snapshot-codec.js';
-import { ALL_MCU_PINS, challengeView, damageView, pinViews, robotView } from './views.js';
+import { ALL_MCU_PINS, challengeView, damageView, obstacleViews, pinViews, robotView } from './views.js';
 
 /** Snapshots to the UI at most this often (wall ms); the simulation itself is unaffected. */
 const FRAME_INTERVAL_MS = 33;
@@ -181,17 +181,13 @@ export class SimHost {
     });
     this.run = run;
     this.lastFrameSim = 0;
-    const floor = scenario.scene.arena?.floor.data;
-    this.post(
-      {
-        type: 'loaded',
-        scene: scenario.scene,
-        seed,
-        engineVersion: ENGINE_VERSION,
-        replaying: replay.length,
-      },
-      floor ? [floor.slice().buffer] : [],
-    );
+    this.post({
+      type: 'loaded',
+      scene: scenario.scene,
+      seed,
+      engineVersion: ENGINE_VERSION,
+      replaying: replay.length,
+    });
     this.publish(true);
   }
 
@@ -271,6 +267,7 @@ export class SimHost {
       parts,
       pins: pinViews(s, ALL_MCU_PINS),
       ...(s.world ? { robot: robotView(s) } : {}),
+      ...(s.world && s.arena?.obstacles?.some((o) => o.dynamic) ? { obstacles: obstacleViews(s) } : {}),
       ...(s.challenge ? { challenge: challengeView(s.challenge.result(), s.arena) } : {}),
     };
     const encoded = run.encoder.encode(hot);

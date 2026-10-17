@@ -341,6 +341,11 @@ export interface ComponentManifest {
   readonly inputs: readonly InputSpec[];
   readonly massG: number;
   /**
+   * Mounting footprint (FR-ARN-09) of a part that can sit on a robot chassis: a box in the part's own
+   * frame (+x = the way it faces), height above its mount point. Parts without one stay on the bench.
+   */
+  readonly mounting?: MountingSpec;
+  /**
    * Electrical / mechanical limits used by faults and safety rules (units in the key). Generic rules read:
    * `peakCurrentMa` (worst-case draw, e.g. stall), `maxVoltageV` (abs. max across the polarity pins).
    */
@@ -353,6 +358,12 @@ export interface ComponentManifest {
   readonly supplyPins?: readonly SupplyPinSpec[];
   /** Per-pin absolute maximum voltage to the part's negative polarity pin (V). */
   readonly pinMaxVolts?: Readonly<Record<string, number>>;
+}
+
+export interface MountingSpec {
+  readonly lengthMm: number;
+  readonly widthMm: number;
+  readonly heightMm: number;
 }
 
 export type ComponentTrait = 'inductive' | 'led' | 'source';

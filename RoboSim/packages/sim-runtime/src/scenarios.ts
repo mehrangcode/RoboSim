@@ -52,16 +52,19 @@ function project(
   sketch: string,
   components: ComponentInstance[],
   wiring: Wire[],
-  extra: Pick<ProjectDocument, 'arena' | 'successConditions'> = {},
+  extra: Pick<ProjectDocument, 'arena' | 'successConditions'> & {
+    boardMount?: NonNullable<ProjectDocument['board']['mount']>;
+  } = {},
 ): ProjectDocument {
+  const { boardMount, ...rest } = extra;
   return {
     schemaVersion: PROJECT_SCHEMA_VERSION,
-    board: { id: 'avr-uno', version: '1.0.0' },
+    board: { id: 'avr-uno', version: '1.0.0', ...(boardMount ? { mount: boardMount } : {}) },
     components,
     wires: wiring,
     code: { language: 'cpp', files: [{ name: 'sketch.ino', content: sketch.trim() + '\n' }] },
     libraries: [],
-    ...extra,
+    ...rest,
     meta: { title },
   };
 }
@@ -105,8 +108,11 @@ function lineFollower(): ProjectDocument {
     SKETCH.lineFollower,
     [
       part('chassis', 'mechanical.chassis-2wd', g(-36), g(12)),
-      part('bat', 'power.battery-4aa', g(66), g(30), { mount: { ...deck, x: deck.x - 30 } }),
-      part('sw', 'power.switch', g(32), g(30), { inputs: { on: true } }),
+      part('bat', 'power.battery-4aa', g(66), g(30), { mount: { ...deck, x: deck.x - 65 } }),
+      part('sw', 'power.switch', g(32), g(30), {
+        inputs: { on: true },
+        mount: { x: -125, y: 55, z: deck.z, yaw: 0 },
+      }),
       part('drv', 'driver.l298n', g(32), g(-24), {
         props: { enaJumper: false, enbJumper: false, regulatorJumper: false },
         mount: deck,
@@ -146,6 +152,8 @@ function lineFollower(): ProjectDocument {
         startPose: { x: ovalArena.start.x, y: ovalArena.start.y, heading: 0 },
       },
       successConditions: clone(ovalChallenge) as ProjectDocument['successConditions'],
+      // Stacked above the driver on the deck.
+      boardMount: { x: deck.x, y: 0, z: 75, yaw: 0 },
     },
   );
 }

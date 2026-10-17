@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ComponentModel, WheelActuator } from '../contracts.js';
 import { cos, sin } from '../dmath/index.js';
 import { PlanckWorld } from './planck-world.js';
+import { boxInertia, plateCentroid } from './mass.js';
 import type { ArenaSpec, RobotGeometry, RobotSpec } from './types.js';
 
 /** Constant-torque actuator that records the shaft speed fed back by the world. */
@@ -48,7 +49,8 @@ function setup(left: number, right: number, a: ArenaSpec = arena(), start = { x:
   const robot: RobotSpec = {
     id: 'bot',
     geometry: GEOMETRY,
-    payloadKg: 0.34,
+    // Payload spread like the plate (210 × 150 mm).
+    payload: [{ ...plateCentroid(GEOMETRY), massKg: 0.34, inertiaKgM2: boxInertia(0.34, 210, 150) }],
     mounts: { sonar: { xMm: 60, yMm: 0, heightMm: 60 }, line: { xMm: 70, yMm: 10, heightMm: 5 } },
     drives: { left: 'mL', right: 'mR' },
     start,

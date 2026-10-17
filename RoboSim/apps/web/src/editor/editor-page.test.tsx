@@ -1,6 +1,6 @@
 import { blankProject, addComponent, PITCH } from '@robosim/circuit-canvas';
 import type { BuildResult, ProjectDocument } from '@robosim/shared';
-import type { Frame, SceneInfo } from '@robosim/sim-runtime/client';
+import type { Frame, MainToWorker, SceneInfo } from '@robosim/sim-runtime/client';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
@@ -221,6 +221,87 @@ describe('editor workspace', () => {
       { type: 'load', scenario: 'dimmer' },
       { type: 'control', action: 'run' },
     ]);
+  });
+
+  it('switches the centre pane to the robot for mounting (FR-ARN-09)', async () => {
+    const robot = addComponent(
+      addComponent(
+        blankProject('Robot', 'void setup() {}\nvoid loop() {}\n'),
+        'mechanical.chassis-2wd',
+        [0, 0],
+      ).doc,
+      'sensor.line-3ch',
+      [0, 0],
+    ).doc;
+    localStorage.setItem('robosim.editor.project.v1', JSON.stringify({ project: robot, pristine: '' }));
+    const { user } = await setup();
+    await user.click(screen.getByRole('radio', { name: 'Robot' }));
+    expect(screen.getByRole('region', { name: 'Robot' })).toBeInTheDocument();
+    expect(screen.queryByRole('application', { name: 'Circuit canvas' })).not.toBeInTheDocument();
+    const tray = screen.getByRole('region', { name: 'Not on the robot' });
+    await user.click(within(tray).getByRole('button', { name: 'Mount' }));
+    expect(
+      screen.getByRole('button', { name: /^3-channel line sensor \(line1\): x 65 mm/ }),
+    ).toBeInTheDocument();
+    // The mount is part of the document: undo takes it off again.
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(within(tray).getByRole('button', { name: 'Mount' })).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: 'Circuit' }));
+    expect(screen.getByRole('application', { name: 'Circuit canvas' })).toBeInTheDocument();
+  });
+
+  it('picks an arena, edits the start pose and runs on it (FR-ARN-05, 06)', async () => {
+    const robot = addComponent(
+      blankProject('Robot', 'void setup() {}\nvoid loop() {}\n'),
+      'mechanical.chassis-2wd',
+      [0, 0],
+    ).doc;
+    localStorage.setItem('robosim.editor.project.v1', JSON.stringify({ project: robot, pristine: '' }));
+    const { loads, user } = await setup();
+    await user.click(screen.getByRole('button', { name: 'Arena…' }));
+    const picker = screen.getByRole('dialog', { name: 'Choose an arena' });
+    for (const name of [
+      'Oval',
+      'Oval with gaps',
+      'Figure eight',
+      '90° turns',
+      'Obstacle course',
+      'Maze',
+      'Sumo ring',
+      'Open floor',
+    ])
+      expect(
+        within(picker).getByRole('button', { name: new RegExp(`^${name} ?(Line|Obst|Maze|Sumo|Open)`) }),
+      ).toBeInTheDocument();
+    await user.click(within(picker).getByRole('button', { name: /^Obstacle course/ }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Arena: Obstacle course' })).toBeInTheDocument();
+
+    // Exact start pose: onto a block is refused, beside it is taken.
+    const x = screen.getByLabelText('x (cm)');
+    expect(x).toHaveValue(30);
+    await user.clear(x);
+    await user.type(x, '95{Enter}');
+    expect(screen.getByRole('alert')).toHaveTextContent('overlap “block-1”');
+    expect(x).toHaveValue(30);
+    await user.clear(x);
+    await user.type(x, '50{Enter}');
+    expect(x).toHaveValue(50);
+
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+    const load = loads().at(-1) as Extract<MainToWorker, { type: 'load'; project: ProjectDocument }>;
+    expect(load.project.arena).toEqual({
+      arenaVersionId: 'obstacle-course',
+      startPose: { x: 0.5, y: 0.8, heading: 0 },
+    });
+    expect(load.project.successConditions?.id).toBe('obstacle-course-goal');
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
+
+    // Open floor: free driving, its own start pose.
+    await user.click(screen.getByRole('button', { name: 'Arena: Obstacle course' }));
+    await user.click(screen.getByRole('button', { name: /^Open floor/ }));
+    expect(screen.getByRole('img', { name: 'Arena: Open floor' })).toBeInTheDocument();
+    expect(screen.getByLabelText('x (cm)')).toHaveValue(150);
   });
 
   it('asks before replacing a modified project', async () => {

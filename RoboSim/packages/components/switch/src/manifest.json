@@ -12,5 +12,6 @@
   "props": {},
   "inputs": [{ "name": "on", "type": "boolean", "default": false }],
   "massG": 2,
+  "mounting": { "lengthMm": 20, "widthMm": 10, "heightMm": 10 },
   "limits": { "maxCurrentMa": 3000 }
 }
