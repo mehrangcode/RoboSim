@@ -6,14 +6,35 @@
   "phase": "P1",
   "nameKey": "passive.resistor.name",
   "pins": [
-    { "name": "a", "kind": "passive" },
-    { "name": "b", "kind": "passive" }
+    {
+      "name": "a",
+      "kind": "passive"
+    },
+    {
+      "name": "b",
+      "kind": "passive"
+    }
   ],
   "props": {
-    "ohms": { "type": "number", "default": 220, "min": 0.1, "max": 10000000, "unit": "Ω" },
-    "powerRatingMw": { "type": "number", "default": 250, "min": 1, "max": 5000, "unit": "mW" }
+    "ohms": {
+      "type": "number",
+      "default": 220,
+      "min": 0.1,
+      "max": 10000000,
+      "unit": "Ω"
+    },
+    "powerRatingMw": {
+      "type": "number",
+      "default": 250,
+      "min": 1,
+      "max": 5000,
+      "unit": "mW"
+    }
   },
   "inputs": [],
   "massG": 0.3,
-  "limits": { "maxPowerMw": 250 }
+  "signalPassthrough": [["a", "b"]],
+  "limits": {
+    "maxPowerMw": 250
+  }
 }

@@ -56,7 +56,16 @@
       "outputs-fighting": "Outputs fighting",
       "motor-on-pin": "Motor on a pin",
       "floating-input": "Floating input",
-      "serial": "Serial Monitor"
+      "serial": "Serial Monitor",
+      "rgb-melody": "RGB mood light + melody",
+      "relay-counter": "Relay counter",
+      "half-adder": "Half adder (logic gates)",
+      "led-bar": "LED bar (74HC595)",
+      "stepper-knob": "Stepper follows a knob",
+      "motor-driver": "Two motors on a TB6612FNG",
+      "bump-avoider": "Bump-and-turn obstacle avoider",
+      "keypad-lock": "Keypad lock",
+      "input-devices": "Encoder and joystick"
     },
     "scenarioHint": {
       "line-follower": "Arduino Uno + L298N + two TT motors + 3-channel line sensor on 4×AA. The firmware follows the black line around the oval.",
@@ -68,7 +77,16 @@
       "outputs-fighting": "D2 and D3 are wired together; the sketch drives D2 HIGH and D3 LOW — a short circuit through both pins.",
       "motor-on-pin": "A TT motor straight on D9. Motors need a driver: the pin cannot supply the current.",
       "floating-input": "A button on D2 to GND, but the sketch uses INPUT without a pull-up: released, the pin floats.",
-      "serial": "The sketch prints a greeting and a tick every second over Serial at 115200 baud, and echoes what you send in capitals (D13 toggles on every byte)."
+      "serial": "The sketch prints a greeting and a tick every second over Serial at 115200 baud, and echoes what you send in capitals (D13 toggles on every byte).",
+      "rgb-melody": "Turn the knob: the RGB LED walks the colour wheel with PWM on D9/D6/D5. Hold the button: tone() plays a melody on the passive buzzer on D8 (turn on Sound to hear it).",
+      "relay-counter": "Press the button to count 0–9 on the 7-segment display. On even numbers the relay closes and the 9 V battery lights the lamp through an LM7805 — a separate circuit the Uno only switches.",
+      "half-adder": "Press the buttons: a 74HC86 XOR makes the sum and a 74HC08 AND the carry, in hardware. The Uno only reads the result and prints it to the serial monitor.",
+      "led-bar": "A lit LED sweeps back and forth across 8 LEDs. shiftOut() clocks each pattern into a 74HC595, which drives the LEDs from just three Uno pins. The knob sets the speed.",
+      "stepper-knob": "Turn the knob: the 28BYJ-48 shaft follows it, one knob turn per shaft turn (2048 steps). The Stepper library drives the coils through a ULN2003A, because a pin cannot supply coil current.",
+      "motor-driver": "Two TT motors on a TB6612FNG MOSFET driver ramp from full reverse to full forward. STBY must be HIGH, or the driver sleeps. MOSFETs waste less voltage than the L298N.",
+      "bump-avoider": "Two lever switches at the front corners: when one hits an obstacle the robot backs up, turns away, and later turns back, working its way to the goal of the obstacle course.",
+      "keypad-lock": "Click the keys on the keypad: type 1234 then # to unlock (green LED); * clears. The Keypad library scans the rows and columns, and the serial monitor shows what you typed.",
+      "input-devices": "Turn the rotary encoder (its slider sets the knob position) and move the joystick: the sketch counts detents from the quadrature contacts and prints both to the serial monitor."
     },
     "telemetry": {
       "title": "Telemetry",
@@ -301,7 +319,8 @@
       "help": "Show these shortcuts",
       "close": "Close"
     },
-    "centreView": "Centre pane view"
+    "centreView": "Centre pane view",
+    "sound": "Sound"
   },
   "code": {
     "files": "Sketch files",

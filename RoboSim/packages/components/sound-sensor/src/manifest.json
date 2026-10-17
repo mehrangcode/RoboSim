@@ -1,0 +1,22 @@
+{
+  "id": "sensor.sound",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.sound.name",
+  "pins": [
+    { "name": "ao", "kind": "output" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "vcc", "kind": "power" },
+    { "name": "do", "kind": "output" }
+  ],
+  "props": {
+    "threshold": { "type": "number", "default": 0.7, "min": 0.5, "max": 0.95 }
+  },
+  "inputs": [{ "name": "level", "type": "number", "default": 0, "min": 0, "max": 1 }],
+  "massG": 3,
+  "mounting": { "lengthMm": 40, "widthMm": 15, "heightMm": 12 },
+  "limits": { "minVoltageV": 3.3, "maxVoltageV": 5.5, "peakCurrentMa": 5 },
+  "polarity": ["vcc", "gnd"]
+}

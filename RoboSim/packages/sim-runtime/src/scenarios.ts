@@ -1,6 +1,6 @@
 import { findDefinition } from '@robosim/catalog';
 import { chassisGeometry, type Chassis2wdProps } from '@robosim/component-chassis-2wd';
-import { ovalArena, ovalChallenge } from '@robosim/content';
+import { ARENAS, CHALLENGES, ovalArena, ovalChallenge } from '@robosim/content';
 import { resolveProps } from '@robosim/sim-core';
 import {
   PROJECT_SCHEMA_VERSION,
@@ -158,6 +158,46 @@ function lineFollower(): ProjectDocument {
   );
 }
 
+/**
+ * The line follower's drive train with two lever switches at the front corners instead of the line
+ * sensor, on the obstacle course with its default challenge (catalogue Tier A, slice 16c).
+ */
+function bumpAvoider(): ProjectDocument {
+  const base = lineFollower();
+  const course = ARENAS['obstacle-course'];
+  const challenge = CHALLENGES['obstacle-course'];
+  if (!course || !challenge) throw new Error('obstacle course missing from @robosim/content');
+  const bump = (id: string, y: number, yaw: number) =>
+    part(id, 'sensor.bump-switch', g(40), g(38 + (55 - y) / 18), { mount: { x: 70, y, z: 20, yaw } });
+  return {
+    ...base,
+    components: [
+      ...base.components.filter((c) => c.type !== 'sensor.line-3ch'),
+      bump('bumpL', 55, 25),
+      bump('bumpC', 0, 0),
+      bump('bumpR', -55, -25),
+    ],
+    wires: wires(
+      ...base.wires
+        .filter((w) => w.from.part !== 'line' && w.to.part !== 'line')
+        .map((w) => [`${w.from.part}.${w.from.pin}`, `${w.to.part}.${w.to.pin}`] as const),
+      ['bumpL.no', 'board.D2'],
+      ['bumpC.no', 'board.D4'],
+      ['bumpR.no', 'board.D3'],
+      ['bumpL.com', 'board.GND3'],
+      ['bumpC.com', 'board.GND3'],
+      ['bumpR.com', 'board.GND3'],
+    ),
+    code: { language: 'cpp', files: [{ name: 'sketch.ino', content: SKETCH.bumpAvoider.trim() + '\n' }] },
+    arena: {
+      arenaVersionId: 'obstacle-course',
+      startPose: { x: course.start.x, y: course.start.y, heading: 0 },
+    },
+    successConditions: clone(challenge) as ProjectDocument['successConditions'],
+    meta: { title: 'Bump-and-turn obstacle avoider' },
+  };
+}
+
 function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: FirmwareId }> {
   const blink = ledOn('D13', 'red');
   const button = ledOn('D13', 'green');
@@ -166,6 +206,7 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
   const fighting = ledOn('D2', 'green');
   return {
     'line-follower': { project: lineFollower(), firmware: 'lineFollower' },
+    'bump-avoider': { project: bumpAvoider(), firmware: 'bumpAvoider' },
     blink: { project: project('Blink', SKETCH.blink, blink.parts, wires(...blink.wires)), firmware: 'blink' },
     button: {
       project: project(
@@ -209,6 +250,261 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
     serial: {
       project: project('Serial Monitor', SKETCH.serial, button.parts, wires(...button.wires)),
       firmware: 'serial',
+    },
+    // Catalogue Tier A (slice 16a): RGB LED, passive buzzer (with the recommended series resistor).
+    'rgb-melody': {
+      project: project(
+        'RGB mood light + melody',
+        SKETCH.rgbMelody,
+        [
+          ...knob.parts,
+          part('rr', 'passive.resistor', g(32), g(-6), { props: { ohms: 220 } }),
+          part('rg', 'passive.resistor', g(32), g(-4), { props: { ohms: 220 } }),
+          part('rb', 'passive.resistor', g(32), g(-2), { props: { ohms: 220 } }),
+          part('rgb', 'actuator.led-rgb', g(40), g(-3)),
+          { ...btn, y: g(12) },
+          part('rbz', 'passive.resistor', g(32), g(8), { props: { ohms: 220 } }),
+          part('buz', 'actuator.buzzer-passive', g(40), g(8)),
+        ],
+        wires(
+          ...knob.wires,
+          ['board.D9', 'rr.a'],
+          ['rr.b', 'rgb.r'],
+          ['board.D6', 'rg.a'],
+          ['rg.b', 'rgb.g'],
+          ['board.D5', 'rb.a'],
+          ['rb.b', 'rgb.b'],
+          ['rgb.common', 'board.GND1'],
+          ['btn.b1', 'board.D2'],
+          ['btn.a1', 'board.GND2'],
+          ['board.D8', 'rbz.a'],
+          ['rbz.b', 'buz.pos'],
+          ['buz.neg', 'board.GND3'],
+        ),
+      ),
+      firmware: 'rgbMelody',
+    },
+    // 7-segment digit, relay module switching a separate 9 V circuit through an LM7805.
+    'relay-counter': {
+      project: project(
+        'Relay counter',
+        SKETCH.relayCounter,
+        [
+          ...(['a', 'b', 'c', 'd', 'e', 'f', 'g'] as const).map((s, i) =>
+            part(`r${s}`, 'passive.resistor', g(30), g(-10 + 2 * i), { props: { ohms: 220 } }),
+          ),
+          part('seg', 'display.seven-segment', g(38), g(-8)),
+          { ...btn, x: g(10), y: g(26) },
+          part('relay', 'actuator.relay-module', g(30), g(6)),
+          part('bat', 'power.battery-9v', g(66), g(4)),
+          part('reg', 'semiconductor.lm7805', g(60), g(14)),
+          part('rl', 'passive.resistor', g(60), g(18), { props: { ohms: 330 } }),
+          part('lamp', 'actuator.led', g(66), g(18), { props: { color: 'white' } }),
+        ],
+        wires(
+          ...(['a', 'b', 'c', 'd', 'e', 'f', 'g'] as const).flatMap(
+            (s, i) =>
+              [
+                [`board.D${2 + i}`, `r${s}.a`],
+                [`r${s}.b`, `seg.${s}`],
+              ] as const,
+          ),
+          ['seg.com1', 'board.GND1'],
+          ['btn.b1', 'board.A1'],
+          ['btn.a1', 'board.GND2'],
+          ['board.D12', 'relay.in'],
+          ['board.5V', 'relay.vcc'],
+          ['relay.gnd', 'board.GND3'],
+          ['bat.pos', 'relay.com'],
+          ['relay.no', 'reg.in'],
+          ['reg.out', 'rl.a'],
+          ['rl.b', 'lamp.a'],
+          ['lamp.k', 'reg.gnd'],
+          ['reg.gnd', 'bat.neg'],
+        ),
+      ),
+      firmware: 'relayCounter',
+    },
+    // Catalogue Tier A (slice 16b): logic ICs, shift register, stepper, MOSFET H-bridge.
+    'half-adder': {
+      project: project(
+        'Half adder',
+        SKETCH.halfAdder,
+        [
+          part('xor', 'ic.74hc86', g(34), g(4)),
+          part('and', 'ic.74hc08', g(34), g(12)),
+          part('btnA', 'sensor.push-button', g(48), g(2)),
+          part('btnB', 'sensor.push-button', g(48), g(10)),
+          part('rA', 'passive.resistor', g(54), g(2), { props: { ohms: 10_000 } }),
+          part('rB', 'passive.resistor', g(54), g(10), { props: { ohms: 10_000 } }),
+          part('rs', 'passive.resistor', g(34), g(20), { props: { ohms: 330 } }),
+          part('sum', 'actuator.led', g(40), g(20), { props: { color: 'green' } }),
+          part('rc', 'passive.resistor', g(46), g(20), { props: { ohms: 330 } }),
+          part('carry', 'actuator.led', g(52), g(20), { props: { color: 'red' } }),
+        ],
+        wires(
+          ['board.5V', 'xor.vcc'],
+          ['board.5V', 'and.vcc'],
+          ['xor.gnd', 'board.GND1'],
+          ['and.gnd', 'board.GND1'],
+          ['board.5V', 'btnA.a1'],
+          ['board.5V', 'btnB.a1'],
+          ['btnA.b1', 'rA.a'],
+          ['rA.b', 'board.GND2'],
+          ['btnB.b1', 'rB.a'],
+          ['rB.b', 'board.GND2'],
+          ['btnA.b1', 'xor.1a'],
+          ['btnB.b1', 'xor.1b'],
+          ['btnA.b1', 'and.1a'],
+          ['btnB.b1', 'and.1b'],
+          ['xor.1y', 'board.D2'],
+          ['and.1y', 'board.D3'],
+          ['xor.1y', 'rs.a'],
+          ['rs.b', 'sum.a'],
+          ['sum.k', 'board.GND3'],
+          ['and.1y', 'rc.a'],
+          ['rc.b', 'carry.a'],
+          ['carry.k', 'board.GND3'],
+        ),
+      ),
+      firmware: 'halfAdder',
+    },
+    'led-bar': {
+      project: project(
+        'LED bar (74HC595)',
+        SKETCH.ledBar,
+        [
+          ...knob.parts,
+          part('sr', 'ic.74hc595', g(36), g(2)),
+          ...Array.from({ length: 8 }, (_, i) =>
+            part(`r${i}`, 'passive.resistor', g(48), g(-6 + 3 * i), { props: { ohms: 220 } }),
+          ),
+          ...Array.from({ length: 8 }, (_, i) =>
+            part(`led${i}`, 'actuator.led', g(56), g(-5 + 3 * i), { props: { color: 'red' } }),
+          ),
+        ],
+        wires(
+          ...knob.wires,
+          ['board.5V', 'sr.vcc'],
+          ['sr.gnd', 'board.GND1'],
+          ['board.5V', 'sr.srclr'],
+          ['sr.oe', 'board.GND1'],
+          ['board.D11', 'sr.ser'],
+          ['board.D12', 'sr.srclk'],
+          ['board.D8', 'sr.rclk'],
+          ...(['qa', 'qb', 'qc', 'qd', 'qe', 'qf', 'qg', 'qh'] as const).flatMap(
+            (q, i) =>
+              [
+                [`sr.${q}`, `r${i}.a`],
+                [`r${i}.b`, `led${i}.a`],
+                [`led${i}.k`, 'board.GND3'],
+              ] as const,
+          ),
+        ),
+      ),
+      firmware: 'ledBar',
+    },
+    'stepper-knob': {
+      project: project(
+        'Stepper follows a knob',
+        SKETCH.stepperKnob,
+        [
+          ...knob.parts,
+          part('drv', 'ic.uln2003a', g(34), g(6)),
+          part('motor', 'actuator.stepper-28byj48', g(50), g(20)),
+        ],
+        wires(
+          ...knob.wires,
+          ['board.D8', 'drv.in1'],
+          ['board.D9', 'drv.in2'],
+          ['board.D10', 'drv.in3'],
+          ['board.D11', 'drv.in4'],
+          ['drv.gnd', 'board.GND1'],
+          ['board.5V', 'drv.com'],
+          ['drv.out1', 'motor.blue'],
+          ['drv.out2', 'motor.pink'],
+          ['drv.out3', 'motor.yellow'],
+          ['drv.out4', 'motor.orange'],
+          ['board.5V', 'motor.red'],
+        ),
+      ),
+      firmware: 'stepperKnob',
+    },
+    'motor-driver': {
+      project: project(
+        'Two motors on a TB6612FNG',
+        SKETCH.motorDriver,
+        [
+          part('drv', 'driver.tb6612fng', g(36), g(8)),
+          part('motorA', 'actuator.tt-motor', g(62), g(4)),
+          part('motorB', 'actuator.tt-motor', g(62), g(14)),
+          part('pack', 'power.battery-4aa', g(60), g(24)),
+        ],
+        wires(
+          ['pack.pos', 'drv.vm'],
+          ['pack.neg', 'board.GND1'],
+          ['board.5V', 'drv.vcc'],
+          ['drv.gnd', 'board.GND1'],
+          ['board.D7', 'drv.stby'],
+          ['board.D5', 'drv.pwma'],
+          ['board.D4', 'drv.ain1'],
+          ['board.D2', 'drv.ain2'],
+          ['board.D6', 'drv.pwmb'],
+          ['board.D8', 'drv.bin1'],
+          ['board.D9', 'drv.bin2'],
+          ['drv.ao1', 'motorA.m1'],
+          ['drv.ao2', 'motorA.m2'],
+          ['drv.bo1', 'motorB.m1'],
+          ['drv.bo2', 'motorB.m2'],
+        ),
+      ),
+      firmware: 'motorDriver',
+    },
+    // Catalogue Tier A (slice 16c): keypad (Keypad library), encoder + joystick.
+    'keypad-lock': {
+      project: project(
+        'Keypad lock',
+        SKETCH.keypadLock,
+        [
+          part('keys', 'sensor.keypad-4x4', g(42), g(34)),
+          part('rl', 'passive.resistor', g(34), g(-4), { props: { ohms: 220 } }),
+          part('led', 'actuator.led', g(40), g(-4), { props: { color: 'green' } }),
+        ],
+        wires(
+          ['board.D9', 'keys.r1'],
+          ['board.D8', 'keys.r2'],
+          ['board.D7', 'keys.r3'],
+          ['board.D6', 'keys.r4'],
+          ['board.D5', 'keys.c1'],
+          ['board.D4', 'keys.c2'],
+          ['board.D3', 'keys.c3'],
+          ['board.D2', 'keys.c4'],
+          ['board.D12', 'rl.a'],
+          ['rl.b', 'led.a'],
+          ['led.k', 'board.GND1'],
+        ),
+      ),
+      firmware: 'keypadLock',
+    },
+    'input-devices': {
+      project: project(
+        'Encoder and joystick',
+        SKETCH.inputDevices,
+        [part('enc', 'sensor.rotary-encoder', g(36), g(14)), part('joy', 'sensor.joystick', g(50), g(16))],
+        wires(
+          ['enc.gnd', 'board.GND1'],
+          ['board.5V', 'enc.vcc'],
+          ['enc.sw', 'board.D4'],
+          ['enc.dt', 'board.D3'],
+          ['enc.clk', 'board.D2'],
+          ['joy.gnd', 'board.GND2'],
+          ['board.5V', 'joy.vcc'],
+          ['joy.vrx', 'board.A0'],
+          ['joy.vry', 'board.A1'],
+          ['joy.sw', 'board.D5'],
+        ),
+      ),
+      firmware: 'inputDevices',
     },
     'led-no-resistor': {
       project: project(

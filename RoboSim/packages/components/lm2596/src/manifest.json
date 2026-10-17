@@ -1,0 +1,55 @@
+{
+  "id": "power.lm2596",
+  "version": "1.0.0",
+  "category": "power",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "power.lm2596.name",
+  "pins": [
+    {
+      "name": "in+",
+      "kind": "power"
+    },
+    {
+      "name": "in-",
+      "kind": "ground"
+    },
+    {
+      "name": "out+",
+      "kind": "power"
+    },
+    {
+      "name": "out-",
+      "kind": "ground"
+    }
+  ],
+  "props": {
+    "outputV": {
+      "type": "number",
+      "default": 5,
+      "min": 1.25,
+      "max": 35,
+      "unit": "V"
+    }
+  },
+  "inputs": [],
+  "massG": 12,
+  "mounting": {
+    "lengthMm": 43,
+    "widthMm": 21,
+    "heightMm": 14
+  },
+  "bondedPins": [["in-", "out-"]],
+  "limits": {
+    "maxVoltageV": 40,
+    "minInputV": 4.5,
+    "maxOutputCurrentMa": 3000
+  },
+  "polarity": ["in+", "in-"],
+  "supplyPins": [
+    {
+      "pin": "out+",
+      "maxCurrentMa": 3000
+    }
+  ]
+}

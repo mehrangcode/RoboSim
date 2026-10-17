@@ -1,0 +1,129 @@
+{
+  "id": "sensor.keypad-4x4",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "sensor.keypad-4x4.name",
+  "pins": [
+    {
+      "name": "r1",
+      "kind": "passive"
+    },
+    {
+      "name": "r2",
+      "kind": "passive"
+    },
+    {
+      "name": "r3",
+      "kind": "passive"
+    },
+    {
+      "name": "r4",
+      "kind": "passive"
+    },
+    {
+      "name": "c1",
+      "kind": "passive"
+    },
+    {
+      "name": "c2",
+      "kind": "passive"
+    },
+    {
+      "name": "c3",
+      "kind": "passive"
+    },
+    {
+      "name": "c4",
+      "kind": "passive"
+    }
+  ],
+  "props": {},
+  "inputs": [
+    {
+      "name": "key1",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key2",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key3",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "keyA",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key4",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key5",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key6",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "keyB",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key7",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key8",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key9",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "keyC",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "keyStar",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "key0",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "keyHash",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "name": "keyD",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "massG": 8,
+  "limits": {
+    "maxContactCurrentMa": 20
+  }
+}

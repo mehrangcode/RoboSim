@@ -1,0 +1,20 @@
+{
+  "id": "sensor.bump-switch",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.bump-switch.name",
+  "pins": [
+    { "name": "com", "kind": "passive" },
+    { "name": "no", "kind": "passive" },
+    { "name": "nc", "kind": "passive" }
+  ],
+  "props": {
+    "leverMm": { "type": "number", "default": 12, "min": 4, "max": 30, "unit": "mm" }
+  },
+  "inputs": [{ "name": "pressed", "type": "boolean", "default": false }],
+  "massG": 2,
+  "mounting": { "lengthMm": 13, "widthMm": 6, "heightMm": 10 },
+  "limits": { "maxContactCurrentMa": 5000 }
+}

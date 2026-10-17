@@ -85,6 +85,9 @@ export class AvrUnoCore implements McuCore {
   private readonly edgeListeners = new Set<(pin: PinId, level: Level, cycle: number) => void>();
   private readonly uartListeners = new Set<(bytes: Uint8Array) => void>();
   private readonly lastEdgeLevel = new Map<PinId, Level>();
+  private readonly modeListeners = new Set<(pin: PinId, mode: PinMode, cycle: number) => void>();
+  /** Last reported mode per pin; every pin resets as an input. */
+  private readonly lastMode = new Map<PinId, PinMode>();
   private readonly pinById = new Map(UNO_MCU_PINS.map((p) => [p.id, p]));
 
   constructor(private readonly program: Uint16Array) {
@@ -142,6 +145,11 @@ export class AvrUnoCore implements McuCore {
     return () => this.edgeListeners.delete(cb);
   }
 
+  onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number) => void): Unsubscribe {
+    this.modeListeners.add(cb);
+    return () => this.modeListeners.delete(cb);
+  }
+
   uart(index: number): UartPort {
     if (index !== 0) throw new Error(`ATmega328P has one USART, got index ${index}`);
     return {
@@ -162,6 +170,7 @@ export class AvrUnoCore implements McuCore {
     this.queueHead = 0;
     this.rxQueue.length = 0;
     this.lastEdgeLevel.clear();
+    this.lastMode.clear();
     this.machine = this.build();
   }
 
@@ -181,9 +190,22 @@ export class AvrUnoCore implements McuCore {
     };
     for (const name of ['B', 'C', 'D'] as const) {
       const pins = UNO_MCU_PINS.filter((p) => p.port === name);
-      ports[name].addListener(() => this.emitEdges(ports[name], pins, cpu));
+      ports[name].addListener(() => {
+        this.emitModes(ports[name], pins, cpu);
+        this.emitEdges(ports[name], pins, cpu);
+      });
     }
     return { cpu, ports, adc, usart };
+  }
+
+  private emitModes(port: AVRIOPort, pins: readonly McuPinMap[], cpu: CPU): void {
+    if (this.modeListeners.size === 0) return;
+    for (const p of pins) {
+      const mode = modeOf(port.pinState(p.bit));
+      if ((this.lastMode.get(p.id) ?? 'input') === mode) continue;
+      this.lastMode.set(p.id, mode);
+      for (const cb of this.modeListeners) cb(p.id, mode, cpu.cycles);
+    }
   }
 
   private emitEdges(port: AVRIOPort, pins: readonly McuPinMap[], cpu: CPU): void {

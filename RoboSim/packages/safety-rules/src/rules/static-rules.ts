@@ -1,5 +1,13 @@
 import { finding, type Finding, type StaticRule } from '@robosim/sim-core';
-import { drivableMcuPins, groundPin, hasTrait, netUsers, round, supplies } from '../helpers.js';
+import {
+  circuitDomains,
+  drivableMcuPins,
+  groundPin,
+  hasTrait,
+  netUsers,
+  round,
+  supplies,
+} from '../helpers.js';
 
 const PIN_WARN_MA = 20;
 const PIN_ERROR_MA = 40;
@@ -261,13 +269,18 @@ export const noCommonGround: StaticRule = {
   kind: 'static',
   check({ circuit }) {
     const users = netUsers(circuit);
+    const domainOf = circuitDomains(circuit);
+    // Nets on the Arduino side: ground and every wired MCU pin.
+    const arduino = new Set([domainOf(0), ...circuit.mcuPins.map((m) => domainOf(m.net))]);
     const out: Finding[] = [];
     const seen = new Set<string>();
     for (const s of supplies(circuit)) {
       const gnd = groundPin(s.part);
       const gndNet = gnd === undefined ? undefined : s.part.pins[gnd];
       const inUse = (users.get(s.net)?.length ?? 0) > 1;
-      if (inUse && gndNet !== undefined && gndNet !== 0 && !seen.has(s.part.id)) {
+      // A fully isolated circuit (behind relay contacts) needs no common ground: nothing crosses over.
+      const reachesArduino = arduino.has(domainOf(s.net));
+      if (inUse && reachesArduino && gndNet !== undefined && gndNet !== 0 && !seen.has(s.part.id)) {
         seen.add(s.part.id);
         out.push(
           finding({

@@ -116,7 +116,9 @@ describe('PlanckWorld drivetrain', () => {
   it('stops at walls and pushes dynamic obstacles', () => {
     const walled = setup(0.05, 0.05, arena(), { x: 2.6, y: 1.5, angle: 0 });
     walled.run(3);
-    expect(walled.pose()?.position.x).toBeLessThan(3 - 0.074);
+    // The front (0.075 m ahead) touches the wall at its true outline, within planck's 5 mm slop.
+    expect(walled.pose()?.position.x).toBeLessThan(3 - 0.075 + 0.005);
+    expect(walled.pose()?.position.x).toBeGreaterThan(3 - 0.075 - 0.005);
 
     const a = arena({
       perimeterWalls: false,

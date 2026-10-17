@@ -4,6 +4,8 @@ import { round } from '../helpers.js';
 const PIN_WARN_A = 0.02;
 const PIN_ERROR_A = 0.04;
 const FLOATING_OHMS = 10e6;
+/** A pin driven as an output this recently is a scanned / multiplexed line, not a floating input. */
+const MULTIPLEXED_WINDOW_S = 0.5;
 const DAMAGING_FAULTS = new Set([
   'OVER_CURRENT',
   'SHORT_CIRCUIT',
@@ -116,6 +118,8 @@ export const floatingInput: RuntimeRule = {
     const out: Condition[] = [];
     for (const { pin, net } of bus.bindings()) {
       if (bus.outputOf(pin)?.mode !== 'input' || bus.isPinDamaged(pin)) continue;
+      const driven = sim.lastDrivenAt(pin);
+      if (driven !== undefined && sim.simTime - driven < MULTIPLEXED_WINDOW_S) continue;
       if (sim.netResistance(net) > FLOATING_OHMS) {
         out.push({
           ...base(this.id),
@@ -157,10 +161,32 @@ export const componentFault: RuntimeRule = {
   },
 };
 
+/** Combinational logic that never settles (a ring of inverters, gates fighting in a loop). */
+export const logicOscillation: RuntimeRule = {
+  id: 'SAF-LOGIC-OSCILLATION',
+  kind: 'runtime',
+  check({ sim }) {
+    return sim.logicUnsettled
+      ? [
+          {
+            ...base(this.id),
+            key: this.id,
+            severity: 'warning',
+            sustainS: 0.05,
+            componentIds: [],
+            pinIds: [],
+            params: {},
+          },
+        ]
+      : [];
+  },
+};
+
 export const RUNTIME_RULES: readonly RuntimeRule[] = [
   pinCurrentRuntime,
   outputsFighting,
   mcuTotalCurrentRuntime,
   floatingInput,
   componentFault,
+  logicOscillation,
 ];

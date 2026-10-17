@@ -1,0 +1,75 @@
+{
+  "id": "ic.74hc86",
+  "version": "1.0.0",
+  "category": "ic",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "ic.74hc86.name",
+  "pins": [
+    {
+      "name": "1a",
+      "kind": "digital"
+    },
+    {
+      "name": "1b",
+      "kind": "digital"
+    },
+    {
+      "name": "1y",
+      "kind": "output"
+    },
+    {
+      "name": "2a",
+      "kind": "digital"
+    },
+    {
+      "name": "2b",
+      "kind": "digital"
+    },
+    {
+      "name": "2y",
+      "kind": "output"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "3y",
+      "kind": "output"
+    },
+    {
+      "name": "3a",
+      "kind": "digital"
+    },
+    {
+      "name": "3b",
+      "kind": "digital"
+    },
+    {
+      "name": "4y",
+      "kind": "output"
+    },
+    {
+      "name": "4a",
+      "kind": "digital"
+    },
+    {
+      "name": "4b",
+      "kind": "digital"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 1,
+  "limits": {
+    "maxVoltageV": 7,
+    "maxOutputCurrentMa": 25,
+    "minVccV": 2
+  },
+  "polarity": ["vcc", "gnd"]
+}

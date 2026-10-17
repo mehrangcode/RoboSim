@@ -9,7 +9,7 @@ export interface ArduinoApiEntry {
   readonly detail: string;
   readonly insert?: string;
   /** For methods: the object or class they belong to. */
-  readonly of?: 'Serial' | 'Servo' | 'NewPing' | 'String';
+  readonly of?: 'Serial' | 'Servo' | 'NewPing' | 'Stepper' | 'Keypad' | 'String';
 }
 
 const fn = (name: string, params: readonly string[], ret = 'void'): ArduinoApiEntry => ({
@@ -40,6 +40,7 @@ const types = (names: readonly string[]): ArduinoApiEntry[] =>
 export const ARDUINO_API: readonly ArduinoApiEntry[] = [
   // Digital and analog I/O
   fn('pinMode', ['uint8_t pin', 'uint8_t mode']),
+  fn('makeKeymap', ['keys'], 'char*'),
   fn('digitalWrite', ['uint8_t pin', 'uint8_t value']),
   fn('digitalRead', ['uint8_t pin'], 'int'),
   fn('analogRead', ['uint8_t pin'], 'int'),
@@ -99,7 +100,7 @@ export const ARDUINO_API: readonly ArduinoApiEntry[] = [
   ...constants(['DEC', 'HEX', 'OCT', 'BIN'], 'number base for print'),
   ...constants(['PI', 'HALF_PI', 'TWO_PI', 'DEG_TO_RAD', 'RAD_TO_DEG'], 'math constant'),
 
-  ...types(['boolean', 'byte', 'word', 'String', 'Servo', 'NewPing', 'size_t']),
+  ...types(['boolean', 'byte', 'word', 'String', 'Servo', 'NewPing', 'Stepper', 'Keypad', 'size_t']),
   ...types(['int8_t', 'uint8_t', 'int16_t', 'uint16_t', 'int32_t', 'uint32_t']),
   { name: 'Serial', kind: 'constant', detail: 'HardwareSerial Serial (USB serial port)' },
 
@@ -130,6 +131,15 @@ export const ARDUINO_API: readonly ArduinoApiEntry[] = [
   method('NewPing', 'ping', [], 'unsigned long'),
   method('NewPing', 'ping_median', ['uint8_t iterations'], 'unsigned long'),
   method('NewPing', 'convert_cm', ['unsigned long echoTime'], 'unsigned long'),
+
+  method('Stepper', 'setSpeed', ['long rpm']),
+  method('Stepper', 'step', ['int steps']),
+
+  method('Keypad', 'getKey', [], 'char'),
+  method('Keypad', 'waitForKey', [], 'char'),
+  method('Keypad', 'isPressed', ['char key'], 'bool'),
+  method('Keypad', 'setDebounceTime', ['unsigned int ms']),
+  method('Keypad', 'setHoldTime', ['unsigned int ms']),
 
   method('String', 'length', [], 'unsigned int'),
   method('String', 'toInt', [], 'long'),

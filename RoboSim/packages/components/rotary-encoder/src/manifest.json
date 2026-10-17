@@ -1,0 +1,23 @@
+{
+  "id": "sensor.rotary-encoder",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "sensor.rotary-encoder.name",
+  "pins": [
+    { "name": "gnd", "kind": "ground" },
+    { "name": "vcc", "kind": "power" },
+    { "name": "sw", "kind": "passive" },
+    { "name": "dt", "kind": "output" },
+    { "name": "clk", "kind": "output" }
+  ],
+  "props": {},
+  "inputs": [
+    { "name": "detents", "type": "number", "default": 0, "min": -40, "max": 40 },
+    { "name": "pressed", "type": "boolean", "default": false }
+  ],
+  "massG": 7,
+  "limits": { "maxVoltageV": 5.5 },
+  "polarity": ["vcc", "gnd"]
+}

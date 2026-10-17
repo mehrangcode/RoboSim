@@ -1,0 +1,102 @@
+{
+  "id": "sensor.line-5ch",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "sensor.line-5ch.name",
+  "pins": [
+    {
+      "name": "vcc",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "s1",
+      "kind": "output"
+    },
+    {
+      "name": "s2",
+      "kind": "output"
+    },
+    {
+      "name": "s3",
+      "kind": "output"
+    },
+    {
+      "name": "s4",
+      "kind": "output"
+    },
+    {
+      "name": "s5",
+      "kind": "output"
+    }
+  ],
+  "props": {
+    "spacingMm": {
+      "type": "number",
+      "default": 15,
+      "min": 8,
+      "max": 30,
+      "unit": "mm"
+    },
+    "threshold": {
+      "type": "number",
+      "default": 0.5,
+      "min": 0.05,
+      "max": 0.95
+    }
+  },
+  "inputs": [
+    {
+      "name": "surface1",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "surface2",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "surface3",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "surface4",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "surface5",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1
+    }
+  ],
+  "massG": 9,
+  "mounting": {
+    "lengthMm": 20,
+    "widthMm": 75,
+    "heightMm": 10
+  },
+  "limits": {
+    "minVoltageV": 3.3,
+    "maxVoltageV": 5.5,
+    "peakCurrentMa": 80
+  },
+  "polarity": ["vcc", "gnd"]
+}

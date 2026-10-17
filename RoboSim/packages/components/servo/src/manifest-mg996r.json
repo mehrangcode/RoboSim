@@ -1,0 +1,60 @@
+{
+  "id": "actuator.mg996r-servo",
+  "version": "1.0.0",
+  "category": "actuator",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "actuator.mg996r-servo.name",
+  "pins": [
+    {
+      "name": "signal",
+      "kind": "digital"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    }
+  ],
+  "props": {
+    "initialAngleDeg": {
+      "type": "number",
+      "default": 90,
+      "min": 0,
+      "max": 180,
+      "unit": "°"
+    },
+    "minPulseUs": {
+      "type": "number",
+      "default": 500,
+      "min": 300,
+      "max": 1000,
+      "unit": "µs"
+    },
+    "maxPulseUs": {
+      "type": "number",
+      "default": 2500,
+      "min": 2000,
+      "max": 3000,
+      "unit": "µs"
+    }
+  },
+  "inputs": [],
+  "massG": 55,
+  "mounting": {
+    "lengthMm": 40.7,
+    "widthMm": 19.7,
+    "heightMm": 42.9
+  },
+  "limits": {
+    "maxVoltageV": 7.2,
+    "minVoltageV": 4.0,
+    "stallCurrentMa": 2500,
+    "peakCurrentMa": 2500
+  },
+  "traits": ["inductive"],
+  "polarity": ["vcc", "gnd"]
+}

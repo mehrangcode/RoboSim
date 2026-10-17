@@ -23,11 +23,16 @@ function project(): ProjectDocument {
   return addComponent(doc, 'passive.resistor', [70 * PITCH, 4 * PITCH]).doc;
 }
 
-function setup(mode: CanvasMode, live: Record<string, unknown> = {}, damaged: string[] = []) {
+function setup(
+  mode: CanvasMode,
+  live: Record<string, unknown> = {},
+  damaged: string[] = [],
+  build: () => ProjectDocument = project,
+) {
   const onInput = vi.fn();
   const state: { current: CircuitEditorState | null } = { current: null };
   function Harness() {
-    const editor = useCircuitEditor(project);
+    const editor = useCircuitEditor(build);
     state.current = editor;
     return <CircuitCanvas editor={editor} mode={mode} onInput={onInput} live={live} damaged={damaged} />;
   }
@@ -52,6 +57,12 @@ describe('canvas run mode (FR-SIM-11)', () => {
       input: 'on',
     });
     expect(interactionOf([{ name: 'position', type: 'number', default: 0.5 }])).toEqual({ kind: 'popover' });
+    expect(
+      interactionOf([
+        { name: 'key1', type: 'boolean', default: false },
+        { name: 'key2', type: 'boolean', default: false },
+      ]),
+    ).toEqual({ kind: 'keys' });
     expect(interactionOf([])).toBeNull();
   });
 
@@ -88,5 +99,39 @@ describe('canvas run mode (FR-SIM-11)', () => {
     const { onInput, body } = setup('view');
     fireEvent.pointerDown(body('btn1'), { button: 0 });
     expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('holds the keypad key under the pointer, and the joystick button drawn on its stick', () => {
+    const keypad = () => {
+      let doc = blankProject('t', '');
+      doc = addComponent(doc, 'sensor.keypad-4x4', [40 * PITCH, 40 * PITCH]).doc;
+      return addComponent(doc, 'sensor.joystick', [80 * PITCH, 40 * PITCH]).doc;
+    };
+    const { onInput, svg, body } = setup('run', {}, [], keypad);
+    const key = (name: string) =>
+      document.querySelector(`[data-part-body="keys1"] [data-input="${name}"] rect`) as Element;
+    fireEvent.pointerDown(key('key5'), { button: 0 });
+    expect(onInput).toHaveBeenLastCalledWith('keys1', 'key5', true);
+    fireEvent.pointerUp(svg);
+    expect(onInput).toHaveBeenLastCalledWith('keys1', 'key5', false);
+    fireEvent.pointerDown(key('keyHash'), { button: 0 });
+    expect(onInput).toHaveBeenLastCalledWith('keys1', 'keyHash', true);
+    fireEvent.pointerUp(svg);
+    // Elsewhere on the keypad: no popover, nothing pressed.
+    onInput.mockClear();
+    fireEvent.pointerDown(body('keys1'), { button: 0 });
+    expect(onInput).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // The joystick: its stick is the push button; the board opens the x / y sliders.
+    fireEvent.pointerDown(
+      document.querySelector('[data-part-body="joy1"] [data-input="pressed"]') as Element,
+      {
+        button: 0,
+      },
+    );
+    expect(onInput).toHaveBeenLastCalledWith('joy1', 'pressed', true);
+    fireEvent.pointerUp(svg);
+    fireEvent.pointerDown(body('joy1'), { button: 0 });
+    expect(screen.getByRole('dialog', { name: 'Inputs of joy1' })).toBeInTheDocument();
   });
 });

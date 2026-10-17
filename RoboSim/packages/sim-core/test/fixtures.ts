@@ -11,6 +11,7 @@ import type {
   NetId,
   PinDrive,
   PinElectrical,
+  PinMode,
   PinId,
   PinOutput,
   RayHit,
@@ -73,6 +74,20 @@ export class FakeCore implements McuCore {
   /** Test hook: report an output edge as a real core would during `run()`. */
   emitEdge(pin: PinId, level: Level, cycle: number): void {
     for (const cb of this.edgeListeners) cb(pin, level, cycle);
+  }
+
+  private readonly modeListeners: ((pin: PinId, mode: PinMode, cycle: number) => void)[] = [];
+
+  onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number) => void): Unsubscribe {
+    this.modeListeners.push(cb);
+    return () => this.modeListeners.splice(this.modeListeners.indexOf(cb), 1);
+  }
+
+  /** Test hook: firmware changes a pin's mode at `cycle` in the middle of `run()`. */
+  emitMode(pin: PinId, mode: PinMode, cycle: number): void {
+    this.cycle = cycle;
+    this.outputs = new Map(this.outputs).set(pin, { mode, level: 0 });
+    for (const cb of this.modeListeners) cb(pin, mode, cycle);
   }
 
   uart(_index: number): UartPort {

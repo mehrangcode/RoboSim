@@ -183,16 +183,37 @@ describe('FR-SAF-02 static rules — trigger and clean fixtures', () => {
   });
 
   it('(10) supply ground not tied to the common ground', () => {
+    // A battery-powered signal into D2 only works when the grounds are joined.
     const floating: CircuitSpec = {
       parts: { bat: { def: def('power.battery-4aa') }, r: { def: def('passive.resistor') } },
       wires: [
         ['bat.pos', 'r.a'],
-        ['r.b', 'bat.neg'],
+        ['r.b', 'mcu.D2'],
       ],
+      mcuPins: ['D2'],
     };
     const tied: CircuitSpec = { ...floating, ground: ['bat.neg'] };
     expect(ids(floating, noCommonGround)).toEqual(['SAF-NO-COMMON-GROUND:warning:bat']);
     expect(ids(tied, noCommonGround)).toEqual([]);
+  });
+
+  it('(10) a circuit isolated behind relay contacts needs no common ground', () => {
+    const relayLamp: CircuitSpec = {
+      parts: {
+        relay: { def: def('actuator.relay-module') },
+        bat: { def: def('power.battery-9v') },
+        lamp: { def: def('passive.resistor') },
+      },
+      wires: [
+        ['mcu.D12', 'relay.in'],
+        ['bat.pos', 'relay.com'],
+        ['relay.no', 'lamp.a'],
+        ['lamp.b', 'bat.neg'],
+      ],
+      ground: ['relay.gnd'],
+      mcuPins: ['D12'],
+    };
+    expect(ids(relayLamp, noCommonGround)).toEqual([]);
   });
 
   it('(11) back-feeding: two supply outputs on one rail', () => {

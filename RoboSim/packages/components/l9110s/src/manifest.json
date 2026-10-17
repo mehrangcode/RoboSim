@@ -1,0 +1,64 @@
+{
+  "id": "driver.l9110s",
+  "version": "1.0.0",
+  "category": "driver",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "driver.l9110s.name",
+  "pins": [
+    {
+      "name": "b-ia",
+      "kind": "digital"
+    },
+    {
+      "name": "b-ib",
+      "kind": "digital"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    },
+    {
+      "name": "a-ia",
+      "kind": "digital"
+    },
+    {
+      "name": "a-ib",
+      "kind": "digital"
+    },
+    {
+      "name": "oa1",
+      "kind": "output"
+    },
+    {
+      "name": "oa2",
+      "kind": "output"
+    },
+    {
+      "name": "ob1",
+      "kind": "output"
+    },
+    {
+      "name": "ob2",
+      "kind": "output"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 4,
+  "mounting": {
+    "lengthMm": 29,
+    "widthMm": 23,
+    "heightMm": 12
+  },
+  "limits": {
+    "maxVoltageV": 12,
+    "maxChannelCurrentMa": 800,
+    "peakChannelCurrentMa": 1500
+  },
+  "polarity": ["vcc", "gnd"]
+}

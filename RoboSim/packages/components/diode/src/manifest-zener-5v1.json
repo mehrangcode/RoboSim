@@ -1,0 +1,20 @@
+{
+  "id": "semiconductor.zener-5v1",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "semiconductor.zener-5v1.name",
+  "pins": [
+    { "name": "a", "kind": "passive" },
+    { "name": "k", "kind": "passive" }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 0.35,
+  "limits": {
+    "maxForwardCurrentMa": 200,
+    "zenerV": 5.1,
+    "maxPowerMw": 1000
+  }
+}

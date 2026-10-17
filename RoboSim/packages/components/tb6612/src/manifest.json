@@ -1,0 +1,84 @@
+{
+  "id": "driver.tb6612fng",
+  "version": "1.0.0",
+  "category": "driver",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "driver.tb6612fng.name",
+  "pins": [
+    {
+      "name": "vm",
+      "kind": "power"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "ao1",
+      "kind": "output"
+    },
+    {
+      "name": "ao2",
+      "kind": "output"
+    },
+    {
+      "name": "bo2",
+      "kind": "output"
+    },
+    {
+      "name": "bo1",
+      "kind": "output"
+    },
+    {
+      "name": "pwma",
+      "kind": "digital"
+    },
+    {
+      "name": "ain2",
+      "kind": "digital"
+    },
+    {
+      "name": "ain1",
+      "kind": "digital"
+    },
+    {
+      "name": "stby",
+      "kind": "digital"
+    },
+    {
+      "name": "bin1",
+      "kind": "digital"
+    },
+    {
+      "name": "bin2",
+      "kind": "digital"
+    },
+    {
+      "name": "pwmb",
+      "kind": "digital"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 3,
+  "mounting": {
+    "lengthMm": 20.3,
+    "widthMm": 20.3,
+    "heightMm": 3
+  },
+  "limits": {
+    "maxVoltageV": 15,
+    "maxChannelCurrentMa": 1200,
+    "peakChannelCurrentMa": 3200,
+    "peakCurrentMa": 2
+  },
+  "polarity": ["vm", "gnd"],
+  "pinMaxVolts": {
+    "vcc": 7
+  }
+}

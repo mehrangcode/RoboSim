@@ -1,0 +1,21 @@
+{
+  "id": "sensor.ir-obstacle",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "sensor.ir-obstacle.name",
+  "pins": [
+    { "name": "out", "kind": "output" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "vcc", "kind": "power" }
+  ],
+  "props": {
+    "rangeCm": { "type": "number", "default": 10, "min": 2, "max": 30, "unit": "cm" }
+  },
+  "inputs": [{ "name": "distanceCm", "type": "number", "default": 50, "min": 0, "max": 50 }],
+  "massG": 3,
+  "mounting": { "lengthMm": 32, "widthMm": 14, "heightMm": 7 },
+  "limits": { "minVoltageV": 3.3, "maxVoltageV": 5.5, "peakCurrentMa": 25 },
+  "polarity": ["vcc", "gnd"]
+}

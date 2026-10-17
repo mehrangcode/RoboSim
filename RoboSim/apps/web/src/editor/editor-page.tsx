@@ -46,6 +46,7 @@ import {
   withFiles,
 } from './project-store.js';
 import { starterProject } from './starter.js';
+import { useBuzzerAudio } from './use-buzzer-audio';
 import { useLayout, useSizeClass, type Pane } from './use-layout.js';
 import { useRun } from './use-run.js';
 
@@ -240,6 +241,7 @@ export function EditorPage({
   }, []);
 
   const live = run.ready ? frame : null;
+  const sound = useBuzzerAudio(live?.parts, running);
   const canvasMode: CanvasMode = run.phase === 'live' ? 'run' : size === 'narrow' ? 'view' : 'edit';
 
   // Arena (FR-ARN-05/06): picked from the built-ins; the start pose is edited on the stopped view.
@@ -523,6 +525,10 @@ export function EditorPage({
         options={SPEEDS.map((v) => ({ value: v, label: `${fmt(Number(v), v.includes('.') ? 2 : 0)}×` }))}
         onChange={setSpeed}
       />
+      <Button size="sm" variant="secondary" aria-pressed={sound.enabled} onClick={sound.toggle}>
+        <span aria-hidden>{sound.enabled ? '🔊 ' : '🔇 '}</span>
+        {t('shell:editor.sound')}
+      </Button>
       <p role="status" aria-live="polite" className="text-sm tabular-nums text-ink-muted">
         {status}
       </p>

@@ -46,7 +46,11 @@ export function assembleCircuit(spec: CircuitSpec): AssembledCircuit {
   const internal: (readonly [string, string])[] = [];
   for (const [id, part] of Object.entries(spec.parts)) {
     for (const pin of part.def.manifest.pins) terminals.push(`${id}:${pin.name}`);
-    for (const [a, b] of part.def.internalConnections?.() ?? []) internal.push([`${id}:${a}`, `${id}:${b}`]);
+    for (const [a, b] of [
+      ...(part.def.internalConnections?.() ?? []),
+      ...(part.def.manifest.bondedPins ?? []),
+    ])
+      internal.push([`${id}:${a}`, `${id}:${b}`]);
   }
   for (const pin of spec.mcuPins ?? []) terminals.push(`mcu:${pin}`);
   const netlist = buildNetlist({
@@ -83,6 +87,7 @@ export function instantiateCircuit(circuit: AssembledCircuit, options: Instantia
     model: p.def.create(),
     pins: p.pins,
     props: p.props,
+    ...(p.def.manifest.signalPassthrough ? { signalPassthrough: p.def.manifest.signalPassthrough } : {}),
   }));
   return new Simulation({
     netCount: circuit.netCount,

@@ -1,0 +1,71 @@
+{
+  "id": "display.seven-segment",
+  "version": "1.0.0",
+  "category": "display",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "display.seven-segment.name",
+  "pins": [
+    {
+      "name": "g",
+      "kind": "passive"
+    },
+    {
+      "name": "f",
+      "kind": "passive"
+    },
+    {
+      "name": "com1",
+      "kind": "passive"
+    },
+    {
+      "name": "a",
+      "kind": "passive"
+    },
+    {
+      "name": "b",
+      "kind": "passive"
+    },
+    {
+      "name": "e",
+      "kind": "passive"
+    },
+    {
+      "name": "d",
+      "kind": "passive"
+    },
+    {
+      "name": "com2",
+      "kind": "passive"
+    },
+    {
+      "name": "c",
+      "kind": "passive"
+    },
+    {
+      "name": "dp",
+      "kind": "passive"
+    }
+  ],
+  "props": {
+    "common": {
+      "type": "enum",
+      "default": "cathode",
+      "options": ["cathode", "anode"]
+    },
+    "color": {
+      "type": "enum",
+      "default": "red",
+      "options": ["red", "green", "blue"]
+    }
+  },
+  "inputs": [],
+  "massG": 2,
+  "bondedPins": [["com1", "com2"]],
+  "limits": {
+    "ratedCurrentMa": 20,
+    "maxCurrentMa": 30,
+    "maxReverseV": 5
+  },
+  "traits": ["led"]
+}

@@ -56,6 +56,11 @@ export interface McuCore {
   pinOutputs(): ReadonlyMap<PinId, PinOutput>;
   /** Cycle-stamped edges for software PWM, servo pulses, ultrasonic TRIG. */
   onPinEdge(cb: (pin: PinId, level: Level, cycle: number) => void): Unsubscribe;
+  /**
+   * Pin mode changes (`pinMode`, enabling a pull-up) at their cycle. The scheduler re-solves the
+   * circuit there, so an input reads its real level at once instead of at the end of the slice.
+   */
+  onPinModeChange?(cb: (pin: PinId, mode: PinMode, cycle: number) => void): Unsubscribe;
   uart(index: number): UartPort;
   reset(): void;
 }
@@ -281,6 +286,12 @@ export interface ComponentIO {
    * Times already executed are applied at the next cycle.
    */
   scheduleMcuInput(net: NetId, level: Level, time: number): void;
+  /**
+   * Publishes a timed logic edge a part drives onto `net` this slice (a 74HC595's QH′ feeding the next
+   * shift register). Parts reading `edges(net)` later in the slice see it; logic parts step in the
+   * order of their `logicNets`, producers first.
+   */
+  emitEdge(net: NetId, level: Level, time: number): void;
   readonly solution: MnaSolution;
   readonly world: WorldModel | null;
   /** Tells the scheduler the component's stamp changed and the circuit must be re-solved. */
@@ -302,6 +313,21 @@ export interface ComponentModel<Props = unknown, State = unknown> {
    * re-solves the circuit afterwards, so models only update state here.
    */
   input?(name: string, value: number | boolean): void;
+  /**
+   * Logic part (Technical Design §5.4, digital timing): its input and output nets. Logic parts step in
+   * topological order of these nets, and `mcuEdge` is subscribed to MCU edges on the inputs.
+   */
+  logicNets?(): { readonly inputs: readonly NetId[]; readonly outputs: readonly NetId[] };
+  /**
+   * MCU edge on an input net, delivered synchronously in the middle of an instruction. A part that
+   * answers the firmware (keypad, gate read back by the MCU) calls `io.scheduleMcuInput` at `time`.
+   */
+  mcuEdge?(net: NetId, level: Level, time: number, io: ComponentIO): void;
+  /**
+   * Combinational re-evaluation after each solve: return true when outputs changed. The scheduler
+   * re-solves and asks again (at most 16 passes), so a chain of gates settles within one slice.
+   */
+  settle?(io: ComponentIO): boolean;
 }
 
 export type PropSpec =
@@ -331,7 +357,16 @@ export interface ComponentManifest {
   readonly id: string;
   readonly version: string;
   readonly category:
-    'power' | 'actuator' | 'driver' | 'sensor' | 'display' | 'comms' | 'passive' | 'mechanical';
+    | 'power'
+    | 'semiconductor'
+    | 'ic'
+    | 'actuator'
+    | 'driver'
+    | 'sensor'
+    | 'display'
+    | 'comms'
+    | 'passive'
+    | 'mechanical';
   readonly tier: 'basic' | 'pro';
   readonly phase: 'P1' | 'P2' | 'P3' | 'P4';
   /** i18n key in the `components` namespace. */
@@ -356,6 +391,23 @@ export interface ComponentManifest {
   readonly polarity?: readonly [string, string];
   /** Pins that act as a supply output (battery +, regulator out), optionally only when a boolean prop is true. */
   readonly supplyPins?: readonly SupplyPinSpec[];
+  /**
+   * Pins that are one conductor inside the part (two common pins of a display, a module's shared
+   * ground plane). Merged by the netlist like a wire; unlike `internalConnections` the part is still
+   * simulated.
+   */
+  readonly bondedPins?: readonly (readonly [string, string])[];
+  /**
+   * Pin pairs a logic signal passes through unchanged in timing (a series resistor). MCU edges and PWM
+   * on one side are visible to parts on the other (`io.edges`, `io.pwm`), so a buzzer or servo behind a
+   * current-limiting resistor still hears its pulses.
+   */
+  readonly signalPassthrough?: readonly (readonly [string, string])[];
+  /**
+   * Pin groups with no electrical path between them inside the part (relay coil vs contacts). Safety
+   * rules that trace a circuit do not cross between groups; without it all pins are one group.
+   */
+  readonly isolationGroups?: readonly (readonly string[])[];
   /** Per-pin absolute maximum voltage to the part's negative polarity pin (V). */
   readonly pinMaxVolts?: Readonly<Record<string, number>>;
 }

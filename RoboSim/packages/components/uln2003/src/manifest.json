@@ -1,0 +1,82 @@
+{
+  "id": "ic.uln2003a",
+  "version": "1.0.0",
+  "category": "ic",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "ic.uln2003a.name",
+  "pins": [
+    {
+      "name": "in1",
+      "kind": "digital"
+    },
+    {
+      "name": "in2",
+      "kind": "digital"
+    },
+    {
+      "name": "in3",
+      "kind": "digital"
+    },
+    {
+      "name": "in4",
+      "kind": "digital"
+    },
+    {
+      "name": "in5",
+      "kind": "digital"
+    },
+    {
+      "name": "in6",
+      "kind": "digital"
+    },
+    {
+      "name": "in7",
+      "kind": "digital"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "com",
+      "kind": "power"
+    },
+    {
+      "name": "out7",
+      "kind": "output"
+    },
+    {
+      "name": "out6",
+      "kind": "output"
+    },
+    {
+      "name": "out5",
+      "kind": "output"
+    },
+    {
+      "name": "out4",
+      "kind": "output"
+    },
+    {
+      "name": "out3",
+      "kind": "output"
+    },
+    {
+      "name": "out2",
+      "kind": "output"
+    },
+    {
+      "name": "out1",
+      "kind": "output"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 1,
+  "limits": {
+    "maxVoltageV": 50,
+    "maxChannelCurrentMa": 500
+  },
+  "polarity": ["com", "gnd"]
+}

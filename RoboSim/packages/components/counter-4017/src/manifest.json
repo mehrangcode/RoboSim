@@ -1,0 +1,82 @@
+{
+  "id": "ic.cd4017",
+  "version": "1.0.0",
+  "category": "ic",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "ic.cd4017.name",
+  "pins": [
+    {
+      "name": "q5",
+      "kind": "output"
+    },
+    {
+      "name": "q1",
+      "kind": "output"
+    },
+    {
+      "name": "q0",
+      "kind": "output"
+    },
+    {
+      "name": "q2",
+      "kind": "output"
+    },
+    {
+      "name": "q6",
+      "kind": "output"
+    },
+    {
+      "name": "q7",
+      "kind": "output"
+    },
+    {
+      "name": "q3",
+      "kind": "output"
+    },
+    {
+      "name": "vss",
+      "kind": "ground"
+    },
+    {
+      "name": "q8",
+      "kind": "output"
+    },
+    {
+      "name": "q4",
+      "kind": "output"
+    },
+    {
+      "name": "q9",
+      "kind": "output"
+    },
+    {
+      "name": "co",
+      "kind": "output"
+    },
+    {
+      "name": "inh",
+      "kind": "digital"
+    },
+    {
+      "name": "clk",
+      "kind": "digital"
+    },
+    {
+      "name": "rst",
+      "kind": "digital"
+    },
+    {
+      "name": "vdd",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 1,
+  "limits": {
+    "maxVoltageV": 20,
+    "maxOutputCurrentMa": 10
+  },
+  "polarity": ["vdd", "vss"]
+}

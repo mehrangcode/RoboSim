@@ -56,6 +56,33 @@ export function groundPin(part: AssembledPart): string | undefined {
   return part.def.manifest.polarity?.[1] ?? part.def.manifest.pins.find((p) => p.kind === 'ground')?.name;
 }
 
+/**
+ * Union-find over nets joined inside parts (every pin of a part, or of one of its `isolationGroups`):
+ * `find(a) === find(b)` when a conductive path through components links the two nets.
+ */
+export function circuitDomains(circuit: AssembledCircuit): (net: NetId) => NetId {
+  const parent = new Map<NetId, NetId>();
+  const find = (n: NetId): NetId => {
+    let r = n;
+    while ((parent.get(r) ?? r) !== r) r = parent.get(r) as NetId;
+    return r;
+  };
+  for (const part of circuit.parts) {
+    const groups = part.def.manifest.isolationGroups ?? [part.def.manifest.pins.map((p) => p.name)];
+    for (const group of groups) {
+      const nets = group.map((pin) => part.pins[pin]).filter((n): n is NetId => n !== undefined);
+      const [first, ...rest] = nets;
+      if (first === undefined) continue;
+      for (const n of rest) {
+        const a = find(first);
+        const b = find(n);
+        if (a !== b) parent.set(b, a);
+      }
+    }
+  }
+  return find;
+}
+
 export const hasTrait = (part: AssembledPart, trait: string): boolean =>
   (part.def.manifest.traits as readonly string[] | undefined)?.includes(trait) ?? false;
 

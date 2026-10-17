@@ -1,0 +1,83 @@
+{
+  "id": "ic.74hc595",
+  "version": "1.0.0",
+  "category": "ic",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "ic.74hc595.name",
+  "pins": [
+    {
+      "name": "qb",
+      "kind": "output"
+    },
+    {
+      "name": "qc",
+      "kind": "output"
+    },
+    {
+      "name": "qd",
+      "kind": "output"
+    },
+    {
+      "name": "qe",
+      "kind": "output"
+    },
+    {
+      "name": "qf",
+      "kind": "output"
+    },
+    {
+      "name": "qg",
+      "kind": "output"
+    },
+    {
+      "name": "qh",
+      "kind": "output"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "qh2",
+      "kind": "output"
+    },
+    {
+      "name": "srclr",
+      "kind": "digital"
+    },
+    {
+      "name": "srclk",
+      "kind": "digital"
+    },
+    {
+      "name": "rclk",
+      "kind": "digital"
+    },
+    {
+      "name": "oe",
+      "kind": "digital"
+    },
+    {
+      "name": "ser",
+      "kind": "digital"
+    },
+    {
+      "name": "qa",
+      "kind": "output"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 1,
+  "limits": {
+    "maxVoltageV": 7,
+    "maxOutputCurrentMa": 35,
+    "maxSupplyCurrentMa": 70
+  },
+  "polarity": ["vcc", "gnd"]
+}

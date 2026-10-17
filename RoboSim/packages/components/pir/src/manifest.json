@@ -1,0 +1,22 @@
+{
+  "id": "sensor.pir",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "sensor.pir.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "out", "kind": "output" },
+    { "name": "gnd", "kind": "ground" }
+  ],
+  "props": {
+    "holdS": { "type": "number", "default": 5, "min": 0.3, "max": 300, "unit": "s" },
+    "retrigger": { "type": "boolean", "default": true }
+  },
+  "inputs": [{ "name": "motion", "type": "boolean", "default": false }],
+  "massG": 7,
+  "mounting": { "lengthMm": 32, "widthMm": 24, "heightMm": 25 },
+  "limits": { "minVoltageV": 4.5, "maxVoltageV": 20, "peakCurrentMa": 1 },
+  "polarity": ["vcc", "gnd"]
+}

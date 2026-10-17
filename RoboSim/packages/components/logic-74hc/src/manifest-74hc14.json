@@ -1,0 +1,75 @@
+{
+  "id": "ic.74hc14",
+  "version": "1.0.0",
+  "category": "ic",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "ic.74hc14.name",
+  "pins": [
+    {
+      "name": "1a",
+      "kind": "digital"
+    },
+    {
+      "name": "1y",
+      "kind": "output"
+    },
+    {
+      "name": "2a",
+      "kind": "digital"
+    },
+    {
+      "name": "2y",
+      "kind": "output"
+    },
+    {
+      "name": "3a",
+      "kind": "digital"
+    },
+    {
+      "name": "3y",
+      "kind": "output"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "4y",
+      "kind": "output"
+    },
+    {
+      "name": "4a",
+      "kind": "digital"
+    },
+    {
+      "name": "5y",
+      "kind": "output"
+    },
+    {
+      "name": "5a",
+      "kind": "digital"
+    },
+    {
+      "name": "6y",
+      "kind": "output"
+    },
+    {
+      "name": "6a",
+      "kind": "digital"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 1,
+  "limits": {
+    "maxVoltageV": 7,
+    "maxOutputCurrentMa": 25,
+    "minVccV": 2
+  },
+  "polarity": ["vcc", "gnd"]
+}

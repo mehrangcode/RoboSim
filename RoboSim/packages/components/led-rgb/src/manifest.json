@@ -1,0 +1,25 @@
+{
+  "id": "actuator.led-rgb",
+  "version": "1.0.0",
+  "category": "actuator",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "actuator.led-rgb.name",
+  "pins": [
+    { "name": "r", "kind": "passive" },
+    { "name": "common", "kind": "passive" },
+    { "name": "g", "kind": "passive" },
+    { "name": "b", "kind": "passive" }
+  ],
+  "props": {
+    "common": { "type": "enum", "default": "cathode", "options": ["cathode", "anode"] }
+  },
+  "inputs": [],
+  "massG": 0.4,
+  "limits": {
+    "ratedCurrentMa": 20,
+    "maxCurrentMa": 30,
+    "maxReverseV": 5
+  },
+  "traits": ["led"]
+}

@@ -27,6 +27,16 @@ export {
 } from './scheduler.js';
 export { Pacer, type PacerOptions, type TickResult } from './pacer.js';
 export { resolveProps, validateManifest, type PropValue } from './manifest.js';
+export {
+  CD4000_FAMILY,
+  HC_FAMILY,
+  HC_SCHMITT,
+  isUndefinedLevel,
+  logicLevel,
+  logicOutputOhms,
+  stampPushPull,
+  type LogicFamily,
+} from './logic.js';
 export { irReflectance, irSpotRadiusMm, sonarRange, toWorld, SPEED_OF_SOUND_M_S } from './sensors.js';
 export { PlanckWorld } from './world/planck-world.js';
 export { boxInertia, plateCentroid, robotMass, type PointMass, type RobotMass } from './world/mass.js';

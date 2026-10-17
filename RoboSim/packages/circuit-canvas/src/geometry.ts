@@ -76,6 +76,29 @@ export const BOARD_FOOTPRINT: Footprint = {
   seatable: false,
 };
 
+/**
+ * Dual in-line package with pins in datasheet order: pin 1 bottom-left, counting anticlockwise, the two
+ * rows `span` grid steps apart (0.3" DIPs straddle the breadboard's centre channel).
+ */
+function dip(names: readonly string[], span = 3): Footprint {
+  const half = names.length / 2;
+  const pins: Record<string, Point> = {};
+  names.forEach((n, i) => {
+    pins[n] = i < half ? [i, span] : [names.length - 1 - i, 0];
+  });
+  return { box: { x: -0.6, y: -0.4, w: half - 1 + 1.2, h: span + 0.8 }, pins, seatable: true };
+}
+
+const QUAD_GATES = ['1a', '1b', '1y', '2a', '2b', '2y', 'gnd', '3y', '3a', '3b', '4y', '4a', '4b', 'vcc'];
+const HEX_INVERTERS = ['1a', '1y', '2a', '2y', '3a', '3y', 'gnd', '4y', '4a', '5y', '5a', '6y', '6a', 'vcc'];
+
+/** Axial two-lead part (diodes): anode left, cathode right, 0.4" lead spacing. */
+const AXIAL: Footprint = {
+  box: { x: -0.4, y: -0.6, w: 4.8, h: 1.2 },
+  pins: { a: [0, 0], k: [4, 0] },
+  seatable: true,
+};
+
 const FOOTPRINTS: Readonly<Record<string, Footprint>> = {
   'passive.resistor': {
     box: { x: -0.4, y: -0.6, w: 4.8, h: 1.2 },
@@ -152,6 +175,183 @@ const FOOTPRINTS: Readonly<Record<string, Footprint>> = {
     seatable: false,
   },
   'mechanical.chassis-2wd': { box: { x: -30, y: -24, w: 60, h: 48 }, pins: {}, seatable: false },
+  // Catalogue expansion Tier A (slice 16a).
+  'semiconductor.diode-1n4007': AXIAL,
+  'semiconductor.diode-1n4148': AXIAL,
+  'semiconductor.zener-5v1': AXIAL,
+  'semiconductor.lm7805': {
+    box: { x: -0.7, y: -7, w: 3.4, h: 7.4 },
+    pins: row(['in', 'gnd', 'out']),
+    seatable: true,
+  },
+  'semiconductor.ams1117-3v3': {
+    box: { x: -0.8, y: -4.4, w: 3.6, h: 4.8 },
+    pins: row(['in', 'gnd', 'out']),
+    seatable: true,
+  },
+  'actuator.led-rgb': {
+    box: { x: -0.6, y: -3.6, w: 4.2, h: 4 },
+    pins: row(['r', 'common', 'g', 'b']),
+    seatable: true,
+  },
+  'actuator.buzzer-passive': {
+    box: { x: -1, y: -4.2, w: 5, h: 4.6 },
+    pins: { pos: [0, 0], neg: [3, 0] },
+    seatable: true,
+  },
+  // 0.56" digit: pins 10–6 on top (g f com a b), 1–5 below (e d com c dp), rows 0.6" apart.
+  'display.seven-segment': {
+    box: { x: -0.8, y: -0.6, w: 5.6, h: 7.2 },
+    pins: { ...row(['g', 'f', 'com1', 'a', 'b']), ...row(['e', 'd', 'com2', 'c', 'dp'], 6) },
+    seatable: true,
+  },
+  'actuator.relay-module': {
+    box: { x: 0, y: 0, w: 20, h: 10.5 },
+    pins: { in: [0, 3], vcc: [0, 5], gnd: [0, 7], no: [20, 2], com: [20, 5], nc: [20, 8] },
+    seatable: false,
+  },
+  'actuator.mg996r-servo': {
+    box: { x: -17, y: -3, w: 16, h: 9 },
+    pins: { signal: [0, 0], vcc: [0, 1], gnd: [0, 2] },
+    seatable: false,
+  },
+  // Catalogue expansion Tier A (slice 16b): DIP chips straddle the channel; modules sit beside it.
+  'ic.74hc00': dip(QUAD_GATES),
+  'ic.74hc08': dip(QUAD_GATES),
+  'ic.74hc32': dip(QUAD_GATES),
+  'ic.74hc86': dip(QUAD_GATES),
+  'ic.74hc14': dip(HEX_INVERTERS),
+  'ic.74hc595': dip([
+    'qb',
+    'qc',
+    'qd',
+    'qe',
+    'qf',
+    'qg',
+    'qh',
+    'gnd',
+    'qh2',
+    'srclr',
+    'srclk',
+    'rclk',
+    'oe',
+    'ser',
+    'qa',
+    'vcc',
+  ]),
+  'ic.cd4017': dip([
+    'q5',
+    'q1',
+    'q0',
+    'q2',
+    'q6',
+    'q7',
+    'q3',
+    'vss',
+    'q8',
+    'q4',
+    'q9',
+    'co',
+    'inh',
+    'clk',
+    'rst',
+    'vdd',
+  ]),
+  'ic.uln2003a': dip([
+    'in1',
+    'in2',
+    'in3',
+    'in4',
+    'in5',
+    'in6',
+    'in7',
+    'gnd',
+    'com',
+    'out7',
+    'out6',
+    'out5',
+    'out4',
+    'out3',
+    'out2',
+    'out1',
+  ]),
+  // Breakout with 0.6" rows: motor side on top, logic below.
+  'driver.tb6612fng': {
+    box: { x: -0.6, y: -0.6, w: 7.2, h: 7.2 },
+    pins: {
+      ...row(['vm', 'vcc', 'gnd', 'ao1', 'ao2', 'bo2', 'bo1']),
+      ...row(['pwma', 'ain2', 'ain1', 'stby', 'bin1', 'bin2', 'pwmb'], 6),
+    },
+    seatable: true,
+  },
+  'driver.l9110s': {
+    box: { x: 0, y: 0, w: 11, h: 8 },
+    pins: {
+      'b-ia': [0, 1],
+      'b-ib': [0, 2],
+      gnd: [0, 3],
+      vcc: [0, 4],
+      'a-ia': [0, 5],
+      'a-ib': [0, 6],
+      oa1: [11, 1],
+      oa2: [11, 2],
+      ob1: [11, 6],
+      ob2: [11, 7],
+    },
+    seatable: false,
+  },
+  'actuator.stepper-28byj48': {
+    box: { x: -3.5, y: -13, w: 11, h: 13.4 },
+    pins: row(['blue', 'pink', 'yellow', 'orange', 'red']),
+    seatable: false,
+  },
+  // Catalogue expansion Tier A (slice 16c): sensor and input modules with male headers.
+  'sensor.bump-switch': {
+    box: { x: -0.8, y: -4.4, w: 5.6, h: 4.8 },
+    pins: { com: [0, 0], nc: [2, 0], no: [4, 0] },
+    seatable: true,
+  },
+  'sensor.line-5ch': {
+    box: { x: -3, y: -10, w: 12, h: 10.4 },
+    pins: row(['vcc', 'gnd', 's1', 's2', 's3', 's4', 's5']),
+    seatable: true,
+  },
+  'sensor.ir-obstacle': {
+    box: { x: -1.5, y: -12, w: 5, h: 12.4 },
+    pins: row(['out', 'gnd', 'vcc']),
+    seatable: true,
+  },
+  'sensor.pir': { box: { x: -4, y: -12, w: 10, h: 12.4 }, pins: row(['vcc', 'out', 'gnd']), seatable: true },
+  'sensor.sound': {
+    box: { x: -1.5, y: -14, w: 6, h: 14.4 },
+    pins: row(['ao', 'gnd', 'vcc', 'do']),
+    seatable: true,
+  },
+  'sensor.soil-moisture': {
+    box: { x: -1.5, y: -14, w: 6, h: 14.4 },
+    pins: row(['vcc', 'gnd', 'do', 'ao']),
+    seatable: true,
+  },
+  'sensor.joystick': {
+    box: { x: -3, y: -14, w: 10, h: 14.4 },
+    pins: row(['gnd', 'vcc', 'vrx', 'vry', 'sw']),
+    seatable: true,
+  },
+  'sensor.keypad-4x4': {
+    box: { x: -10, y: -30, w: 27, h: 30.4 },
+    pins: row(['r1', 'r2', 'r3', 'r4', 'c1', 'c2', 'c3', 'c4']),
+    seatable: true,
+  },
+  'sensor.rotary-encoder': {
+    box: { x: -1.5, y: -12, w: 7, h: 12.4 },
+    pins: row(['gnd', 'vcc', 'sw', 'dt', 'clk']),
+    seatable: true,
+  },
+  'power.lm2596': {
+    box: { x: 0, y: 0, w: 17, h: 8.8 },
+    pins: { 'in+': [0, 2], 'in-': [0, 6], 'out+': [17, 2], 'out-': [17, 6] },
+    seatable: false,
+  },
 };
 
 const breadboardCache = new Map<string, Footprint>();

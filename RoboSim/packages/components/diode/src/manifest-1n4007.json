@@ -1,0 +1,20 @@
+{
+  "id": "semiconductor.diode-1n4007",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "semiconductor.diode-1n4007.name",
+  "pins": [
+    { "name": "a", "kind": "passive" },
+    { "name": "k", "kind": "passive" }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 0.4,
+  "limits": {
+    "maxForwardCurrentMa": 1000,
+    "surgeCurrentMa": 30000,
+    "maxReverseV": 1000
+  }
+}

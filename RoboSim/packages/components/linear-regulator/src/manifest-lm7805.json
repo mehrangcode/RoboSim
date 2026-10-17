@@ -1,0 +1,41 @@
+{
+  "id": "semiconductor.lm7805",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "semiconductor.lm7805.name",
+  "pins": [
+    {
+      "name": "in",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "out",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 2,
+  "mounting": {
+    "lengthMm": 10.2,
+    "widthMm": 4.6,
+    "heightMm": 15.6
+  },
+  "limits": {
+    "maxVoltageV": 35,
+    "maxOutputCurrentMa": 1500
+  },
+  "polarity": ["in", "gnd"],
+  "supplyPins": [
+    {
+      "pin": "out",
+      "maxCurrentMa": 1500
+    }
+  ]
+}

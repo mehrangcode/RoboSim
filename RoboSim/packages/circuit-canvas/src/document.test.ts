@@ -92,6 +92,18 @@ describe('editing a project document', () => {
     expect(doc.components.every((c) => c.seats === undefined)).toBe(true);
   });
 
+  it('a 7-segment digit straddles the channel (rows d and h) and its two commons are one net', () => {
+    let doc = blankProject('t', '');
+    ({ doc } = addComponent(doc, 'passive.breadboard-half', at(0, 0)));
+    ({ doc } = addComponent(doc, 'display.seven-segment', at(20, 6)));
+    const seg = doc.components[1];
+    expect(Object.keys(seg?.seats ?? {})).toHaveLength(10);
+    expect(seg?.seats?.['g']).toEqual({ part: 'bb1', pin: '20d' });
+    expect(seg?.seats?.['e']).toEqual({ part: 'bb1', pin: '20h' });
+    const nets = new CircuitNets(doc);
+    expect(nets.connectedTo({ part: 'seg1', pin: 'com1' })).toContainEqual({ part: 'seg1', pin: 'com2' });
+  });
+
   it('gives new and duplicated parts fresh ids', () => {
     let doc = breadboardCircuit();
     const dup = duplicateComponents(doc, ['r1', 'led1']);

@@ -264,7 +264,10 @@ export interface WorldModel {
 export interface ComponentDefinition {       // exported by every packages/components/<slug>
   manifest: ComponentManifest;                // pins, props (defaults/ranges), inputs, limits, mass, nameKey
   create(): ComponentModel;
-  internalConnections?(): [pin, pin][];       // same-conductor pins (breadboard strips) merged by the netlist
+  internalConnections?(): [pin, pin][];       // same-conductor pins (breadboard strips) merged by the netlist; the part is topological only
+  // Manifest wiring hints (slice 16a): bondedPins (pins joined inside a simulated part, e.g. a display's two
+  // commons, a buck module's shared ground), signalPassthrough (a series resistor: MCU edges and PWM reach parts
+  // behind it through io.edges / io.pwm), isolationGroups (pins with no path between them, e.g. relay coil vs contacts).
 }
 // WorldModel.componentPose(id) gives a mounted part's arena pose (null on the bench); sim-core/sensors.ts has the
 // shared optics (irReflectance, sonarRange). io.scheduleMcuInput(net, level, time) drives MCU inputs at an exact cycle
@@ -303,6 +306,7 @@ loop (worker, requestAnimationFrame-independent timer):
 - If the budget is exhausted before reaching `target`, simulation **slows down**; it never drops cycles (FR-SIM-05).
 - The grader runs the same loop without wall-clock pacing (as fast as possible) and with a maximum simulated duration.
 - Simulated time is an integer slice counter (`simTime = slice / 1000`), so no floating-point drift accumulates; the MCU cycle at a slice boundary is `round(slice × clockHz / 1000)`. Components that invalidate the circuit during their `step` are re-solved within the same slice, so sensor outputs reach MCU inputs without an extra slice of latency.
+- **Input settling (slice 16a).** Inputs are otherwise thresholded at the end of each slice. The scheduler also solves once at power-on, before the first instruction, and again whenever firmware changes a pin's mode (`McuCore.onPinModeChange`), applying inputs at that cycle. A fresh `INPUT_PULLUP` or a knob on A0 therefore reads its real level at once, as on hardware, instead of 0 V for up to 1 ms (which looked like a button press at start-up).
 - Board adapters (e.g. `boards/avr-uno`) apply scheduled inputs at their exact CPU cycle, between instructions. PWM duty and frequency come from WGM/COM/CS/OCR/ICR registers per the ATmega328P datasheet. avr8js's emulated waveform can differ from the datasheet by one timer tick, which the conformance tests tolerate.
 - PWM duty is derived from timer configuration registers (TOP/OCR, prescaler, mode) — not by sampling edges at 1 ms, which would be wrong. Software-generated pulses (Servo library, bit-banged PWM, HC-SR04 TRIG) are measured from cycle-stamped edges via `onPinEdge`.
 
@@ -321,12 +325,42 @@ A small **modified nodal analysis (MNA)** solver covers the whole circuit at DC 
 | DC motor | Resistance + back-EMF source `Ke·ω` (ω from the mechanical model of the previous slice) |
 | L298N / TB6612 | Behavioural: logic inputs high-Z, read as MCU PWM duty (`io.pwm`) or as thresholded DC levels. Each enabled output is a PWM-averaged leg (transformer element): `V = f·(Vs − 1.6 V) − 0.5 Ω·I`, drawing `f·I` from VS. That gives a total drop of 1.75 V at 0.15 A and 2.1 V at 0.5 A. The onboard 78M05 needs VS ≥ 7 V; below that the logic browns out. ENA/ENB jumpers are installed by default, as shipped |
 | Servo, sensors, modules | Behavioural current sinks from manifest (`idle`, `active`, `stall` currents) |
+| Zener diode (Tier A) | Two PWL diodes in anti-parallel: forward (Vf ≈ 0.7 V) and reverse breakdown (Vf = Vz, Rs = Zzt) |
+| Linear regulator (Tier A) | `voltageSource(out, gnd, Vout, r, { supplyFrom: in })` while `Vin − Vout ≥ dropout`; in dropout the output follows `Vin − dropout` (re-stamped by `step`). Current limit and `P = (Vin − Vout)·I` against the package rating feed faults |
+| Buck module (Tier A) | `transformer` from input to output with `ratio = Vset / Vin` updated each slice from the solved input, so input current = `Vout·I / (η·Vin)` |
+| Logic IC output (Tier A) | Voltage source to VCC or GND with the family's output resistance (74HC ≈ 50 Ω at 4.5 V); inputs are high impedance and thresholded at `0.3·VCC` / `0.7·VCC` (74HC14 with Schmitt hysteresis) |
+| Relay coil, stepper coil (Tier A) | Conductance with `traits: ['inductive']`; relay contacts are a conductance between COM and NO/NC that changes after the operate/release time |
+| Transistors, capacitors (Tier B, P2) | See *Planned: Tier B* below |
 
 Besides R/G, current sources, voltage sources and PWL diodes, the stamper offers two branch elements. `voltageSource(…, { supplyFrom })` draws the delivered current from another net, so a linear regulator loads the battery behind it. `transformer(…)` is an ideal averaged DC transformer, `V(sec) = ratio·V(pri) − offset − r·I`, with `ratio·I` drawn from the primary, for PWM-averaged bridges and buck stages.
 
 Implementation notes: every net has GMIN = 10⁻¹² S to ground (as in SPICE), so floating islands solve to 0 V instead of producing a singular matrix. Off diodes leak 10⁻⁹ S. Voltage sources add one branch unknown each; their reported current is the current delivered out of the + terminal. Diode regions warm-start from the previous solve; a result that has not settled after 10 passes is returned with `converged: false`. PWM pins are not stamped at their average voltage, because that is wrong for nonlinear loads: a 25 % LED would sit below Vf and stay dark. Instead the scheduler solves k + 1 operating points (all PWM pins low, then each PWM pin high on its own) and blends them as `avg = base + Σ dutyᵢ·(solᵢ − base)`. This is exact when PWM-driven sub-circuits are independent (separate LEDs, motor channels) and an approximation when they are coupled. Behavioural drivers can still read the duty directly.
 
 Circuits are small (< 200 nodes), so a dense LU decomposition is used; solves only happen when something changed (typically ≤ 1 kHz, microseconds each). Digital levels seen by MCU inputs are thresholded from node voltages using the board's `VIL`/`VIH`.
+
+**Digital timing within a slice (catalogue Tier A, slice 16b).** MCU inputs are thresholded once per slice, and a component that changes its stamp in `step` is re-solved once after all components stepped. That is enough for LEDs and motors, but not for two digital cases. Two opt-in hooks cover them. Components that implement neither behave exactly as before, so existing goldens do not change.
+
+| Hook | Problem it solves | Behaviour |
+|---|---|---|
+| `settle(io): boolean` | A chain of gates (74HC00 → 74HC86 → LED) would advance one stage per slice | After the post-step solve, the scheduler calls `settle` on combinational parts, re-solves while any returns `true`, at most 16 passes. Then it reports `SAF-LOGIC-OSCILLATION` (a ring oscillator never settles) |
+| `mcuEdge(net, level, time, io)` | The Keypad library pulls a row LOW for a few microseconds and reads the columns in that window. A per-slice solve never sees it | Called synchronously from the core's edge callback for the input nets in the part's `logicNets()` (directly or behind series resistors). The part answers with `io.scheduleMcuInput(net, level, time)` at the same cycle, which avr-uno applies before the next instruction. The slice-end DC solve then makes the circuit consistent again |
+| `io.emitEdge(net, level, time)` | A 74HC595's QH′ feeds the next 595, and a ULN2003A passes step timing on to a stepper. Both happen faster than a slice | A part publishes the timed edges it drives. Parts reading `io.edges(net)` later in the slice see them; logic parts step producers-first (topological order of `logicNets()` inputs and outputs, feedback loops by document order) |
+
+`io.edges(net)` remains the way to consume pulse trains after the fact: servo pulses, `tone()` (passive buzzer frequency), and `shiftOut` into a 74HC595, which samples SER at each rising SRCLK edge and copies to its outputs on the rising RCLK edge (equal-time ties: clocks before data, so a chained QH′ is sampled before it changes). A level that comes from the operating point instead of edges (a button, a tied pin) is applied at the start of the slice, since user inputs land between slices. The 28BYJ-48 follows timed coil edges the same way, so stepping faster than its pull-in rate (≈ 1200 half-steps/s) loses steps instead of aliasing against the 1 ms slice. Shared CMOS behaviour (thresholds as fractions of VCC, Schmitt levels, push-pull outputs drawing from VCC, 74HC and CD4000 families) lives in `sim-core/src/logic.ts`.
+
+`io.scheduleMcuInput` drives only pins currently in input mode, so a part's answer never overrides a pin the firmware drives. The floating-input rule ignores pins that were outputs within the last 0.5 s (`Simulation.lastDrivenAt`): scanned lines such as keypad columns float between scans by design. In the editor, an art element marked `data-input="<name>"` is a momentary button for that input, and parts whose inputs are all buttons (a keypad) get the `keys` interaction instead of a popover.
+
+**Planned: Tier B — reactive elements and transistors (P2).**
+- **Capacitors and inductors** use backward-Euler companion models (`G = C/h`, `I = C·v/h`). When the smallest time constant in a slice is shorter than the slice, the slice is split into sub-steps (minimum 1 µs, LTE-controlled, breakpoints at MCU edges). Otherwise one step per slice is used, so a circuit without reactive parts costs nothing extra.
+- **PWM and capacitors.** PWM-driven nets that see a capacitor are solved from real edges instead of the averaged k + 1 operating points. This lets an RC filter ripple and a 555 oscillate correctly.
+- **BJTs** use region models (cutoff, active `Ic = β·Ib` with `Vbe ≈ 0.65 V`, saturation `Vce(sat)`). **MOSFETs** use cutoff, saturation (`K(Vgs − Vth)²`) and linear (`Rds(on)` scaled by Vgs). Both are solved by region iteration with warm start, like the PWL diodes; a non-converging solve is reported as it is for diodes. Junction power feeds a first-order thermal model (θJA, τ per package) and the damage model.
+- **Inductive kickback.** A switched coil with no clamp now produces a real voltage spike, so the flyback rule (FR-SAF-02) can show its evidence in the pin inspector.
+
+**Planned: Tier C — MCU buses (P2).**
+- `McuCore.i2c(0)` and `spi(0)` wrap avr8js `AVRTWI` / `AVRSPI` in `boards/avr-uno`. Device models implement `I2cDevice { address; start; write(byte): ack; read(): byte; stop }` or `SpiDevice { transfer(byte): byte }`. The bus routes a transaction to a device only when that device's SDA/SCL (MOSI/MISO/SCK/CS) nets connect to the MCU's bus pins.
+- The bus checks electrical health: pull-ups are present on SDA/SCL, logic levels are compatible (a 3.3 V device without a level shifter), and two devices do not share an address.
+- Timed single-wire protocols are decoded from cycle-stamped edges and answered through the MCU-edge fast path: DHT11 and DS18B20 response pulses, and WS2812 bits at 800 kHz from high-time widths.
+- Device state (OLED framebuffer, LCD DDRAM, NeoPixel colours) travels in component snapshots. Sensor readings come from the world (MPU-6050 from body acceleration and yaw rate, VL53L0X from a ray cast) plus seeded noise, keeping runs deterministic.
 
 ### 5.5 Physics and sensors
 
@@ -338,14 +372,16 @@ Circuits are small (< 200 nodes), so a dense LU decomposition is used; solves on
 | Battery | Open-circuit voltage curve by state of charge + internal resistance → sag under load |
 | Line sensor | Floor is a luminance raster (1 px = 1 mm), rasterised deterministically from the arena's vector paint (`rasterizeFloor`); built-in arenas live in `packages/content` (*current, slice 14:* eight arenas in `BUILTIN_ARENAS`, engine-free subpath `@robosim/content/arenas` with default challenges and the start-pose fit check `startPoseProblem`, which the loader and the editor share). Sensor samples a disc whose radius depends on mount height; reflectance → analog voltage via calibration curve; digital modules apply comparator threshold (potentiometer property) with hysteresis |
 | Ultrasonic | On a valid TRIG pulse (≥ 10 µs, cycle-stamped), cast 7 rays across a 15° cone; nearest hit distance `d` within 2–400 cm → ECHO HIGH after calibrated latency for `2d / 343 m·s⁻¹`; no hit → timeout pulse like the real module |
-| Bump switch | Contact listener on the switch fixture |
+| Contact skin | planck separates polygons and edges by `polygonRadius` (1 cm each). `PlanckWorld` insets polygon fixtures and moves the perimeter out by that skin, so bodies touch at their true outlines, and `raycast` subtracts it again (`skin / cos(incidence)`), so ranging measures the true faces (slice 16c) |
+| Bump switch | *Tier A (slice 16c):* the lever is a short ray cast from the switch's mount pose (reach from the manifest). A wall or obstacle within reach closes the contact; the robot body's own collision still stops it. Avoids contact listeners, so it stays deterministic and engine-free |
+| IR obstacle, line array (Tier A) | FC-51 uses `sonarRange`-style ray casts with an IR reflectance threshold set by its potentiometer prop. The 5-channel array samples the floor raster like the 3-channel module |
 | Encoder (P4) | Ticks from wheel angle with slots-per-revolution from manifest |
-| IMU (P4) | Body acceleration and yaw rate + seeded noise, exposed over the I²C register map of MPU-6050 |
+| IMU (P2, Tier C) | Body acceleration and yaw rate + seeded noise, exposed over the I²C register map of MPU-6050 |
 
 ### 5.6 Safety in the engine
 
 - **Static rules** (`packages/safety-rules`) run on the netlist + manifests + code-analysis facts, in the main thread (debounced 300 ms) and once before each run. *Implementation:* `analyzeCircuit` does not guess from topology. It **solves** the circuit with fresh models at power-on (every MCU pin high-Z), and on demand with one pin driven HIGH or LOW (memoised). Rules then read voltages, pin currents and component faults. Pins sharing a net with a part's `output` pin are inputs by design and are not drive-probed until code analysis (FR-SAF-03) knows the pin modes.
-- **Generic rules read manifests** (FR-SAF-05): `traits` (`inductive`, `led`, `source`), `polarity` [+, −], `supplyPins` (with an optional enabling prop, e.g. the L298N regulator jumper), `pinMaxVolts`, and `limits.maxVoltageV` / `limits.peakCurrentMa`. `validateManifest` checks that they reference real pins.
+- **Generic rules read manifests** (FR-SAF-05): `traits` (`inductive`, `led`, `source`), `polarity` [+, −], `supplyPins` (with an optional enabling prop, e.g. the L298N regulator jumper), `pinMaxVolts`, `isolationGroups`, and `limits.maxVoltageV` / `limits.peakCurrentMa`. `validateManifest` checks that they reference real pins. The common-ground rule only warns when a separately grounded supply's circuit reaches the Arduino side through some part; a circuit isolated behind relay contacts needs no common ground.
 - *Packaging:* one `packages/safety-rules` package with a folder per rule group and trigger/clean fixture tests per rule. The framework (`analyzeCircuit`, `SafetyMonitor`, rule and finding types) lives in `sim-core/src/safety`.
 - **Runtime rules** (`SafetyMonitor`, a slice observer evaluated every 5 ms; rules may declare a slower `periodS`) run on MNA results: pin current over limits, rail over-current, two outputs fighting, over-voltage after a battery change. A sustained violation (configurable duration per rule, e.g. 50 ms over 40 mA) marks the component `damaged`; damaged models return a failure behaviour (pin stuck, motor stops) until reset after the fault is removed.
 - Rule interface:
@@ -473,7 +509,7 @@ sequenceDiagram
 *Current implementation (P1 slice 10, thin vertical, [ADR-022](decisions.md#adr-022--build-service-drives-avr-gcc-directly-linux-namespace-sandbox-for-development)):*
 
 - **Compiler.** `apps/compiler` is a library plus CLI (`robosim-compile <main.ino> [files…] [--out firmware.hex] [--json]`). It drives avr-gcc 7.3.0 directly, without arduino-cli, against the pinned Arduino AVR core 1.8.6.
-  - **Libraries:** the core's built-ins (EEPROM, HID, SPI, SoftwareSerial, Wire), plus Servo 1.3.0 and NewPing 1.9.7, all in `toolchain.lock.json` and fetched by `pnpm compiler:setup`.
+  - **Libraries:** the core's built-ins (EEPROM, HID, SPI, SoftwareSerial, Wire), plus Servo 1.3.0 and NewPing 1.9.7, all in `toolchain.lock.json` and fetched by `pnpm compiler:setup`. Catalogue Tier A adds Stepper (16b) and Keypad (16c). Tier C (P2) adds the libraries of its I²C/SPI and single-wire parts. Every library is pinned from GitHub or PlatformIO with a sha256.
   - **Pipeline:**
     1. Validate (`buildRequestSchema` in `packages/shared`).
     2. Normalise and compute the cache key: sha256 of sources, main file, FQBN, declared libraries and toolchain id. The toolchain id covers the lock, the gcc build, the flags and the driver version.

@@ -1,6 +1,6 @@
 {
   "log": {
-    "engineVersion": "sim-core@0.2.0+board-avr-uno@0.1.0+components@0.1.0+safety-rules@0.1.0+sim-runtime@0.3.0",
+    "engineVersion": "sim-core@0.3.0+board-avr-uno@0.2.0+components@0.2.0+safety-rules@0.2.0+sim-runtime@0.4.0",
     "scenario": "line-follower",
     "project": {
       "schemaVersion": 1,

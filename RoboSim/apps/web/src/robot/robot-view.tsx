@@ -56,6 +56,9 @@ const FILL: Readonly<Record<string, string>> = {
   driver: '#4f46e5',
   power: '#dc2626',
   passive: '#78716c',
+  semiconductor: '#57534e',
+  ic: '#1f2937',
+  display: '#7c3aed',
 };
 const fillOf = (p: Mountable): string =>
   FILL[p.id === BOARD_ID ? 'board' : (findManifest(p.type)?.category ?? 'passive')] ?? '#78716c';

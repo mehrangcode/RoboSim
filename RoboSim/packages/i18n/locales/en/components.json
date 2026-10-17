@@ -3,19 +3,71 @@
     "buzzer-active": {
       "name": "Active buzzer"
     },
+    "buzzer-passive": {
+      "name": "Passive buzzer"
+    },
     "led": {
       "name": "LED"
     },
+    "led-rgb": {
+      "name": "RGB LED"
+    },
+    "mg996r-servo": {
+      "name": "MG996R servo"
+    },
+    "relay-module": {
+      "name": "Relay module (5 V, 1 channel)"
+    },
     "sg90-servo": {
       "name": "SG90 micro servo"
+    },
+    "stepper-28byj48": {
+      "name": "28BYJ-48 stepper motor"
     },
     "tt-motor": {
       "name": "TT gear motor"
     }
   },
+  "display": {
+    "seven-segment": {
+      "name": "7-segment display (1 digit)"
+    }
+  },
   "driver": {
     "l298n": {
       "name": "L298N motor driver"
+    },
+    "l9110s": {
+      "name": "L9110S motor driver"
+    },
+    "tb6612fng": {
+      "name": "TB6612FNG motor driver"
+    }
+  },
+  "ic": {
+    "74hc00": {
+      "name": "74HC00 quad NAND gate"
+    },
+    "74hc08": {
+      "name": "74HC08 quad AND gate"
+    },
+    "74hc14": {
+      "name": "74HC14 hex Schmitt inverter"
+    },
+    "74hc32": {
+      "name": "74HC32 quad OR gate"
+    },
+    "74hc595": {
+      "name": "74HC595 shift register"
+    },
+    "74hc86": {
+      "name": "74HC86 quad XOR gate"
+    },
+    "cd4017": {
+      "name": "CD4017 decade counter"
+    },
+    "uln2003a": {
+      "name": "ULN2003A Darlington driver"
     }
   },
   "mechanical": {
@@ -44,13 +96,45 @@
     "battery-9v": {
       "name": "9 V battery"
     },
+    "lm2596": {
+      "name": "LM2596 buck converter"
+    },
     "switch": {
       "name": "On/off switch"
     }
   },
+  "semiconductor": {
+    "ams1117-3v3": {
+      "name": "AMS1117 3.3 V regulator"
+    },
+    "diode-1n4007": {
+      "name": "1N4007 rectifier diode"
+    },
+    "diode-1n4148": {
+      "name": "1N4148 signal diode"
+    },
+    "lm7805": {
+      "name": "LM7805 5 V regulator"
+    },
+    "zener-5v1": {
+      "name": "5.1 V Zener diode"
+    }
+  },
   "sensor": {
+    "bump-switch": {
+      "name": "Bump / limit switch"
+    },
     "hc-sr04": {
       "name": "HC-SR04 ultrasonic sensor"
+    },
+    "ir-obstacle": {
+      "name": "FC-51 IR obstacle sensor"
+    },
+    "joystick": {
+      "name": "KY-023 joystick"
+    },
+    "keypad-4x4": {
+      "name": "4×4 keypad"
     },
     "ldr": {
       "name": "Light sensor (LDR)"
@@ -58,8 +142,23 @@
     "line-3ch": {
       "name": "3-channel line sensor"
     },
+    "line-5ch": {
+      "name": "5-channel line sensor"
+    },
+    "pir": {
+      "name": "HC-SR501 PIR motion sensor"
+    },
     "push-button": {
       "name": "Push button"
+    },
+    "rotary-encoder": {
+      "name": "KY-040 rotary encoder"
+    },
+    "soil-moisture": {
+      "name": "Soil moisture sensor"
+    },
+    "sound": {
+      "name": "KY-038 sound sensor"
     },
     "tcrt5000": {
       "name": "TCRT5000 line sensor"

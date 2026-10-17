@@ -1,0 +1,41 @@
+{
+  "id": "semiconductor.ams1117-3v3",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "semiconductor.ams1117-3v3.name",
+  "pins": [
+    {
+      "name": "in",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "out",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 1.5,
+  "mounting": {
+    "lengthMm": 6.5,
+    "widthMm": 7,
+    "heightMm": 1.8
+  },
+  "limits": {
+    "maxVoltageV": 15,
+    "maxOutputCurrentMa": 800
+  },
+  "polarity": ["in", "gnd"],
+  "supplyPins": [
+    {
+      "pin": "out",
+      "maxCurrentMa": 800
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "actuator.stepper-28byj48",
+  "version": "1.0.0",
+  "category": "actuator",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "actuator.stepper-28byj48.name",
+  "pins": [
+    {
+      "name": "blue",
+      "kind": "passive"
+    },
+    {
+      "name": "pink",
+      "kind": "passive"
+    },
+    {
+      "name": "yellow",
+      "kind": "passive"
+    },
+    {
+      "name": "orange",
+      "kind": "passive"
+    },
+    {
+      "name": "red",
+      "kind": "power"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 30,
+  "mounting": {
+    "lengthMm": 42,
+    "widthMm": 28,
+    "heightMm": 19
+  },
+  "limits": {
+    "ratedVoltageV": 5,
+    "maxVoltageV": 6,
+    "coilOhms": 50,
+    "peakCurrentMa": 200
+  },
+  "traits": ["inductive"]
+}

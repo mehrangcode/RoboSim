@@ -8,6 +8,8 @@
       "label": "Category",
       "all": "All",
       "power": "Power",
+      "semiconductor": "Semiconductors",
+      "ic": "Integrated circuits",
       "passive": "Passive",
       "actuator": "Actuators",
       "sensor": "Sensors",
@@ -120,6 +122,17 @@
     "pressed": "Pressed",
     "on": "On",
     "loadTorqueNm": "Load torque (N·m)",
-    "stalled": "Shaft blocked"
+    "stalled": "Shaft blocked",
+    "surface1": "Surface under S1",
+    "surface2": "Surface under S2",
+    "surface3": "Surface under S3",
+    "surface4": "Surface under S4",
+    "surface5": "Surface under S5",
+    "motion": "Motion in view",
+    "level": "Sound loudness",
+    "moisture": "Soil moisture",
+    "x": "Stick left ↔ right",
+    "y": "Stick down ↔ up",
+    "detents": "Knob position (detents)"
   }
 }

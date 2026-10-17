@@ -116,6 +116,15 @@ export function conditionsModified(doc: ProjectDocument): boolean {
 /** HC-SR04 model constants (Technical Design §5.5): 15° cone, 4 m range. */
 const SONAR_CONE_RAD = 15 * RAD_PER_DEG;
 const SONAR_MAX_M = 4;
+const IR_CONE_RAD = 20 * RAD_PER_DEG;
+/** 5-channel array: S1 leftmost (+2 spacings) … S5 rightmost. */
+const LINE5_CHANNELS = [
+  ['s1', 2],
+  ['s2', 1],
+  ['s3', 0],
+  ['s4', -1],
+  ['s5', -2],
+] as const;
 const LINE_CHANNELS = [
   ['left', 1],
   ['center', 0],
@@ -163,6 +172,24 @@ export function overlayOf(
       for (const [ch, side] of LINE_CHANNELS) {
         overlay.lineSpots.push({ ...at(0, side * spacing), black: outputs[ch] === 1 });
       }
+    } else if (m.type === 'sensor.line-5ch') {
+      const spacing = Number(project.components.find((c) => c.id === m.id)?.props['spacingMm'] ?? 15) / 1000;
+      const outputs = (state?.['outputs'] ?? {}) as Record<string, number>;
+      for (const [ch, side] of LINE5_CHANNELS)
+        overlay.lineSpots.push({ ...at(0, side * spacing), black: outputs[ch] === 1 });
+    } else if (m.type === 'sensor.ir-obstacle') {
+      // The FC-51 beam out to the range set on its potentiometer; the label says whether it sees anything.
+      const rangeM = Number(project.components.find((c) => c.id === m.id)?.props['rangeCm'] ?? 10) / 100;
+      const cm = state?.['distanceCm'];
+      const distanceM = typeof cm === 'number' && cm / 100 <= rangeM ? cm / 100 : null;
+      overlay.sonars.push({
+        ...at(0, 0),
+        angle: pose.angle + m.angle,
+        coneRad: IR_CONE_RAD,
+        maxM: rangeM,
+        distanceM,
+        label: distanceM === null ? units.noEcho : units.cm(fmt(distanceM * 100, 1)),
+      });
     } else if (m.type === 'sensor.tcrt5000') {
       overlay.lineSpots.push({ ...at(0, 0), black: state?.['d0'] === 1 });
     } else if (m.type === 'sensor.hc-sr04') {

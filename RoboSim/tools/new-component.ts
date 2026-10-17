@@ -5,7 +5,18 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const [slug, typeId, category, className] = process.argv.slice(2);
-const CATEGORIES = ['power', 'actuator', 'driver', 'sensor', 'display', 'comms', 'passive', 'mechanical'];
+const CATEGORIES = [
+  'power',
+  'semiconductor',
+  'ic',
+  'actuator',
+  'driver',
+  'sensor',
+  'display',
+  'comms',
+  'passive',
+  'mechanical',
+];
 if (
   !slug ||
   !typeId ||

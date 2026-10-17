@@ -1,0 +1,21 @@
+{
+  "id": "actuator.buzzer-passive",
+  "version": "1.0.0",
+  "category": "actuator",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "actuator.buzzer-passive.name",
+  "pins": [
+    { "name": "pos", "kind": "passive" },
+    { "name": "neg", "kind": "passive" }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 2,
+  "mounting": { "lengthMm": 12, "widthMm": 12, "heightMm": 8.5 },
+  "limits": {
+    "ratedVoltageV": 5,
+    "coilOhms": 42,
+    "resonantHz": 2700
+  }
+}

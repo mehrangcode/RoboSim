@@ -3,6 +3,7 @@ import { def, monitored, ports } from '../../test/helpers.js';
 import {
   componentFault,
   floatingInput,
+  logicOscillation,
   mcuTotalCurrentRuntime,
   outputsFighting,
   pinCurrentRuntime,
@@ -98,6 +99,32 @@ describe('FR-SAF-04 runtime rules + damage model (FR-SIM-10)', () => {
     expect(pulled.monitor.findings()).toEqual([]);
   });
 
+  it('(9) a scanned line (output for microseconds every few ms, like a keypad column) is not floating', () => {
+    const scan = `
+      ldi r20, 0
+    again:
+      sbi 0x0A, 2            ; D2 output (LOW) for a moment
+      cbi 0x0A, 2            ; back to input
+      ldi r24, 0x00
+      ldi r25, 0x10
+    wait:
+      sbiw r24, 1
+      brne wait              ; ≈ 1 ms
+      rjmp again`;
+    const m = monitored(
+      {
+        parts: { btn: { def: def('sensor.push-button') } },
+        wires: [['btn.b1', 'mcu.D2']],
+        ground: ['btn.a1'],
+        mcuPins: ['D2'],
+      },
+      scan,
+      [floatingInput],
+    );
+    m.run(0.5);
+    expect(m.monitor.findings()).toEqual([]);
+  });
+
   it('LED without a resistor on a 9 V battery burns out and goes dark', () => {
     const m = monitored(
       {
@@ -114,5 +141,28 @@ describe('FR-SAF-04 runtime rules + damage model (FR-SIM-10)', () => {
     ).toEqual(['SAF-COMPONENT-FAULT:led:OVER_CURRENT']);
     const led = m.sim.model('led')?.snapshot() as { damaged: boolean; currentMa: number };
     expect(led).toMatchObject({ damaged: true, currentMa: 0 });
+  });
+
+  it('a 74HC14 inverter fed back to itself never settles → oscillation warning; a tied input is clean', () => {
+    // D13 HIGH powers the chip (it draws next to nothing).
+    const ring = (feedback: boolean) =>
+      monitored(
+        {
+          parts: { u: { def: def('ic.74hc14') } },
+          wires: [['mcu.D13', 'u.vcc'], ...(feedback ? ([['u.1y', 'u.1a']] as const) : [])],
+          ground: ['u.gnd', ...(feedback ? [] : ['u.1a'])],
+          mcuPins: ['D13'],
+        },
+        ports({ ddrb: 0x20, portb: 0x20 }),
+        [logicOscillation],
+      );
+    const osc = ring(true);
+    osc.run(0.1);
+    expect(osc.monitor.findings().map((f) => `${f.ruleId}:${f.severity}`)).toEqual([
+      'SAF-LOGIC-OSCILLATION:warning',
+    ]);
+    const clean = ring(false);
+    clean.run(0.1);
+    expect(clean.monitor.findings()).toEqual([]);
   });
 });

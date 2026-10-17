@@ -66,6 +66,10 @@ export function validateManifest(m: ComponentManifest): string[] {
       errors.push(`supply pin '${sp.pin}': enabledByProp '${sp.enabledByProp}' must be a boolean prop`);
     }
   }
+  for (const pair of [...(m.bondedPins ?? []), ...(m.signalPassthrough ?? []), ...(m.isolationGroups ?? [])])
+    for (const pin of pair)
+      if (!hasPin(pin))
+        errors.push(`pin '${pin}' in bondedPins/signalPassthrough/isolationGroups does not exist`);
   for (const pin of Object.keys(m.pinMaxVolts ?? {}))
     if (!hasPin(pin)) errors.push(`pinMaxVolts pin '${pin}' does not exist`);
   if (m.pinMaxVolts && !m.polarity) errors.push('pinMaxVolts needs a polarity pair as reference');

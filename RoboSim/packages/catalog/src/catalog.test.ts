@@ -20,7 +20,9 @@ describe('component catalog', () => {
     expect(CATALOG_MANIFESTS).toEqual(CATALOG.map((d) => d.manifest));
     for (const def of CATALOG) {
       expect(findManifest(def.manifest.id)).toEqual(def.manifest);
-      expect(internalConnectionsOf(def.manifest.id)).toEqual(def.internalConnections?.() ?? []);
+      expect(internalConnectionsOf(def.manifest.id)).toEqual(
+        def.internalConnections?.() ?? def.manifest.bondedPins ?? [],
+      );
     }
   });
 
@@ -41,7 +43,7 @@ describe('component catalog', () => {
     expect(() => findDefinition('actuator.flux-capacitor')).toThrow(/Unknown component/);
   });
 
-  it('offers exactly the basic-tier P1 components of PRD §7.2', () => {
+  it('offers exactly the P1 components of PRD §7.2, by tier', () => {
     // Jumper wires are netlist edges, not models; the BOM counts them from project wires.
     const prdP1Basic = [
       'power.battery-9v',
@@ -62,11 +64,47 @@ describe('component catalog', () => {
       'passive.breadboard-half',
       'passive.breadboard-full',
       'mechanical.chassis-2wd',
+      // Catalogue expansion Tier A (slices 16a–c).
+      'semiconductor.diode-1n4007',
+      'semiconductor.diode-1n4148',
+      'semiconductor.zener-5v1',
+      'semiconductor.lm7805',
+      'semiconductor.ams1117-3v3',
+      'actuator.led-rgb',
+      'actuator.buzzer-passive',
+      'display.seven-segment',
+      'ic.74hc00',
+      'ic.74hc08',
+      'ic.74hc32',
+      'ic.74hc86',
+      'ic.74hc14',
+      'ic.74hc595',
+      'ic.cd4017',
+      'ic.uln2003a',
+      'sensor.bump-switch',
+      'sensor.joystick',
+      'sensor.rotary-encoder',
+      'sensor.sound',
+      'sensor.soil-moisture',
     ];
-    expect(
+    const prdP1Pro = [
+      'power.lm2596',
+      'actuator.mg996r-servo',
+      'actuator.relay-module',
+      'actuator.stepper-28byj48',
+      'driver.tb6612fng',
+      'driver.l9110s',
+      'sensor.line-5ch',
+      'sensor.ir-obstacle',
+      'sensor.pir',
+      'sensor.keypad-4x4',
+    ];
+    const ids = (tier: string) =>
       catalogFor('P1')
+        .filter((d) => d.manifest.tier === tier)
         .map((d) => d.manifest.id)
-        .sort(),
-    ).toEqual([...prdP1Basic].sort());
+        .sort();
+    expect(ids('basic')).toEqual([...prdP1Basic].sort());
+    expect(ids('pro')).toEqual([...prdP1Pro].sort());
   });
 });

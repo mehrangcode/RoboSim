@@ -6,11 +6,38 @@
 import type { ProjectDocument } from '@robosim/shared';
 import type { DictDelta } from './snapshot-codec.js';
 
-export type BenchScenarioId = 'blink' | 'button' | 'dimmer' | 'servo' | 'serial';
+export type BenchScenarioId =
+  | 'blink'
+  | 'button'
+  | 'dimmer'
+  | 'servo'
+  | 'serial'
+  | 'rgb-melody'
+  | 'relay-counter'
+  | 'half-adder'
+  | 'led-bar'
+  | 'stepper-knob'
+  | 'motor-driver'
+  | 'keypad-lock'
+  | 'input-devices';
 export type SafetyScenarioId = 'led-no-resistor' | 'outputs-fighting' | 'motor-on-pin' | 'floating-input';
-export type ScenarioId = 'line-follower' | BenchScenarioId | SafetyScenarioId;
+export type ScenarioId = 'line-follower' | 'bump-avoider' | BenchScenarioId | SafetyScenarioId;
 
-export const BENCH_SCENARIOS: readonly BenchScenarioId[] = ['blink', 'button', 'dimmer', 'servo', 'serial'];
+export const BENCH_SCENARIOS: readonly BenchScenarioId[] = [
+  'blink',
+  'button',
+  'dimmer',
+  'servo',
+  'serial',
+  'rgb-melody',
+  'relay-counter',
+  'half-adder',
+  'led-bar',
+  'stepper-knob',
+  'motor-driver',
+  'keypad-lock',
+  'input-devices',
+];
 export const SAFETY_SCENARIOS: readonly SafetyScenarioId[] = [
   'led-no-resistor',
   'outputs-fighting',
@@ -20,7 +47,12 @@ export const SAFETY_SCENARIOS: readonly SafetyScenarioId[] = [
 /** Longest verified run in simulated seconds (Technical Design §11.1). */
 export const MAX_SIM_SECONDS = 300;
 
-export const SCENARIOS: readonly ScenarioId[] = ['line-follower', ...BENCH_SCENARIOS, ...SAFETY_SCENARIOS];
+export const SCENARIOS: readonly ScenarioId[] = [
+  'line-follower',
+  'bump-avoider',
+  ...BENCH_SCENARIOS,
+  ...SAFETY_SCENARIOS,
+];
 
 /** A safety finding as shown in the Lab (FR-SAF-06); texts come from i18n `<messageKey>.title|why|fix`. */
 export interface FindingView {

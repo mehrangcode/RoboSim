@@ -28,6 +28,12 @@ const POSITION_ITERATIONS = 3;
 const FRICTION_DEADBAND_M_S = 0.01;
 const FLOOR_SAMPLES = 8;
 const FLOOR_SAMPLE_RADIUS = 0.7;
+/**
+ * planck keeps polygons and edges apart by a contact skin (Settings.polygonRadius = 2 × linearSlop =
+ * 1 cm each), so two boxes would rest 2 cm apart. Polygons are inset and the perimeter moved out by the
+ * skin, so bodies touch at their true outlines; ray casts add the skin back (see `raycast`).
+ */
+const SKIN_M = 0.01;
 
 interface Wheel {
   readonly side: 'left' | 'right';
@@ -131,13 +137,17 @@ export class PlanckWorld implements WorldModel {
     let best: RayHit | null = null;
     const p1 = new PVec2(origin.x, origin.y);
     const p2 = new PVec2(origin.x + dir.x * maxDist, origin.y + dir.y * maxDist);
-    this.world.rayCast(p1, p2, (fixture, point, _normal, fraction) => {
-      const distance = fraction * maxDist;
-      if (!best || distance < best.distance) {
+    this.world.rayCast(p1, p2, (fixture, _point, normal, fraction) => {
+      // Polygons and edges sit one skin inside their true outline: measure to the outline.
+      const skinned = fixture.getShape().getType() !== 'circle';
+      const incidence = Math.max(0.2, Math.abs(normal.x * dir.x + normal.y * dir.y));
+      const distance = Math.max(0, fraction * maxDist - (skinned ? SKIN_M / incidence : 0));
+      if (distance <= maxDist && (!best || distance < best.distance)) {
         const data = fixture.getBody().getUserData() as { id?: string } | null;
-        best = { point: { x: point.x, y: point.y }, distance, bodyId: data?.id ?? 'wall' };
+        const point = { x: origin.x + dir.x * distance, y: origin.y + dir.y * distance };
+        best = { point, distance, bodyId: data?.id ?? 'wall' };
       }
-      return fraction; // clip the ray: only nearer hits are reported afterwards
+      return 1; // keep looking: a skinned polygon just behind a circle may be nearer once corrected
     });
     return best;
   }
@@ -236,7 +246,7 @@ export class PlanckWorld implements WorldModel {
     });
     body.setUserData({ id: spec.id });
     body.createFixture({
-      shape: new Polygon(g.footprint.map((p) => new PVec2(p.x, p.y))),
+      shape: new Polygon(insetConvex(g.footprint, SKIN_M).map((p) => new PVec2(p.x, p.y))),
       density: 1,
       friction: 0.3,
     });
@@ -282,7 +292,8 @@ export class PlanckWorld implements WorldModel {
 
   private addPerimeter(ground: Body): void {
     const { widthM: w, heightM: h } = this.arena;
-    const corners = [new PVec2(0, 0), new PVec2(w, 0), new PVec2(w, h), new PVec2(0, h)];
+    const s = SKIN_M;
+    const corners = [new PVec2(-s, -s), new PVec2(w + s, -s), new PVec2(w + s, h + s), new PVec2(-s, h + s)];
     corners.forEach((a, i) =>
       ground.createFixture({ shape: new Edge(a, corners[(i + 1) % 4] ?? a), friction: 0.3 }),
     );
@@ -293,7 +304,9 @@ export class PlanckWorld implements WorldModel {
     ground: Body,
   ): void {
     const shape =
-      o.shape.kind === 'box' ? new Box(o.shape.widthM / 2, o.shape.heightM / 2) : new Circle(o.shape.radiusM);
+      o.shape.kind === 'box'
+        ? new Box(Math.max(o.shape.widthM / 2 - SKIN_M, 1e-3), Math.max(o.shape.heightM / 2 - SKIN_M, 1e-3))
+        : new Circle(o.shape.radiusM);
     const body = this.world.createBody({
       type: o.dynamic ? 'dynamic' : 'static',
       position: new PVec2(o.pose.x, o.pose.y),
@@ -313,4 +326,31 @@ export class PlanckWorld implements WorldModel {
     );
     this.dynamicObstacles.push({ id: o.id, body });
   }
+}
+
+/** Moves every edge of a convex polygon inward by `d` (vertices along their bisectors). */
+function insetConvex(points: readonly { x: number; y: number }[], d: number): { x: number; y: number }[] {
+  const n = points.length;
+  // Signed area tells the winding, so "inward" is the right side of each edge either way.
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const a = points[i] as { x: number; y: number };
+    const b = points[(i + 1) % n] as { x: number; y: number };
+    area += a.x * b.y - b.x * a.y;
+  }
+  const sign = area >= 0 ? 1 : -1;
+  const normal = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const ex = b.x - a.x;
+    const ey = b.y - a.y;
+    const len = Math.hypot(ex, ey) || 1;
+    return { x: (-ey / len) * sign, y: (ex / len) * sign };
+  };
+  return points.map((p, i) => {
+    const prev = points[(i + n - 1) % n] as { x: number; y: number };
+    const next = points[(i + 1) % n] as { x: number; y: number };
+    const n1 = normal(prev, p);
+    const n2 = normal(p, next);
+    const k = d / (1 + n1.x * n2.x + n1.y * n2.y);
+    return { x: p.x + (n1.x + n2.x) * k, y: p.y + (n1.y + n2.y) * k };
+  });
 }

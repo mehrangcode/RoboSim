@@ -1,0 +1,20 @@
+{
+  "id": "semiconductor.diode-1n4148",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P1",
+  "nameKey": "semiconductor.diode-1n4148.name",
+  "pins": [
+    { "name": "a", "kind": "passive" },
+    { "name": "k", "kind": "passive" }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 0.13,
+  "limits": {
+    "maxForwardCurrentMa": 300,
+    "surgeCurrentMa": 2000,
+    "maxReverseV": 100
+  }
+}

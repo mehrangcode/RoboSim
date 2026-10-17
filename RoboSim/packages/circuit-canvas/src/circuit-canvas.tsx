@@ -180,7 +180,7 @@ export function CircuitCanvas({
   const [hover, setHover] = useState<{ pin: PinRef; at: Point } | null>(null);
   /** Part whose input popover is open, and the button held down (run mode). */
   const [inspecting, setInspecting] = useState<string | null>(null);
-  const [pressing, setPressing] = useState<string | null>(null);
+  const [pressing, setPressing] = useState<{ id: string; input: string } | null>(null);
   /** Values sent to inputs the live state does not report (line-sensor surfaces…). */
   const [sent, setSent] = useState<Readonly<Record<string, Readonly<Record<string, number | boolean>>>>>({});
   const nets = useMemo(() => new CircuitNets(doc), [doc]);
@@ -318,11 +318,21 @@ export function CircuitCanvas({
     if (!editing) {
       const part = attr(e.target, 'data-part-body');
       const c = part ? doc.components.find((v) => v.id === part) : undefined;
-      const how = c && running ? interactionOf(findManifest(c.type)?.inputs ?? []) : null;
-      if (c && how && e.button === 0) {
+      const inputs = c && running ? (findManifest(c.type)?.inputs ?? []) : [];
+      const how = c && running ? interactionOf(inputs) : null;
+      // A button drawn inside a part (a keypad key, a joystick's push) is held where it is drawn.
+      const drawn = attr(e.target, 'data-input');
+      const button = inputs.find((i) => i.name === drawn && i.type === 'boolean');
+      if (c && button && e.button === 0) {
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        setPressing({ id: c.id, input: button.name });
+        sendInput(c.id, button.name, true);
+        return;
+      }
+      if (c && how && how.kind !== 'keys' && e.button === 0) {
         if (how.kind === 'momentary') {
           e.currentTarget.setPointerCapture?.(e.pointerId);
-          setPressing(c.id);
+          setPressing({ id: c.id, input: how.input });
           sendInput(c.id, how.input, true);
         } else if (how.kind === 'toggle') sendInput(c.id, how.input, !inputValue(c.id, how.input, false));
         else setInspecting(c.id);
@@ -395,10 +405,7 @@ export function CircuitCanvas({
 
   const onPointerUp = () => {
     if (pressing) {
-      const how = interactionOf(
-        findManifest(doc.components.find((c) => c.id === pressing)?.type ?? '')?.inputs ?? [],
-      );
-      if (how?.kind === 'momentary') sendInput(pressing, how.input, false);
+      sendInput(pressing.id, pressing.input, false);
       setPressing(null);
     }
     if (drag?.kind === 'parts' && drag.moved)

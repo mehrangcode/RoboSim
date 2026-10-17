@@ -1,0 +1,62 @@
+{
+  "id": "actuator.relay-module",
+  "version": "1.0.0",
+  "category": "actuator",
+  "tier": "pro",
+  "phase": "P1",
+  "nameKey": "actuator.relay-module.name",
+  "pins": [
+    {
+      "name": "in",
+      "kind": "digital"
+    },
+    {
+      "name": "vcc",
+      "kind": "power"
+    },
+    {
+      "name": "gnd",
+      "kind": "ground"
+    },
+    {
+      "name": "com",
+      "kind": "passive"
+    },
+    {
+      "name": "no",
+      "kind": "passive"
+    },
+    {
+      "name": "nc",
+      "kind": "passive"
+    }
+  ],
+  "props": {
+    "trigger": {
+      "type": "enum",
+      "default": "high",
+      "options": ["high", "low"]
+    }
+  },
+  "inputs": [],
+  "massG": 15,
+  "mounting": {
+    "lengthMm": 50,
+    "widthMm": 26,
+    "heightMm": 19
+  },
+  "isolationGroups": [
+    ["in", "vcc", "gnd"],
+    ["com", "no", "nc"]
+  ],
+  "limits": {
+    "ratedVoltageV": 5,
+    "maxVoltageV": 6.5,
+    "coilCurrentMa": 72,
+    "peakCurrentMa": 75,
+    "contactMaxCurrentMa": 10000,
+    "contactMaxDcV": 30
+  },
+  "traits": ["inductive"],
+  "polarity": ["vcc", "gnd"]
+}

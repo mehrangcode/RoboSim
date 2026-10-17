@@ -419,16 +419,22 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 
 ### 7.2 Components
 
-| Category | Components (tier `basic` in **bold**) | Phase |
+Tier rule: fundamentals are `basic` (available in Free): discrete semiconductors, logic ICs, the 555, switches, regulators and simple sensors. Modules and specialty parts are `pro`. Parts are delivered in three expansion tiers by the engine work they need: **A** works with the P1 engine (P1 slices 16a–c), **B** needs reactive elements and transistor models (P2), **C** needs MCU buses (I²C, SPI) and timed single-wire protocols (P2).
+
+| Category | Components (tier `basic` in **bold**, others `pro`) | Phase |
 |---|---|---|
-| Power | **9 V battery**, **4×AA pack**, 2S Li-ion pack, 18650 holder, **on/off switch**, USB power, LM2596 buck converter, AMS1117 3.3 V regulator | P1 (bold), P2 |
-| Actuators | **TT gear motor**, **SG90 servo**, MG996R servo, **LED**, RGB LED, **active buzzer**, passive buzzer, 28BYJ-48 stepper + ULN2003, relay module | P1–P2 |
-| Drivers | **L298N**, TB6612FNG, L9110S | P1 (L298N), P2 |
-| Sensors | **HC-SR04**, **TCRT5000 single**, **3-channel line module**, 5-channel line array, **push button**, **LDR**, bump/limit switch, IR receiver (VS1838B), MPU-6050 IMU, wheel encoder, DHT11 | P1 (bold), P2–P4 |
-| Displays | 16×2 LCD (I²C), SSD1306 OLED (I²C), 7-segment, WS2812 strip | P2–P4 |
+| Power | **9 V battery**, **4×AA pack**, **on/off switch**, LM2596 buck module (A), 2S Li-ion pack, 18650 holder, USB power | P1; Li-ion, 18650, USB in P2 |
+| Semiconductors | **1N4007 rectifier diode**, **1N4148 signal diode**, **5.1 V Zener** (A), **LM7805**, **AMS1117-3.3** regulators (A), **2N2222**, **BC547**, **2N3906** transistors, **TIP120** Darlington, **IRLZ44N** logic-level MOSFET, IRF520 MOSFET module (B) | A in P1, B in P2 |
+| Integrated circuits | **74HC00**, **74HC08**, **74HC32**, **74HC86**, **74HC14**, **74HC595**, **CD4017**, **ULN2003A** (A), **NE555** (B) | A in P1, B in P2 |
+| Actuators | **TT gear motor**, **SG90 servo**, **LED**, **active buzzer**, **RGB LED**, **passive buzzer** (A), MG996R servo, relay module (1-ch, 5 V), 28BYJ-48 stepper (A) | P1 |
+| Drivers | **L298N**, TB6612FNG, L9110S (A) | P1 |
+| Sensors | **HC-SR04**, **TCRT5000 single**, **3-channel line module**, **push button**, **LDR**, **bump/limit switch**, **joystick (KY-023)**, **rotary encoder (KY-040)**, **sound sensor (KY-038)**, **soil moisture**, 5-channel line array, IR obstacle (FC-51), PIR (HC-SR501), 4×4 keypad (A); MPU-6050 IMU, BMP280, VL53L0X, DHT11, DS18B20 (C); IR receiver (VS1838B), wheel encoder | P1 (bold, A); C in P2; IR receiver, encoder in P4 |
+| Displays | **7-segment digit** (A), 16×2 LCD (I²C), SSD1306 OLED (I²C), WS2812 strip (C) | A in P1, C in P2 |
 | Comms | HC-05 Bluetooth (UART, simulated as a phone-controller panel) | P4 |
-| Passive & prototyping | **Resistor**, **potentiometer**, capacitor, diode, **breadboard (half/full)**, **jumper wires** | P1 |
+| Passive & prototyping | **Resistor**, **potentiometer**, **breadboard (half/full)**, **jumper wires**, **ceramic and electrolytic capacitors** (B) | P1; capacitors in P2 |
 | Mechanical | **2-wheel differential chassis with caster**, 4-wheel chassis, tank-tread chassis (skid-steer), sensor brackets | P1 (bold), P2 |
+
+Every part ships with a datasheet-calibrated model, FA/EN name, breadboard art with live state, safety limits, and a demo project. Required Arduino libraries join the build allow-list with the part (Stepper and Keypad in A; Wire-based device libraries, Adafruit SSD1306/GFX, LiquidCrystal_I2C, DHT, OneWire/DallasTemperature, Adafruit NeoPixel in C).
 
 ## 8. Non-functional requirements
 
