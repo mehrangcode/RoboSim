@@ -141,4 +141,6 @@ User decisions: real point masses (mount positions → COM, inertia, axle/caster
 - [x] Editor wiring (Circuit | Robot toggle), arena view reflects mounts; Lab visible demo
 - [x] Tests + docs (TD/Release Plan/README/EG) + `pnpm verify` + browser check
 
-Next candidates: 16 3D view (FR-ARN-08, US-ARN-02, US-ARN-06 AC1 3D half) · obstacle-avoider / maze / sumo demo firmware · 17 canvas completion · 18 build service queue half · FR-COD-06 · 19 hardening.
+Next candidates: obstacle-avoider / maze / sumo demo firmware · canvas completion · Playwright golden leg (Chrome/Firefox) · build service queue half · FR-COD-06 · hardening · **3D view LAST** (FR-ARN-08, US-ARN-02, US-ARN-06 AC1 3D half).
+
+Decision (2026-10-19, user): 3D view deferred to the last P1 item — not important now; it only blocks the P1 exit criterion "lap in 2D and 3D". Discuss again before implementing.
