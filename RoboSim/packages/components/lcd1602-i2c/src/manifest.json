@@ -1,0 +1,25 @@
+{
+  "id": "display.lcd1602-i2c",
+  "version": "1.0.0",
+  "category": "display",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "display.lcd1602-i2c.name",
+  "pins": [
+    { "name": "gnd", "kind": "ground" },
+    { "name": "vcc", "kind": "power" },
+    { "name": "sda", "kind": "digital" },
+    { "name": "scl", "kind": "digital" }
+  ],
+  "props": {
+    "address": { "type": "enum", "default": "0x27", "options": ["0x27", "0x3F"] }
+  },
+  "inputs": [{ "name": "contrast", "type": "number", "default": 0.55, "min": 0, "max": 1 }],
+  "massG": 35,
+  "polarity": ["vcc", "gnd"],
+  "i2c": { "sda": "sda", "scl": "scl", "address": 39, "addressProp": "address" },
+  "limits": {
+    "maxVoltageV": 6,
+    "peakCurrentMa": 30
+  }
+}

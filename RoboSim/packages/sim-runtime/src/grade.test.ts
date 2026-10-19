@@ -14,11 +14,11 @@ const job = (scenario: ScenarioId, maxSimSeconds: number, entries: InputLogEntry
 describe('grade', () => {
   it('runs the line follower until the challenge decides and samples the pose at 10 Hz', () => {
     const r = grade(job('line-follower', 60));
-    expect(r).toMatchObject({ outcome: 'success', endSlice: 14430, score: { total: 100, max: 100 } });
-    expect(r.challenge?.decidedAt).toBe(14.43);
+    expect(r).toMatchObject({ outcome: 'success', endSlice: 14440, score: { total: 100, max: 100 } });
+    expect(r.challenge?.decidedAt).toBe(14.44);
     const slices = r.trace.samples.map((s) => s.slice);
     expect(slices.slice(0, 3)).toEqual([0, 100, 200]);
-    expect(slices.at(-1)).toBe(14430); // the decisive slice closes the trace
+    expect(slices.at(-1)).toBe(14440); // the decisive slice closes the trace
     expect(r.final).toBe(r.trace.samples.at(-1));
     expect(r.final.robot).toHaveLength(3);
   }, 30_000);

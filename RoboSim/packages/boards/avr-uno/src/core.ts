@@ -1,6 +1,8 @@
 import {
   AVRADC,
   AVRIOPort,
+  AVRSPI,
+  AVRTWI,
   AVRTimer,
   AVRUSART,
   CPU,
@@ -10,20 +12,26 @@ import {
   portBConfig,
   portCConfig,
   portDConfig,
+  spiConfig,
   timer0Config,
   timer1Config,
   timer2Config,
+  twiConfig,
   usart0Config,
   type AVRTimerConfig,
+  type TWIEventHandler,
 } from 'avr8js';
 import type {
+  BusPins,
   FirmwareImage,
+  I2cBusHandler,
   Level,
   McuCore,
   PinDrive,
   PinId,
   PinMode,
   PinOutput,
+  SpiBusHandler,
   UartPort,
   Unsubscribe,
 } from '@robosim/sim-core';
@@ -51,7 +59,15 @@ interface Machine {
   readonly ports: Readonly<Record<PortName, AVRIOPort>>;
   readonly adc: AVRADC;
   readonly usart: AVRUSART;
+  readonly twi: AVRTWI;
+  readonly spi: AVRSPI;
 }
+
+/** Uno R3: TWI on A4/A5 (PC4/PC5), SPI on D11–D13 (PB3–PB5). */
+export const UNO_BUS_PINS: BusPins = { sda: 'A4', scl: 'A5', mosi: 'D11', miso: 'D12', sck: 'D13' };
+
+/** I²C clock periods per byte on the wire: 8 data bits and the ACK. */
+const I2C_BYTE_BITS = 9;
 
 function modeOf(state: PinState): PinMode {
   if (state === PinState.Input) return 'input';
@@ -78,6 +94,9 @@ export function loadFirmware(fw: FirmwareImage): Uint16Array {
  */
 export class AvrUnoCore implements McuCore {
   readonly clockHz = UNO_CLOCK_HZ;
+  readonly busPins = UNO_BUS_PINS;
+  private i2cHandler: I2cBusHandler | null = null;
+  private spiHandler: SpiBusHandler | null = null;
   private machine: Machine;
   private queue: PendingInput[] = [];
   private queueHead = 0;
@@ -85,7 +104,9 @@ export class AvrUnoCore implements McuCore {
   private readonly edgeListeners = new Set<(pin: PinId, level: Level, cycle: number) => void>();
   private readonly uartListeners = new Set<(bytes: Uint8Array) => void>();
   private readonly lastEdgeLevel = new Map<PinId, Level>();
-  private readonly modeListeners = new Set<(pin: PinId, mode: PinMode, cycle: number) => void>();
+  private readonly modeListeners = new Set<
+    (pin: PinId, mode: PinMode, cycle: number, level: Level) => void
+  >();
   /** Last reported mode per pin; every pin resets as an input. */
   private readonly lastMode = new Map<PinId, PinMode>();
   private readonly pinById = new Map(UNO_MCU_PINS.map((p) => [p.id, p]));
@@ -145,7 +166,7 @@ export class AvrUnoCore implements McuCore {
     return () => this.edgeListeners.delete(cb);
   }
 
-  onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number) => void): Unsubscribe {
+  onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number, level: Level) => void): Unsubscribe {
     this.modeListeners.add(cb);
     return () => this.modeListeners.delete(cb);
   }
@@ -162,6 +183,20 @@ export class AvrUnoCore implements McuCore {
         this.uartListeners.add(cb);
         return () => this.uartListeners.delete(cb);
       },
+    };
+  }
+
+  attachI2c(handler: I2cBusHandler): Unsubscribe {
+    this.i2cHandler = handler;
+    return () => {
+      if (this.i2cHandler === handler) this.i2cHandler = null;
+    };
+  }
+
+  attachSpi(handler: SpiBusHandler): Unsubscribe {
+    this.spiHandler = handler;
+    return () => {
+      if (this.spiHandler === handler) this.spiHandler = null;
     };
   }
 
@@ -183,6 +218,14 @@ export class AvrUnoCore implements McuCore {
       D: new AVRIOPort(cpu, portDConfig),
     };
     const adc = new AVRADC(cpu, adcConfig);
+    const twi = new AVRTWI(cpu, twiConfig, UNO_CLOCK_HZ);
+    twi.eventHandler = this.twiEvents(cpu, twi);
+    const spi = new AVRSPI(cpu, spiConfig, UNO_CLOCK_HZ);
+    spi.onByte = (value) => {
+      const time = cpu.cycles / UNO_CLOCK_HZ;
+      const miso = this.spiHandler?.transfer(value, time) ?? 0xff;
+      cpu.addClockEvent(() => spi.completeTransfer(miso), spi.transferCycles);
+    };
     const usart = new AVRUSART(cpu, usart0Config, UNO_CLOCK_HZ);
     usart.onByteTransmit = (byte) => {
       const data = Uint8Array.of(byte);
@@ -195,16 +238,52 @@ export class AvrUnoCore implements McuCore {
         this.emitEdges(ports[name], pins, cpu);
       });
     }
-    return { cpu, ports, adc, usart };
+    return { cpu, ports, adc, usart, twi, spi };
+  }
+
+  /**
+   * TWI master events → the attached I²C handler, each completed after its time on the wire at the
+   * SCL frequency from TWBR/TWSR (so `Wire.setClock` matters). Without a handler nothing answers.
+   */
+  private twiEvents(cpu: CPU, twi: AVRTWI): TWIEventHandler {
+    const later = (bits: number, done: () => void): void => {
+      const cycles = Math.max(1, Math.round((bits * UNO_CLOCK_HZ) / twi.sclFrequency));
+      cpu.addClockEvent(done, cycles);
+    };
+    const now = (): number => cpu.cycles / UNO_CLOCK_HZ;
+    return {
+      start: (repeated) => {
+        this.i2cHandler?.start(repeated, now());
+        later(1, () => twi.completeStart());
+      },
+      stop: () => {
+        this.i2cHandler?.stop(now());
+        later(1, () => twi.completeStop());
+      },
+      connectToSlave: (address, write) => {
+        const ack = this.i2cHandler?.connect(address, !write, now()) ?? false;
+        later(I2C_BYTE_BITS, () => twi.completeConnect(ack));
+      },
+      writeByte: (value) => {
+        const ack = this.i2cHandler?.write(value, now()) ?? false;
+        later(I2C_BYTE_BITS, () => twi.completeWrite(ack));
+      },
+      readByte: (ack) => {
+        const value = this.i2cHandler?.read(ack, now()) ?? 0xff;
+        later(I2C_BYTE_BITS, () => twi.completeRead(value));
+      },
+    };
   }
 
   private emitModes(port: AVRIOPort, pins: readonly McuPinMap[], cpu: CPU): void {
     if (this.modeListeners.size === 0) return;
     for (const p of pins) {
-      const mode = modeOf(port.pinState(p.bit));
+      const state = port.pinState(p.bit);
+      const mode = modeOf(state);
       if ((this.lastMode.get(p.id) ?? 'input') === mode) continue;
       this.lastMode.set(p.id, mode);
-      for (const cb of this.modeListeners) cb(p.id, mode, cpu.cycles);
+      const level: Level = state === PinState.High ? 1 : 0;
+      for (const cb of this.modeListeners) cb(p.id, mode, cpu.cycles, level);
     }
   }
 

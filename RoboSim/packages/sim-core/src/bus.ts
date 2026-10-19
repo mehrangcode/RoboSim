@@ -95,15 +95,17 @@ export class McuBus {
   /**
    * Stamps pin drivers. PWM pins are stamped at the instantaneous level of one PWM phase:
    * high only if listed in `pwmHigh` — the scheduler averages the phases (see AveragedSolution).
+   * `levels` overrides output levels of pins integrated edge by edge (reactive circuits).
    */
-  stamp(s: MnaStamper, pwmHigh: ReadonlySet<PinId> = new Set()): void {
+  stamp(s: MnaStamper, pwmHigh: ReadonlySet<PinId> = new Set(), levels?: ReadonlyMap<PinId, Level>): void {
     const { vcc, outputResistance, pullupResistance } = this.electrical;
     this.handles.clear();
     for (const { pin, net } of this.pins) {
       const out = this.outputs.get(pin);
       if (!out || net === 0 || this.damaged.has(pin)) continue;
       if (out.mode === 'output') {
-        const high = out.pwm ? pwmHigh.has(pin) : out.level === 1;
+        const override = levels?.get(pin);
+        const high = override !== undefined ? override === 1 : out.pwm ? pwmHigh.has(pin) : out.level === 1;
         const volts = high ? vcc : 0;
         this.handles.set(pin, s.voltageSource(net, 0, volts, outputResistance));
       } else if (out.mode === 'input_pullup') {

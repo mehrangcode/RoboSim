@@ -44,10 +44,46 @@ User decisions (2026-10-17): fundamentals `basic` (free), modules/specialty `pro
 - [x] Joystick (KY-023), 4×4 keypad (+ Keypad library), rotary encoder (KY-040)
 - [x] Art, mounting, demos, docs, verify, browser check
 
-## Tier B (P2) — reactive elements and transistors
-- [ ] Engine: capacitors/inductors (companion models, sub-stepping), BJT/MOSFET region models
-- [ ] Capacitors, NE555, 2N2222, BC547, 2N3906, TIP120, IRF520, IRLZ44N; safety rules
+## Tier B + C (P2) — started 2026-10-19, four slices (B1, B2, C1, C2)
 
-## Tier C (P2) — MCU buses
-- [ ] avr-uno TWI + SPI, I²C/SPI device framework; timed single-wire via fast path
-- [ ] MPU-6050, SSD1306, LCD 16×2 I²C, BMP280, VL53L0X, DHT11, DS18B20, WS2812
+Per slice: parts + model tests, art + footprints, catalog (`phase: P2`), FA/EN names, safety rules with
+trigger/clean fixtures, demos in the Lab, docs (PRD/TD/Release Plan/README), `pnpm verify`, browser check.
+Editor library shows P2 parts (editor passes `phase="P2"`).
+
+### Slice B1 — reactive elements, capacitors, NE555 — done 2026-10-19 (uncommitted; browser check batched at end)
+- [x] Engine: capacitor + inductor branch elements (BDF2 companion, BE after discontinuities, state owned by the part), DC mode (caps open)
+- [x] Engine: transient integrator (LTE-controlled sub-steps 1 µs–1 ms, breakpoints at edges of MCU pins that
+      reach a reactive net, MCU run in chunks so inputs land within a sub-step, slice-averaged solution,
+      per-net envelope), settle/pendingSwitch event location, ComponentIO.now; static analysis in DC mode
+- [x] TT motor winding inductance + damping; driver clamp diodes; goldens re-recorded; engineVersion bump
+- [x] Parts: ceramic capacitor, electrolytic capacitor (polarity, rating, ESR, leakage, venting), NE555
+- [x] Safety: SAF-CAPACITOR (reversed / over-voltage, any `capacitor` trait part)
+- [x] Demos: 555 blinker (pulseIn period), RC charge curve (A0 + Serial)
+- [x] Editor library lists P2 parts; prop/option/input label test + Tier A label gaps filled
+
+### Slice B2 — transistors — done 2026-10-19 (uncommitted; browser check batched at end)
+- [x] Engine: BJT element (cutoff/active/saturation, NPN/PNP), MOSFET level-1 (Newton), per-solve power, thermal in parts
+- [x] Engine: PWM pins reaching a base/gate are edge-driven in reactive circuits; edge-level reconcile; static transition probe
+- [x] Parts: 2N2222, BC547, 2N3906, TIP120, IRLZ44N, IRF520 module
+- [x] Safety: SAF-BASE-NO-RESISTOR, SAF-FLYBACK (switch-off probe sees the spike), SAF-MOSFET-GATE
+- [x] Demos: transistor motor (TIP120 + 1N4007 + knob), MOSFET soft start (IRLZ44N), no-flyback safety demo
+
+### Slice C1 — I²C / SPI — done 2026-10-19 (uncommitted; verify green; browser check batched at end)
+- [x] avr-uno TWI / SPI (AVRTWI / AVRSPI, byte timing from SCL / SPI clock), board-avr-uno 0.3.0, goldens re-recorded
+- [x] sim-core bus routers (bus nets, idle-high, address match, wired-AND; SPI chip select), RegisterPort, stampPullUp, `powerOn` hook
+- [x] Safety: SAF-I2C-PULLUP, SAF-I2C-ADDRESS (resetPin exemption), SAF-I2C-LEVEL
+- [x] Libraries pinned: BusIO, Unified Sensor, GFX, SSD1306, LiquidCrystal_I2C, MPU6050, BMP280, VL53L0X; compiler: CRLF include scan, archives linked as a group, DRIVER_VERSION 2
+- [x] Parts: SSD1306 OLED, LCD 16×2 + PCF8574, MPU-6050, BMP280 (I²C + SPI), VL53L0X; 3V3 rail in the loader
+- [x] Art (OLED framebuffer, LCD 5×8 ROM), footprints, id prefixes (also Tier B), arena beam + default mount for VL53L0X
+- [x] Demos: OLED, LCD, IMU tilt, weather station (3V3), laser avoider robot
+
+### Slice C2 — timed single-wire — done 2026-10-19 (uncommitted)
+- [x] Engine: core reports mode changes with level; `mcuMode` hook; `OpenDrainWatch` + `pullLow` (sim-core/src/single-wire.ts)
+- [x] Libraries pinned: DHT 1.4.7, OneWire v2.3.8, DallasTemperature v4.0.6, NeoPixel 1.15.5
+- [x] Parts: DHT11, DS18B20 (search ROM, multiple on one bus, parasite power), WS2812 strip (chained, current draw; `peakCurrentPer`)
+- [x] Art/footprints/id prefixes, i18n, demos (two thermometers, NeoPixel rainbow), docs
+
+### Wrap-up
+- [x] README (features, hardware, planned)
+- [x] Full `pnpm verify` (271/271 tasks, 2026-10-19)
+- [x] Browser check of Tier B/C demos in the editor (FA UI): OLED, LCD, NeoPixel, thermometers, 555, TIP120, IMU, weather, laser avoider — all ≈1× real time, no errors

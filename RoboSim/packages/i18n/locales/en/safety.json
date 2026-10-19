@@ -74,6 +74,43 @@
     "SHORT_CIRCUIT": "short circuit",
     "OVER_VOLTAGE": "over-voltage",
     "REVERSE_VOLTAGE": "reverse voltage",
-    "OVER_POWER": "overheating"
+    "OVER_POWER": "overheating",
+    "AVALANCHE": "avalanche breakdown",
+    "PARTIAL_ENHANCEMENT": "gate voltage too low"
+  },
+  "SAF-CAPACITOR": {
+    "title": "{problem, select, reversed {{part} is connected backwards} other {{part} is above its voltage rating}}",
+    "why": "{problem, select, reversed {An electrolytic capacitor only tolerates about 1 V of reverse voltage ({volts} V here). Reversed, its oxide layer breaks down: it conducts, heats up and can vent or burst.} other {It sees {volts} V but is only rated for {limit} V. The dielectric breaks down, the capacitor fails and an electrolytic can vent or burst.}}",
+    "fix": "{problem, select, reversed {Turn it around: the stripe (−) goes to the lower voltage, the longer leg (+) to the higher.} other {Use a capacitor rated well above the circuit voltage, about 1.5–2 times (for example 16 V or more on a 9 V battery).}}"
+  },
+  "SAF-BASE-NO-RESISTOR": {
+    "title": "{part}'s base is wired straight to {pin}",
+    "why": "A transistor's base behaves like a diode to its emitter. With no resistor, {pin} pushes about {ma} mA into it, far above the pin's 20 mA, and both can burn out.",
+    "fix": "Put a resistor between {pin} and the base: about 1 kΩ for a small transistor, 220–470 Ω for a TIP120 switching amps."
+  },
+  "SAF-MOSFET-GATE": {
+    "title": "{part} only partly turns on",
+    "why": "Its gate gets {vgs} V, but it needs about {needed} V to switch fully on. Partly on, it behaves like a resistor and heats up with the load current.",
+    "fix": "Use a logic-level MOSFET such as the IRLZ44N, or drive the gate from a higher voltage through a gate driver or a transistor stage."
+  },
+  "SAF-FLYBACK": {
+    "title": "Switching {part} off makes a {volts} V spike",
+    "why": "A motor or coil keeps its current flowing for a moment after it is switched off. With nowhere to go, that current drives the voltage up to {volts} V until {switch} breaks down. Each time it does, the transistor is damaged a little more.",
+    "fix": "Put a flyback diode (1N4007) across {part}: the striped end (cathode) to the + supply side, the other end to the transistor."
+  },
+  "SAF-I2C-PULLUP": {
+    "title": "The I²C {line} line of {part} has no pull-up",
+    "why": "I²C parts only ever pull a line low; a resistor must pull it back up. Without one, {line} sits at {volts} V and no data can get through (the Uno's own weak pull-ups are too weak for reliable signals).",
+    "fix": "Add a 4.7 kΩ resistor from {line} to the part's VCC, or use a breakout board that has pull-ups on it."
+  },
+  "SAF-I2C-ADDRESS": {
+    "title": "{parts} share I²C address {address}",
+    "why": "Every part on one I²C bus needs its own address. Both answer at {address}, talk over each other and the readings come back garbled.",
+    "fix": "Change one part's address (its address pin or jumper), wire XSHUT pins to the board so the sketch can give each sensor a new address, or move one part to another bus."
+  },
+  "SAF-I2C-LEVEL": {
+    "title": "{part}'s I²C pins see {volts} V",
+    "why": "{part} is a 3.3 V chip: its pins tolerate at most {limit} V. Pull-ups to 5 V on the same bus push current into it and can damage it over time.",
+    "fix": "Power every pull-up on this bus from 3.3 V, or put a level shifter between the 5 V parts and {part}."
   }
 }

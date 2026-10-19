@@ -117,6 +117,10 @@ export function conditionsModified(doc: ProjectDocument): boolean {
 const SONAR_CONE_RAD = 15 * RAD_PER_DEG;
 const SONAR_MAX_M = 4;
 const IR_CONE_RAD = 20 * RAD_PER_DEG;
+/** VL53L0X: 25° field of view, 1.2 m in the default mode; 8190 mm means nothing in range. */
+const TOF_CONE_RAD = 25 * RAD_PER_DEG;
+const TOF_MAX_M = 1.2;
+const TOF_OUT_OF_RANGE_MM = 8190;
 /** 5-channel array: S1 leftmost (+2 spacings) … S5 rightmost. */
 const LINE5_CHANNELS = [
   ['s1', 2],
@@ -200,6 +204,17 @@ export function overlayOf(
         angle: pose.angle + m.angle,
         coneRad: SONAR_CONE_RAD,
         maxM: SONAR_MAX_M,
+        distanceM,
+        label: distanceM === null ? units.noEcho : units.cm(fmt(distanceM * 100, 1)),
+      });
+    } else if (m.type === 'sensor.vl53l0x') {
+      const mm = state?.['rangeMm'];
+      const distanceM = typeof mm === 'number' && mm < TOF_OUT_OF_RANGE_MM ? mm / 1000 : null;
+      overlay.sonars.push({
+        ...at(0, 0),
+        angle: pose.angle + m.angle,
+        coneRad: TOF_CONE_RAD,
+        maxM: TOF_MAX_M,
         distanceM,
         label: distanceM === null ? units.noEcho : units.cm(fmt(distanceM * 100, 1)),
       });

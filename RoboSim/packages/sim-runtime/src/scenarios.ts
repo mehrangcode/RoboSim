@@ -85,6 +85,31 @@ const ledOn = (pin: string, color: string, gnd = 'GND1') => ({
   ] as const,
 });
 
+/** D9 → 1 kΩ → TIP120 base; 4×AA → TT motor → collector; with or without a 1N4007 across the motor. */
+const transistorMotor = (flyback: boolean) => ({
+  parts: [
+    part('pack', 'power.battery-4aa', g(58), g(22)),
+    part('rb', 'passive.resistor', g(30), g(4), { props: { ohms: 1000 } }),
+    part('q', 'semiconductor.tip120', g(38), g(6)),
+    ...(flyback ? [part('d', 'semiconductor.diode-1n4007', g(44), g(-2))] : []),
+    part('motor', 'actuator.tt-motor', g(52), g(6)),
+  ],
+  wires: [
+    ['board.D9', 'rb.a'],
+    ['rb.b', 'q.b'],
+    ['q.e', 'board.GND1'],
+    ['pack.neg', 'board.GND2'],
+    ['pack.pos', 'motor.m1'],
+    ['motor.m2', 'q.c'],
+    ...(flyback
+      ? ([
+          ['d.a', 'motor.m2'],
+          ['d.k', 'motor.m1'],
+        ] as const)
+      : []),
+  ] as const,
+});
+
 const knob = {
   parts: [part('pot', 'passive.potentiometer', g(32), g(16))],
   wires: [
@@ -198,6 +223,42 @@ function bumpAvoider(): ProjectDocument {
   };
 }
 
+/**
+ * The bump avoider's drive train with a VL53L0X laser ranger looking ahead instead of the lever
+ * switches (catalogue Tier C): it spins away from anything closer than 25 cm.
+ */
+function laserAvoider(): ProjectDocument {
+  const base = bumpAvoider();
+  return {
+    ...base,
+    components: [
+      ...base.components.filter((c) => c.type !== 'sensor.bump-switch'),
+      part('tof', 'sensor.vl53l0x', g(40), g(40), { mount: { x: 70, y: 0, z: 40, yaw: 0 } }),
+    ],
+    wires: wires(
+      ...base.wires
+        .filter((w) => !w.from.part.startsWith('bump') && !w.to.part.startsWith('bump'))
+        .map((w) => [`${w.from.part}.${w.from.pin}`, `${w.to.part}.${w.to.pin}`] as const),
+      ['board.5V', 'tof.vin'],
+      ['tof.gnd', 'board.GND3'],
+      ['tof.sda', 'board.A4'],
+      ['tof.scl', 'board.A5'],
+      ['board.D11', 'tof.xshut'],
+    ),
+    code: { language: 'cpp', files: [{ name: 'sketch.ino', content: SKETCH.laserAvoider.trim() + '\n' }] },
+    meta: { title: 'Laser-ranging obstacle avoider' },
+  };
+}
+
+/** I²C module wiring to the Uno: power, ground and SDA/SCL on A4/A5. */
+const i2cWires = (id: string, vcc = 'vcc', supply = '5V', gnd = 'GND1') =>
+  [
+    [`board.${supply}`, `${id}.${vcc}`],
+    [`${id}.gnd`, `board.${gnd}`],
+    [`${id}.sda`, 'board.A4'],
+    [`${id}.scl`, 'board.A5'],
+  ] as const;
+
 function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: FirmwareId }> {
   const blink = ledOn('D13', 'red');
   const button = ledOn('D13', 'green');
@@ -207,6 +268,7 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
   return {
     'line-follower': { project: lineFollower(), firmware: 'lineFollower' },
     'bump-avoider': { project: bumpAvoider(), firmware: 'bumpAvoider' },
+    'laser-avoider': { project: laserAvoider(), firmware: 'laserAvoider' },
     blink: { project: project('Blink', SKETCH.blink, blink.parts, wires(...blink.wires)), firmware: 'blink' },
     button: {
       project: project(
@@ -506,6 +568,172 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
       ),
       firmware: 'inputDevices',
     },
+    // Catalogue Tier B (P2): reactive parts — a free-running 555, an RC time constant.
+    'timer-555': {
+      project: project(
+        '555 blinker',
+        SKETCH.timer555,
+        [
+          part('timer', 'ic.ne555', g(36), g(10)),
+          part('r1', 'passive.resistor', g(30), g(4), { props: { ohms: 1000 } }),
+          part('r2', 'passive.resistor', g(38), g(4), { props: { ohms: 68_000 } }),
+          part('ct', 'passive.capacitor-electrolytic', g(44), g(16), {
+            props: { capacitanceUf: 10, ratedVoltage: 'v16' },
+          }),
+          part('cc', 'passive.capacitor-ceramic', g(36), g(18), { props: { capacitanceNf: 10 } }),
+          part('rl', 'passive.resistor', g(44), g(8), { props: { ohms: 330 } }),
+          part('led', 'actuator.led', g(50), g(8), { props: { color: 'red' } }),
+        ],
+        wires(
+          ['board.5V', 'timer.vcc'],
+          ['board.5V', 'timer.reset'],
+          ['timer.gnd', 'board.GND1'],
+          ['board.5V', 'r1.a'],
+          ['r1.b', 'timer.dis'],
+          ['timer.dis', 'r2.a'],
+          ['r2.b', 'timer.thr'],
+          ['timer.thr', 'timer.trig'],
+          ['timer.thr', 'ct.pos'],
+          ['ct.neg', 'board.GND1'],
+          ['timer.ctrl', 'cc.a'],
+          ['cc.b', 'board.GND1'],
+          ['timer.out', 'rl.a'],
+          ['rl.b', 'led.a'],
+          ['led.k', 'board.GND2'],
+          ['timer.out', 'board.D2'],
+        ),
+      ),
+      firmware: 'timer555',
+    },
+    'rc-charge': {
+      project: project(
+        'Capacitor charging curve',
+        SKETCH.rcCharge,
+        [
+          part('r', 'passive.resistor', g(32), g(6), { props: { ohms: 10_000 } }),
+          part('c', 'passive.capacitor-electrolytic', g(40), g(12), {
+            props: { capacitanceUf: 100, ratedVoltage: 'v16' },
+          }),
+        ],
+        wires(['board.D7', 'r.a'], ['r.b', 'c.pos'], ['r.b', 'board.A0'], ['c.neg', 'board.GND1']),
+      ),
+      firmware: 'rcCharge',
+    },
+    'transistor-motor': {
+      project: project(
+        'Motor speed with a TIP120',
+        SKETCH.transistorMotor,
+        [...transistorMotor(true).parts, ...knob.parts],
+        wires(...transistorMotor(true).wires, ...knob.wires),
+      ),
+      firmware: 'transistorMotor',
+    },
+    'mosfet-ramp': {
+      project: project(
+        'MOSFET soft start',
+        SKETCH.mosfetRamp,
+        [
+          part('pack', 'power.battery-4aa', g(58), g(22)),
+          part('rg', 'passive.resistor', g(30), g(4), { props: { ohms: 220 } }),
+          part('rpd', 'passive.resistor', g(36), g(10), { props: { ohms: 10_000 } }),
+          part('q', 'semiconductor.irlz44n', g(40), g(6)),
+          part('d', 'semiconductor.diode-1n4007', g(46), g(-2)),
+          part('motor', 'actuator.tt-motor', g(54), g(6)),
+        ],
+        wires(
+          ['board.D6', 'rg.a'],
+          ['rg.b', 'q.g'],
+          ['q.g', 'rpd.a'],
+          ['rpd.b', 'board.GND1'],
+          ['q.s', 'board.GND1'],
+          ['pack.neg', 'board.GND2'],
+          ['pack.pos', 'motor.m1'],
+          ['motor.m2', 'q.d'],
+          ['d.a', 'motor.m2'],
+          ['d.k', 'motor.m1'],
+        ),
+      ),
+      firmware: 'mosfetRamp',
+    },
+    // Catalogue Tier C (P2): I²C displays and sensors on A4/A5.
+    'oled-knob': {
+      project: project(
+        'OLED display',
+        SKETCH.oledKnob,
+        [...knob.parts, part('oled', 'display.oled-ssd1306', g(44), g(4))],
+        wires(...knob.wires, ...i2cWires('oled')),
+      ),
+      firmware: 'oledKnob',
+    },
+    'lcd-hello': {
+      project: project(
+        'Character LCD',
+        SKETCH.lcdHello,
+        [part('lcd', 'display.lcd1602-i2c', g(40), g(6))],
+        wires(...i2cWires('lcd')),
+      ),
+      firmware: 'lcdHello',
+    },
+    'imu-tilt': {
+      project: project(
+        'Tilt sensor (MPU-6050)',
+        SKETCH.imuTilt,
+        [...blink.parts, part('imu', 'sensor.mpu6050', g(44), g(14))],
+        wires(...blink.wires, ...i2cWires('imu', 'vcc', '5V', 'GND2')),
+      ),
+      firmware: 'imuTilt',
+    },
+    'weather-station': {
+      project: project(
+        'Weather station (BMP280)',
+        SKETCH.weatherStation,
+        [part('bmp', 'sensor.bmp280', g(40), g(8))],
+        wires(...i2cWires('bmp', 'vcc', '3V3')),
+      ),
+      firmware: 'weatherStation',
+    },
+    // Catalogue Tier C (P2): timed single-wire buses.
+    thermometers: {
+      project: project(
+        'Two thermometers',
+        SKETCH.thermometers,
+        [
+          part('dht', 'sensor.dht11', g(34), g(8)),
+          part('ds', 'sensor.ds18b20', g(46), g(8)),
+          part('rp', 'passive.resistor', g(46), g(2), { props: { ohms: 4700 } }),
+        ],
+        wires(
+          ['board.5V', 'dht.vcc'],
+          ['dht.data', 'board.D2'],
+          ['dht.gnd', 'board.GND1'],
+          ['board.5V', 'ds.vdd'],
+          ['ds.dq', 'board.D4'],
+          ['ds.gnd', 'board.GND2'],
+          ['board.5V', 'rp.a'],
+          ['rp.b', 'ds.dq'],
+        ),
+      ),
+      firmware: 'thermometers',
+    },
+    'neopixel-rainbow': {
+      project: project(
+        'NeoPixel rainbow',
+        SKETCH.neopixelRainbow,
+        [
+          ...knob.parts,
+          part('rd', 'passive.resistor', g(32), g(4), { props: { ohms: 330 } }),
+          part('strip', 'actuator.ws2812-strip', g(40), g(2), { props: { count: 8 } }),
+        ],
+        wires(
+          ...knob.wires,
+          ['board.D6', 'rd.a'],
+          ['rd.b', 'strip.din'],
+          ['board.5V', 'strip.vcc'],
+          ['strip.gnd', 'board.GND1'],
+        ),
+      ),
+      firmware: 'neopixelRainbow',
+    },
     'led-no-resistor': {
       project: project(
         'LED without resistor',
@@ -532,6 +760,15 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
         wires(['board.D9', 'motor.m1'], ['motor.m2', 'board.GND1']),
       ),
       firmware: 'pinHigh',
+    },
+    'no-flyback': {
+      project: project(
+        'Motor without a flyback diode',
+        SKETCH.motorPwm,
+        transistorMotor(false).parts,
+        wires(...transistorMotor(false).wires),
+      ),
+      firmware: 'motorPwm',
     },
     'floating-input': {
       project: project(

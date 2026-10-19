@@ -73,6 +73,20 @@ export function validateManifest(m: ComponentManifest): string[] {
   for (const pin of Object.keys(m.pinMaxVolts ?? {}))
     if (!hasPin(pin)) errors.push(`pinMaxVolts pin '${pin}' does not exist`);
   if (m.pinMaxVolts && !m.polarity) errors.push('pinMaxVolts needs a polarity pair as reference');
+  if (m.peakCurrentPer && m.props[m.peakCurrentPer]?.type !== 'number')
+    errors.push(`peakCurrentPer '${m.peakCurrentPer}' must be a number prop`);
+  if (m.i2c) {
+    for (const pin of [
+      m.i2c.sda,
+      m.i2c.scl,
+      ...(m.i2c.addressPin ? [m.i2c.addressPin.pin] : []),
+      ...(m.i2c.resetPin ? [m.i2c.resetPin] : []),
+    ])
+      if (!hasPin(pin)) errors.push(`i2c pin '${pin}' does not exist`);
+    if (m.i2c.addressProp && m.props[m.i2c.addressProp]?.type !== 'enum')
+      errors.push(`i2c addressProp '${m.i2c.addressProp}' must be an enum prop`);
+    if (!(m.i2c.address >= 0x08 && m.i2c.address <= 0x77)) errors.push('i2c address must be 0x08–0x77');
+  }
   for (const input of m.inputs) {
     if (typeof input.default !== input.type)
       errors.push(`input '${input.name}' default must be ${input.type}`);

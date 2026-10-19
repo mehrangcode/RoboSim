@@ -1,9 +1,16 @@
-import type { CircuitSpec } from '@robosim/sim-core';
+import type { CircuitSpec, ComponentDefinition, NetId } from '@robosim/sim-core';
 import { dcSupply } from '@robosim/test-fixtures';
 import { describe, expect, it } from 'vitest';
 import { analyze, def } from '../../test/helpers.js';
 import {
   backfeed,
+  baseNoResistor,
+  capacitorStress,
+  flyback,
+  i2cAddress,
+  i2cLevel,
+  i2cPullUp,
+  mosfetGate,
   inductiveOnPin,
   ledNoResistor,
   mcuTotalCurrent,
@@ -180,6 +187,17 @@ describe('FR-SAF-02 static rules — trigger and clean fixtures', () => {
     });
     expect(ids(servos(2), supplyOverload)).toEqual(['SAF-SUPPLY-OVERLOAD:error:rail+s0+s1']);
     expect(ids(servos(0), supplyOverload)).toEqual([]);
+    // An LED strip's peak current scales with its length: 8 WS2812B ≈ 300 mA, 30 ≈ 1.1 A.
+    const strip = (count: number): CircuitSpec => ({
+      parts: {
+        rail: { def: dcSupply, props: { volts: 5 } },
+        led: { def: def('actuator.ws2812-strip'), props: { count } },
+      },
+      wires: [['rail.pos', 'led.vcc']],
+      ground: ['rail.neg', 'led.gnd'],
+    });
+    expect(ids(strip(8), supplyOverload)).toEqual([]);
+    expect(analyze(supplyOverload, strip(30))[0]?.params).toMatchObject({ ma: 1110, limit: 500 });
   });
 
   it('(10) supply ground not tied to the common ground', () => {
@@ -238,5 +256,229 @@ describe('FR-SAF-02 static rules — trigger and clean fixtures', () => {
         backfeed,
       ),
     ).toEqual([]);
+  });
+
+  it('(Tier B) electrolytic capacitor reversed or above its rating; a correct one is clean', () => {
+    const cap = (pos: string, props: Record<string, number | string> = {}): CircuitSpec => ({
+      parts: {
+        bat: { def: def('power.battery-9v') },
+        c: { def: def('passive.capacitor-electrolytic'), props },
+      },
+      wires: [[pos === 'pos' ? 'bat.pos' : 'bat.neg', 'c.pos']],
+      ground: [pos === 'pos' ? 'bat.neg' : 'bat.pos', 'c.neg'],
+    });
+    expect(ids(cap('neg'), capacitorStress)).toEqual(['SAF-CAPACITOR:error:c']);
+    expect(analyze(capacitorStress, cap('neg'))[0]?.params).toMatchObject({ problem: 'reversed' });
+    const over = analyze(capacitorStress, cap('pos', { ratedVoltage: 'v6_3' }));
+    expect(over.map((f) => f.params)).toEqual([
+      { part: 'c', problem: 'overvoltage', volts: 9.5, limit: 7.2 },
+    ]);
+    expect(ids(cap('pos', { ratedVoltage: 'v16' }), capacitorStress)).toEqual([]);
+  });
+
+  it('(Tier B) transistor base wired straight to a pin; a 1 kΩ base resistor is clean', () => {
+    const spec = (withResistor: boolean): CircuitSpec => ({
+      parts: {
+        bat: { def: def('power.battery-9v') },
+        load: { def: def('passive.resistor'), props: { ohms: 220 } },
+        q: { def: def('semiconductor.2n2222') },
+        ...(withResistor ? { rb: { def: def('passive.resistor'), props: { ohms: 1000 } } } : {}),
+      },
+      wires: [
+        ['bat.pos', 'load.a'],
+        ['load.b', 'q.c'],
+        ...(withResistor
+          ? ([
+              ['mcu.D9', 'rb.a'],
+              ['rb.b', 'q.b'],
+            ] as const)
+          : ([['mcu.D9', 'q.b']] as const)),
+      ],
+      ground: ['bat.neg', 'q.e'],
+      mcuPins: ['D9'],
+    });
+    expect(ids(spec(false), baseNoResistor)).toEqual(['SAF-BASE-NO-RESISTOR:error:q+D9']);
+    expect(ids(spec(true), baseNoResistor)).toEqual([]);
+  });
+
+  it('(Tier B) IRF520 module from a 5 V pin carrying a motor is only partly on; an IRLZ44N is clean', () => {
+    const module: CircuitSpec = {
+      parts: {
+        bat: { def: def('power.battery-4aa') },
+        m: { def: def('driver.irf520-module') },
+        motor: { def: def('actuator.tt-motor') },
+      },
+      wires: [
+        ['bat.pos', 'm.vin'],
+        ['m.vplus', 'motor.m1'],
+        ['motor.m2', 'm.vminus'],
+        ['mcu.D9', 'm.sig'],
+      ],
+      ground: ['bat.neg', 'm.gnd'],
+      mcuPins: ['D9'],
+    };
+    const logicLevel: CircuitSpec = {
+      parts: {
+        bat: { def: def('power.battery-4aa') },
+        rg: { def: def('passive.resistor'), props: { ohms: 220 } },
+        q: { def: def('semiconductor.irlz44n') },
+        motor: { def: def('actuator.tt-motor') },
+      },
+      wires: [
+        ['bat.pos', 'motor.m1'],
+        ['motor.m2', 'q.d'],
+        ['mcu.D9', 'rg.a'],
+        ['rg.b', 'q.g'],
+      ],
+      ground: ['bat.neg', 'q.s'],
+      mcuPins: ['D9'],
+    };
+    expect(ids(module, mosfetGate)).toEqual(['SAF-MOSFET-GATE:warning:m+D9']);
+    expect(analyze(mosfetGate, module)[0]?.params).toMatchObject({ part: 'm', needed: 10 });
+    expect(ids(logicLevel, mosfetGate)).toEqual([]);
+  });
+
+  it('(Tier B) motor switched by a TIP120 without a flyback diode kicks back; with a 1N4007 it is clean', () => {
+    const spec = (diode: boolean): CircuitSpec => ({
+      parts: {
+        bat: { def: def('power.battery-4aa') },
+        rb: { def: def('passive.resistor'), props: { ohms: 1000 } },
+        q: { def: def('semiconductor.tip120') },
+        motor: { def: def('actuator.tt-motor') },
+        ...(diode ? { d: { def: def('semiconductor.diode-1n4007') } } : {}),
+      },
+      wires: [
+        ['bat.pos', 'motor.m1'],
+        ['motor.m2', 'q.c'],
+        ['mcu.D9', 'rb.a'],
+        ['rb.b', 'q.b'],
+        ...(diode
+          ? ([
+              ['d.a', 'motor.m2'],
+              ['d.k', 'motor.m1'],
+            ] as const)
+          : []),
+      ],
+      ground: ['bat.neg', 'q.e'],
+      mcuPins: ['D9'],
+    });
+    const found = analyze(flyback, spec(false));
+    expect(
+      found.map((f) => `${f.ruleId}:${f.severity}:${[...f.componentIds, ...f.pinIds].join('+')}`),
+    ).toEqual(['SAF-FLYBACK:error:motor+q+D9']);
+    expect(Number(found[0]?.params['volts'])).toBeGreaterThan(55); // the TIP120 breaks down at 60 V
+    expect(ids(spec(true), flyback)).toEqual([]);
+  });
+
+  describe('(Tier C) I²C bus', () => {
+    /** A bare I²C chip (no breakout pull-ups) answering 0x50. */
+    const bareChip: ComponentDefinition = {
+      manifest: {
+        id: 'test.i2c-chip',
+        version: '1.0.0',
+        category: 'ic',
+        tier: 'pro',
+        phase: 'P2',
+        nameKey: 'test.i2c-chip.name',
+        pins: [
+          { name: 'vcc', kind: 'power' },
+          { name: 'gnd', kind: 'ground' },
+          { name: 'sda', kind: 'digital' },
+          { name: 'scl', kind: 'digital' },
+        ],
+        props: {},
+        inputs: [],
+        massG: 0,
+        limits: {},
+        polarity: ['vcc', 'gnd'],
+        i2c: { sda: 'sda', scl: 'scl', address: 0x50 },
+      },
+      create: () => {
+        let vcc: NetId = 0;
+        return {
+          type: 'test.i2c-chip',
+          init: (ctx) => void (vcc = ctx.net('vcc')),
+          stamp: (s) => s.conductance(vcc, 0, 1e-4),
+          step: () => undefined,
+          faults: () => [],
+          snapshot: () => null,
+        };
+      },
+    };
+    const bus = (parts: CircuitSpec['parts'], extra: CircuitSpec['wires'] = []): CircuitSpec => ({
+      parts: { src: { def: dcSupply, props: { volts: 5, ohms: 0.01 } }, ...parts },
+      wires: [
+        ...Object.keys(parts).flatMap((id) => [
+          [`${id}.sda`, 'mcu.A4'] as const,
+          [`${id}.scl`, 'mcu.A5'] as const,
+        ]),
+        ...extra,
+      ],
+      ground: ['src.neg', ...Object.keys(parts).map((id) => `${id}.gnd`)],
+      mcuPins: ['A4', 'A5'],
+    });
+    const power = (...ids: string[]) => ids.map((id) => ['src.pos', `${id}.vcc`] as const);
+
+    it('a bus with no pull-up warns on each line; a breakout with pull-ups is clean', () => {
+      expect(ids(bus({ chip: { def: bareChip } }, power('chip')), i2cPullUp)).toEqual([
+        'SAF-I2C-PULLUP:warning:chip+A4',
+        'SAF-I2C-PULLUP:warning:chip+A5',
+      ]);
+      const withOled = bus(
+        { chip: { def: bareChip }, oled: { def: def('display.oled-ssd1306') } },
+        power('chip', 'oled'),
+      );
+      expect(ids(withOled, i2cPullUp)).toEqual([]);
+    });
+
+    it('two parts at one address conflict, unless an address pin or reset pins tell them apart', () => {
+      const twoImus = (ad0: boolean) =>
+        bus({ a: { def: def('sensor.mpu6050') }, b: { def: def('sensor.mpu6050') } }, [
+          ...power('a', 'b'),
+          ...(ad0 ? ([['src.pos', 'b.ad0']] as const) : []),
+        ]);
+      expect(ids(twoImus(false), i2cAddress)).toEqual(['SAF-I2C-ADDRESS:error:a+b+A4+A5']);
+      expect(analyze(i2cAddress, twoImus(false))[0]?.params).toMatchObject({ address: '0x68' });
+      expect(ids(twoImus(true), i2cAddress)).toEqual([]);
+      const twoRangers = (xshut: boolean) => ({
+        ...bus({ a: { def: def('sensor.vl53l0x') }, b: { def: def('sensor.vl53l0x') } }, [
+          ['src.pos', 'a.vin'],
+          ['src.pos', 'b.vin'],
+          ...(xshut
+            ? ([
+                ['mcu.D2', 'a.xshut'],
+                ['mcu.D3', 'b.xshut'],
+              ] as const)
+            : []),
+        ]),
+        mcuPins: ['A4', 'A5', ...(xshut ? ['D2', 'D3'] : [])],
+      });
+      expect(ids(twoRangers(false), i2cAddress)).toEqual(['SAF-I2C-ADDRESS:error:a+b+A4+A5']);
+      expect(ids(twoRangers(true), i2cAddress)).toEqual([]);
+    });
+
+    it('a 3.3 V part on a bus pulled up to 5 V is over its pin rating', () => {
+      const mixed = bus({ bmp: { def: def('sensor.bmp280') }, lcd: { def: def('display.lcd1602-i2c') } }, [
+        ...power('lcd'),
+        ['reg.pos', 'bmp.vcc'],
+      ]);
+      const spec: CircuitSpec = {
+        ...mixed,
+        parts: { ...mixed.parts, reg: { def: dcSupply, props: { volts: 3.3, ohms: 0.01 } } },
+        ground: [...(mixed.ground ?? []), 'reg.neg'],
+      };
+      expect(ids(spec, i2cLevel)).toEqual(['SAF-I2C-LEVEL:error:bmp+A4+A5']);
+      const alone = bus({ bmp: { def: def('sensor.bmp280') } }, [['reg.pos', 'bmp.vcc']]);
+      expect(
+        ids(
+          {
+            ...alone,
+            parts: { ...alone.parts, reg: { def: dcSupply, props: { volts: 3.3, ohms: 0.01 } } },
+            ground: [...(alone.ground ?? []), 'reg.neg'],
+          },
+          i2cLevel,
+        ),
+      ).toEqual([]);
+    });
   });
 });

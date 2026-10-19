@@ -1,0 +1,33 @@
+{
+  "id": "driver.irf520-module",
+  "version": "1.0.0",
+  "category": "driver",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "driver.irf520-module.name",
+  "pins": [
+    { "name": "sig", "kind": "digital" },
+    { "name": "vcc", "kind": "passive" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "vin", "kind": "power" },
+    { "name": "gndIn", "kind": "ground" },
+    { "name": "vplus", "kind": "power" },
+    { "name": "vminus", "kind": "passive" }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 8,
+  "traits": ["mosfet"],
+  "bondedPins": [
+    ["vin", "vplus"],
+    ["gnd", "gndIn"]
+  ],
+  "mounting": { "lengthMm": 34, "widthMm": 20, "heightMm": 18 },
+  "limits": {
+    "maxDrainCurrentMa": 5000,
+    "vdssV": 100,
+    "maxPowerMw": 2400,
+    "tjMaxC": 175,
+    "fullEnhancementV": 10
+  }
+}

@@ -92,6 +92,19 @@ function dip(names: readonly string[], span = 3): Footprint {
 const QUAD_GATES = ['1a', '1b', '1y', '2a', '2b', '2y', 'gnd', '3y', '3a', '3b', '4y', '4a', '4b', 'vcc'];
 const HEX_INVERTERS = ['1a', '1y', '2a', '2y', '3a', '3y', 'gnd', '4y', '4a', '5y', '5a', '6y', '6a', 'vcc'];
 
+/** Three legs on 0.1" pitch, body above them: TO-92 small-signal transistors. */
+const TO92 = (legs: readonly [string, string, string]): Footprint => ({
+  box: { x: -0.6, y: -2.6, w: 3.2, h: 3 },
+  pins: row(legs),
+  seatable: true,
+});
+/** TO-220 power package with its tab above the body. */
+const TO220 = (legs: readonly [string, string, string]): Footprint => ({
+  box: { x: -0.6, y: -7, w: 3.2, h: 7.4 },
+  pins: row(legs),
+  seatable: true,
+});
+
 /** Axial two-lead part (diodes): anode left, cathode right, 0.4" lead spacing. */
 const AXIAL: Footprint = {
   box: { x: -0.4, y: -0.6, w: 4.8, h: 1.2 },
@@ -177,12 +190,83 @@ const FOOTPRINTS: Readonly<Record<string, Footprint>> = {
   'mechanical.chassis-2wd': { box: { x: -30, y: -24, w: 60, h: 48 }, pins: {}, seatable: false },
   // Catalogue expansion Tier A (slice 16a).
   'semiconductor.diode-1n4007': AXIAL,
+  // Radial capacitors: a ceramic disc with 0.2" leads, an electrolytic can with 0.1" leads (+ first).
+  'passive.capacitor-ceramic': {
+    box: { x: -0.4, y: -2.6, w: 2.8, h: 3 },
+    pins: { a: [0, 0], b: [2, 0] },
+    seatable: true,
+  },
+  'passive.capacitor-electrolytic': {
+    box: { x: -0.7, y: -4, w: 2.4, h: 4.4 },
+    pins: { pos: [0, 0], neg: [1, 0] },
+    seatable: true,
+  },
+  'ic.ne555': dip(['gnd', 'trig', 'out', 'reset', 'ctrl', 'thr', 'dis', 'vcc']),
   'semiconductor.diode-1n4148': AXIAL,
   'semiconductor.zener-5v1': AXIAL,
   'semiconductor.lm7805': {
     box: { x: -0.7, y: -7, w: 3.4, h: 7.4 },
     pins: row(['in', 'gnd', 'out']),
     seatable: true,
+  },
+  // Transistors: legs in the order the real package has them, flat face (or tab) toward the viewer.
+  'semiconductor.2n2222': TO92(['e', 'b', 'c']),
+  'semiconductor.bc547': TO92(['c', 'b', 'e']),
+  'semiconductor.2n3906': TO92(['e', 'b', 'c']),
+  'semiconductor.tip120': TO220(['b', 'c', 'e']),
+  'semiconductor.irlz44n': TO220(['g', 'd', 's']),
+  'driver.irf520-module': {
+    box: { x: -0.6, y: -1, w: 12.2, h: 7 },
+    pins: {
+      sig: [0, 0],
+      vcc: [0, 1],
+      gnd: [0, 2],
+      vin: [11, 0],
+      gndIn: [11, 1],
+      vplus: [11, 3],
+      vminus: [11, 4],
+    },
+    seatable: false,
+  },
+  // Catalogue expansion Tier C (P2): I²C breakouts, header along the bottom edge.
+  'display.oled-ssd1306': {
+    box: { x: -3.8, y: -10.4, w: 10.6, h: 10.8 },
+    pins: row(['gnd', 'vcc', 'scl', 'sda']),
+    seatable: true,
+  },
+  // 1602 LCD with the PCF8574 backpack's 4-pin header at its lower left.
+  'display.lcd1602-i2c': {
+    box: { x: -1, y: -14.6, w: 31.5, h: 15 },
+    pins: row(['gnd', 'vcc', 'sda', 'scl']),
+    seatable: false,
+  },
+  'sensor.mpu6050': {
+    box: { x: -0.65, y: -6, w: 8.3, h: 6.4 },
+    pins: row(['vcc', 'gnd', 'scl', 'sda', 'xda', 'xcl', 'ad0', 'int']),
+    seatable: true,
+  },
+  'sensor.bmp280': {
+    box: { x: -0.45, y: -4.6, w: 5.9, h: 5 },
+    pins: row(['vcc', 'gnd', 'scl', 'sda', 'csb', 'sdo']),
+    seatable: true,
+  },
+  'sensor.vl53l0x': {
+    box: { x: -2.4, y: -4.6, w: 9.8, h: 5 },
+    pins: row(['vin', 'gnd', 'scl', 'sda', 'gpio1', 'xshut']),
+    seatable: true,
+  },
+  // Catalogue expansion Tier C (slice C2): single-wire parts.
+  'sensor.dht11': {
+    box: { x: -1, y: -10.6, w: 4, h: 11 },
+    pins: row(['vcc', 'data', 'gnd']),
+    seatable: true,
+  },
+  'sensor.ds18b20': TO92(['gnd', 'dq', 'vdd']),
+  // Strip: VCC/DIN/GND wires at the left end, DOUT at the right; LEDs spread along it.
+  'actuator.ws2812-strip': {
+    box: { x: 0.6, y: -0.7, w: 21.8, h: 3.4 },
+    pins: { vcc: [0, 0], din: [0, 1], gnd: [0, 2], dout: [23, 1] },
+    seatable: false,
   },
   'semiconductor.ams1117-3v3': {
     box: { x: -0.8, y: -4.4, w: 3.6, h: 4.8 },

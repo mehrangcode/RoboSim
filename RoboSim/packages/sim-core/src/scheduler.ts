@@ -1,4 +1,5 @@
 import { McuBus, type McuPinBinding } from './bus.js';
+import { I2cRouter, SpiRouter, type BusContext } from './buses.js';
 import { isDamageable } from './contracts.js';
 import type {
   BodySnapshot,
@@ -15,7 +16,14 @@ import type {
   PwmOutput,
   WorldModel,
 } from './contracts.js';
-import { AveragedSolution, MnaCircuit, ZERO_SOLUTION } from './mna/circuit.js';
+import {
+  AveragedSolution,
+  DC_STEP,
+  MnaCircuit,
+  WeightedSolution,
+  ZERO_SOLUTION,
+  shapeOf,
+} from './mna/circuit.js';
 import { Prng } from './prng.js';
 
 /** MCU ↔ component bus exchange period (Technical Design §5.3). */
@@ -24,6 +32,12 @@ export const SLICES_PER_SECOND = 1000;
 /** Physics step: every second slice. */
 export const PHYS_DT_S = 0.002;
 const SLICES_PER_PHYS_STEP = 2;
+
+/** Transient integration (Tier B): sub-step bounds and the step of an "instant" re-solve (s). */
+export const MIN_STEP_S = 1e-6;
+const MAX_STEP_S = SLICE_S;
+const INSTANT_STEP_S = 1e-9;
+const TIME_EPS_S = 1e-12;
 
 export interface ComponentInstance {
   readonly id: string;
@@ -48,6 +62,11 @@ export interface SimulationOptions {
   readonly mcu?: McuAttachment;
   readonly world?: WorldModel;
   readonly seed: number;
+  /**
+   * Solve DC operating points only: capacitors open, inductors short, no time steps. Static safety
+   * analysis uses it, so a large electrolytic does not look like a short at power-on.
+   */
+  readonly dcOnly?: boolean;
 }
 
 export interface SliceContext {
@@ -89,6 +108,10 @@ class SimulationIO implements ComponentIO {
     return this.sim.simTime;
   }
 
+  get now(): number {
+    return this.sim.now;
+  }
+
   get solution(): MnaSolution {
     return this.sim.currentSolution;
   }
@@ -122,7 +145,29 @@ export class Simulation {
   private sliceCount = 0;
   private poweredOn = false;
   private dirty = true;
+  /** Operating point now (instantaneous); MCU inputs and combinational logic read it. */
   private solution: MnaSolution = ZERO_SOLUTION;
+  /** What components and observers read: `solution`, or in a reactive circuit the slice's time average. */
+  private published: MnaSolution = ZERO_SOLUTION;
+  private readonly dcOnly: boolean;
+  /** Next sub-step length (s), from the local truncation error of the last one. */
+  private hNext = MAX_STEP_S;
+  /** True while shrinking steps towards a pending comparator switch (no step growth). */
+  private bisecting = false;
+  /** Operating point at the present time with the present stamp: the start of the next step. */
+  private startSolution: MnaSolution | null = null;
+  /** MCU pins whose signal reaches a capacitor or inductor: stamped at their real level between edges. */
+  private edgeDriven = new Set<string>();
+  private readonly edgeLevel = new Map<string, Level>();
+  private readonly edgesUsed = new Map<string, number>();
+  /** Lowest / highest voltage per net in the last slice (inductive spikes between sub-steps). */
+  private envMin = new Float64Array(0);
+  private envMax = new Float64Array(0);
+  private envelopeValid = false;
+  /** Time of the operating point being evaluated (see ComponentIO.now). */
+  private nowS = 0;
+  /** Work counters for performance tests: accepted / rejected integration steps and linear solves. */
+  readonly stats = { steps: 0, rejected: 0, solves: 0 };
   private readonly circuit: MnaCircuit;
   private readonly bus: McuBus | null;
   private readonly world: WorldModel | null;
@@ -152,6 +197,7 @@ export class Simulation {
 
   constructor(options: SimulationOptions) {
     this.circuit = new MnaCircuit(options.netCount);
+    this.dcOnly = options.dcOnly ?? false;
     this.components = options.components;
     this.world = options.world ?? null;
     this.bus = options.mcu ? new McuBus(options.mcu.core, options.mcu.pins, options.mcu.electrical) : null;
@@ -185,15 +231,18 @@ export class Simulation {
       for (const { pin, net } of options.mcu.pins)
         this.pinsByNet.set(net, [...(this.pinsByNet.get(net) ?? []), pin]);
       this.linkSignalNets();
-      core.onPinModeChange?.((pin, mode) => {
+      core.onPinModeChange?.((pin, mode, cycle, level) => {
         if (mode === 'output') this.lastDriven.set(pin, this.simTime);
         this.settleInputs();
+        for (const w of this.edgeWatchers.get(pin) ?? [])
+          w.model.mcuMode?.(w.net, mode, level, cycle / core.clockHz, this.io);
       });
       for (const c of this.components) {
         for (const net of c.model.logicNets?.().inputs ?? [])
           for (const pin of this.signalPinsByNet.get(net) ?? [])
             this.edgeWatchers.set(pin, [...(this.edgeWatchers.get(pin) ?? []), { model: c.model, net }]);
       }
+      this.attachBuses(core, options.mcu.electrical);
       core.onPinEdge((pin, level, cycle) => {
         const list = this.sliceEdges.get(pin) ?? [];
         list.push({ level, time: cycle / core.clockHz });
@@ -202,6 +251,32 @@ export class Simulation {
         this.sliceEdges.set(pin, list);
       });
     }
+  }
+
+  /** Connects the MCU's I²C and SPI peripherals to the targets in the circuit (Tier C). */
+  private attachBuses(core: McuCore, electrical: PinElectrical): void {
+    const pins = core.busPins;
+    if (!pins) return;
+    const i2c = this.components.flatMap((c) => c.model.i2c?.() ?? []);
+    const spi = this.components.flatMap((c) => c.model.spi?.() ?? []);
+    if (i2c.length === 0 && spi.length === 0) return;
+    const ctx: BusContext = {
+      pins,
+      vil: electrical.vil,
+      vih: electrical.vih,
+      reaches: (net, pin) => net !== 0 && (this.signalPinsByNet.get(net)?.includes(pin) ?? false),
+      volts: (net) => this.published.voltage(net),
+      drivenLevel: (net) => {
+        const outputs = core.pinOutputs();
+        for (const pin of this.signalPinsByNet.get(net) ?? []) {
+          const out = outputs.get(pin);
+          if (out?.mode === 'output') return out.level;
+        }
+        return null;
+      },
+    };
+    if (i2c.length > 0) core.attachI2c?.(new I2cRouter(i2c, ctx));
+    if (spi.length > 0) core.attachSpi?.(new SpiRouter(spi, ctx));
   }
 
   /** Delivers a user interaction declared in the component's manifest (button press, pot position…). */
@@ -348,8 +423,30 @@ export class Simulation {
     return this.sliceCount / SLICES_PER_SECOND;
   }
 
+  /** See ComponentIO.now. */
+  get now(): number {
+    return this.nowS;
+  }
+
+  /** The operating point components read (the slice average in a reactive circuit). */
   get currentSolution(): MnaSolution {
-    return this.solution;
+    return this.published;
+  }
+
+  /** True when the circuit has capacitors or inductors and is integrated in time steps. */
+  get transient(): boolean {
+    return !this.dcOnly && this.circuit.reactiveCount > 0;
+  }
+
+  /**
+   * Lowest and highest voltage of `net` during the last slice. Reactive circuits track every sub-step,
+   * so an inductive kickback of a few microseconds shows up here although the slice average hides it.
+   */
+  netEnvelope(net: NetId): { readonly min: number; readonly max: number } {
+    if (this.envelopeValid && net > 0 && net < this.envMin.length)
+      return { min: this.envMin[net] ?? 0, max: this.envMax[net] ?? 0 };
+    const v = this.published.voltage(net);
+    return { min: v, max: v };
   }
 
   addObserver(o: SliceObserver): () => void {
@@ -372,6 +469,7 @@ export class Simulation {
    */
   private settleInputs(): void {
     if (!this.bus) return;
+    this.nowS = this.bus.core.cycle / this.bus.core.clockHz;
     this.bus.readOutputs();
     this.dirty = true;
     this.solveIfDirty();
@@ -384,49 +482,240 @@ export class Simulation {
     const next = this.sliceCount + 1;
     if (this.sliceCount === 0 && !this.poweredOn) {
       this.poweredOn = true;
-      this.settleInputs();
+      if (this.bus) this.settleInputs();
+      else this.solveIfDirty(); // stamps once, so a reactive circuit integrates from the first slice
+      if (this.components.some((c) => c.model.powerOn)) {
+        for (const c of this.components) c.model.powerOn?.(this.io);
+        if (this.bus) this.settleInputs();
+        else this.solveIfDirty();
+      }
     }
+    this.unsettledSlice = false;
     this.emittedEdges.clear();
-    if (this.bus) {
-      this.sliceEdges.clear();
-      this.bus.core.run(this.cycleAt(next));
-      if (this.bus.readOutputs()) this.dirty = true;
+    this.sliceEdges.clear();
+    this.envelopeValid = false;
+    if (this.transient) {
+      this.integrateSlice(next);
+    } else {
+      if (this.bus) {
+        this.bus.core.run(this.cycleAt(next));
+        if (this.bus.readOutputs()) this.dirty = true;
+      }
+      this.nowS = next / SLICES_PER_SECOND;
+      this.solveIfDirty();
     }
-    this.solveIfDirty();
+    this.nowS = next / SLICES_PER_SECOND;
+    const sliceSolution = this.published;
 
     for (const c of this.order) c.model.step(SLICE_S, this.io);
     if (this.world && next % SLICES_PER_PHYS_STEP === 0) this.world.step(PHYS_DT_S);
 
     // Components that changed their stamp (sensors, user input) are visible to the MCU in the same slice.
+    this.published = this.solution;
     this.solveIfDirty();
     this.settleLogic();
     this.bus?.applyInputs(this.solution, this.bus.core.cycle);
+    if (this.transient) this.published = sliceSolution;
 
     this.sliceCount = next;
     const ctx: SliceContext = {
       slice: this.sliceCount,
       simTime: this.simTime,
-      solution: this.solution,
+      solution: this.published,
       components: this.components,
       bus: this.bus,
     };
     for (const o of this.observers) o.afterSlice(ctx);
   }
 
-  /** Re-evaluates combinational parts until their outputs stop changing (bounded; see `settle`). */
-  private settleLogic(): void {
-    this.unsettledSlice = false;
-    if (this.settlers.length === 0) return;
+  /**
+   * Re-evaluates combinational parts until their outputs stop changing (bounded; see `settle`).
+   * Returns true when any output changed (the circuit was re-solved).
+   */
+  private settleLogic(): boolean {
+    if (this.settlers.length === 0) return false;
     for (let pass = 0; ; pass++) {
       let changed = false;
       for (const m of this.settlers) if (m.settle?.(this.io)) changed = true;
-      if (!changed) return;
+      if (!changed) return pass > 0;
       this.dirty = true;
       this.solveIfDirty();
       if (pass + 1 >= MAX_SETTLE_PASSES) {
         this.unsettledSlice = true;
-        return;
+        return true;
       }
+    }
+  }
+
+  /**
+   * One slice of a reactive circuit (Technical Design §5.4, Tier B). The MCU runs in chunks of the
+   * current step length, so inputs computed after each chunk reach it within one step. Inside a chunk,
+   * edges of pins that drive a reactive net are breakpoints, and backward-Euler steps are sized by
+   * their local truncation error (1 µs … 1 ms): a quiet circuit costs one step per slice.
+   */
+  private integrateSlice(next: number): void {
+    const t1 = next / SLICES_PER_SECOND;
+    let t = this.simTime;
+    if (this.dirty) {
+      this.dirty = false;
+      this.discontinuity();
+    }
+    this.edgeDriven = this.findEdgeDriven();
+    this.edgesUsed.clear();
+    this.envMin = new Float64Array(this.circuit.netCount + 1).fill(Infinity);
+    this.envMax = new Float64Array(this.circuit.netCount + 1).fill(-Infinity);
+    const acc: { average: WeightedSolution | null } = { average: null };
+    while (t1 - t > TIME_EPS_S) {
+      let chunkEnd = Math.min(t1, t + this.hNext);
+      if (t1 - chunkEnd < MIN_STEP_S) chunkEnd = t1;
+      if (this.bus) {
+        const core = this.bus.core;
+        core.run(chunkEnd === t1 ? this.cycleAt(next) : Math.round(chunkEnd * core.clockHz));
+        if (this.bus.readOutputs()) this.discontinuity();
+      }
+      const from = t;
+      t = this.integrate(t, chunkEnd, (s, h) => {
+        if (!acc.average) {
+          const shape = shapeOf(s);
+          if (shape) acc.average = new WeightedSolution(shape);
+        }
+        acc.average?.add(s, h);
+      });
+      if (t <= from) break; // defensive: no progress
+      this.bus?.applyInputs(this.solution, this.bus.core.cycle);
+    }
+    this.envelopeValid = true;
+    this.published = acc.average && !acc.average.empty ? acc.average : this.solution;
+  }
+
+  /** Integrates from `ta` to `tb` with the MCU outputs of this chunk; returns the time reached. */
+  private integrate(ta: number, tb: number, accumulate: (s: MnaSolution, h: number) => void): number {
+    const edges = this.takeEdges(tb);
+    this.reconcileEdgeLevels();
+    let k = 0;
+    let t = ta;
+    const applyEdgesUntil = (time: number): void => {
+      while (k < edges.length && (edges[k]?.time ?? Infinity) <= time + TIME_EPS_S) {
+        const e = edges[k++];
+        if (e && this.edgeLevel.get(e.pin) !== e.level) {
+          this.edgeLevel.set(e.pin, e.level);
+          this.discontinuity();
+        }
+      }
+    };
+    while (tb - t > TIME_EPS_S) {
+      applyEdgesUntil(t);
+      const segEnd = Math.min(tb, edges[k]?.time ?? tb);
+      const rest = segEnd - t;
+      let h = Math.min(this.hNext, rest);
+      // Never leave a sliver shorter than the minimum step: split what is left into two equal steps,
+      // or take it whole. A step stretched to at most two minimum steps is accepted as it is, so
+      // the loop always ends; every rejection shrinks the step by at least 10 %.
+      let forced = false;
+      if (rest - h > 0 && rest - h < MIN_STEP_S) {
+        if (rest >= 2 * MIN_STEP_S && rest / 2 <= this.hNext) h = rest / 2;
+        else {
+          h = rest;
+          forced = rest <= 2 * MIN_STEP_S;
+        }
+      }
+      const canShrink = !forced && h > MIN_STEP_S;
+      this.startSolution ??= this.solveAt(INSTANT_STEP_S);
+      const start = this.startSolution;
+      const end = this.solveAt(h);
+      const ratio = this.circuit.lteRatio(start, end, h);
+      const pending = canShrink && this.settlers.some((m) => m.pendingSwitch?.(end) ?? false);
+      if (canShrink && (ratio > 1 || pending)) {
+        this.hNext = Math.max(
+          MIN_STEP_S,
+          pending ? h / 2 : h * Math.min(0.9, Math.max(0.2, 0.9 / Math.sqrt(ratio))),
+        );
+        this.bisecting = pending;
+        this.stats.rejected++;
+        continue;
+      }
+      this.circuit.commit(end, h);
+      this.stats.steps++;
+      t += h;
+      this.nowS = t;
+      accumulate(end, h);
+      this.track(end);
+      this.solution = this.published = end;
+      this.startSolution = end;
+      if (this.settleLogic()) {
+        // A comparator or gate switched: restart small and first order, the circuit just jumped.
+        this.circuit.restart();
+        this.startSolution = this.solution;
+        this.track(this.solution);
+        this.bisecting = false;
+        this.hNext = 4 * MIN_STEP_S;
+      } else {
+        if (!canShrink) this.bisecting = false;
+        if (!this.bisecting)
+          this.hNext = Math.min(MAX_STEP_S, h * Math.min(2, 0.9 / Math.sqrt(Math.max(ratio, 1e-4))));
+      }
+    }
+    applyEdgesUntil(tb); // edges at the very end of the chunk shape the next one
+    return t;
+  }
+
+  /**
+   * An edge-driven pin with no edges left to deliver this slice is at its output level. Cores report
+   * every edge, but a core that does not (the static analyzer's fixed outputs) must still switch.
+   */
+  private reconcileEdgeLevels(): void {
+    for (const pin of this.edgeDriven) {
+      const pending = (this.sliceEdges.get(pin)?.length ?? 0) > (this.edgesUsed.get(pin) ?? 0);
+      const out = this.bus?.outputOf(pin);
+      if (pending || out?.mode !== 'output' || out.pwm || this.edgeLevel.get(pin) === out.level) continue;
+      this.edgeLevel.set(pin, out.level);
+      this.discontinuity();
+    }
+  }
+
+  /** The stamp changed abruptly: re-solve the start of the next step and integrate it first order. */
+  private discontinuity(): void {
+    this.startSolution = null;
+    this.circuit.restart();
+  }
+
+  /** MCU edges up to `tb` on edge-driven pins, in time order, each delivered once per slice. */
+  private takeEdges(tb: number): { time: number; pin: string; level: Level }[] {
+    const out: { time: number; pin: string; level: Level }[] = [];
+    for (const pin of this.edgeDriven) {
+      const list = this.sliceEdges.get(pin) ?? [];
+      let i = this.edgesUsed.get(pin) ?? 0;
+      for (; i < list.length; i++) {
+        const e = list[i];
+        if (!e || e.time > tb + TIME_EPS_S) break;
+        out.push({ time: e.time, pin, level: e.level });
+      }
+      this.edgesUsed.set(pin, i);
+    }
+    return out.sort((a, b) => a.time - b.time);
+  }
+
+  /**
+   * MCU pins whose signal group (direct or through series resistors) touches a reactive net or a
+   * transistor's base or gate. Switching an inductive load is integrated edge by edge: averaging the
+   * on and off phases would make its freewheeling diode chatter around zero current.
+   */
+  private findEdgeDriven(): Set<string> {
+    const pins = new Set<string>();
+    if (!this.bus) return pins;
+    for (const net of [...this.circuit.reactiveNets(), ...this.circuit.controlNets()])
+      for (const pin of this.signalPinsByNet.get(net) ?? []) pins.add(pin);
+    for (const pin of this.edgeLevel.keys()) if (!pins.has(pin)) this.edgeLevel.delete(pin);
+    for (const pin of pins)
+      if (!this.edgeLevel.has(pin)) this.edgeLevel.set(pin, this.bus.outputOf(pin)?.level ?? 0);
+    return pins;
+  }
+
+  private track(s: MnaSolution): void {
+    for (let n = 1; n < this.envMin.length; n++) {
+      const v = s.voltage(n);
+      if (v < (this.envMin[n] ?? Infinity)) this.envMin[n] = v;
+      if (v > (this.envMax[n] ?? -Infinity)) this.envMax[n] = v;
     }
   }
 
@@ -446,26 +735,44 @@ export class Simulation {
     };
   }
 
+  /**
+   * Re-solves the present operating point after a stamp change: DC, or in a reactive circuit an
+   * "instant" step that keeps capacitor voltages and inductor currents where they are.
+   */
   private solveIfDirty(): void {
     if (!this.dirty) return;
     this.dirty = false;
-    const pwm = this.bus?.pwmPins() ?? [];
-    const base = this.solveWith(new Set());
-    this.solution =
-      pwm.length === 0
-        ? base
-        : new AveragedSolution(
-            base,
-            pwm.map(({ pin, duty }) => ({ solution: this.solveWith(new Set([pin])), duty })),
-          );
+    this.solution = this.published = this.solveAt(null);
+    if (this.transient) this.startSolution = this.solution;
   }
 
-  private solveWith(pwmHigh: ReadonlySet<string>, extra?: (s: MnaCircuit) => void): MnaSolution {
+  /**
+   * Operating point after a step of `h` (null: DC or instant, whichever the circuit needs), with PWM
+   * pins averaged over their phases — except pins that reach a reactive net, which are stamped at
+   * their real level so an RC filter ripples and a timer sees every edge.
+   */
+  private solveAt(h: number | null): MnaSolution {
+    const pwm = (this.bus?.pwmPins() ?? []).filter((p) => !this.edgeDriven.has(p.pin));
+    const base = this.solveWith(new Set(), undefined, h);
+    return pwm.length === 0
+      ? base
+      : new AveragedSolution(
+          base,
+          pwm.map(({ pin, duty }) => ({ solution: this.solveWith(new Set([pin]), undefined, h), duty })),
+        );
+  }
+
+  private solveWith(
+    pwmHigh: ReadonlySet<string>,
+    extra?: (s: MnaCircuit) => void,
+    h: number | null = null,
+  ): MnaSolution {
     this.circuit.clear();
-    this.bus?.stamp(this.circuit, pwmHigh);
+    this.bus?.stamp(this.circuit, pwmHigh, this.edgeDriven.size > 0 ? this.edgeLevel : undefined);
     for (const c of this.components) c.model.stamp(this.circuit);
     extra?.(this.circuit);
-    return this.circuit.solve();
+    this.stats.solves++;
+    return this.circuit.solve(h ?? (this.transient ? INSTANT_STEP_S : DC_STEP));
   }
 
   /**
@@ -476,8 +783,8 @@ export class Simulation {
   netResistance(net: NetId): number {
     if (net === 0) return 0;
     const probeA = 1e-6;
-    const base = this.solveWith(new Set());
-    const probed = this.solveWith(new Set(), (s) => s.currentSource(0, net, probeA));
+    const base = this.solveWith(new Set(), undefined, DC_STEP);
+    const probed = this.solveWith(new Set(), (s) => s.currentSource(0, net, probeA), DC_STEP);
     this.dirty = true; // the circuit object now holds probe stamps; re-stamp before the next slice
     return Math.abs(probed.voltage(net) - base.voltage(net)) / probeA;
   }

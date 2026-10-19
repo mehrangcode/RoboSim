@@ -4,6 +4,8 @@ import {
   PHYS_DT_S,
   Simulation,
   type ComponentInstance,
+  type ComponentIO,
+  type MnaStamper,
   type SimulationSnapshot,
 } from '../src/index.js';
 import {
@@ -176,6 +178,53 @@ describe('Simulation scheduler', () => {
     expect(sim.currentSolution.voltage(3)).toBeLessThan(0.01);
     expect(() => sim.input('nope', 'pressed', true)).toThrow(/Unknown component/);
     expect(() => sim.input('r1', 'x', 1)).toThrow(/accepts no input/);
+  });
+
+  it('gives parts the power-on operating point before the sketch runs (powerOn), once', () => {
+    const seen: { volts: number; now: number; cycle: number }[] = [];
+    const core = new FakeCore(CLOCK, () => new Map([['D13', out(0)]]));
+    const probe = {
+      type: 'test.probe',
+      init: () => undefined,
+      stamp: (s: MnaStamper) => void s.voltageSource(1, 0, 5, 1),
+      step: () => undefined,
+      faults: () => [],
+      snapshot: () => null,
+      powerOn: (io: ComponentIO) =>
+        void seen.push({ volts: io.solution.voltage(1), now: io.now, cycle: core.cycle }),
+    };
+    const sim = blinkCircuit(core, [{ id: 'p', model: probe, pins: { a: 1 }, props: null }]); // a supply on D13's net
+    sim.run(3);
+    expect(seen).toEqual([{ volts: expect.closeTo(5, 1) as number, now: 0, cycle: 0 }]);
+  });
+
+  it('tells parts watching a net when the firmware drives or releases its pin (mcuMode)', () => {
+    let core: FakeCore | null = null;
+    core = new FakeCore(CLOCK, (cycle) => {
+      if (cycle === 16_000) {
+        core?.emitMode('D2', 'output', 1_600, 0); // 0.1 ms: pinMode(OUTPUT) with the port bit low
+        core?.emitMode('D2', 'input', 9_600); // 0.6 ms: released
+      }
+      return new Map([['D13', out(0)]]);
+    });
+    const seen: unknown[] = [];
+    const watcher = {
+      type: 'test.watcher',
+      init: () => undefined,
+      stamp: () => undefined,
+      step: () => undefined,
+      faults: () => [],
+      snapshot: () => null,
+      logicNets: () => ({ inputs: [3], outputs: [] }),
+      mcuMode: (net: number, mode: string, level: number, time: number) =>
+        void seen.push([net, mode, level, time]),
+    };
+    const sim = blinkCircuit(core, [{ id: 'w', model: watcher, pins: { a: 3 }, props: null }], 3);
+    sim.run(2);
+    expect(seen).toEqual([
+      [3, 'output', 0, 0.0001],
+      [3, 'input', 0, 0.0006],
+    ]);
   });
 
   it('exposes MCU edges of the current slice per net, in seconds', () => {

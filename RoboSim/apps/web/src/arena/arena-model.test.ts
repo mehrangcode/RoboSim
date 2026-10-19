@@ -85,6 +85,7 @@ describe('arena model', () => {
     add('sensor.line-3ch', 'line', { x: 60, y: 0 });
     add('sensor.hc-sr04', 'sonar', { x: 50, y: 0 });
     add('actuator.tt-motor', 'motorL', { x: 0, y: 45 });
+    add('sensor.vl53l0x', 'tof', { x: 55, y: 0 });
     const robot = robotOf(doc);
     if (!robot) throw new Error('robot');
     const overlay = overlayOf(
@@ -94,6 +95,7 @@ describe('arena model', () => {
         line: { outputs: { left: 1, center: 0, right: 0 } },
         sonar: { distanceCm: 42.5 },
         motorL: { rpm: 60 },
+        tof: { rangeMm: 8190 },
       },
       doc,
       (v, d = 0) => v.toFixed(d),
@@ -102,6 +104,7 @@ describe('arena model', () => {
     expect(overlay.lineSpots.map((s) => s.black)).toEqual([true, false, false]);
     expect(overlay.lineSpots[0]?.y).toBeCloseTo(1.012, 12);
     expect(overlay.sonars[0]).toMatchObject({ x: 1.05, y: 1, distanceM: 0.425, label: '42.5 cm' });
+    expect(overlay.sonars[1]).toMatchObject({ x: 1.055, distanceM: null, label: 'none', maxM: 1.2 }); // VL53L0X out of range
     // 60 rpm on a 65 mm wheel: π · 0.065 m/s.
     expect(overlay.wheels[0]?.speedMps).toBeCloseTo(Math.PI * 0.065, 12);
     expect(overlay.wheels[0]).toMatchObject({ x: 1, y: 1.065, label: '0.20 m/s' });

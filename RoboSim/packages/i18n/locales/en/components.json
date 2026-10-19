@@ -26,11 +26,20 @@
     },
     "tt-motor": {
       "name": "TT gear motor"
+    },
+    "ws2812-strip": {
+      "name": "WS2812B RGB LED strip (NeoPixel)"
     }
   },
   "display": {
     "seven-segment": {
       "name": "7-segment display (1 digit)"
+    },
+    "oled-ssd1306": {
+      "name": "SSD1306 OLED display (128×64, I²C)"
+    },
+    "lcd1602-i2c": {
+      "name": "16×2 LCD with I²C backpack"
     }
   },
   "driver": {
@@ -42,6 +51,9 @@
     },
     "tb6612fng": {
       "name": "TB6612FNG motor driver"
+    },
+    "irf520-module": {
+      "name": "IRF520 MOSFET module"
     }
   },
   "ic": {
@@ -68,6 +80,9 @@
     },
     "uln2003a": {
       "name": "ULN2003A Darlington driver"
+    },
+    "ne555": {
+      "name": "NE555 timer"
     }
   },
   "mechanical": {
@@ -87,6 +102,12 @@
     },
     "resistor": {
       "name": "Resistor"
+    },
+    "capacitor-ceramic": {
+      "name": "Ceramic capacitor"
+    },
+    "capacitor-electrolytic": {
+      "name": "Electrolytic capacitor"
     }
   },
   "power": {
@@ -118,6 +139,21 @@
     },
     "zener-5v1": {
       "name": "5.1 V Zener diode"
+    },
+    "2n2222": {
+      "name": "2N2222 NPN transistor"
+    },
+    "bc547": {
+      "name": "BC547 NPN transistor"
+    },
+    "2n3906": {
+      "name": "2N3906 PNP transistor"
+    },
+    "tip120": {
+      "name": "TIP120 Darlington transistor"
+    },
+    "irlz44n": {
+      "name": "IRLZ44N logic-level MOSFET"
     }
   },
   "sensor": {
@@ -162,6 +198,21 @@
     },
     "tcrt5000": {
       "name": "TCRT5000 line sensor"
+    },
+    "mpu6050": {
+      "name": "MPU-6050 accelerometer + gyroscope"
+    },
+    "bmp280": {
+      "name": "BMP280 pressure + temperature sensor"
+    },
+    "vl53l0x": {
+      "name": "VL53L0X laser distance sensor"
+    },
+    "dht11": {
+      "name": "DHT11 temperature + humidity sensor"
+    },
+    "ds18b20": {
+      "name": "DS18B20 digital thermometer (1-Wire)"
     }
   }
 }

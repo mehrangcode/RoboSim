@@ -20,7 +20,7 @@ describe('engine version', () => {
 
   it('is one readable string', () => {
     expect(ENGINE_VERSION).toBe(
-      'sim-core@0.3.0+board-avr-uno@0.2.0+components@0.2.0+safety-rules@0.2.0+sim-runtime@0.4.0',
+      'sim-core@0.4.0+board-avr-uno@0.3.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0',
     );
   });
 });

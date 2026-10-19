@@ -36,6 +36,13 @@ export interface StaticProbe {
   readonly faults: readonly Fault[];
 }
 
+/** What happens right after a pin switches (reactive circuits): extreme voltages and faults. */
+export interface TransitionProbe {
+  /** Lowest and highest voltage of `net` in the window after the switch. */
+  peak(net: NetId): { readonly min: number; readonly max: number };
+  readonly faults: readonly Fault[];
+}
+
 export interface StaticContext {
   readonly circuit: AssembledCircuit;
   readonly board: BoardInfo | null;
@@ -43,6 +50,11 @@ export interface StaticContext {
   readonly idle: StaticProbe;
   /** Worst case for one pin: driven as an output at `level`, every other MCU pin high-impedance. */
   drive(pin: string, level: Level): StaticProbe;
+  /**
+   * Integrated in time (capacitors charge, inductors carry current): `pin` driven at `from` until the
+   * circuit settles, then switched to `to`. Shows an inductive kickback the DC probes cannot.
+   */
+  transition(pin: string, from: Level, to: Level): TransitionProbe;
 }
 
 export interface StaticRule {

@@ -1,0 +1,32 @@
+{
+  "id": "semiconductor.2n2222",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "semiconductor.2n2222.name",
+  "pins": [
+    {
+      "name": "e",
+      "kind": "passive"
+    },
+    {
+      "name": "b",
+      "kind": "passive"
+    },
+    {
+      "name": "c",
+      "kind": "passive"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 0.2,
+  "traits": ["bjt"],
+  "limits": {
+    "maxCollectorCurrentMa": 600,
+    "vceoV": 40,
+    "maxPowerMw": 625,
+    "tjMaxC": 150
+  }
+}

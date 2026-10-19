@@ -1,0 +1,35 @@
+{
+  "id": "sensor.bmp280",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "sensor.bmp280.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "scl", "kind": "digital" },
+    { "name": "sda", "kind": "digital" },
+    { "name": "csb", "kind": "digital" },
+    { "name": "sdo", "kind": "digital" }
+  ],
+  "props": {},
+  "inputs": [
+    { "name": "temperatureC", "type": "number", "default": 22, "min": -20, "max": 60 },
+    { "name": "altitudeM", "type": "number", "default": 0, "min": -100, "max": 4000 }
+  ],
+  "massG": 1,
+  "mounting": { "lengthMm": 15, "widthMm": 11, "heightMm": 3 },
+  "polarity": ["vcc", "gnd"],
+  "i2c": {
+    "sda": "sda",
+    "scl": "scl",
+    "address": 118,
+    "addressPin": { "pin": "sdo", "whenHigh": 119 },
+    "maxBusV": 3.6
+  },
+  "limits": {
+    "maxVoltageV": 3.6,
+    "peakCurrentMa": 1
+  }
+}

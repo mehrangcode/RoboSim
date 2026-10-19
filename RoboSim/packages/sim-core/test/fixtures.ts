@@ -76,18 +76,18 @@ export class FakeCore implements McuCore {
     for (const cb of this.edgeListeners) cb(pin, level, cycle);
   }
 
-  private readonly modeListeners: ((pin: PinId, mode: PinMode, cycle: number) => void)[] = [];
+  private readonly modeListeners: ((pin: PinId, mode: PinMode, cycle: number, level: Level) => void)[] = [];
 
-  onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number) => void): Unsubscribe {
+  onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number, level: Level) => void): Unsubscribe {
     this.modeListeners.push(cb);
     return () => this.modeListeners.splice(this.modeListeners.indexOf(cb), 1);
   }
 
   /** Test hook: firmware changes a pin's mode at `cycle` in the middle of `run()`. */
-  emitMode(pin: PinId, mode: PinMode, cycle: number): void {
+  emitMode(pin: PinId, mode: PinMode, cycle: number, level: Level = 0): void {
     this.cycle = cycle;
-    this.outputs = new Map(this.outputs).set(pin, { mode, level: 0 });
-    for (const cb of this.modeListeners) cb(pin, mode, cycle);
+    this.outputs = new Map(this.outputs).set(pin, { mode, level });
+    for (const cb of this.modeListeners) cb(pin, mode, cycle, level);
   }
 
   uart(_index: number): UartPort {

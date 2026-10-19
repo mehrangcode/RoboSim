@@ -25,6 +25,8 @@ export interface TestArenaOptions {
  */
 export class TestArena implements WorldModel {
   private robot = { x: 0, y: 0, angle: 0 };
+  /** World-frame velocity of the robot origin (m/s) and yaw rate (rad/s), set by hand. */
+  private motion = { vx: 0, vy: 0, yawRate: 0 };
   private readonly floor: (p: Vec2) => number;
   private readonly walls: readonly (readonly [Vec2, Vec2])[];
   private readonly mounts: Readonly<Record<string, Mount>>;
@@ -37,6 +39,21 @@ export class TestArena implements WorldModel {
 
   setRobot(x: number, y: number, angle = 0): void {
     this.robot = { x, y, angle };
+  }
+
+  /** Sets the robot's motion (IMU tests): velocity of its origin in the world frame and yaw rate. */
+  setMotion(vx: number, vy: number, yawRate = 0): void {
+    this.motion = { vx, vy, yawRate };
+  }
+
+  componentMotion(componentId: string): { velocity: Vec2; yawRate: number } | null {
+    const pose = this.componentPose(componentId);
+    if (!pose) return null;
+    // v = v0 + ω × r, with r from the robot origin to the mount.
+    const rx = pose.position.x - this.robot.x;
+    const ry = pose.position.y - this.robot.y;
+    const { vx, vy, yawRate } = this.motion;
+    return { velocity: { x: vx - yawRate * ry, y: vy + yawRate * rx }, yawRate };
   }
 
   step(): void {}

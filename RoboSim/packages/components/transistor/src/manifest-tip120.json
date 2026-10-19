@@ -1,0 +1,32 @@
+{
+  "id": "semiconductor.tip120",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "semiconductor.tip120.name",
+  "pins": [
+    {
+      "name": "b",
+      "kind": "passive"
+    },
+    {
+      "name": "c",
+      "kind": "passive"
+    },
+    {
+      "name": "e",
+      "kind": "passive"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 2,
+  "traits": ["bjt"],
+  "limits": {
+    "maxCollectorCurrentMa": 5000,
+    "vceoV": 60,
+    "maxPowerMw": 2000,
+    "tjMaxC": 150
+  }
+}

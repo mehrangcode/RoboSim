@@ -1,0 +1,26 @@
+{
+  "id": "sensor.dht11",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "sensor.dht11.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "data", "kind": "digital" },
+    { "name": "gnd", "kind": "ground" }
+  ],
+  "props": {},
+  "inputs": [
+    { "name": "temperatureC", "type": "number", "default": 24, "min": 0, "max": 50 },
+    { "name": "humidity", "type": "number", "default": 55, "min": 20, "max": 90 }
+  ],
+  "massG": 3,
+  "mounting": { "lengthMm": 28, "widthMm": 13, "heightMm": 8 },
+  "polarity": ["vcc", "gnd"],
+  "limits": {
+    "minVoltageV": 3,
+    "maxVoltageV": 5.5,
+    "peakCurrentMa": 2.5
+  }
+}

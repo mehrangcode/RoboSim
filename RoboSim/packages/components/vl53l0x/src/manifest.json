@@ -1,0 +1,29 @@
+{
+  "id": "sensor.vl53l0x",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "sensor.vl53l0x.name",
+  "pins": [
+    { "name": "vin", "kind": "power" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "scl", "kind": "digital" },
+    { "name": "sda", "kind": "digital" },
+    { "name": "gpio1", "kind": "output" },
+    { "name": "xshut", "kind": "digital" }
+  ],
+  "props": {},
+  "inputs": [{ "name": "distanceMm", "type": "number", "default": 300, "min": 0, "max": 2500 }],
+  "massG": 1,
+  "mounting": { "lengthMm": 13, "widthMm": 18, "heightMm": 3 },
+  "polarity": ["vin", "gnd"],
+  "i2c": { "sda": "sda", "scl": "scl", "address": 41, "resetPin": "xshut" },
+  "limits": {
+    "minVoltageV": 2.6,
+    "maxVoltageV": 5.5,
+    "minRangeCm": 3,
+    "maxRangeCm": 200,
+    "peakCurrentMa": 40
+  }
+}

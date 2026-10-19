@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { BuildBoard } from '@robosim/shared';
 
 /** Bump when compile flags or preprocessing change: it is part of every cache key. */
-export const DRIVER_VERSION = 1;
+export const DRIVER_VERSION = 2;
 
 export interface BoardSpec {
   readonly fqbn: string;

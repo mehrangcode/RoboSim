@@ -1,0 +1,26 @@
+{
+  "id": "display.oled-ssd1306",
+  "version": "1.0.0",
+  "category": "display",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "display.oled-ssd1306.name",
+  "pins": [
+    { "name": "gnd", "kind": "ground" },
+    { "name": "vcc", "kind": "power" },
+    { "name": "scl", "kind": "digital" },
+    { "name": "sda", "kind": "digital" }
+  ],
+  "props": {
+    "address": { "type": "enum", "default": "0x3C", "options": ["0x3C", "0x3D"] }
+  },
+  "inputs": [],
+  "massG": 4,
+  "mounting": { "lengthMm": 27, "widthMm": 27, "heightMm": 5 },
+  "polarity": ["vcc", "gnd"],
+  "i2c": { "sda": "sda", "scl": "scl", "address": 60, "addressProp": "address" },
+  "limits": {
+    "maxVoltageV": 5.5,
+    "peakCurrentMa": 25
+  }
+}

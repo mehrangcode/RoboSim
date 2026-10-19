@@ -1,0 +1,22 @@
+{
+  "id": "sensor.ds18b20",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "sensor.ds18b20.name",
+  "pins": [
+    { "name": "gnd", "kind": "ground" },
+    { "name": "dq", "kind": "digital" },
+    { "name": "vdd", "kind": "power" }
+  ],
+  "props": {},
+  "inputs": [{ "name": "temperatureC", "type": "number", "default": 22, "min": -55, "max": 125 }],
+  "massG": 1,
+  "mounting": { "lengthMm": 5, "widthMm": 5, "heightMm": 5 },
+  "polarity": ["vdd", "gnd"],
+  "limits": {
+    "maxVoltageV": 5.5,
+    "peakCurrentMa": 1.5
+  }
+}

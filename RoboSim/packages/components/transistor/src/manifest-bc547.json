@@ -1,0 +1,32 @@
+{
+  "id": "semiconductor.bc547",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "semiconductor.bc547.name",
+  "pins": [
+    {
+      "name": "c",
+      "kind": "passive"
+    },
+    {
+      "name": "b",
+      "kind": "passive"
+    },
+    {
+      "name": "e",
+      "kind": "passive"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 0.2,
+  "traits": ["bjt"],
+  "limits": {
+    "maxCollectorCurrentMa": 100,
+    "vceoV": 45,
+    "maxPowerMw": 500,
+    "tjMaxC": 150
+  }
+}

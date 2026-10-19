@@ -82,7 +82,7 @@ describe('project loader', () => {
           {
             id: 'x1',
             from: { part: 'r1', pin: 'zz' },
-            to: { part: 'board', pin: '3V3' },
+            to: { part: 'board', pin: 'VIN' },
             color: 'red',
             points: [],
           },
@@ -100,7 +100,7 @@ describe('project loader', () => {
       "component 'r1': passive.resistor@9.9.9 is not available (have 1.0.0)",
       "component 'led': unknown type 'actuator.unobtainium'",
       "wire x1: r1 (passive.resistor) has no pin 'zz'",
-      'wire x1: board pin 3V3 is not simulated yet',
+      'wire x1: board pin VIN is not simulated yet',
       "wire x2: the board has no pin 'D99'",
     ]);
   });

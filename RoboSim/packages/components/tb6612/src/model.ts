@@ -35,6 +35,8 @@ const LOGIC_OHMS = 5 / 0.0011; // ≈ 1.1 mA logic supply current
 const MAX_VM = 15;
 const MAX_PEAK_A = 3.2;
 const RESTAMP = 1e-3;
+/** Body diodes of the output MOSFETs: a coasting motor's current returns to VM or comes from GND. */
+const BODY_DIODE = { vf: 0.8, rs: 0.1 } as const;
 
 interface Channel {
   readonly in1: NetId;
@@ -101,6 +103,11 @@ export class Tb6612 implements ComponentModel<Tb6612Props, Tb6612State>, Damagea
     for (const n of [this.stby, ...this.channels.flatMap((c) => [c.in1, c.in2, c.pwm])])
       s.conductance(n, g, 1 / PULL_DOWN_OHMS);
     this.handles = [];
+    for (const c of this.channels)
+      for (const out of [c.out1, c.out2]) {
+        s.diode(out, this.vmNet, BODY_DIODE);
+        s.diode(g, out, BODY_DIODE);
+      }
     this.channels.forEach((c, i) => {
       const d = this.damaged ? null : this.drives[i];
       if (!d) {

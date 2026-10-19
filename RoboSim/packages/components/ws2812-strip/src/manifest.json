@@ -1,0 +1,27 @@
+{
+  "id": "actuator.ws2812-strip",
+  "version": "1.0.0",
+  "category": "actuator",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "actuator.ws2812-strip.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "din", "kind": "digital" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "dout", "kind": "output" }
+  ],
+  "props": {
+    "count": { "type": "number", "default": 8, "min": 1, "max": 60 }
+  },
+  "inputs": [],
+  "massG": 6,
+  "mounting": { "lengthMm": 100, "widthMm": 10, "heightMm": 3 },
+  "polarity": ["vcc", "gnd"],
+  "peakCurrentPer": "count",
+  "limits": {
+    "minVoltageV": 3.5,
+    "maxVoltageV": 5.5,
+    "peakCurrentMa": 37
+  }
+}

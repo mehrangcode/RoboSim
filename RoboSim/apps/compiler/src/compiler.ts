@@ -279,9 +279,12 @@ export class Compiler {
           '-o',
           elf,
           ...objects,
+          // One group: libraries depend on each other (Adafruit_MPU6050 → Adafruit_BusIO) in any order.
+          '-Wl,--start-group',
           ...archives,
           `${p.prebuilt}/core.a`,
           '-lm',
+          '-Wl,--end-group',
         ],
         { cwd: sketchDir, deadline },
       );

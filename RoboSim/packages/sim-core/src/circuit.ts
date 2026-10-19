@@ -78,6 +78,8 @@ export interface InstantiateOptions {
   readonly mcu?: { readonly core: McuCore; readonly electrical: PinElectrical };
   readonly world?: WorldModel;
   readonly seed?: number;
+  /** DC operating points only (capacitors open, inductors short); see SimulationOptions.dcOnly. */
+  readonly dcOnly?: boolean;
 }
 
 /** Creates fresh component models for an assembled circuit and wires them into a Simulation. */
@@ -93,6 +95,7 @@ export function instantiateCircuit(circuit: AssembledCircuit, options: Instantia
     netCount: circuit.netCount,
     seed: options.seed ?? 1,
     components,
+    ...(options.dcOnly ? { dcOnly: true } : {}),
     ...(options.world ? { world: options.world } : {}),
     ...(options.mcu
       ? { mcu: { core: options.mcu.core, electrical: options.mcu.electrical, pins: circuit.mcuPins } }

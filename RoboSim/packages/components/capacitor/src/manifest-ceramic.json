@@ -1,0 +1,21 @@
+{
+  "id": "passive.capacitor-ceramic",
+  "version": "1.0.0",
+  "category": "passive",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "passive.capacitor-ceramic.name",
+  "pins": [
+    { "name": "a", "kind": "passive" },
+    { "name": "b", "kind": "passive" }
+  ],
+  "props": {
+    "capacitanceNf": { "type": "number", "default": 100, "min": 0.001, "max": 10000, "unit": "nF" }
+  },
+  "inputs": [],
+  "traits": ["capacitor"],
+  "massG": 0.2,
+  "limits": {
+    "ratedVoltageV": 50
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "sensor.mpu6050",
+  "version": "1.0.0",
+  "category": "sensor",
+  "tier": "pro",
+  "phase": "P2",
+  "nameKey": "sensor.mpu6050.name",
+  "pins": [
+    { "name": "vcc", "kind": "power" },
+    { "name": "gnd", "kind": "ground" },
+    { "name": "scl", "kind": "digital" },
+    { "name": "sda", "kind": "digital" },
+    { "name": "xda", "kind": "passive" },
+    { "name": "xcl", "kind": "passive" },
+    { "name": "ad0", "kind": "digital" },
+    { "name": "int", "kind": "output" }
+  ],
+  "props": {},
+  "inputs": [
+    { "name": "tiltX", "type": "number", "default": 0, "min": -90, "max": 90 },
+    { "name": "tiltY", "type": "number", "default": 0, "min": -90, "max": 90 },
+    { "name": "turnRate", "type": "number", "default": 0, "min": -250, "max": 250 }
+  ],
+  "massG": 2,
+  "mounting": { "lengthMm": 21, "widthMm": 16, "heightMm": 3 },
+  "polarity": ["vcc", "gnd"],
+  "i2c": { "sda": "sda", "scl": "scl", "address": 104, "addressPin": { "pin": "ad0", "whenHigh": 105 } },
+  "limits": {
+    "maxVoltageV": 6,
+    "peakCurrentMa": 5
+  }
+}

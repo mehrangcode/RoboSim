@@ -11,11 +11,12 @@ type Category = 'all' | ComponentManifest['category'];
 
 /**
  * Component library (FR-CIR-10): search in Persian and English at once, filter by category, then
- * click to add at the centre of the view or drag onto the canvas.
+ * click to add at the centre of the view or drag onto the canvas. By default it lists every part
+ * shipping through P2 (catalogue Tiers A–C).
  */
 export function LibraryPanel({
   editor,
-  phase = 'P1',
+  phase = 'P2',
 }: {
   editor: CircuitEditorState;
   phase?: 'P1' | 'P2' | 'P3' | 'P4';

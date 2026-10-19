@@ -5,6 +5,7 @@ import type {
   MnaStamper,
   ModelContext,
   NetId,
+  ReactiveState,
   SourceHandle,
   WheelActuator,
   Damageable,
@@ -18,6 +19,8 @@ export interface TtMotorProps {
   readonly gearRatio: number;
   readonly gearEfficiency: number;
   readonly timeConstantMs: number;
+  /** Winding inductance: interrupting the current makes the kickback a flyback diode exists for. */
+  readonly inductanceMh: number;
 }
 
 export interface TtMotorState {
@@ -54,6 +57,11 @@ export function motorConstants(p: TtMotorProps): MotorConstants {
 
 /** Re-stamp when the back-EMF changes by more than this (V). */
 const RESTAMP_EPSILON_V = 1e-4;
+/**
+ * Losses across the terminals (brush arcing, eddy currents): what an interrupted winding current flows
+ * into when nothing clamps it, so an opened switch shows a kick of hundreds of volts, not megavolts.
+ */
+const DAMPING_OHMS = 2200;
 
 /**
  * Brushed DC gear motor (Technical Design §5.4–5.5): winding resistance + back-EMF source in the circuit;
@@ -70,6 +78,8 @@ export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState>, Whee
   private omega = 0;
   private stampedEmf = 0;
   private handle = 0 as SourceHandle;
+  /** Winding current between integration steps. */
+  private readonly winding: ReactiveState = { volts: 0, amps: 0 };
   private currentA = 0;
   private volts = 0;
   private loadTorqueNm = 0;
@@ -123,8 +133,15 @@ export class TtMotor implements ComponentModel<TtMotorProps, TtMotorState>, Whee
 
   stamp(s: MnaStamper): void {
     this.stampedEmf = this.k.ke * this.omega;
-    if (this.damaged) return;
-    this.handle = s.voltageSource(this.m1, this.m2, this.stampedEmf, this.k.r);
+    if (this.damaged) {
+      this.winding.amps = 0;
+      return;
+    }
+    s.conductance(this.m1, this.m2, 1 / DAMPING_OHMS);
+    this.handle = s.inductor(this.m1, this.m2, (this.props?.inductanceMh ?? 1.5) / 1000, this.winding, {
+      seriesResistance: this.k.r,
+      emf: this.stampedEmf,
+    });
   }
 
   step(dt: number, io: ComponentIO): void {

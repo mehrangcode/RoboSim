@@ -12,6 +12,8 @@ export {
 } from './mna/circuit.js';
 export { SingularMatrixError } from './mna/lu.js';
 export { McuBus, type McuPinBinding } from './bus.js';
+export { I2cRouter, SpiRouter, type BusContext } from './buses.js';
+export { RegisterPort, stampPullUp, type RegisterSpace } from './registers.js';
 export {
   Simulation,
   SLICE_S,
@@ -76,6 +78,7 @@ export {
   type Severity,
   type StaticContext,
   type StaticProbe,
+  type TransitionProbe,
   type StaticRule,
 } from './safety/types.js';
 export {
@@ -98,3 +101,4 @@ export {
   type TickState,
 } from './challenge/evaluate.js';
 export { ChallengeTracker, type ChallengeResult, type ChallengeTrackerOptions } from './challenge/tracker.js';
+export { OpenDrainWatch, pullLow, type LineEvent } from './single-wire.js';

@@ -305,6 +305,343 @@ void loop() {
     drive(SPEED, SPEED);
   }
 }`,
+  timer555: `
+// 555 blinker: the NE555 runs on its own as an astable (R1 = 1 kΩ, R2 = 68 kΩ, C = 10 µF, about 1 Hz)
+// and blinks the LED. The Uno only watches the 555's output on D2 and reports what it measures.
+const int TIMER_PIN = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(TIMER_PIN, INPUT);
+}
+
+void loop() {
+  unsigned long high = pulseIn(TIMER_PIN, HIGH, 3000000UL); // µs
+  unsigned long low = pulseIn(TIMER_PIN, LOW, 3000000UL);
+  if (high == 0 || low == 0) {
+    Serial.println("no pulses");
+    return;
+  }
+  Serial.print("period ");
+  Serial.print((high + low) / 1000);
+  Serial.print(" ms, high ");
+  Serial.print(100 * high / (high + low));
+  Serial.println(" %");
+}`,
+  rcCharge: `
+// RC charging: D7 charges a 100 µF capacitor through 10 kΩ (time constant R·C = 1 s) and A0 reads its
+// voltage. Every 4 s the pin flips, so the capacitor charges and discharges along e^(-t/RC) curves.
+// Open the serial monitor (or plotter): after 1 s of charging it reads 63 % of 5 V.
+const int CHARGE_PIN = 7;
+unsigned long flipped = 0;
+bool charging = true;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(CHARGE_PIN, OUTPUT);
+  digitalWrite(CHARGE_PIN, HIGH);
+}
+
+void loop() {
+  if (millis() - flipped >= 4000) {
+    flipped = millis();
+    charging = !charging;
+    digitalWrite(CHARGE_PIN, charging ? HIGH : LOW);
+  }
+  float volts = analogRead(A0) * 5.0 / 1023;
+  Serial.println(volts, 2);
+  delay(100);
+}`,
+  transistorMotor: `
+// Motor speed with a TIP120: the knob on A0 sets the PWM duty on D9. D9 drives the TIP120's base
+// through 1 kΩ, and the Darlington switches the motor current from the 4×AA pack, which no pin could
+// supply. The 1N4007 across the motor carries the coil's current each time the transistor switches off.
+const int MOTOR_PIN = 9;
+unsigned long last = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(MOTOR_PIN, OUTPUT);
+}
+
+void loop() {
+  int duty = analogRead(A0) / 4;
+  analogWrite(MOTOR_PIN, duty);
+  if (millis() - last >= 500) {
+    last = millis();
+    Serial.print("duty ");
+    Serial.print(100L * duty / 255);
+    Serial.println(" %");
+  }
+}`,
+  mosfetRamp: `
+// Soft start with a logic-level MOSFET: D6 drives an IRLZ44N's gate through 220 Ω, and 10 kΩ holds the
+// gate low while the Uno boots. The motor ramps up over 2 s, runs, ramps down, rests, and repeats.
+const int GATE_PIN = 6;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(GATE_PIN, OUTPUT);
+}
+
+void ramp(int from, int to) {
+  int step = from < to ? 5 : -5;
+  for (int duty = from; duty != to; duty += step) {
+    analogWrite(GATE_PIN, duty);
+    delay(40);
+  }
+  analogWrite(GATE_PIN, to);
+}
+
+void loop() {
+  Serial.println("ramp up");
+  ramp(0, 255);
+  Serial.println("full speed");
+  delay(1500);
+  Serial.println("ramp down");
+  ramp(255, 0);
+  Serial.println("rest");
+  delay(1000);
+}`,
+  motorPwm: `
+void setup() { pinMode(9, OUTPUT); analogWrite(9, 128); }
+void loop() {}`,
+  oledKnob: `
+// SSD1306 OLED on I²C (SDA A4, SCL A5, address 0x3C): a title, the knob on A0 as a number and a bar.
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
+
+void setup() {
+  Serial.begin(9600);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("SSD1306 not found");
+    for (;;) {}
+  }
+  display.setTextColor(SSD1306_WHITE);
+}
+
+void loop() {
+  int knob = analogRead(A0);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.println("RoboSim");
+  display.setTextSize(1);
+  display.setCursor(0, 24);
+  display.print("Knob: ");
+  display.println(knob);
+  display.drawRect(0, 40, 128, 14, SSD1306_WHITE);
+  display.fillRect(2, 42, map(knob, 0, 1023, 0, 124), 10, SSD1306_WHITE);
+  display.display();
+  delay(100);
+}`,
+  lcdHello: `
+// 16x2 LCD with a PCF8574 I²C backpack (address 0x27): a greeting with a custom heart, then the uptime.
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+byte heart[8] = {0b00000, 0b01010, 0b11111, 0b11111, 0b01110, 0b00100, 0b00000, 0b00000};
+
+void setup() {
+  lcd.init();
+  lcd.backlight();
+  lcd.createChar(0, heart);
+  lcd.setCursor(0, 0);
+  lcd.print("Hello, RoboSim ");
+  lcd.write(0);
+}
+
+void loop() {
+  lcd.setCursor(0, 1);
+  lcd.print("Uptime: ");
+  lcd.print(millis() / 1000);
+  lcd.print(" s   ");
+  delay(250);
+}`,
+  imuTilt: `
+// MPU-6050 (I²C 0x68): prints acceleration and rotation, and lights the LED on D13 past 20° of tilt.
+#include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+
+Adafruit_MPU6050 mpu;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(13, OUTPUT);
+  if (!mpu.begin()) {
+    Serial.println("MPU6050 not found");
+    for (;;) {}
+  }
+  mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
+  mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+}
+
+void loop() {
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+  float tilt = degrees(atan2(sqrt(a.acceleration.x * a.acceleration.x + a.acceleration.y * a.acceleration.y),
+                             a.acceleration.z));
+  digitalWrite(13, tilt > 20 ? HIGH : LOW);
+  Serial.print("tilt ");
+  Serial.print(tilt, 1);
+  Serial.print(" deg, turn ");
+  Serial.print(degrees(g.gyro.z), 1);
+  Serial.println(" deg/s");
+  delay(500);
+}`,
+  weatherStation: `
+// BMP280 weather station on the 3.3 V pin (I²C 0x76): temperature, pressure and altitude every 2 s.
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+
+Adafruit_BMP280 bmp;
+
+void setup() {
+  Serial.begin(9600);
+  if (!bmp.begin(0x76)) {
+    Serial.println("BMP280 not found");
+    for (;;) {}
+  }
+  // Wire.begin() turned on the Uno's pull-ups to 5 V; the module already pulls SDA/SCL up to 3.3 V.
+  digitalWrite(SDA, LOW);
+  digitalWrite(SCL, LOW);
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL, Adafruit_BMP280::SAMPLING_X2, Adafruit_BMP280::SAMPLING_X16,
+                  Adafruit_BMP280::FILTER_X16, Adafruit_BMP280::STANDBY_MS_500);
+}
+
+void loop() {
+  Serial.print(bmp.readTemperature(), 1);
+  Serial.print(" C  ");
+  Serial.print(bmp.readPressure() / 100.0, 1);
+  Serial.print(" hPa  ");
+  Serial.print(bmp.readAltitude(1013.25), 0);
+  Serial.println(" m");
+  delay(2000);
+}`,
+  laserAvoider: `
+// Laser-ranging obstacle avoider: a VL53L0X on the front (I²C, XSHUT to D11) measures the gap ahead.
+// Something within 45 cm: veer right; within 18 cm: back up and turn. With a clear view it veers back
+// left until it has undone its turns, so it keeps heading for the goal on the right of the course.
+// L298N: ENA D5, ENB D6, IN1-IN4 D7-D10.
+#include <Wire.h>
+#include <VL53L0X.h>
+
+VL53L0X tof;
+const int SPEED = 170;
+long heading = 0; // net turning, in ms of veering (right positive)
+unsigned long last = 0;
+
+void drive(int left, int right) { // -255..255
+  digitalWrite(7, left > 0 ? HIGH : LOW);
+  digitalWrite(8, left < 0 ? HIGH : LOW);
+  analogWrite(5, abs(left));
+  digitalWrite(9, right > 0 ? HIGH : LOW);
+  digitalWrite(10, right < 0 ? HIGH : LOW);
+  analogWrite(6, abs(right));
+}
+
+void setup() {
+  Serial.begin(9600);
+  for (int p = 5; p <= 10; p++) pinMode(p, OUTPUT);
+  pinMode(11, OUTPUT);
+  digitalWrite(11, HIGH); // release XSHUT
+  delay(10);
+  Wire.begin();
+  tof.setTimeout(500);
+  if (!tof.init()) {
+    Serial.println("VL53L0X not found");
+    for (;;) {}
+  }
+  tof.startContinuous();
+  last = millis();
+}
+
+void loop() {
+  int mm = tof.readRangeContinuousMillimeters();
+  unsigned long now = millis();
+  int dt = now - last;
+  last = now;
+  if (mm < 180) {
+    drive(-SPEED, -SPEED);
+    delay(200);
+    drive(SPEED, -SPEED);
+    delay(250);
+    heading += 500;
+  } else if (mm < 450) {
+    drive(SPEED, SPEED / 5); // veer right
+    heading += dt;
+  } else if (heading > 0 && mm > 600) {
+    drive(SPEED / 5, SPEED); // veer back left
+    heading -= dt;
+  } else {
+    drive(SPEED, SPEED);
+  }
+}`,
+  thermometers: `
+// Two thermometers: a DHT11 module on D2 (temperature + humidity) and a DS18B20 on D4 (1-Wire, with a
+// 4.7 kΩ pull-up). Both are read every 2 s and printed to the serial monitor.
+#include <DHT.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+DHT dht(2, DHT11);
+OneWire oneWire(4);
+DallasTemperature sensors(&oneWire);
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+  sensors.begin();
+  Serial.print(sensors.getDeviceCount());
+  Serial.println(" DS18B20 found");
+}
+
+void loop() {
+  delay(2000);
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println("DHT11 read failed");
+  } else {
+    Serial.print("DHT11 ");
+    Serial.print(temperature, 0);
+    Serial.print(" C ");
+    Serial.print(humidity, 0);
+    Serial.println(" %");
+  }
+  sensors.requestTemperatures();
+  Serial.print("DS18B20 ");
+  Serial.print(sensors.getTempCByIndex(0), 2);
+  Serial.println(" C");
+}`,
+  neopixelRainbow: `
+// NeoPixel rainbow: 8 WS2812B LEDs on D6 (through 330 Ω) cycle through the colour wheel; the knob on
+// A0 sets the brightness.
+#include <Adafruit_NeoPixel.h>
+
+const int LEDS = 8;
+Adafruit_NeoPixel strip(LEDS, 6, NEO_GRB + NEO_KHZ800);
+uint16_t hue = 0;
+
+void setup() {
+  strip.begin();
+  strip.show();
+}
+
+void loop() {
+  strip.setBrightness(map(analogRead(A0), 0, 1023, 5, 255));
+  for (int i = 0; i < LEDS; i++)
+    strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(hue + i * (65536L / LEDS))));
+  strip.show();
+  hue += 512;
+  delay(20);
+}`,
   lineFollower: `
 // L/C/R line sensor on D2/D3/D4 (HIGH = black); L298N ENA/ENB on D5/D6, IN1-IN4 on D7-D10 (IN2/IN4 stay LOW).
 void setup() {

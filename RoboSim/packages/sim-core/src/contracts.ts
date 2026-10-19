@@ -46,6 +46,35 @@ export interface UartPort {
   onData(cb: (bytes: Uint8Array) => void): Unsubscribe;
 }
 
+/**
+ * I²C master events of an MCU (Tier C), delivered at the CPU cycle they happen (`time` in s). The
+ * core completes each one after the time it takes on the wire at the configured SCL frequency.
+ */
+export interface I2cBusHandler {
+  start(repeated: boolean, time: number): void;
+  /** Address byte; returns the ACK. */
+  connect(address: number, read: boolean, time: number): boolean;
+  /** Data byte from the master; returns the ACK. */
+  write(byte: number, time: number): boolean;
+  /** Data byte for the master; `ack` false marks the last one. */
+  read(ack: boolean, time: number): number;
+  stop(time: number): void;
+}
+
+/** SPI master transfers of an MCU (Tier C): one byte out on MOSI, the returned byte in on MISO. */
+export interface SpiBusHandler {
+  transfer(byte: number, time: number): number;
+}
+
+/** Board pins of the hardware serial buses. */
+export interface BusPins {
+  readonly sda: PinId;
+  readonly scl: PinId;
+  readonly mosi: PinId;
+  readonly miso: PinId;
+  readonly sck: PinId;
+}
+
 export interface McuCore {
   readonly clockHz: number;
   /** Monotonically increasing CPU cycle count. */
@@ -60,8 +89,14 @@ export interface McuCore {
    * Pin mode changes (`pinMode`, enabling a pull-up) at their cycle. The scheduler re-solves the
    * circuit there, so an input reads its real level at once instead of at the end of the slice.
    */
-  onPinModeChange?(cb: (pin: PinId, mode: PinMode, cycle: number) => void): Unsubscribe;
+  onPinModeChange?(cb: (pin: PinId, mode: PinMode, cycle: number, level: Level) => void): Unsubscribe;
   uart(index: number): UartPort;
+  /** Pins the I²C and SPI peripherals use (Tier C). */
+  readonly busPins?: BusPins;
+  /** Routes the I²C peripheral's transfers to `handler` (one handler; a new one replaces it). */
+  attachI2c?(handler: I2cBusHandler): Unsubscribe;
+  /** Routes the SPI peripheral's transfers to `handler`. */
+  attachSpi?(handler: SpiBusHandler): Unsubscribe;
   reset(): void;
 }
 
@@ -163,6 +198,11 @@ export interface WorldModel {
   /** Pose of a component mounted on a robot, or null when it is not mounted (e.g. on the bench). */
   componentPose(componentId: string): ComponentPose | null;
   /**
+   * Motion of a mounted component (Tier C, IMU): velocity of its mount point in the world frame (m/s)
+   * and the body's yaw rate (rad/s, counter-clockwise), or null when it is not mounted.
+   */
+  componentMotion?(componentId: string): { readonly velocity: Vec2; readonly yawRate: number } | null;
+  /**
    * Called once by the scheduler after component models are initialised, so the world can couple
    * drivetrain actuators (motors) to wheels by component id.
    */
@@ -202,6 +242,54 @@ export interface Fault {
 export type SourceHandle = number & { readonly __brand: 'SourceHandle' };
 /** Handle to a stamped piecewise-linear diode. */
 export type DiodeHandle = number & { readonly __brand: 'DiodeHandle' };
+/** Handle to a stamped BJT or MOSFET. */
+export type TransistorHandle = number & { readonly __brand: 'TransistorHandle' };
+
+/** Operating region of a transistor; a MOSFET's triode region is `linear`. */
+export type TransistorRegion = 'cutoff' | 'active' | 'saturation' | 'linear';
+
+/**
+ * Bipolar transistor as a region model (Tier B): cutoff; active with the base-emitter junction as a
+ * PWL diode and Ic = β·Ib; saturation with Vce = Vce(sat) + r·Ic. Voltages and currents are for an NPN;
+ * a PNP uses the same values with every polarity reversed.
+ */
+export interface BjtParams {
+  readonly polarity: 'npn' | 'pnp';
+  /** Current gain hFE. */
+  readonly beta: number;
+  /** Base-emitter knee (V) and the junction's series resistance (Ω): Vbe = vbe + rb·Ib. */
+  readonly vbe: number;
+  readonly rb: number;
+  /** Saturation: Vce = vceSat + rceSat·Ic. */
+  readonly vceSat: number;
+  readonly rceSat: number;
+}
+
+/**
+ * MOSFET, level 1 (Tier B): cutoff below Vth; saturation Id = K·(Vgs − Vth)²; linear (triode)
+ * Id = K·(2·(Vgs − Vth)·Vds − Vds²), so Rds(on) = 1 / (2·K·(Vgs − Vth)). Symmetric in drain and source.
+ */
+export interface MosfetParams {
+  readonly polarity: 'n' | 'p';
+  /** Threshold voltage, positive for both polarities (V). */
+  readonly vth: number;
+  /** Transconductance parameter (A/V²). */
+  readonly k: number;
+  /** The gate sees this fraction of V(g) − V(s) (a module's gate divider). Default 1. */
+  readonly gateScale?: number;
+}
+
+/** Currents of a transistor in its normal direction (A): collector or drain, and base (0 for a MOSFET). */
+export interface TransistorReading {
+  readonly main: number;
+  readonly control: number;
+  readonly region: TransistorRegion;
+  /**
+   * Dissipation Vce·Ic + Vbe·Ib or Vds·Id (W), computed per operating point before any averaging, so a
+   * PWM-switched transistor heats by its real mean power, not by mean voltage × mean current.
+   */
+  readonly power: number;
+}
 
 export interface DiodeParams {
   /** Forward voltage at which the diode turns on (V). */
@@ -236,6 +324,60 @@ export interface MnaStamper {
     options?: { readonly seriesResistance?: number; readonly offsetV?: number },
   ): SourceHandle;
   diode(anode: NetId, cathode: NetId, params: DiodeParams): DiodeHandle;
+  /** Bipolar transistor (Tier B), solved by region iteration like the PWL diodes. */
+  bjt(collector: NetId, base: NetId, emitter: NetId, params: BjtParams): TransistorHandle;
+  /** MOSFET (Tier B), linearised and solved by Newton iteration with the other nonlinear parts. */
+  mosfet(drain: NetId, gate: NetId, source: NetId, params: MosfetParams): TransistorHandle;
+  /**
+   * Capacitor from `a` to `b` (Tier B). Backward-Euler companion as a branch: across one time step h,
+   * V(a) − V(b) = (ESR + h/C)·I + v, with v the capacitor voltage of `state`. In a DC solve it is open.
+   * The integrator writes the new voltage and current into `state` after every accepted step.
+   * `sourceCurrent(handle)` reports −I (I flows a → b inside the part).
+   */
+  capacitor(
+    a: NetId,
+    b: NetId,
+    farads: number,
+    state: ReactiveState,
+    options?: CapacitorOptions,
+  ): SourceHandle;
+  /**
+   * Inductor from `a` to `b` with optional winding resistance and a series source (a motor's back-EMF):
+   * V(a) − V(b) = r·I + L·dI/dt + emf. In a DC solve the inductance vanishes. `state.amps` carries the
+   * current between steps. `sourceCurrent(handle)` reports −I (I flows a → b inside the part).
+   */
+  inductor(
+    a: NetId,
+    b: NetId,
+    henries: number,
+    state: ReactiveState,
+    options?: InductorOptions,
+  ): SourceHandle;
+}
+
+/**
+ * State of a reactive element, owned by the component that stamps it. The integrator updates it after
+ * every accepted time step (Technical Design §5.4, Tier B); the part reads it in `step` and `snapshot`.
+ */
+export interface ReactiveState {
+  /** Capacitor: voltage of the capacitance (without the ESR drop). Inductor: terminal voltage a − b. */
+  volts: number;
+  /** Current a → b through the element (A). */
+  amps: number;
+  /** Integrator history (previous step), managed by the solver; parts leave it alone. */
+  history?: { readonly value: number; readonly h: number } | undefined;
+}
+
+export interface CapacitorOptions {
+  /** Equivalent series resistance (Ω). */
+  readonly esr?: number;
+}
+
+export interface InductorOptions {
+  /** Winding resistance (Ω). */
+  readonly seriesResistance?: number;
+  /** Source in series, + at `a` (V): opposes current a → b, like a motor's back-EMF. */
+  readonly emf?: number;
 }
 
 export interface VoltageSourceOptions {
@@ -254,6 +396,8 @@ export interface MnaSolution {
   sourceCurrent(h: SourceHandle): number;
   /** Anode → cathode current (A). */
   diodeCurrent(h: DiodeHandle): number;
+  /** Currents and region of a transistor. */
+  transistor(h: TransistorHandle): TransistorReading;
 }
 
 export interface ModelContext {
@@ -273,6 +417,11 @@ export interface PinEdge {
 export interface ComponentIO {
   /** Simulated time at the start of this slice (s). */
   readonly simTime: number;
+  /**
+   * Simulated time of the operating point `solution` describes (s): the end of the slice in `step`, the
+   * end of a sub-step while a reactive circuit is integrated (`settle`), the cycle of a pin-mode change.
+   */
+  readonly now: number;
   /** MCU output edges during this slice on pins wired directly to `net` (servo pulses, TRIG), in time order. */
   edges(net: NetId): readonly PinEdge[];
   /**
@@ -324,10 +473,63 @@ export interface ComponentModel<Props = unknown, State = unknown> {
    */
   mcuEdge?(net: NetId, level: Level, time: number, io: ComponentIO): void;
   /**
+   * MCU pin mode change on an input net, delivered synchronously after the scheduler re-settled the
+   * inputs (catalogue Tier C, single-wire buses). `output` drives `level`; an input mode releases the
+   * line. With `mcuEdge` it tells when the firmware pulls an open-drain line low and when it lets go
+   * (DHT11 start signal, 1-Wire slots): `pinMode(OUTPUT)` with the port bit already low is no edge.
+   */
+  mcuMode?(net: NetId, mode: PinMode, level: Level, time: number, io: ComponentIO): void;
+  /**
    * Combinational re-evaluation after each solve: return true when outputs changed. The scheduler
    * re-solves and asks again (at most 16 passes), so a chain of gates settles within one slice.
    */
   settle?(io: ComponentIO): boolean;
+  /**
+   * Once, at the power-on operating point before the first slice. A real Uno starts its sketch about
+   * 65 ms after power is applied (start-up delay fuses), so a module that needs a few milliseconds to
+   * power up and boot (BMP280, VL53L0X) is ready when setup() first talks to it.
+   */
+  powerOn?(io: ComponentIO): void;
+  /**
+   * Reactive circuits (Tier B): true when `settle` would change the part's outputs at this tentative
+   * operating point (a 555 comparator crossing its threshold). The integrator shortens the time step
+   * until the switch lands within a microsecond, so an RC timer keeps its datasheet period.
+   */
+  pendingSwitch?(solution: MnaSolution): boolean;
+  /** I²C target this part contains (Tier C), routed by the scheduler when its SDA/SCL reach the MCU's. */
+  i2c?(): I2cDevice | null;
+  /** SPI target this part contains (Tier C), selected while its CS line is LOW. */
+  spi?(): SpiDevice | null;
+}
+
+/**
+ * An I²C target (Tier C). The scheduler addresses it when its SDA and SCL nets reach the MCU's bus
+ * pins (directly or through series resistors) and the bus idles high. Several targets answering the
+ * same address all receive the transfer, and their read bytes are wired-AND, as on a real bus.
+ */
+export interface I2cDevice {
+  readonly sda: NetId;
+  readonly scl: NetId;
+  /** The 7-bit address it answers now, or null while it cannot answer (unpowered, held in reset). */
+  address(): number | null;
+  /** Addressed after a START: the master writes (`read` false) or reads. Returns the ACK. */
+  begin(read: boolean, time: number): boolean;
+  /** Byte from the master; returns the ACK. */
+  write(byte: number, time: number): boolean;
+  /** Next byte for the master; `ack` false means the master wants no more. */
+  read(ack: boolean, time: number): number;
+  /** STOP or repeated START: the transfer is over. */
+  end(time: number): void;
+}
+
+/** An SPI target (Tier C), selected while its CS net is LOW. */
+export interface SpiDevice {
+  readonly sck: NetId;
+  readonly mosi: NetId;
+  readonly miso: NetId;
+  readonly cs: NetId;
+  /** Full-duplex byte while selected: returns what it shifts out on MISO. */
+  transfer(byte: number, time: number): number;
 }
 
 export type PropSpec =
@@ -385,6 +587,8 @@ export interface ComponentManifest {
    * `peakCurrentMa` (worst-case draw, e.g. stall), `maxVoltageV` (abs. max across the polarity pins).
    */
   readonly limits: Readonly<Record<string, number>>;
+  /** Number prop that multiplies `peakCurrentMa` (an LED strip's length): the limit is then per unit. */
+  readonly peakCurrentPer?: string;
   /** Behaviour classes generic safety rules key on (FR-SAF-05). */
   readonly traits?: readonly ComponentTrait[];
   /** [positive pin, negative pin] of a polarised supply input; reversed wiring is an Error. */
@@ -410,6 +614,26 @@ export interface ComponentManifest {
   readonly isolationGroups?: readonly (readonly string[])[];
   /** Per-pin absolute maximum voltage to the part's negative polarity pin (V). */
   readonly pinMaxVolts?: Readonly<Record<string, number>>;
+  /** I²C target (Tier C): its bus pins and addressing, read by the bus safety rules. */
+  readonly i2c?: I2cSpec;
+}
+
+export interface I2cSpec {
+  readonly sda: string;
+  readonly scl: string;
+  /** Default 7-bit address. */
+  readonly address: number;
+  /** Enum prop holding the address as hex text ('0x3C'). */
+  readonly addressProp?: string;
+  /** Pin that selects `whenHigh` as the address when pulled high (MPU-6050 AD0, BMP280 SDO). */
+  readonly addressPin?: { readonly pin: string; readonly whenHigh: number };
+  /** Highest bus voltage its I/O pins tolerate (V); 3.3 V-only parts set it. */
+  readonly maxBusV?: number;
+  /**
+   * Pin that holds the part in reset (VL53L0X XSHUT). Firmware controlling it can wake such parts one
+   * at a time and give each its own address, so a shared default address is not a conflict.
+   */
+  readonly resetPin?: string;
 }
 
 export interface MountingSpec {
@@ -418,7 +642,7 @@ export interface MountingSpec {
   readonly heightMm: number;
 }
 
-export type ComponentTrait = 'inductive' | 'led' | 'source';
+export type ComponentTrait = 'inductive' | 'led' | 'source' | 'capacitor' | 'bjt' | 'mosfet';
 
 export interface SupplyPinSpec {
   readonly pin: string;

@@ -42,6 +42,18 @@ import { manifests as soilMoisture } from '@robosim/component-soil-moisture/mani
 import { manifests as joystick } from '@robosim/component-joystick/manifest';
 import { manifests as keypad } from '@robosim/component-keypad/manifest';
 import { manifests as rotaryEncoder } from '@robosim/component-rotary-encoder/manifest';
+import { manifests as capacitors } from '@robosim/component-capacitor/manifest';
+import { manifests as ne555 } from '@robosim/component-ne555/manifest';
+import { manifests as transistors } from '@robosim/component-transistor/manifest';
+import { manifests as irf520Module } from '@robosim/component-irf520-module/manifest';
+import { manifests as oledSsd1306 } from '@robosim/component-oled-ssd1306/manifest';
+import { manifests as lcd1602I2c } from '@robosim/component-lcd1602-i2c/manifest';
+import { manifests as mpu6050 } from '@robosim/component-mpu6050/manifest';
+import { manifests as bmp280 } from '@robosim/component-bmp280/manifest';
+import { manifests as vl53l0x } from '@robosim/component-vl53l0x/manifest';
+import { manifests as dht11 } from '@robosim/component-dht11/manifest';
+import { manifests as ds18b20 } from '@robosim/component-ds18b20/manifest';
+import { manifests as ws2812Strip } from '@robosim/component-ws2812-strip/manifest';
 import type { ComponentManifest } from '@robosim/sim-core';
 
 /**
@@ -55,15 +67,21 @@ export const CATALOG_MANIFESTS: readonly ComponentManifest[] = [
   ...breadboards,
   ...resistor,
   ...potentiometer,
+  ...capacitors,
   ...diodes,
+  ...transistors,
   ...linearRegulators,
   ...logic74hc,
   ...shiftRegister595,
   ...counter4017,
+  ...ne555,
   ...uln2003,
   ...led,
   ...ledRgb,
+  ...ws2812Strip,
   ...sevenSegment,
+  ...lcd1602I2c,
+  ...oledSsd1306,
   ...buzzerActive,
   ...buzzerPassive,
   ...relayModule,
@@ -81,9 +99,15 @@ export const CATALOG_MANIFESTS: readonly ComponentManifest[] = [
   ...line5ch,
   ...irObstacle,
   ...hcSr04,
+  ...vl53l0x,
+  ...mpu6050,
+  ...bmp280,
+  ...dht11,
+  ...ds18b20,
   ...l298n,
   ...tb6612,
   ...l9110s,
+  ...irf520Module,
   ...ttMotor,
   ...stepper28byj48,
   ...servos,

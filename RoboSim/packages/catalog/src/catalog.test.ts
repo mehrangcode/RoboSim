@@ -37,6 +37,24 @@ describe('component catalog', () => {
     }
   });
 
+  it('every property, option and user input has an editor label in both languages', () => {
+    for (const def of CATALOG) {
+      const m = def.manifest;
+      const keys = [
+        ...Object.keys(m.props).map((k) => `prop.${k}`),
+        ...Object.values(m.props).flatMap((spec) =>
+          spec.type === 'enum' ? spec.options.map((o) => `option.${o}`) : [],
+        ),
+        ...m.inputs.map((i) => `input.${i.name}`),
+      ];
+      for (const locale of ['en', 'fa'] as const)
+        for (const key of keys)
+          expect(typeof lookup(resources[locale].editor, key), `${locale}: ${m.id} editor:${key}`).toBe(
+            'string',
+          );
+    }
+  });
+
   it('resolves definitions by id and creates independent model instances', () => {
     const led = findDefinition('actuator.led');
     expect(led.create()).not.toBe(led.create());

@@ -193,3 +193,241 @@ describe('catalogue Tier A demos', () => {
     expect(run.safety.findings()).toEqual([]);
   }, 120_000);
 });
+
+/** Catalogue expansion Tier B (P2): reactive parts, run headless from their compiled sketches. */
+describe('catalogue Tier B demos', () => {
+  const state = <T>(run: ReturnType<typeof buildRun>, id: string) => run.circuit.models[id]?.snapshot() as T;
+
+  it('555 blinker: the timer free-runs at ≈ 1 Hz and the Uno measures its period with pulseIn()', () => {
+    const run = buildRun({ scenario: 'timer-555' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    let serial = '';
+    sim.mcu?.uart(0).onData((bytes) => (serial += String.fromCharCode(...bytes)));
+    const lit = new Set<boolean>();
+    for (let i = 0; i < 40; i++) {
+      sim.run(100);
+      lit.add(state<{ currentMa: number }>(run, 'led').currentMa > 5);
+    }
+    expect([...lit].sort()).toEqual([false, true]); // it blinks
+    const t = state<{ freqHz: number; duty: number }>(run, 'timer');
+    const f = 1 / (Math.LN2 * (1000 + 2 * 68_000) * 10e-6); // ≈ 1.05 Hz
+    expect(Math.abs(t.freqHz / f - 1)).toBeLessThan(0.03);
+    expect(t.duty).toBeCloseTo(69 / 137, 1);
+    const period = Number(/period (\d+) ms/.exec(serial)?.[1]);
+    expect(Math.abs(period / (1000 / f) - 1)).toBeLessThan(0.03);
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('RC charge: A0 reads 63 % of 5 V one time constant after D7 goes HIGH, then discharges', () => {
+    const run = buildRun({ scenario: 'rc-charge' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    const volts = () => state<{ volts: number }>(run, 'c').volts;
+    sim.run(1000);
+    expect(volts()).toBeCloseTo(5 * (1 - Math.exp(-1)), 1);
+    sim.run(3000); // 4 s: nearly full, then D7 goes LOW
+    const top = volts();
+    expect(top).toBeGreaterThan(4.85);
+    sim.run(1000);
+    expect(volts()).toBeCloseTo(top * Math.exp(-1), 1);
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('TIP120 motor: the knob sets the PWM duty, the transistor switches the pack current, the diode clamps', () => {
+    const run = buildRun({ scenario: 'transistor-motor' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    let serial = '';
+    sim.mcu?.uart(0).onData((bytes) => (serial += String.fromCharCode(...bytes)));
+    const rpm = () => state<{ rpm: number }>(run, 'motor').rpm;
+    sim.input('pot', 'position', 0); // the wiper at the 5 V end: duty 255
+    sim.run(800);
+    const full = rpm();
+    expect(full).toBeGreaterThan(150);
+    expect(state<{ region: string }>(run, 'q').region).toBe('saturation');
+    sim.input('pot', 'position', 0.6); // duty ≈ 40 %
+    sim.run(800);
+    expect(rpm()).toBeLessThan(full * 0.85); // unloaded, the coasting back-EMF props the speed up
+    expect(rpm()).toBeGreaterThan(full * 0.2);
+    sim.input('pot', 'position', 1);
+    sim.run(800);
+    expect(rpm()).toBeLessThan(5);
+    expect(serial).toContain('duty 100 %');
+    expect(state<{ avalanche: boolean; damaged: boolean }>(run, 'q')).toMatchObject({
+      avalanche: false,
+      damaged: false,
+    });
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('MOSFET soft start: the IRLZ44N ramps the motor up and down with PWM on its gate', () => {
+    const run = buildRun({ scenario: 'mosfet-ramp' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    let serial = '';
+    sim.mcu?.uart(0).onData((bytes) => (serial += String.fromCharCode(...bytes)));
+    const rpm = () => state<{ rpm: number }>(run, 'motor').rpm;
+    sim.run(1000);
+    const half = rpm();
+    sim.run(2000); // full speed from 2.04 s
+    expect(rpm()).toBeGreaterThan(200);
+    expect(half).toBeLessThan(rpm() * 0.8);
+    expect(state<{ partiallyOn: boolean }>(run, 'q').partiallyOn).toBe(false);
+    sim.run(3200); // ramped down by 5.6 s, resting
+    expect(rpm()).toBeLessThan(10);
+    expect(serial).toContain('ramp up\r\nfull speed\r\nramp down\r\nrest');
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('no flyback diode: flagged before the run, and the PWM kickbacks destroy the TIP120', () => {
+    const run = buildRun({ scenario: 'no-flyback' });
+    expect(run.scene.staticFindings.map((f) => f.ruleId)).toContain('SAF-FLYBACK');
+    const { sim } = run.circuit;
+    sim.run(300);
+    expect(state<{ damaged: boolean }>(run, 'q').damaged).toBe(true);
+    expect(run.safety.findings().map((f) => f.ruleId)).toContain('SAF-COMPONENT-FAULT');
+  }, 60_000);
+});
+
+/** Catalogue expansion Tier C (P2): I²C displays and sensors driven by their Arduino libraries. */
+describe('catalogue Tier C demos', () => {
+  const state = <T>(run: ReturnType<typeof buildRun>, id: string) => run.circuit.models[id]?.snapshot() as T;
+  const serialOf = (run: ReturnType<typeof buildRun>) => {
+    const out = { text: '' };
+    run.circuit.sim.mcu?.uart(0).onData((bytes) => (out.text += String.fromCharCode(...bytes)));
+    return out;
+  };
+
+  it('OLED: Adafruit_SSD1306 draws the title and a bar as long as the knob is turned', () => {
+    const run = buildRun({ scenario: 'oled-knob' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    type Oled = { on: boolean; pixels: readonly number[] };
+    const lit = (y: number) => {
+      const p = state<Oled>(run, 'oled').pixels;
+      let n = 0;
+      for (let x = 0; x < 128; x++) if (((p[y * 4 + (x >> 5)] ?? 0) >>> (x & 31)) & 1) n++;
+      return n;
+    };
+    sim.input('pot', 'position', 0); // 5 V end: 1023
+    sim.run(600);
+    expect(state<Oled>(run, 'oled').on).toBe(true);
+    expect(lit(46)).toBeGreaterThan(120); // the frame's sides + a full bar
+    expect([...Array(16).keys()].reduce((n, y) => n + lit(y), 0)).toBeGreaterThan(150); // "RoboSim", size 2
+    sim.input('pot', 'position', 1);
+    sim.run(300);
+    expect(lit(46)).toBeLessThan(6); // only the frame's sides
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('LCD: LiquidCrystal_I2C prints a greeting with a custom heart, then the uptime', () => {
+    const run = buildRun({ scenario: 'lcd-hello' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    sim.run(2600);
+    type Lcd = { backlight: boolean; rows: readonly (readonly number[])[]; cgram: readonly number[] };
+    const lcd = state<Lcd>(run, 'lcd');
+    const text = (row: number) =>
+      (lcd.rows[row] ?? []).map((c) => (c < 0 ? ' ' : c < 8 ? '♥' : String.fromCharCode(c))).join('');
+    expect(lcd.backlight).toBe(true);
+    expect(text(0)).toBe('Hello, RoboSim ♥');
+    expect(text(1)).toMatch(/^Uptime: 2 s/);
+    expect(lcd.cgram.slice(0, 8)).toEqual([0, 0b01010, 0b11111, 0b11111, 0b01110, 0b00100, 0, 0]);
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('IMU: Adafruit_MPU6050 reports the tilt and the LED lights past 20°', () => {
+    const run = buildRun({ scenario: 'imu-tilt' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    const serial = serialOf(run);
+    const ledOn = () => state<{ currentMa: number }>(run, 'led').currentMa > 5;
+    sim.run(1200);
+    expect(ledOn()).toBe(false);
+    const flat = Number(/tilt ([\d.]+) deg/.exec(serial.text)?.[1]);
+    expect(flat).toBeLessThan(5);
+    sim.input('imu', 'tiltX', 35);
+    serial.text = '';
+    sim.run(1200);
+    expect(ledOn()).toBe(true);
+    const tilted = [...serial.text.matchAll(/tilt ([\d.]+) deg/g)].map((m) => Number(m[1])).at(-1) ?? 0;
+    expect(Math.abs(tilted - 35)).toBeLessThan(4);
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('weather station: Adafruit_BMP280 on the 3.3 V pin reads the bench temperature, pressure and altitude', () => {
+    const run = buildRun({ scenario: 'weather-station' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    const serial = serialOf(run);
+    sim.input('bmp', 'temperatureC', 26.5);
+    sim.input('bmp', 'altitudeM', 500);
+    sim.run(4500);
+    const last = [...serial.text.matchAll(/([\d.-]+) C {2}([\d.]+) hPa {2}([\d-]+) m/g)].at(-1);
+    expect(last).toBeDefined();
+    expect(Number(last?.[1])).toBeCloseTo(26.5, 0);
+    expect(Math.abs(Number(last?.[2]) - 954.6)).toBeLessThan(1);
+    expect(Math.abs(Number(last?.[3]) - 500)).toBeLessThan(15);
+    expect(state<{ interface: string }>(run, 'bmp').interface).toBe('i2c');
+    expect(run.safety.findings()).toEqual([]);
+  }, 60_000);
+
+  it('laser avoider: the VL53L0X sees what is ahead and the robot steers around it to the goal', () => {
+    const run = buildRun({ scenario: 'laser-avoider' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    const serial = serialOf(run);
+    const ranges = new Set<number>();
+    for (let s = 0; s < 60 && run.challenge?.result().status === 'running'; s++)
+      for (let i = 0; i < 10; i++) {
+        sim.run(100);
+        const r = state<{ rangeMm: number | null }>(run, 'tof').rangeMm;
+        if (r !== null) ranges.add(Math.round(r / 100));
+      }
+    expect(serial.text).not.toContain('not found');
+    expect(ranges.size).toBeGreaterThan(3); // the gap ahead changes as it drives
+    expect(run.challenge?.result().status).toBe('success');
+    expect(run.safety.findings()).toEqual([]);
+  }, 120_000);
+
+  it('thermometers: DHT11 (Adafruit DHT) and DS18B20 (OneWire + DallasTemperature) report the bench', () => {
+    const run = buildRun({ scenario: 'thermometers' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    const serial = serialOf(run);
+    sim.input('dht', 'temperatureC', 28);
+    sim.input('dht', 'humidity', 40);
+    sim.input('ds', 'temperatureC', 19.25);
+    sim.run(5000);
+    expect(serial.text).toContain('1 DS18B20 found');
+    expect(serial.text).not.toContain('read failed');
+    const dht = [...serial.text.matchAll(/DHT11 (\d+) C (\d+) %/g)].at(-1);
+    expect(Math.abs(Number(dht?.[1]) - 28)).toBeLessThanOrEqual(1);
+    expect(Math.abs(Number(dht?.[2]) - 40)).toBeLessThanOrEqual(3);
+    const ds = [...serial.text.matchAll(/DS18B20 (-?[\d.]+) C/g)].at(-1);
+    expect(Math.abs(Number(ds?.[1]) - 19.25)).toBeLessThanOrEqual(0.25);
+    expect(run.safety.findings()).toEqual([]);
+  }, 120_000);
+
+  it('NeoPixel rainbow: the 800 kHz bits of Adafruit_NeoPixel light the strip; the knob sets the brightness', () => {
+    const run = buildRun({ scenario: 'neopixel-rainbow' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const { sim } = run.circuit;
+    type Strip = { colors: readonly number[]; currentMa: number };
+    const level = (c: number) => Math.max((c >> 16) & 0xff, (c >> 8) & 0xff, c & 0xff);
+    sim.input('pot', 'position', 0); // 5 V end: full brightness
+    sim.run(300);
+    const bright = state<Strip>(run, 'strip');
+    expect(new Set(bright.colors).size).toBe(8); // a rainbow: every LED a different colour
+    expect(Math.max(...bright.colors.map(level))).toBeGreaterThanOrEqual(250);
+    sim.run(200);
+    expect(state<Strip>(run, 'strip').colors).not.toEqual(bright.colors); // it moves
+    sim.input('pot', 'position', 0.9);
+    sim.run(300);
+    const dim = state<Strip>(run, 'strip');
+    expect(Math.max(...dim.colors.map(level))).toBeLessThan(80);
+    expect(dim.currentMa).toBeLessThan(bright.currentMa);
+    expect(run.safety.findings()).toEqual([]);
+  }, 120_000);
+});

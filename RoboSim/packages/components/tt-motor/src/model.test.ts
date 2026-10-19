@@ -68,21 +68,45 @@ describe('actuator.tt-motor', () => {
   });
 });
 
+describe('actuator.tt-motor winding inductance', () => {
+  it('raises its stall current with τ = L/R and reports the slice average', () => {
+    const b = motorAt(6);
+    b.input('m', 'stalled', true);
+    b.run(0.001);
+    // Mean of 1.2 A·(1 − e^(−t/0.3 ms)) over the first millisecond: ≈ 0.85 A.
+    const tau = 1.5e-3 / 5;
+    const mean = 1.2 * (1 - (tau / 0.001) * (1 - Math.exp(-0.001 / tau)));
+    expect(b.state<TtMotorState>('m').currentMa / 1000).toBeCloseTo(mean, 1);
+    b.run(0.004);
+    expect(b.state<TtMotorState>('m').currentMa).toBeCloseTo(1200, 0);
+  });
+
+  it('kicks back when its supply is cut: the winding current flows on into the damping losses', () => {
+    const b = motorAt(6);
+    b.input('m', 'stalled', true);
+    b.run(0.005);
+    b.input('src', 'volts', 0); // the supply's own 0 Ω keeps a path, so the current decays smoothly
+    b.run(0.001);
+    expect(Math.abs(b.state<TtMotorState>('m').currentMa)).toBeLessThan(1200);
+    expect(b.sim.transient).toBe(true);
+  });
+});
+
 describe('actuator.tt-motor as a wheel actuator', () => {
   it('delivers stall torque at standstill and follows the imposed shaft speed', () => {
     const b = motorAt(6);
     const motor = b.models['m'] as unknown as WheelActuator;
     motor.setShaftSpeed(0);
-    b.run(0.002);
+    b.run(0.005); // a few winding time constants (L/R = 0.3 ms)
     const k = motorConstants(defaults);
-    expect(motor.shaftTorque()).toBeCloseTo(k.ke * 1.2 * 48 * 0.75, 6); // Kt·I_stall·G·η
+    expect(motor.shaftTorque()).toBeCloseTo(k.ke * 1.2 * 48 * 0.75, 4); // Kt·I_stall·G·η
     expect(motor.shaftInertia).toBeCloseTo(k.j * 48 * 48, 12);
 
     const noLoad = (250 * 2 * Math.PI) / 60;
     motor.setShaftSpeed(noLoad);
-    b.run(0.002);
+    b.run(0.005);
     expect(b.state<TtMotorState>('m').rpm).toBeCloseTo(250, 6); // speed is imposed, not integrated
     expect(b.state<TtMotorState>('m').currentMa).toBeCloseTo(150, 0);
-    expect(motor.shaftTorque()).toBeCloseTo(0, 6); // Kt·I0 just balances friction
+    expect(motor.shaftTorque()).toBeCloseTo(0, 5); // Kt·I0 just balances friction
   });
 });

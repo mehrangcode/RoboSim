@@ -83,6 +83,34 @@ export function circuitDomains(circuit: AssembledCircuit): (net: NetId) => NetId
   return find;
 }
 
+/**
+ * Nets joined through `signalPassthrough` pins (series resistors), never through ground: a pin's
+ * signal reaches every net of its group, e.g. a transistor base behind its base resistor.
+ */
+export function signalGroups(circuit: AssembledCircuit): (net: NetId) => NetId {
+  const parent = new Map<NetId, NetId>();
+  const find = (n: NetId): NetId => {
+    let r = n;
+    while ((parent.get(r) ?? r) !== r) r = parent.get(r) as NetId;
+    return r;
+  };
+  for (const part of circuit.parts)
+    for (const [a, b] of part.def.manifest.signalPassthrough ?? []) {
+      const na = part.pins[a];
+      const nb = part.pins[b];
+      if (na === undefined || nb === undefined || na === 0 || nb === 0) continue;
+      const ra = find(na);
+      const rb = find(nb);
+      if (ra !== rb) parent.set(rb, ra);
+    }
+  return find;
+}
+
+/** Control input of a transistor-like part: BJT base, MOSFET gate, a driver module's signal pin. */
+export function controlPin(part: AssembledPart): string | undefined {
+  return ['b', 'g', 'sig'].find((p) => part.pins[p] !== undefined);
+}
+
 export const hasTrait = (part: AssembledPart, trait: string): boolean =>
   (part.def.manifest.traits as readonly string[] | undefined)?.includes(trait) ?? false;
 

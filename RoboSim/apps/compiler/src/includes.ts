@@ -28,7 +28,7 @@ export function scanSources(files: readonly SourceFile[]): {
     errors.push({ file, line, column, severity: 'error', message, explanationKey: 'unsafe_source' });
   };
   for (const f of files) {
-    f.content.split('\n').forEach((text, k) => {
+    f.content.split(/\r?\n/).forEach((text, k) => {
       const line = k + 1;
       const asm = FILE_READING_ASM.exec(text);
       if (asm) refuse(f.name, line, asm.index + 1, `assembler directive '${asm[0]}' is not allowed`);
@@ -59,7 +59,7 @@ export function scanSources(files: readonly SourceFile[]): {
 /** Includes in a library or other trusted source tree (no guards): bare names only. */
 export function includedNames(content: string): string[] {
   const names: string[] = [];
-  for (const text of content.split('\n')) {
+  for (const text of content.split(/\r?\n/)) {
     const m = INCLUDE.exec(text);
     const target = m && TARGET.exec(m[3] ?? '');
     if (target) names.push(target[2] ?? target[3] ?? '');

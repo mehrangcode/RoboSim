@@ -68,6 +68,23 @@ const PREFIX: Readonly<Record<string, string>> = {
   'sensor.joystick': 'joy',
   'sensor.keypad-4x4': 'keys',
   'sensor.rotary-encoder': 'enc',
+  'passive.capacitor-ceramic': 'c',
+  'passive.capacitor-electrolytic': 'c',
+  'ic.ne555': 'u',
+  'semiconductor.2n2222': 'q',
+  'semiconductor.bc547': 'q',
+  'semiconductor.2n3906': 'q',
+  'semiconductor.tip120': 'q',
+  'semiconductor.irlz44n': 'q',
+  'driver.irf520-module': 'drv',
+  'display.oled-ssd1306': 'oled',
+  'display.lcd1602-i2c': 'lcd',
+  'sensor.mpu6050': 'imu',
+  'sensor.bmp280': 'baro',
+  'sensor.vl53l0x': 'tof',
+  'sensor.dht11': 'dht',
+  'sensor.ds18b20': 'temp',
+  'actuator.ws2812-strip': 'strip',
 };
 
 function nextId(taken: ReadonlySet<string>, prefix: string): string {

@@ -1,0 +1,27 @@
+{
+  "id": "ic.ne555",
+  "version": "1.0.0",
+  "category": "ic",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "ic.ne555.name",
+  "pins": [
+    { "name": "gnd", "kind": "ground" },
+    { "name": "trig", "kind": "digital" },
+    { "name": "out", "kind": "output" },
+    { "name": "reset", "kind": "digital" },
+    { "name": "ctrl", "kind": "analog" },
+    { "name": "thr", "kind": "analog" },
+    { "name": "dis", "kind": "passive" },
+    { "name": "vcc", "kind": "power" }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 0.5,
+  "polarity": ["vcc", "gnd"],
+  "limits": {
+    "maxVoltageV": 16,
+    "peakCurrentMa": 200,
+    "minVoltageV": 4.5
+  }
+}

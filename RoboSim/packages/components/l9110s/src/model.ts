@@ -32,6 +32,8 @@ const MIN_VCC = 2.5;
 const MAX_VCC = 12;
 const MAX_PEAK_A = 1.5;
 const RESTAMP = 1e-3;
+/** Output-stage clamp diodes: a coasting motor's current returns to VCC or comes from GND. */
+const CLAMP = { vf: 0.8, rs: 0.2 } as const;
 
 interface Channel {
   readonly ia: NetId;
@@ -80,6 +82,11 @@ export class L9110s implements ComponentModel<L9110sProps, L9110sState>, Damagea
 
   stamp(s: MnaStamper): void {
     const g = this.gnd;
+    for (const c of this.channels)
+      for (const out of [c.out1, c.out2]) {
+        s.diode(out, this.vccNet, CLAMP);
+        s.diode(g, out, CLAMP);
+      }
     this.handles = this.channels.map((c, i) => {
       const d = this.damaged ? null : this.drives[i];
       if (!d) return null;

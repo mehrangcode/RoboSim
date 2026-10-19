@@ -46,6 +46,8 @@ const JUMPER_OHMS = 0.01;
 const MAX_VS_V = 35;
 const MAX_CHANNEL_A = 2;
 const RESTAMP_EPSILON = 1e-3;
+/** The module's eight clamp diodes (each output to VS and from GND) carry a coasting motor's current. */
+const CLAMP = { vf: 0.7, rs: 0.3 } as const;
 
 interface Channel {
   readonly en: NetId;
@@ -123,6 +125,10 @@ export class L298n implements ComponentModel<L298nProps, L298nState>, Damageable
     const handles: SourceHandle[] = [];
     this.channels?.forEach((c, i) => {
       if (c.jumper) s.conductance(c.en, this.v5Net, 1 / JUMPER_OHMS);
+      for (const out of [c.outA, c.outB]) {
+        s.diode(out, this.vsNet, CLAMP);
+        s.diode(g, out, CLAMP);
+      }
       const d = this.damaged ? null : this.drives[i];
       if (!d) return;
       for (const [out, f] of [

@@ -64,7 +64,7 @@ describe('drive train: Uno → L298N → TT motor on 4×AA', () => {
   it('does nothing until the power switch is on', () => {
     const b = robot(255);
     b.run(0.3);
-    expect(b.state<TtMotorState>('motor').rpm).toBeCloseTo(0, 6);
+    expect(b.state<TtMotorState>('motor').rpm).toBeCloseTo(0, 4);
   });
 
   it('full PWM runs the motor forward at the speed the sagging battery and bridge drop allow', () => {

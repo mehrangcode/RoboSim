@@ -37,6 +37,18 @@ import { definition as soilMoisture } from '@robosim/component-soil-moisture';
 import { definition as joystick } from '@robosim/component-joystick';
 import { definition as keypad } from '@robosim/component-keypad';
 import { definition as rotaryEncoder } from '@robosim/component-rotary-encoder';
+import { definitions as capacitors } from '@robosim/component-capacitor';
+import { definition as ne555 } from '@robosim/component-ne555';
+import { definitions as transistors } from '@robosim/component-transistor';
+import { definition as irf520Module } from '@robosim/component-irf520-module';
+import { definition as oledSsd1306 } from '@robosim/component-oled-ssd1306';
+import { definition as lcd1602I2c } from '@robosim/component-lcd1602-i2c';
+import { definition as mpu6050 } from '@robosim/component-mpu6050';
+import { definition as bmp280 } from '@robosim/component-bmp280';
+import { definition as vl53l0x } from '@robosim/component-vl53l0x';
+import { definition as dht11 } from '@robosim/component-dht11';
+import { definition as ds18b20 } from '@robosim/component-ds18b20';
+import { definition as ws2812Strip } from '@robosim/component-ws2812-strip';
 import type { ComponentDefinition } from '@robosim/sim-core';
 
 /**
@@ -50,15 +62,21 @@ export const CATALOG: readonly ComponentDefinition[] = [
   ...breadboards,
   resistor,
   potentiometer,
+  ...capacitors,
   ...diodes,
+  ...transistors,
   ...linearRegulators,
   ...logic74hc,
   shiftRegister595,
   counter4017,
+  ne555,
   uln2003,
   led,
   ledRgb,
+  ws2812Strip,
   sevenSegment,
+  lcd1602I2c,
+  oledSsd1306,
   buzzerActive,
   buzzerPassive,
   relayModule,
@@ -76,9 +94,15 @@ export const CATALOG: readonly ComponentDefinition[] = [
   line5ch,
   irObstacle,
   hcSr04,
+  vl53l0x,
+  mpu6050,
+  bmp280,
+  dht11,
+  ds18b20,
   l298n,
   tb6612,
   l9110s,
+  irf520Module,
   ttMotor,
   stepper28byj48,
   ...servos,

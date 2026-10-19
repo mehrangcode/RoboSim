@@ -19,9 +19,21 @@ export type BenchScenarioId =
   | 'stepper-knob'
   | 'motor-driver'
   | 'keypad-lock'
-  | 'input-devices';
-export type SafetyScenarioId = 'led-no-resistor' | 'outputs-fighting' | 'motor-on-pin' | 'floating-input';
-export type ScenarioId = 'line-follower' | 'bump-avoider' | BenchScenarioId | SafetyScenarioId;
+  | 'input-devices'
+  | 'timer-555'
+  | 'rc-charge'
+  | 'transistor-motor'
+  | 'mosfet-ramp'
+  | 'oled-knob'
+  | 'lcd-hello'
+  | 'imu-tilt'
+  | 'weather-station'
+  | 'thermometers'
+  | 'neopixel-rainbow';
+export type SafetyScenarioId =
+  'led-no-resistor' | 'outputs-fighting' | 'motor-on-pin' | 'floating-input' | 'no-flyback';
+export type ScenarioId =
+  'line-follower' | 'bump-avoider' | 'laser-avoider' | BenchScenarioId | SafetyScenarioId;
 
 export const BENCH_SCENARIOS: readonly BenchScenarioId[] = [
   'blink',
@@ -37,12 +49,23 @@ export const BENCH_SCENARIOS: readonly BenchScenarioId[] = [
   'motor-driver',
   'keypad-lock',
   'input-devices',
+  'timer-555',
+  'rc-charge',
+  'transistor-motor',
+  'mosfet-ramp',
+  'oled-knob',
+  'lcd-hello',
+  'imu-tilt',
+  'weather-station',
+  'thermometers',
+  'neopixel-rainbow',
 ];
 export const SAFETY_SCENARIOS: readonly SafetyScenarioId[] = [
   'led-no-resistor',
   'outputs-fighting',
   'motor-on-pin',
   'floating-input',
+  'no-flyback',
 ];
 /** Longest verified run in simulated seconds (Technical Design §11.1). */
 export const MAX_SIM_SECONDS = 300;
@@ -50,6 +73,7 @@ export const MAX_SIM_SECONDS = 300;
 export const SCENARIOS: readonly ScenarioId[] = [
   'line-follower',
   'bump-avoider',
+  'laser-avoider',
   ...BENCH_SCENARIOS,
   ...SAFETY_SCENARIOS,
 ];

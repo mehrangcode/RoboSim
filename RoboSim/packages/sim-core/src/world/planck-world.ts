@@ -189,6 +189,16 @@ export class PlanckWorld implements WorldModel {
     return null;
   }
 
+  componentMotion(componentId: string): { velocity: Vec2; yawRate: number } | null {
+    for (const r of this.robots) {
+      const m = r.spec.mounts[componentId];
+      if (!m) continue;
+      const v = r.body.getLinearVelocityFromLocalPoint(new PVec2(m.xMm / 1000, m.yMm / 1000));
+      return { velocity: { x: v.x, y: v.y }, yawRate: r.body.getAngularVelocity() };
+    }
+    return null;
+  }
+
   /** Robot chassis velocity in the robot frame (forward m/s, yaw rad/s) for tests and telemetry. */
   robotMotion(robotId: string): { forward: number; lateral: number; yawRate: number } {
     const r = this.robots.find((x) => x.spec.id === robotId);

@@ -65,7 +65,19 @@
       "motor-driver": "Two motors on a TB6612FNG",
       "bump-avoider": "Bump-and-turn obstacle avoider",
       "keypad-lock": "Keypad lock",
-      "input-devices": "Encoder and joystick"
+      "input-devices": "Encoder and joystick",
+      "timer-555": "555 blinker",
+      "rc-charge": "Capacitor charging curve",
+      "transistor-motor": "Motor speed with a TIP120",
+      "mosfet-ramp": "MOSFET soft start",
+      "no-flyback": "Motor without a flyback diode",
+      "laser-avoider": "Laser-ranging obstacle avoider",
+      "oled-knob": "OLED display",
+      "lcd-hello": "Character LCD",
+      "imu-tilt": "Tilt sensor (MPU-6050)",
+      "weather-station": "Weather station (BMP280)",
+      "thermometers": "Two thermometers",
+      "neopixel-rainbow": "NeoPixel rainbow"
     },
     "scenarioHint": {
       "line-follower": "Arduino Uno + L298N + two TT motors + 3-channel line sensor on 4×AA. The firmware follows the black line around the oval.",
@@ -86,7 +98,19 @@
       "motor-driver": "Two TT motors on a TB6612FNG MOSFET driver ramp from full reverse to full forward. STBY must be HIGH, or the driver sleeps. MOSFETs waste less voltage than the L298N.",
       "bump-avoider": "Two lever switches at the front corners: when one hits an obstacle the robot backs up, turns away, and later turns back, working its way to the goal of the obstacle course.",
       "keypad-lock": "Click the keys on the keypad: type 1234 then # to unlock (green LED); * clears. The Keypad library scans the rows and columns, and the serial monitor shows what you typed.",
-      "input-devices": "Turn the rotary encoder (its slider sets the knob position) and move the joystick: the sketch counts detents from the quadrature contacts and prints both to the serial monitor."
+      "input-devices": "Turn the rotary encoder (its slider sets the knob position) and move the joystick: the sketch counts detents from the quadrature contacts and prints both to the serial monitor.",
+      "timer-555": "An NE555 timer blinks the LED about once a second all by itself: R1, R2 and the 10 µF capacitor set the rhythm (f = 1.44 / ((R1 + 2·R2)·C)). The Uno only listens on D2 and prints the period it measures.",
+      "rc-charge": "D7 charges a 100 µF capacitor through 10 kΩ and A0 watches it rise: 63 % of 5 V after one time constant (R·C = 1 s), almost full after five. Every 4 s the pin flips and it discharges. Watch the numbers in the serial monitor.",
+      "transistor-motor": "Turn the knob: the PWM duty on D9 switches a TIP120 Darlington, which carries the motor current from the 4×AA pack (a pin could not). The 1N4007 across the motor catches the coil's current every time the transistor switches off.",
+      "mosfet-ramp": "An IRLZ44N logic-level MOSFET, fully on with 5 V on its gate, ramps the motor up over 2 s, runs it, ramps it down and rests. 220 Ω limits the gate charging current; 10 kΩ keeps the gate low while the Uno boots.",
+      "no-flyback": "The same TIP120 motor switch, but without the diode. The checker flags it before you run. Run it: each time the PWM switches the motor off, its coil kicks the collector up to 60 V until the transistor breaks down, and soon it fails.",
+      "laser-avoider": "A VL53L0X time-of-flight sensor on the front measures the gap ahead with an infrared laser. Something within 45 cm: the robot veers right; with a clear view it veers back left until it has undone its turns, so it works its way to the goal. It talks I²C on A4/A5; XSHUT on D11 lets the sketch reset it.",
+      "oled-knob": "Turn the knob: the Adafruit_SSD1306 library draws the title, the reading and a bar into a 1 KB frame buffer in the Uno's RAM and sends it to the 128×64 OLED over I²C (A4/A5, address 0x3C) ten times a second.",
+      "lcd-hello": "A 16×2 character LCD driven through a PCF8574 I²C backpack: only two data wires instead of six. The sketch defines a heart as a custom character and counts the seconds on the second line. Turn the contrast knob if the text fades.",
+      "imu-tilt": "Tilt the MPU-6050 (its sliders set the angles) and watch the serial monitor: the sketch works out the tilt from gravity on the three axes and lights the LED past 20°. The gyroscope reports how fast it turns.",
+      "weather-station": "A BMP280 on the Uno's 3.3 V pin: it is a 3.3 V chip, so its module pulls the bus up to 3.3 V and the sketch switches off the Uno's own 5 V pull-ups after Wire starts. Change the temperature and altitude sliders and watch the readings follow (the IIR filter smooths them).",
+      "thermometers": "A DHT11 on D2 and a DS18B20 on D4, read every 2 s. Both talk over a single wire with precisely timed pulses: the DHT11 answers a 20 ms start pulse with 40 bits, the DS18B20 speaks 1-Wire and needs the 4.7 kΩ pull-up. Change their temperature sliders and compare: the DS18B20 resolves 1/16 °C, the DHT11 whole degrees.",
+      "neopixel-rainbow": "Eight WS2812B LEDs on D6 take their colours as 800 kHz pulses: a short HIGH is a 0, a long one a 1, 24 bits per LED, passed along the strip. Turn the knob for brightness. Each LED draws up to 36 mA at full white, so long strips need their own 5 V supply."
     },
     "telemetry": {
       "title": "Telemetry",

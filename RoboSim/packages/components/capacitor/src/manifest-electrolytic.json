@@ -1,0 +1,27 @@
+{
+  "id": "passive.capacitor-electrolytic",
+  "version": "1.0.0",
+  "category": "passive",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "passive.capacitor-electrolytic.name",
+  "pins": [
+    { "name": "pos", "kind": "passive" },
+    { "name": "neg", "kind": "passive" }
+  ],
+  "props": {
+    "capacitanceUf": { "type": "number", "default": 100, "min": 0.1, "max": 10000, "unit": "µF" },
+    "ratedVoltage": {
+      "type": "enum",
+      "default": "v16",
+      "options": ["v6_3", "v10", "v16", "v25", "v35", "v50", "v63"]
+    }
+  },
+  "inputs": [],
+  "traits": ["capacitor"],
+  "massG": 1.2,
+  "limits": {
+    "reverseVoltageV": 1,
+    "surgeFactor": 1.15
+  }
+}

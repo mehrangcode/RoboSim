@@ -508,6 +508,9 @@ importers:
       '@robosim/component-battery':
         specifier: workspace:*
         version: link:../components/battery
+      '@robosim/component-bmp280':
+        specifier: workspace:*
+        version: link:../components/bmp280
       '@robosim/component-breadboard':
         specifier: workspace:*
         version: link:../components/breadboard
@@ -520,21 +523,33 @@ importers:
       '@robosim/component-buzzer-passive':
         specifier: workspace:*
         version: link:../components/buzzer-passive
+      '@robosim/component-capacitor':
+        specifier: workspace:*
+        version: link:../components/capacitor
       '@robosim/component-chassis-2wd':
         specifier: workspace:*
         version: link:../components/chassis-2wd
       '@robosim/component-counter-4017':
         specifier: workspace:*
         version: link:../components/counter-4017
+      '@robosim/component-dht11':
+        specifier: workspace:*
+        version: link:../components/dht11
       '@robosim/component-diode':
         specifier: workspace:*
         version: link:../components/diode
+      '@robosim/component-ds18b20':
+        specifier: workspace:*
+        version: link:../components/ds18b20
       '@robosim/component-hc-sr04':
         specifier: workspace:*
         version: link:../components/hc-sr04
       '@robosim/component-ir-obstacle':
         specifier: workspace:*
         version: link:../components/ir-obstacle
+      '@robosim/component-irf520-module':
+        specifier: workspace:*
+        version: link:../components/irf520-module
       '@robosim/component-joystick':
         specifier: workspace:*
         version: link:../components/joystick
@@ -547,6 +562,9 @@ importers:
       '@robosim/component-l9110s':
         specifier: workspace:*
         version: link:../components/l9110s
+      '@robosim/component-lcd1602-i2c':
+        specifier: workspace:*
+        version: link:../components/lcd1602-i2c
       '@robosim/component-ldr':
         specifier: workspace:*
         version: link:../components/ldr
@@ -571,6 +589,15 @@ importers:
       '@robosim/component-logic-74hc':
         specifier: workspace:*
         version: link:../components/logic-74hc
+      '@robosim/component-mpu6050':
+        specifier: workspace:*
+        version: link:../components/mpu6050
+      '@robosim/component-ne555':
+        specifier: workspace:*
+        version: link:../components/ne555
+      '@robosim/component-oled-ssd1306':
+        specifier: workspace:*
+        version: link:../components/oled-ssd1306
       '@robosim/component-pir':
         specifier: workspace:*
         version: link:../components/pir
@@ -616,12 +643,21 @@ importers:
       '@robosim/component-tcrt5000':
         specifier: workspace:*
         version: link:../components/tcrt5000
+      '@robosim/component-transistor':
+        specifier: workspace:*
+        version: link:../components/transistor
       '@robosim/component-tt-motor':
         specifier: workspace:*
         version: link:../components/tt-motor
       '@robosim/component-uln2003':
         specifier: workspace:*
         version: link:../components/uln2003
+      '@robosim/component-vl53l0x':
+        specifier: workspace:*
+        version: link:../components/vl53l0x
+      '@robosim/component-ws2812-strip':
+        specifier: workspace:*
+        version: link:../components/ws2812-strip
       '@robosim/sim-core':
         specifier: workspace:*
         version: link:../sim-core
@@ -737,6 +773,28 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
+  packages/components/bmp280:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
   packages/components/breadboard:
     dependencies:
       '@robosim/sim-core':
@@ -831,6 +889,28 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
+  packages/components/capacitor:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
   packages/components/chassis-2wd:
     dependencies:
       '@robosim/sim-core':
@@ -878,7 +958,51 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
+  packages/components/dht11:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
   packages/components/diode:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/ds18b20:
     dependencies:
       '@robosim/sim-core':
         specifier: workspace:*
@@ -934,6 +1058,28 @@ importers:
       '@robosim/board-avr-uno':
         specifier: workspace:*
         version: link:../../boards/avr-uno
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/irf520-module:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
       '@robosim/config':
         specifier: workspace:*
         version: link:../../config
@@ -1031,6 +1177,28 @@ importers:
       '@robosim/board-avr-uno':
         specifier: workspace:*
         version: link:../../boards/avr-uno
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/lcd1602-i2c:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
       '@robosim/config':
         specifier: workspace:*
         version: link:../../config
@@ -1213,6 +1381,72 @@ importers:
       '@robosim/board-avr-uno':
         specifier: workspace:*
         version: link:../../boards/avr-uno
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/mpu6050:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/ne555:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/oled-ssd1306:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
       '@robosim/config':
         specifier: workspace:*
         version: link:../../config
@@ -1583,6 +1817,28 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
 
+  packages/components/transistor:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
   packages/components/tt-motor:
     dependencies:
       '@robosim/sim-core':
@@ -1614,6 +1870,50 @@ importers:
       '@robosim/board-avr-uno':
         specifier: workspace:*
         version: link:../../boards/avr-uno
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/vl53l0x:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
+      '@robosim/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@robosim/test-fixtures':
+        specifier: workspace:*
+        version: link:../../test-fixtures
+      eslint:
+        specifier: ^10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(jsdom@30.1.2)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0))
+
+  packages/components/ws2812-strip:
+    dependencies:
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../../sim-core
+    devDependencies:
       '@robosim/config':
         specifier: workspace:*
         version: link:../../config

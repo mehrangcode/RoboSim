@@ -164,7 +164,11 @@ export function defaultMount(doc: ProjectDocument, id: string): MountPose | null
     return { x: s.xMm, y: s.yMm, z: s.heightMm, yaw: 0 };
   };
   const base =
-    part.type === 'sensor.hc-sr04' ? at('front-top') : part.overhang ? at('front-bracket') : at('deck');
+    part.type === 'sensor.hc-sr04' || part.type === 'sensor.vl53l0x'
+      ? at('front-top')
+      : part.overhang
+        ? at('front-bracket')
+        : at('deck');
   return { ...base, z: Math.min(clearHeight(parts, part, base), 150) };
 }
 

@@ -1,6 +1,8 @@
 import { breadboardLayout, type BreadboardLayout } from '@robosim/catalog/manifests';
 import { memo, type ReactNode } from 'react';
 import { GOLD, resistorBands } from './colors.js';
+import { capacitorCode } from './markings.js';
+import { glyphRows } from './lcd-font.js';
 import { BOARD_FOOTPRINT, footprintOf, railHoleX, type Footprint } from './geometry.js';
 
 /*
@@ -70,7 +72,21 @@ const SILK = {
   soil: 'SOIL',
   ky023: 'KY-023',
   ky040: 'KY-040',
+  irf520: 'IRF520',
+  ssd1306: 'SSD1306',
+  gy521: 'GY-521',
+  bmp280: 'BMP280',
+  vl53l0x: 'VL53L0X',
+  dht11: 'DHT11',
 };
+const IRF520_HEADER: readonly string[] = ['SIG', 'VCC', 'GND'];
+/** IRF520 module screw-terminal silkscreen: name, y. */
+const IRF520_TERMINALS: readonly (readonly [string, number])[] = [
+  ['VIN', 0],
+  ['GND', 1],
+  ['V+', 3],
+  ['V−', 4],
+];
 /** Keypad legends, row by row (printed on the keys). */
 const KEYPAD_ROWS: readonly (readonly string[])[] = [
   ['1', '2', '3', 'A'],
@@ -433,6 +449,67 @@ function Diode({ type }: ArtProps) {
   );
 }
 
+/** Electrolytic marking: value in µF (`100µ`) and rating. */
+const ufLabel = (uf: number): string => `${uf >= 10 ? Math.round(uf) : Math.round(uf * 10) / 10}µ`;
+
+/** Ceramic disc capacitor with its value code. */
+function CeramicCap({ props }: ArtProps) {
+  return (
+    <>
+      <Leg from={[0, 0]} to={[0.6, -1.2]} />
+      <Leg from={[2, 0]} to={[1.4, -1.2]} />
+      <ellipse cx={1} cy={-1.5} rx={1.15} ry={0.95} fill="#d97706" />
+      <Label x={1} y={-1.5} size={0.55}>
+        {capacitorCode(Number(props['capacitanceNf'] ?? 100))}
+      </Label>
+    </>
+  );
+}
+
+/**
+ * Electrolytic can: the stripe marks the − lead. While running, a light band rises with the voltage
+ * across it relative to its rating; a vented (damaged) can shows a split, bulging top.
+ */
+function ElectrolyticCap({ props, live }: ArtProps) {
+  const volts = liveNumber(live, 'volts');
+  const rated = liveNumber(live, 'ratedV') ?? 16;
+  const vented = liveFlag(live, 'damaged');
+  const level = volts === null ? 0 : Math.min(1, Math.max(0, volts / rated));
+  const rating = String(props['ratedVoltage'] ?? 'v16')
+    .slice(1)
+    .replace('_', '.');
+  return (
+    <>
+      <Leg from={[0, 0]} to={[0, -0.5]} />
+      <Leg from={[1, 0]} to={[1, -0.5]} />
+      <rect x={-0.6} y={-3.6} width={2.2} height={3.1} rx={0.3} fill="#1e3a8a" />
+      {level > 0 && (
+        <rect x={-0.6} y={-0.5 - 3.1 * level} width={1.5} height={3.1 * level} fill="#60a5fa66" />
+      )}
+      <rect x={0.95} y={-3.6} width={0.65} height={3.1} fill="#cbd5e1" />
+      <Label x={1.27} y={-2.9} size={0.55} fill="#1e3a8a">
+        −
+      </Label>
+      <Label x={0.2} y={-2.6} size={0.42}>
+        {ufLabel(Number(props['capacitanceUf'] ?? 100))}
+      </Label>
+      <Label x={0.2} y={-1.6} size={0.38}>
+        {`${rating}V`}
+      </Label>
+      {vented ? (
+        <path
+          d="M -0.6 -3.6 Q 0.5 -4.3 1.6 -3.6 M 0.1 -3.9 L 0.5 -3.6 L 0.9 -3.95"
+          stroke="#78350f"
+          strokeWidth={0.18}
+          fill="none"
+        />
+      ) : (
+        <path d="M 0.2 -3.6 V -3.3 M 0.8 -3.6 V -3.3" stroke="#94a3b8" strokeWidth={0.08} />
+      )}
+    </>
+  );
+}
+
 /** Regulator: TO-220 with its tab (LM7805) or a small blue module (AMS1117); tints red as it heats. */
 function Regulator({ type, live }: ArtProps) {
   const heat = Math.min(1, Math.max(0, ((liveNumber(live, 'junctionC') ?? 25) - 40) / 100));
@@ -466,6 +543,290 @@ function Regulator({ type, live }: ArtProps) {
       <Label x={1} y={to220 ? -3 : -2.7} size={0.5}>
         {shutdown ? '🌡' : to220 ? SILK.lm7805 : SILK.ams1117}
       </Label>
+    </>
+  );
+}
+
+/** Silkscreen part numbers of discrete transistors. */
+const TRANSISTOR_SILK: Readonly<Record<string, string>> = {
+  'semiconductor.2n2222': '2N2222',
+  'sensor.ds18b20': '18B20',
+  'semiconductor.bc547': 'BC547',
+  'semiconductor.2n3906': '2N3906',
+  'semiconductor.tip120': 'TIP120',
+  'semiconductor.irlz44n': 'IRLZ44N',
+};
+
+/** Red tint for a hot junction: none below 40 °C, full at 140 °C. */
+const heatOf = (live: unknown): number =>
+  Math.min(1, Math.max(0, ((liveNumber(live, 'junctionC') ?? 25) - 40) / 100));
+
+/**
+ * Discrete transistor: a TO-92 half-cylinder or a TO-220 with its tab. While running, a green dot
+ * shows it conducting, the body tints red as the junction heats, and a burnt one shows a crack.
+ */
+function Transistor({ type, live }: ArtProps) {
+  const to220 = type === 'semiconductor.tip120' || type === 'semiconductor.irlz44n';
+  const heat = heatOf(live);
+  const region = (live as { region?: string } | undefined)?.region;
+  const conducting = region !== undefined && region !== 'cutoff';
+  const damaged = liveFlag(live, 'damaged');
+  const top = to220 ? -4.6 : -2.4;
+  const height = to220 ? 3.4 : 1.9;
+  return (
+    <>
+      {[0, 1, 2].map((x) => (
+        <Leg key={x} from={[x, 0]} to={[x, top + height]} />
+      ))}
+      {to220 && (
+        <>
+          <rect x={-0.6} y={-6.9} width={3.2} height={2.4} rx={0.15} fill="#9ca3af" />
+          <circle cx={1} cy={-5.9} r={0.55} fill="#e5e7eb" />
+        </>
+      )}
+      {to220 ? (
+        <rect x={-0.6} y={top} width={3.2} height={height} rx={0.15} fill="#111827" />
+      ) : (
+        <path
+          d={`M -0.5 ${top + height} V ${top + 0.7} A 1.5 0.9 0 0 1 2.5 ${top + 0.7} V ${top + height} Z`}
+          fill="#111827"
+        />
+      )}
+      {heat > 0 && (
+        <rect x={-0.6} y={top} width={3.2} height={height} rx={0.15} fill="#ef4444" opacity={heat * 0.6} />
+      )}
+      <Label x={1} y={top + height / 2 + (to220 ? 0 : 0.15)} size={to220 ? 0.45 : 0.38}>
+        {TRANSISTOR_SILK[type] ?? ''}
+      </Label>
+      {conducting && !damaged && <circle cx={2.3} cy={top - 0.3} r={0.25} fill="#22c55e" />}
+      {damaged && (
+        <path
+          d={`M 0.2 ${top} L 1 ${top + height / 2} L 0.6 ${top + height / 2} L 1.6 ${top + height}`}
+          stroke="#f97316"
+          strokeWidth={0.15}
+          fill="none"
+        />
+      )}
+    </>
+  );
+}
+
+/** IRF520 module: header SIG/VCC/GND on the left, screw terminals on the right, the MOSFET in between. */
+function Irf520Module({ live }: ArtProps) {
+  const heat = heatOf(live);
+  const led = liveFlag(live, 'ledOn');
+  return (
+    <>
+      <rect x={-0.6} y={-0.8} width={12.2} height={6.6} rx={0.3} fill={PCB_BLUE} />
+      {IRF520_HEADER.map((n, i) => (
+        <g key={n}>
+          <rect x={-0.35} y={i - 0.35} width={0.7} height={0.7} fill="#111" />
+          <Label x={1.4} y={i} size={0.45}>
+            {n}
+          </Label>
+        </g>
+      ))}
+      {IRF520_TERMINALS.map(([n, y]) => (
+        <g key={n}>
+          <rect x={10.2} y={y - 0.45} width={1.6} height={0.9} rx={0.15} fill="#16a34a" />
+          <Label x={9.2} y={y} size={0.45}>
+            {n}
+          </Label>
+        </g>
+      ))}
+      <rect x={4.6} y={-0.4} width={3.2} height={2} rx={0.1} fill="#9ca3af" />
+      <rect x={4.6} y={1.5} width={3.2} height={2.8} rx={0.1} fill="#111827" />
+      {heat > 0 && <rect x={4.6} y={1.5} width={3.2} height={2.8} fill="#ef4444" opacity={heat * 0.6} />}
+      <Label x={6.2} y={2.9} size={0.45}>
+        {SILK.irf520}
+      </Label>
+      <circle cx={3} cy={4.4} r={0.35} fill={led ? '#ef4444' : '#450a0a'} />
+    </>
+  );
+}
+
+/** 0.96" OLED: the panel shows the controller's frame buffer, pixel for pixel. */
+function OledSsd1306(p: ArtProps) {
+  const live = p.live as { on?: boolean; contrast?: number; pixels?: readonly number[] } | undefined;
+  const px = OLED_W / 128;
+  let d = '';
+  if (live?.on && live.pixels) {
+    for (let y = 0; y < 64; y++) {
+      let run = -1;
+      for (let x = 0; x <= 128; x++) {
+        const lit = x < 128 && ((live.pixels[y * 4 + (x >> 5)] ?? 0) >>> (x & 31)) & 1;
+        if (lit && run < 0) run = x;
+        else if (!lit && run >= 0) {
+          d += `M${OLED_X + run * px} ${OLED_Y + y * px}h${(x - run) * px}v${px}h${-(x - run) * px}z`;
+          run = -1;
+        }
+      }
+    }
+  }
+  return (
+    <Module fp={footprintOf(p.type)} color={PCB_BLUE} label={SILK.ssd1306}>
+      <rect x={OLED_X - 0.3} y={OLED_Y - 0.3} width={OLED_W + 0.6} height={OLED_W / 2 + 0.6} fill="#0b0b0f" />
+      {d && <path d={d} fill="#e0f2fe" opacity={0.55 + 0.45 * ((live?.contrast ?? 207) / 255)} />}
+    </Module>
+  );
+}
+const OLED_W = 8.5;
+const OLED_X = 1.5 - OLED_W / 2;
+const OLED_Y = -8.6;
+
+/** 16×2 LCD: 5×8 dot cells on the blue backlight; custom characters come from CGRAM. */
+function Lcd1602(p: ArtProps) {
+  const live = p.live as
+    | {
+        powered?: boolean;
+        backlight?: boolean;
+        displayOn?: boolean;
+        rows?: readonly (readonly number[])[];
+        cgram?: readonly number[];
+        cursor?: { row: number; col: number } | null;
+        cursorOn?: boolean;
+        blinkVisible?: boolean;
+      }
+    | undefined;
+  const lit = live?.powered && live.backlight;
+  let dots = '';
+  let cells = '';
+  for (let row = 0; row < 2; row++)
+    for (let col = 0; col < 16; col++) {
+      const x0 = LCD_X + col * LCD_PITCH_X;
+      const y0 = LCD_Y + row * LCD_PITCH_Y;
+      cells += `M${x0} ${y0}h${5 * LCD_DOT_W}v${8 * LCD_DOT_H}h${-5 * LCD_DOT_W}z`;
+      const code = live?.displayOn ? (live.rows?.[row]?.[col] ?? -1) : -1;
+      const glyph =
+        code < 0
+          ? []
+          : code < 8
+            ? [...Array(8).keys()].map((r) => live?.cgram?.[code * 8 + r] ?? 0)
+            : glyphRows(code);
+      const here = live?.cursor?.row === row && live.cursor.col === col && live.displayOn;
+      if (here && live?.blinkVisible) glyph.splice(0, 8, 31, 31, 31, 31, 31, 31, 31, 31);
+      else if (here && live?.cursorOn) glyph[7] = 31;
+      glyph.forEach((bits, r) => {
+        for (let c = 0; c < 5; c++)
+          if ((bits >> (4 - c)) & 1)
+            dots += `M${x0 + c * LCD_DOT_W} ${y0 + r * LCD_DOT_H}h${LCD_DOT_W * 0.85}v${LCD_DOT_H * 0.85}h${-LCD_DOT_W * 0.85}z`;
+      });
+    }
+  return (
+    <>
+      <rect x={-1} y={-14.6} width={31.5} height={14.5} rx={0.4} fill="#166534" />
+      <rect x={0.6} y={-12.8} width={28.3} height={9.6} rx={0.3} fill="#111827" />
+      <rect x={1.6} y={-12} width={26.3} height={8} fill={lit ? '#3b82f6' : '#1e3a8a'} />
+      <path d={cells} fill="#ffffff" opacity={lit ? 0.08 : 0.04} />
+      {dots && <path d={dots} fill={lit ? '#f8fafc' : '#94a3b8'} opacity={lit ? 1 : 0.35} />}
+      {(['GND', 'VCC', 'SDA', 'SCL'] as const).map((n, i) => (
+        <g key={n}>
+          <rect x={i - 0.4} y={-1.3} width={0.8} height={1} fill="#111" />
+          <Label x={i} y={-1.9} size={0.45}>
+            {n}
+          </Label>
+        </g>
+      ))}
+    </>
+  );
+}
+const LCD_PITCH_X = 1.4;
+const LCD_PITCH_Y = 2.34;
+const LCD_DOT_W = 1.16 / 5;
+const LCD_DOT_H = 2.19 / 8;
+const LCD_X = 14.75 - (16 * LCD_PITCH_X) / 2 + 0.12;
+const LCD_Y = -10.3;
+
+/** GY-521 MPU-6050 breakout: the QFN chip in the middle. */
+function Mpu6050(p: ArtProps) {
+  return (
+    <Module fp={footprintOf(p.type)} color={PCB_BLUE} label={SILK.gy521}>
+      <rect x={2.6} y={-4.2} width={1.6} height={1.6} rx={0.1} fill="#111827" />
+    </Module>
+  );
+}
+
+/** GY-BMP280 breakout: the metal-lid sensor with its vent hole. */
+function Bmp280(p: ArtProps) {
+  return (
+    <Module fp={footprintOf(p.type)} color={PCB_RED} label={SILK.bmp280}>
+      <rect x={1.9} y={-2.9} width={1.2} height={1.2} rx={0.1} fill="#d1d5db" />
+      <circle cx={2.2} cy={-2.6} r={0.12} fill="#374151" />
+    </Module>
+  );
+}
+
+/** VL53L0X breakout: the sensor's black window with emitter and receiver apertures. */
+function Vl53l0x(p: ArtProps) {
+  const ranging = (p.live as { mode?: string } | undefined)?.mode === 'continuous';
+  return (
+    <Module fp={footprintOf(p.type)} color={PCB_BLUE} label={SILK.vl53l0x}>
+      <rect x={1.6} y={-3.1} width={2.4} height={1.2} rx={0.2} fill="#111827" />
+      <circle cx={2.2} cy={-2.5} r={0.3} fill={ranging ? '#7f1d1d' : '#1f2937'} />
+      <circle cx={3.4} cy={-2.5} r={0.3} fill="#1f2937" />
+    </Module>
+  );
+}
+
+/** DHT11 module: the blue perforated housing on a small board. */
+function Dht11(p: ArtProps) {
+  return (
+    <Module fp={footprintOf(p.type)} color={PCB_BLUE} label={SILK.dht11}>
+      <rect x={-0.4} y={-9.2} width={2.8} height={5.6} rx={0.2} fill="#38bdf8" />
+      {[0, 1, 2, 3].map((r) =>
+        [0, 1, 2].map((c) => (
+          <rect
+            key={`${r}${c}`}
+            x={0.05 + c * 0.75}
+            y={-8.6 + r * 1.2}
+            width={0.45}
+            height={0.7}
+            fill="#0c4a6e"
+          />
+        )),
+      )}
+    </Module>
+  );
+}
+
+/** WS2812B strip: the LEDs shine in their latched colours. */
+function Ws2812Strip({ props, live }: ArtProps) {
+  const count = Math.max(1, Math.min(60, Math.round(Number(props['count'] ?? 8))));
+  const colors = (live as { colors?: readonly number[] } | undefined)?.colors ?? [];
+  const pitch = 20 / count;
+  const size = Math.min(1.6, pitch * 0.8);
+  return (
+    <>
+      <rect
+        x={0.6}
+        y={-0.7}
+        width={21.8}
+        height={3.4}
+        rx={0.3}
+        fill="#f8fafc"
+        stroke="#cbd5e1"
+        strokeWidth={0.06}
+      />
+      {[...Array(count).keys()].map((i) => {
+        const c = colors[i] ?? 0;
+        const cx = 1.6 + (i + 0.5) * pitch;
+        const rgb = `rgb(${(c >> 16) & 0xff}, ${(c >> 8) & 0xff}, ${c & 0xff})`;
+        const level = Math.max((c >> 16) & 0xff, (c >> 8) & 0xff, c & 0xff) / 255;
+        return (
+          <g key={i}>
+            {level > 0 && (
+              <circle cx={cx} cy={1} r={size * (0.7 + level)} fill={rgb} opacity={0.35 * level + 0.15} />
+            )}
+            <rect
+              x={cx - size / 2}
+              y={1 - size / 2}
+              width={size}
+              height={size}
+              fill={level > 0 ? rgb : '#e5e7eb'}
+            />
+          </g>
+        );
+      })}
     </>
   );
 }
@@ -650,6 +1011,7 @@ function litPins(type: string, live: unknown): string[] {
   if (type === 'ic.74hc595')
     return (s.outputs ?? []).flatMap((l, i) => (l === 1 ? [`q${'abcdefgh'[i] ?? ''}`] : []));
   if (type === 'ic.cd4017') return typeof s.count === 'number' ? [`q${s.count}`] : [];
+  if (type === 'ic.ne555') return (live as { output?: number | null }).output === 1 ? ['out'] : [];
   return (s.outputs ?? []).flatMap((l, i) => (l === 1 ? [`${i + 1}y`] : []));
 }
 
@@ -1035,6 +1397,23 @@ const ART: Readonly<Record<string, (p: ArtProps) => ReactNode>> = {
   'ic.74hc595': DipChip,
   'ic.cd4017': DipChip,
   'ic.uln2003a': DipChip,
+  'ic.ne555': DipChip,
+  'semiconductor.2n2222': Transistor,
+  'semiconductor.bc547': Transistor,
+  'semiconductor.2n3906': Transistor,
+  'semiconductor.tip120': Transistor,
+  'semiconductor.irlz44n': Transistor,
+  'driver.irf520-module': Irf520Module,
+  'display.oled-ssd1306': OledSsd1306,
+  'display.lcd1602-i2c': Lcd1602,
+  'sensor.mpu6050': Mpu6050,
+  'sensor.bmp280': Bmp280,
+  'sensor.vl53l0x': Vl53l0x,
+  'sensor.dht11': Dht11,
+  'sensor.ds18b20': Transistor,
+  'actuator.ws2812-strip': Ws2812Strip,
+  'passive.capacitor-ceramic': CeramicCap,
+  'passive.capacitor-electrolytic': ElectrolyticCap,
   'driver.tb6612fng': Tb6612,
   'driver.l9110s': L9110s,
   'actuator.stepper-28byj48': Stepper,

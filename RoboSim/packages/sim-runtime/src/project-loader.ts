@@ -24,7 +24,7 @@ import {
   type RobotSpec,
 } from '@robosim/sim-core';
 import { BOARD_PART, type PinRef, type ProjectDocument } from '@robosim/shared';
-import { unoFiveVolt } from './board-rail.js';
+import { unoFiveVolt, unoThreeVolt } from './board-rail.js';
 import { buildCircuit, type Circuit, type CircuitSpec } from './circuit.js';
 import type { ArenaScene, FindingView, FirmwarePayload, PartInfo, SceneInfo } from './protocol.js';
 
@@ -55,8 +55,13 @@ export const UNO_BOARD: BoardInfo = {
   packageMaxCurrentMa: avrUno.power.mcuPackageMaxCurrentMa,
 };
 
-/** Part id of the 5 V rail stand-in (not a document component, so it cannot collide). */
-const RAIL = '5V-rail';
+/** Part ids of the supply-pin stand-ins (not document components, so they cannot collide). */
+const RAILS = {
+  '5V': { id: '5V-rail', def: unoFiveVolt },
+  '3V3': { id: '3V3-rail', def: unoThreeVolt },
+} as const;
+type RailPin = keyof typeof RAILS;
+const isRailPin = (pin: string): pin is RailPin => pin in RAILS;
 const MCU_PINS = new Set(UNO_MCU_PINS.map((p) => p.id));
 const GROUND_PINS = new Set(avrUno.pins.filter((p) => p.capabilities.includes('ground')).map((p) => p.id));
 
@@ -107,15 +112,15 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
     defs.set(c.id, def);
   }
 
-  // Wires → engine terminals. Board header pins: MCU I/O → `mcu.<pin>`, GND → ground, 5V → rail.
-  let railUsed = false;
+  // Wires → engine terminals. Board header pins: MCU I/O → `mcu.<pin>`, GND → ground, 5V / 3V3 → rails.
+  const railsUsed = new Set<RailPin>();
   const terminal = (ref: PinRef, where: string): string | 'ground' | null => {
     if (ref.part === BOARD_PART) {
       if (MCU_PINS.has(ref.pin)) return `mcu.${ref.pin}`;
       if (GROUND_PINS.has(ref.pin)) return 'ground';
-      if (ref.pin === '5V') {
-        railUsed = true;
-        return `${RAIL}.pos`;
+      if (isRailPin(ref.pin)) {
+        railsUsed.add(ref.pin);
+        return `${RAILS[ref.pin].id}.pos`;
       }
       issues.push(
         avrUno.pins.some((p) => p.id === ref.pin)
@@ -238,9 +243,9 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
       c.id,
       { def: defs.get(c.id) as ComponentDefinition, props: c.props as Record<string, PropValue> },
     ]),
-    ...(railUsed ? [[RAIL, { def: unoFiveVolt }]] : []),
+    ...[...railsUsed].map((pin) => [RAILS[pin].id, { def: RAILS[pin].def }]),
   ]);
-  if (railUsed) ground.push(`${RAIL}.neg`);
+  for (const pin of railsUsed) ground.push(`${RAILS[pin].id}.neg`);
   const pins = UNO_MCU_PINS.map((p) => p.id).filter((p) => mcuPins.has(p));
   const world = arena ? new PlanckWorld(arena, robot ? [robot] : []) : null;
   const circuit = buildCircuit({

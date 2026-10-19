@@ -1,0 +1,33 @@
+{
+  "id": "semiconductor.irlz44n",
+  "version": "1.0.0",
+  "category": "semiconductor",
+  "tier": "basic",
+  "phase": "P2",
+  "nameKey": "semiconductor.irlz44n.name",
+  "pins": [
+    {
+      "name": "g",
+      "kind": "passive"
+    },
+    {
+      "name": "d",
+      "kind": "passive"
+    },
+    {
+      "name": "s",
+      "kind": "passive"
+    }
+  ],
+  "props": {},
+  "inputs": [],
+  "massG": 2,
+  "traits": ["mosfet"],
+  "limits": {
+    "maxDrainCurrentMa": 47000,
+    "vdssV": 55,
+    "maxPowerMw": 2400,
+    "tjMaxC": 175,
+    "fullEnhancementV": 4.5
+  }
+}

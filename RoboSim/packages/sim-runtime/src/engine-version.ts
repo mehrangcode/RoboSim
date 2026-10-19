@@ -4,11 +4,11 @@
  * with their package.json files (every component package must share the `components` version).
  */
 export const ENGINE_PACKAGES = {
-  'sim-core': '0.3.0',
-  'board-avr-uno': '0.2.0',
-  components: '0.2.0',
-  'safety-rules': '0.2.0',
-  'sim-runtime': '0.4.0',
+  'sim-core': '0.4.0',
+  'board-avr-uno': '0.3.0',
+  components: '0.3.0',
+  'safety-rules': '0.3.0',
+  'sim-runtime': '0.5.0',
 } as const;
 
 export const ENGINE_VERSION = Object.entries(ENGINE_PACKAGES)
