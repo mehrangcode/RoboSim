@@ -8,7 +8,7 @@ goldens 32 Node + 70 browser). Fix: Vitest `commands.readFile` resolves from the
 Perf: avr8js decode chain replaced by generated switch (packages/boards/avr-uno/scripts/gen-decoder.ts →
 src/decoder.generated.ts, drift + 65 536-opcode differential test); LU factor reuse in MnaCircuit (sameBits cache).
 Goldens bit-identical, no engine bump for these. Line-follower lap avg 0.303 ms (was ≈ 0.5). Curves cost ~19 solves/slice.
-2D frame budget done (renderer-2d browser test, mean + p95 gate, ROBOSIM_PERF_SCALE via `define`).
+2D frame budget done (renderer-2d browser test, mean + p95 gate, best of 3 batches (single 60-frame p95 flaked at 9.1 ms under load), ROBOSIM_PERF_SCALE via `define`).
 2026-10-20: steps 6–8 done; `pnpm verify` green. P1 hardening complete (uncommitted).
 Follow-ups: CI `sim` job not yet run on GitHub; Playwright browser cache needs a pinned actions/cache SHA (no `gh` here);
 2D frame budget fails under heavy parallel CPU load (passes alone) — run `test:sim` on an idle machine.

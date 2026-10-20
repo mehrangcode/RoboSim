@@ -15,14 +15,16 @@ import {
  * its heaviest state — a 900 × 600 CSS px canvas at devicePixelRatio 2, the full 2000-point trail, zone
  * progress and the sensor/wheel overlay with labels. Each timed frame ends with a 1-pixel readback so the
  * rasterisation is paid inside the frame, not deferred to the next one. Gated on the mean (timed over the
- * whole batch: Firefox rounds performance.now() to 1 ms) and the per-frame p95 (jank). ROBOSIM_PERF_SCALE (via the
- * browser config's `define`) scales the budget for machines slower than the reference.
+ * whole batch: Firefox rounds performance.now() to 1 ms) and the per-frame p95 (jank), each the best of BATCHES
+ * batches: a real regression slows every batch, while OS / GC hiccups rarely hit all of them. ROBOSIM_PERF_SCALE
+ * (via the browser config's `define`) scales the budget for machines slower than the reference.
  */
 
 declare const __PERF_SCALE__: number;
 const BUDGET_MS = 8 * __PERF_SCALE__;
 const WARMUP = 10;
 const FRAMES = 60;
+const BATCHES = 3;
 
 const view = ({ spec: s }: BuiltinArena): ArenaView => ({
   widthM: s.widthM,
@@ -84,7 +86,8 @@ function overlayAt(p: RobotPose): SensorOverlay {
   };
 }
 
-function frameTimes(arena: ArenaView, camera: Camera): { mean: number; times: number[] } {
+/** BATCHES timed batches of FRAMES frames each, after the trail is full and WARMUP frames are drawn. */
+function frameBatches(arena: ArenaView, camera: Camera): { mean: number; times: number[] }[] {
   const canvas = document.createElement('canvas');
   canvas.width = 1800;
   canvas.height = 1200;
@@ -101,20 +104,22 @@ function frameTimes(arena: ArenaView, camera: Camera): { mean: number; times: nu
     visitedZones: arena.zones.slice(0, 1).map((z) => z.id),
     nextZone: arena.zones[1]?.id ?? null,
   };
-  const times: number[] = [];
-  let start = 0;
-  for (let f = 0; f < WARMUP + FRAMES; f++) {
-    if (f === WARMUP) start = performance.now();
-    const pose = poseAt(arena, lap + f, lap);
+  let step = lap;
+  const frame = (): number => {
+    const pose = poseAt(arena, step++, lap);
     const t0 = performance.now();
     renderer.draw({ pose, zones, overlay: overlayAt(pose), trail: true });
     ctx.getImageData(0, 0, 1, 1);
-    const ms = performance.now() - t0;
-    if (f >= WARMUP) times.push(ms);
-  }
-  const mean = (performance.now() - start) / FRAMES;
+    return performance.now() - t0;
+  };
+  for (let f = 0; f < WARMUP; f++) frame();
+  const batches = Array.from({ length: BATCHES }, () => {
+    const start = performance.now();
+    const times = Array.from({ length: FRAMES }, frame);
+    return { mean: (performance.now() - start) / FRAMES, times };
+  });
   canvas.remove();
-  return { mean, times };
+  return batches;
 }
 
 const p95 = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length * 0.95)] ?? NaN;
@@ -125,8 +130,8 @@ describe.each(BUILTIN_ARENAS)('2D frame on $id', (builtin) => {
     ['fit', FIT_CAMERA],
     ['zoomed in', { zoom: 3, center: { x: arena.widthM / 2, y: arena.heightM / 2 } }],
   ] as const)(`stays under ${BUDGET_MS} ms (%s)`, (_view, camera) => {
-    const { mean, times } = frameTimes(arena, camera);
-    expect(mean).toBeLessThan(BUDGET_MS);
-    expect(p95(times)).toBeLessThan(BUDGET_MS);
+    const batches = frameBatches(arena, camera);
+    expect(Math.min(...batches.map((b) => b.mean))).toBeLessThan(BUDGET_MS);
+    expect(Math.min(...batches.map((b) => p95(b.times)))).toBeLessThan(BUDGET_MS);
   });
 });
