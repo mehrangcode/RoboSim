@@ -217,3 +217,11 @@ describe('AvrUnoCore', () => {
     );
   });
 });
+
+describe('AvrUnoCore serial input', () => {
+  it('accepts a megabyte pasted at once without blowing the stack', () => {
+    const c = avrUno.createCore(firmware('halt: rjmp halt'));
+    expect(() => c.uart(0).write(new Uint8Array(1 << 20))).not.toThrow();
+    c.run(16_000);
+  });
+});

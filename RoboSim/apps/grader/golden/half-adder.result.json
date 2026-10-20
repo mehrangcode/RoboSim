@@ -1,0 +1,270 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 400,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [],
+  "damaged": { "parts": [], "pins": [] },
+  "final": {
+    "slice": 400,
+    "pins": {
+      "D2": { "mode": "input", "level": 0, "volts": 0 },
+      "D3": { "mode": "input", "level": 1, "volts": 4.625974025786571 }
+    },
+    "parts": {
+      "xor": {
+        "vcc": 4.999068850287825,
+        "powered": true,
+        "outputs": [0, 0, 0, 0],
+        "undefinedInputs": 0,
+        "damaged": false
+      },
+      "and": {
+        "vcc": 4.999068850287825,
+        "powered": true,
+        "outputs": [1, 0, 0, 0],
+        "undefinedInputs": 0,
+        "damaged": false
+      },
+      "btnA": { "pressed": true },
+      "btnB": { "pressed": true },
+      "rA": { "currentMa": 0.4999043855068051, "powerMw": 2.4990439464893637, "damaged": false },
+      "rB": { "currentMa": 0.4999043855068051, "powerMw": 2.4990439464893637, "damaged": false },
+      "rs": { "currentMa": 0, "powerMw": 0, "damaged": false },
+      "sum": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false },
+      "rc": { "currentMa": 8.311688311192361, "powerMw": 22.797773652195872, "damaged": false },
+      "carry": {
+        "color": "red",
+        "currentMa": 8.31168830930924,
+        "brightness": 0.41558441546546193,
+        "damaged": false
+      }
+    }
+  },
+  "serial": "carry=0 sum=0\r\ncarry=0 sum=1\r\ncarry=1 sum=0\r\n",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [
+      { "slice": 1, "text": "c" },
+      { "slice": 2, "text": "a" },
+      { "slice": 3, "text": "r" },
+      { "slice": 4, "text": "r" },
+      { "slice": 5, "text": "y" },
+      { "slice": 6, "text": "=" },
+      { "slice": 7, "text": "0" },
+      { "slice": 8, "text": " " },
+      { "slice": 9, "text": "s" },
+      { "slice": 10, "text": "u" },
+      { "slice": 11, "text": "m" },
+      { "slice": 12, "text": "=" },
+      { "slice": 13, "text": "0" },
+      { "slice": 14, "text": "\r" },
+      { "slice": 15, "text": "\n" },
+      { "slice": 102, "text": "c" },
+      { "slice": 103, "text": "a" },
+      { "slice": 104, "text": "r" },
+      { "slice": 105, "text": "r" },
+      { "slice": 106, "text": "y" },
+      { "slice": 107, "text": "=" },
+      { "slice": 108, "text": "0" },
+      { "slice": 109, "text": " " },
+      { "slice": 110, "text": "s" },
+      { "slice": 111, "text": "u" },
+      { "slice": 112, "text": "m" },
+      { "slice": 113, "text": "=" },
+      { "slice": 114, "text": "1" },
+      { "slice": 115, "text": "\r" },
+      { "slice": 116, "text": "\n" },
+      { "slice": 202, "text": "c" },
+      { "slice": 203, "text": "a" },
+      { "slice": 204, "text": "r" },
+      { "slice": 205, "text": "r" },
+      { "slice": 206, "text": "y" },
+      { "slice": 207, "text": "=" },
+      { "slice": 208, "text": "1" },
+      { "slice": 209, "text": " " },
+      { "slice": 210, "text": "s" },
+      { "slice": 211, "text": "u" },
+      { "slice": 212, "text": "m" },
+      { "slice": 213, "text": "=" },
+      { "slice": 214, "text": "0" },
+      { "slice": 215, "text": "\r" },
+      { "slice": 216, "text": "\n" }
+    ],
+    "findings": [],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": {
+          "D2": { "mode": "input", "level": 0, "volts": 0 },
+          "D3": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "xor": {
+            "vcc": 0,
+            "powered": false,
+            "outputs": [null, null, null, null],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "and": {
+            "vcc": 0,
+            "powered": false,
+            "outputs": [null, null, null, null],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "btnA": { "pressed": false },
+          "btnB": { "pressed": false },
+          "rA": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rB": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rs": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "sum": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false },
+          "rc": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "carry": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": {
+          "D2": { "mode": "input", "level": 0, "volts": 0 },
+          "D3": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "xor": {
+            "vcc": 4.999999999998508,
+            "powered": true,
+            "outputs": [0, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "and": {
+            "vcc": 4.999999999998508,
+            "powered": true,
+            "outputs": [0, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "btnA": { "pressed": true },
+          "btnB": { "pressed": false },
+          "rA": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rB": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rs": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "sum": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false },
+          "rc": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "carry": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": {
+          "D2": { "mode": "input", "level": 1, "volts": 4.649350649162044 },
+          "D3": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "xor": {
+            "vcc": 4.999170787759946,
+            "powered": true,
+            "outputs": [1, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "and": {
+            "vcc": 4.999170787759946,
+            "powered": true,
+            "outputs": [0, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "btnA": { "pressed": true },
+          "btnB": { "pressed": true },
+          "rA": { "currentMa": 0.4999145792030489, "powerMw": 2.4991458649976144, "damaged": false },
+          "rB": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rs": { "currentMa": 7.792207791714186, "powerMw": 20.03710574885292, "damaged": false },
+          "sum": {
+            "color": "green",
+            "currentMa": 7.792207789636274,
+            "brightness": 0.3896103894818137,
+            "damaged": false
+          },
+          "rc": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "carry": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": {
+          "D2": { "mode": "input", "level": 0, "volts": 0 },
+          "D3": { "mode": "input", "level": 1, "volts": 4.625974025786571 }
+        },
+        "parts": {
+          "xor": {
+            "vcc": 4.999068850287825,
+            "powered": true,
+            "outputs": [0, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "and": {
+            "vcc": 4.999068850287825,
+            "powered": true,
+            "outputs": [1, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "btnA": { "pressed": true },
+          "btnB": { "pressed": true },
+          "rA": { "currentMa": 0.4999043855068051, "powerMw": 2.4990439464893637, "damaged": false },
+          "rB": { "currentMa": 0.4999043855068051, "powerMw": 2.4990439464893637, "damaged": false },
+          "rs": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "sum": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false },
+          "rc": { "currentMa": 8.311688311192361, "powerMw": 22.797773652195872, "damaged": false },
+          "carry": {
+            "color": "red",
+            "currentMa": 8.31168830930924,
+            "brightness": 0.41558441546546193,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": {
+          "D2": { "mode": "input", "level": 0, "volts": 0 },
+          "D3": { "mode": "input", "level": 1, "volts": 4.625974025786571 }
+        },
+        "parts": {
+          "xor": {
+            "vcc": 4.999068850287825,
+            "powered": true,
+            "outputs": [0, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "and": {
+            "vcc": 4.999068850287825,
+            "powered": true,
+            "outputs": [1, 0, 0, 0],
+            "undefinedInputs": 0,
+            "damaged": false
+          },
+          "btnA": { "pressed": true },
+          "btnB": { "pressed": true },
+          "rA": { "currentMa": 0.4999043855068051, "powerMw": 2.4990439464893637, "damaged": false },
+          "rB": { "currentMa": 0.4999043855068051, "powerMw": 2.4990439464893637, "damaged": false },
+          "rs": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "sum": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false },
+          "rc": { "currentMa": 8.311688311192361, "powerMw": 22.797773652195872, "damaged": false },
+          "carry": {
+            "color": "red",
+            "currentMa": 8.31168830930924,
+            "brightness": 0.41558441546546193,
+            "damaged": false
+          }
+        }
+      }
+    ]
+  }
+}

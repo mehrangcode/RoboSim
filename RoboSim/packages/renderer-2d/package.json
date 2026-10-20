@@ -16,11 +16,15 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
   },
   "devDependencies": {
     "@robosim/config": "workspace:*",
+    "@robosim/content": "workspace:*",
+    "@vitest/browser-playwright": "5.0.4",
     "eslint": "^10.12.0",
+    "playwright": "1.63.0",
     "typescript": "6.0.3",
     "vitest": "^5.0.4"
   }

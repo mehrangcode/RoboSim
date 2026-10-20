@@ -1,6 +1,6 @@
 {
   "name": "@robosim/board-avr-uno",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -20,7 +20,10 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:conformance": "vitest run test/conformance",
+    "gen:decoder": "node scripts/gen-decoder.ts",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
     "@robosim/sim-core": "workspace:*",
@@ -28,7 +31,10 @@
   },
   "devDependencies": {
     "@robosim/config": "workspace:*",
+    "@types/node": "^24.19.2",
+    "@vitest/browser-playwright": "5.0.4",
     "eslint": "^10.12.0",
+    "playwright": "1.63.0",
     "typescript": "6.0.3",
     "vitest": "^5.0.4"
   }

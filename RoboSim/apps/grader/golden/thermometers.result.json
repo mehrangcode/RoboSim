@@ -1,0 +1,1075 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 5000,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [],
+  "damaged": { "parts": [], "pins": [] },
+  "final": {
+    "slice": 5000,
+    "pins": {
+      "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+      "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+    },
+    "parts": {
+      "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+      "ds": {
+        "powered": true,
+        "parasite": false,
+        "rom": "28f84dcebc004d58",
+        "temperatureC": 19.3125,
+        "resolutionBits": 12,
+        "converting": true
+      },
+      "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+    }
+  },
+  "serial": "1 DS18B20 found\r\nDHT11 28 C 39 %\r\nDS18B20 19.31 C\r\nDHT11 28 C 39 %\r\n",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [
+      { "slice": 85, "text": "1" },
+      { "slice": 86, "text": " " },
+      { "slice": 87, "text": "D" },
+      { "slice": 88, "text": "S" },
+      { "slice": 89, "text": "1" },
+      { "slice": 90, "text": "8" },
+      { "slice": 91, "text": "B" },
+      { "slice": 92, "text": "2" },
+      { "slice": 93, "text": "0" },
+      { "slice": 94, "text": " " },
+      { "slice": 95, "text": "f" },
+      { "slice": 96, "text": "o" },
+      { "slice": 97, "text": "u" },
+      { "slice": 99, "text": "n" },
+      { "slice": 100, "text": "d" },
+      { "slice": 101, "text": "\r" },
+      { "slice": 102, "text": "\n" },
+      { "slice": 2110, "text": "D" },
+      { "slice": 2111, "text": "H" },
+      { "slice": 2112, "text": "T" },
+      { "slice": 2113, "text": "1" },
+      { "slice": 2114, "text": "1" },
+      { "slice": 2115, "text": " " },
+      { "slice": 2116, "text": "2" },
+      { "slice": 2117, "text": "8" },
+      { "slice": 2118, "text": " " },
+      { "slice": 2119, "text": "C" },
+      { "slice": 2120, "text": " " },
+      { "slice": 2122, "text": "3" },
+      { "slice": 2123, "text": "9" },
+      { "slice": 2124, "text": " " },
+      { "slice": 2125, "text": "%" },
+      { "slice": 2126, "text": "\r" },
+      { "slice": 2127, "text": "\n" },
+      { "slice": 2862, "text": "D" },
+      { "slice": 2863, "text": "S" },
+      { "slice": 2864, "text": "1" },
+      { "slice": 2865, "text": "8" },
+      { "slice": 2866, "text": "B" },
+      { "slice": 2867, "text": "2" },
+      { "slice": 2868, "text": "0" },
+      { "slice": 2869, "text": " " },
+      { "slice": 2889, "text": "1" },
+      { "slice": 2890, "text": "9" },
+      { "slice": 2891, "text": "." },
+      { "slice": 2892, "text": "3" },
+      { "slice": 2893, "text": "1" },
+      { "slice": 2894, "text": " " },
+      { "slice": 2895, "text": "C" },
+      { "slice": 2896, "text": "\r" },
+      { "slice": 2897, "text": "\n" },
+      { "slice": 4914, "text": "D" },
+      { "slice": 4915, "text": "H" },
+      { "slice": 4916, "text": "T" },
+      { "slice": 4917, "text": "1" },
+      { "slice": 4918, "text": "1" },
+      { "slice": 4919, "text": " " },
+      { "slice": 4920, "text": "2" },
+      { "slice": 4921, "text": "8" },
+      { "slice": 4922, "text": " " },
+      { "slice": 4923, "text": "C" },
+      { "slice": 4924, "text": " " },
+      { "slice": 4925, "text": "3" },
+      { "slice": 4926, "text": "9" },
+      { "slice": 4927, "text": " " },
+      { "slice": 4929, "text": "%" },
+      { "slice": 4930, "text": "\r" },
+      { "slice": 4931, "text": "\n" }
+    ],
+    "findings": [],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": {
+          "D2": { "mode": "input", "level": 0, "volts": 0 },
+          "D4": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "dht": { "powered": false, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": false,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 0, "powerMw": 0, "damaged": false }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 600,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 700,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 800,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 900,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1000,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1100,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1600,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1700,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1800,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 1900,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2000,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2100,
+        "pins": {
+          "D2": { "mode": "output", "level": 0, "volts": 0.012468578617356217 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999900002184999 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": null, "humidity": null, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999900068437842e-9, "powerMw": 1.1749530326351428e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2600,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2700,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2800,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 85,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 2900,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3000,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3100,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3600,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3700,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3800,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 3900,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4000,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4100,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4600,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4700,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4800,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.9999609945302605 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999949876610179 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999949957608651e-9, "powerMw": 1.1749764801937654e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 4900,
+        "pins": {
+          "D2": { "mode": "output", "level": 0, "volts": 0.012468578617356217 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999900002184999 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": false
+          },
+          "rp": { "currentMa": 4.999900068437842e-9, "powerMw": 1.1749530326351428e-16, "damaged": false }
+        }
+      },
+      {
+        "slice": 5000,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999883294703531 },
+          "D4": { "mode": "input", "level": 1, "volts": 4.999849976832649 }
+        },
+        "parts": {
+          "dht": { "powered": true, "temperatureC": 28, "humidity": 39, "transmitting": false },
+          "ds": {
+            "powered": true,
+            "parasite": false,
+            "rom": "28f84dcebc004d58",
+            "temperatureC": 19.3125,
+            "resolutionBits": 12,
+            "converting": true
+          },
+          "rp": { "currentMa": 4.999849990292902e-9, "powerMw": 1.1749294964953005e-16, "damaged": false }
+        }
+      }
+    ]
+  }
+}

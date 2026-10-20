@@ -46,6 +46,33 @@ jobs:
       - name: Bundle budget (NFR-PERF-04)
         run: pnpm bundle:check
 
+  sim:
+    name: Simulation · Node, Chromium, Firefox
+    # P1 exit criterion: conformance + golden traces bit-identical in Node and both browsers (Engineering Guide §6).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Playwright Chromium + Firefox (version pinned by the lockfile)
+        run: pnpm --filter @robosim/grader exec playwright install --with-deps chromium firefox
+      - name: Conformance, goldens, robustness and full-cap runs (Node)
+        run: pnpm test:sim:node
+      - name: Conformance and goldens (Chromium + Firefox, bit-identical to Node)
+        run: pnpm test:sim:browser
+      # Budgets are machine-dependent and shared runners are noisy: report here, gate locally (Technical Design §17).
+      - name: 2D frame budget (report-only)
+        continue-on-error: true
+        run: pnpm --filter @robosim/renderer-2d run test:browser
+      - name: Simulation slice budgets (report-only)
+        continue-on-error: true
+        run: pnpm test:perf
+
   security:
     name: Vulnerabilities · secrets · licences · SBOM
     runs-on: ubuntu-24.04

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { SimClient } from './client.js';
 import { ENGINE_VERSION } from './engine-version.js';
-import { EngineVersionMismatchError, grade, traceDigest, type GradeJob } from './grade.js';
+import { firmware } from '@robosim/test-fixtures';
+import { EngineVersionMismatchError, MAX_SERIAL_CHARS, grade, traceDigest, type GradeJob } from './grade.js';
 import { SimHost } from './host.js';
 import type { InputLog, InputLogEntry, ScenarioId, WorkerToMain } from './protocol.js';
 import { builtinSource } from './scenarios.js';
@@ -88,4 +89,47 @@ describe('grade', () => {
     expect(r.final.pins).toEqual(Object.fromEntries(Object.entries(live.pins).filter(([, p]) => !p.unwired)));
     expect(r.challenge?.tree).toEqual(live.challenge?.tree);
   }, 30_000);
+});
+
+describe('grade limits', () => {
+  it('keeps the first MAX_SERIAL_CHARS of a 2 Mbaud flood and marks the result truncated', () => {
+    // U2X with UBRR0 = 0: 2 Mbaud, an 'A' whenever the data register is empty (≈ 200 kB/s).
+    const flood = firmware(`
+      ldi r16, 0x02
+      sts 0xc0, r16       ; UCSR0A: U2X0
+      ldi r16, 0
+      sts 0xc5, r16       ; UBRR0H
+      sts 0xc4, r16       ; UBRR0L
+      ldi r16, 0x08
+      sts 0xc1, r16       ; UCSR0B: TXEN0
+      ldi r16, 0x41
+    loop:
+      lds r17, 0xc0
+      sbrs r17, 5         ; UDRE0
+      rjmp loop
+      sts 0xc6, r16       ; UDR0
+      rjmp loop
+    `);
+    const { project } = builtinSource('serial');
+    const text = String.fromCharCode(...flood.bytes);
+    const r = grade({
+      log: {
+        engineVersion: ENGINE_VERSION,
+        scenario: null,
+        project,
+        firmware: { format: 'ihex', text, sha256: 'flood' },
+        seed: 1,
+        entries: [],
+      },
+      maxSimSeconds: 6,
+    });
+    expect(r.serial).toHaveLength(MAX_SERIAL_CHARS);
+    expect(r.serialTruncated).toBe(true);
+    expect(r.trace.serial.reduce((n, c) => n + c.text.length, 0)).toBe(MAX_SERIAL_CHARS);
+    expect(r.endSlice).toBe(6000); // the run itself goes on to the cap
+  }, 60_000);
+
+  it('leaves ordinary runs untouched', () => {
+    expect(grade(job('serial', 2)).serialTruncated).toBeUndefined();
+  });
 });

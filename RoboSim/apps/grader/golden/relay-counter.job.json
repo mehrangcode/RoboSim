@@ -1,0 +1,563 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "relay-counter",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "ra",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": -25.4,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rb",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": -20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rc",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": -15.24,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rd",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": -10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "re",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": -5.08,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rf",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": 0,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rg",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": 5.08,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "seg",
+          "type": "display.seven-segment",
+          "typeVersion": "1.0.0",
+          "x": 96.52,
+          "y": -20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "btn",
+          "type": "sensor.push-button",
+          "typeVersion": "1.0.0",
+          "x": 25.4,
+          "y": 66.04,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "relay",
+          "type": "actuator.relay-module",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": 15.24,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "bat",
+          "type": "power.battery-9v",
+          "typeVersion": "1.0.0",
+          "x": 167.64000000000001,
+          "y": 10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "reg",
+          "type": "semiconductor.lm7805",
+          "typeVersion": "1.0.0",
+          "x": 152.4,
+          "y": 35.56,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "rl",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 152.4,
+          "y": 45.72,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 330
+          }
+        },
+        {
+          "id": "lamp",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 167.64000000000001,
+          "y": 45.72,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "white"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "to": {
+            "part": "ra",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "ra",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "board",
+            "pin": "D3"
+          },
+          "to": {
+            "part": "rb",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "rb",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "b"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "board",
+            "pin": "D4"
+          },
+          "to": {
+            "part": "rc",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "rc",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "c"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "board",
+            "pin": "D5"
+          },
+          "to": {
+            "part": "rd",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "rd",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "d"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "board",
+            "pin": "D6"
+          },
+          "to": {
+            "part": "re",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "re",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "e"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "board",
+            "pin": "D7"
+          },
+          "to": {
+            "part": "rf",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "rf",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "f"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "board",
+            "pin": "D8"
+          },
+          "to": {
+            "part": "rg",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "rg",
+            "pin": "b"
+          },
+          "to": {
+            "part": "seg",
+            "pin": "g"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w15",
+          "from": {
+            "part": "seg",
+            "pin": "com1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w16",
+          "from": {
+            "part": "btn",
+            "pin": "b1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "A1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w17",
+          "from": {
+            "part": "btn",
+            "pin": "a1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w18",
+          "from": {
+            "part": "board",
+            "pin": "D12"
+          },
+          "to": {
+            "part": "relay",
+            "pin": "in"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w19",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "relay",
+            "pin": "vcc"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w20",
+          "from": {
+            "part": "relay",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w21",
+          "from": {
+            "part": "bat",
+            "pin": "pos"
+          },
+          "to": {
+            "part": "relay",
+            "pin": "com"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w22",
+          "from": {
+            "part": "relay",
+            "pin": "no"
+          },
+          "to": {
+            "part": "reg",
+            "pin": "in"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w23",
+          "from": {
+            "part": "reg",
+            "pin": "out"
+          },
+          "to": {
+            "part": "rl",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w24",
+          "from": {
+            "part": "rl",
+            "pin": "b"
+          },
+          "to": {
+            "part": "lamp",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w25",
+          "from": {
+            "part": "lamp",
+            "pin": "k"
+          },
+          "to": {
+            "part": "reg",
+            "pin": "gnd"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w26",
+          "from": {
+            "part": "reg",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "bat",
+            "pin": "neg"
+          },
+          "color": "yellow",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// Press the button on A1 to count 0-9 on a common-cathode 7-segment digit (a..g on D2..D8).\n// On even numbers the relay on D12 switches the 9 V lamp circuit (LM7805 -> LED) on.\nconst int SEGMENT_PINS[7] = {2, 3, 4, 5, 6, 7, 8};\nconst byte DIGITS[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F}; // bit 0 = a\nconst int BUTTON_PIN = A1;\nconst int RELAY_PIN = 12;\nint count = 0;\nbool wasPressed = false;\n\nvoid show(int n) {\n  for (int s = 0; s < 7; s++) digitalWrite(SEGMENT_PINS[s], bitRead(DIGITS[n], s));\n  digitalWrite(RELAY_PIN, n % 2 == 0 ? HIGH : LOW);\n}\n\nvoid setup() {\n  for (int s = 0; s < 7; s++) pinMode(SEGMENT_PINS[s], OUTPUT);\n  pinMode(RELAY_PIN, OUTPUT);\n  pinMode(BUTTON_PIN, INPUT_PULLUP);\n  show(count);\n}\n\nvoid loop() {\n  bool pressed = digitalRead(BUTTON_PIN) == LOW;\n  if (pressed && !wasPressed) { count = (count + 1) % 10; show(count); delay(20); }\n  wasPressed = pressed;\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Relay counter"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C9461000C947E000C947E000C947E0095\n:100010000C947E000C947E000C947E000C947E0068\n:100020000C947E000C947E000C947E000C947E0058\n:100030000C947E000C947E000C947E000C947E0048\n:100040000C9465010C947E000C947E000C947E0050\n:100050000C947E000C947E000C947E000C947E0028\n:100060000C947E000C947E0000000000230026000B\n:10007000290000000000240027002A0000000000E2\n:10008000250028002B0004040404040404040202D4\n:100090000202020203030303030301020408102007\n:1000A0004080010204081020010204081020000012\n:1000B0000008000201000003040700000000000027\n:1000C000000011241FBECFEFD8E0DEBFCDBF11E08E\n:1000D000A0E0B1E0ECE3F5E002C005900D92A8319C\n:1000E000B107D9F721E0A8E1B1E001C01D92A43227\n:1000F000B207E1F70E94AF010C949C020C9400003F\n:10010000833081F028F4813099F08230A9F008958D\n:100110008730A9F08830C9F08430B1F48091800034\n:100120008F7D03C0809180008F7780938000089539\n:1001300084B58F7784BD089584B58F7DFBCF809182\n:10014000B0008F778093B00008958091B0008F7DCC\n:10015000F9CF1F93CF93DF93282F30E0F901E255B9\n:10016000FF4F8491F901E656FF4FD491F901EA5708\n:10017000FF4FC491CC23A9F0162F81110E9480005B\n:10018000EC2FF0E0EE0FFF1FE458FF4FA591B49164\n:100190008FB7F894EC91111108C0D095DE23DC9351\n:1001A0008FBFDF91CF911F910895DE2BF8CFCF93B2\n:1001B000DF9390E0FC01E656FF4F24918A579F4F52\n:1001C000FC0184918823D1F090E0880F991FFC01F5\n:1001D000EE58FF4FA591B491FC01E458FF4FC59133\n:1001E000D491623071F49FB7F8943C91822F80953E\n:1001F00083238C93E8812E2B28839FBFDF91CF919F\n:1002000008958FB7F894EC912E2B2C938FBFF6CFD7\n:100210003FB7F8948091200190912101A091220193\n:10022000B091230126B5A89B05C02F3F19F0019678\n:10023000A11DB11D3FBFBA2FA92F982F8827BC0140\n:10024000CD01620F711D811D911D42E0660F771F68\n:10025000881F991F4A95D1F70895CF92DF92EF92A8\n:10026000FF920F931F93CF93DF93EC018AE0C82E88\n:1002700081E0D82E10E000E0FE01E050FF4FE0806A\n:10028000F12CF6018081F2E0CF0ED11CB701002ED7\n:1002900002C0759567950A94E2F761700E94A90003\n:1002A0000F5F1F4F0730110561F7BE016095709514\n:1002B000617077278CE0DF91CF911F910F91FF90B4\n:1002C000EF90DF90CF900C94A9001F920F920FB681\n:1002D0000F9211242F933F938F939F93AF93BF93CC\n:1002E00080911C0190911D01A0911E01B0911F01F0\n:1002F00030911B0123E0230F2D3758F50196A11DE6\n:10030000B11D20931B0180931C0190931D01A093AC\n:100310001E01B0931F018091200190912101A091B5\n:100320002201B09123010196A11DB11D80932001EE\n:1003300090932101A0932201B0932301BF91AF912B\n:100340009F918F913F912F910F900FBE0F901F9013\n:10035000189526E8230F0296A11DB11DD2CF7894DF\n:1003600084B5826084BD84B5816084BD85B58260BA\n:1003700085BD85B5816085BD80916E00816080936B\n:100380006E001092810080918100826080938100D4\n:1003900080918100816080938100809180008160E4\n:1003A000809380008091B10084608093B10080913F\n:1003B000B00081608093B00080917A008460809367\n:1003C0007A0080917A00826080937A0080917A002E\n:1003D000816080937A0080917A00806880937A00AF\n:1003E0001092C100CAE0D1E008E111E088812296B4\n:1003F00061E00E94D7000C171D07C1F761E08CE097\n:100400000E94D70062E08FE00E94D700809118011F\n:10041000909119010E942D012DEB222E20E0322E09\n:1004200039EA832E30E0932EC5E9D0E04AE0A42ECD\n:10043000B12C00E010E0F1018491F401F490FE0190\n:10044000E490E11040C080911A01811132C0809186\n:100450001801909119010196B5010E9474029093C0\n:100460001901809318010E942D010E9408012B019F\n:100470003C0184E1C82ED12CE12CF12C0E94080112\n:100480006419750986099709683E734081059105CD\n:10049000A8F3F1E0CF1AD108E108F10828EE420EE6\n:1004A00023E0521E611C711CC114D104E104F1044B\n:1004B00029F781E080931A010115110509F4BBCFDA\n:1004C0000E940000B8CF81110E948000EE2DF0E064\n:1004D000EE0FFF1FE859FF4FA591B4918C91F822C0\n:1004E00009F4B1CF80E0E6CF97FB072E16F4009415\n:1004F00007D077FD09D00E94880207FC05D03EF4A2\n:10050000909581959F4F0895709561957F4F0895BF\n:10051000AA1BBB1B51E107C0AA1FBB1FA617B70729\n:1005200010F0A61BB70B881F991F5A95A9F7809545\n:0C0530009095BC01CD010895F894FFCF18\n:10053C003F065B4F666D7D077F6F02000300040072\n:08054C0005000600070008008D\n:00000001FF\n",
+      "sha256": "demo:relayCounter"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 200,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": true
+      },
+      {
+        "slice": 260,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": false
+      },
+      {
+        "slice": 400,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": true
+      },
+      {
+        "slice": 460,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": false
+      }
+    ]
+  },
+  "maxSimSeconds": 0.8
+}

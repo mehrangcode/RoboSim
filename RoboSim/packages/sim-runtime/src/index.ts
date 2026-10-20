@@ -1,8 +1,9 @@
 export { SimHost, type SimHostOptions } from './host.js';
 export { SimClient, SERIAL_TAIL_CHARS } from './client.js';
-export { HeadlessRun, InputLogger, applyInput, type LiveInput } from './input-log.js';
+export { HeadlessRun, InputLogError, InputLogger, applyInput, type LiveInput } from './input-log.js';
 export {
   EngineVersionMismatchError,
+  MAX_SERIAL_CHARS,
   MAX_SIM_SECONDS,
   TRACE_INTERVAL_SLICES,
   grade,

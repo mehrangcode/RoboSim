@@ -15,7 +15,7 @@ import type {
   TransistorRegion,
   VoltageSourceOptions,
 } from '../contracts.js';
-import { luSolveInPlace } from './lu.js';
+import { luFactor, luSolveFactored, type LuFactors } from './lu.js';
 
 /** Conductance from every net to ground so floating nets never make the matrix singular (SPICE GMIN). */
 export const GMIN = 1e-12;
@@ -338,6 +338,9 @@ export class MnaCircuit implements MnaStamper {
   /** Transistor regions and MOSFET operating points from the previous solve (warm start). */
   private deviceRegions: BjtRegion[] = [];
   private devicePoints: MosfetPoint[] = [];
+  /** Last factored system matrix (a copy, compared bit for bit) and its LU factors. */
+  private factored: { readonly matrix: Float64Array; readonly lu: LuFactors } | null = null;
+  private work = new Float64Array(0);
 
   constructor(readonly netCount: number) {}
 
@@ -678,7 +681,10 @@ export class MnaCircuit implements MnaStamper {
   ): Float64Array {
     const n = this.netCount;
     const size = n + this.sources.length;
-    const a = new Float64Array(size * size);
+    // One work matrix per circuit size, zeroed for every assembly (it never escapes this method).
+    if (this.work.length !== size * size) this.work = new Float64Array(size * size);
+    const a = this.work;
+    a.fill(0);
     const z = new Float64Array(size);
     const addA = (row: NetId, col: NetId, v: number): void => {
       if (row > 0 && col > 0) a[(row - 1) * size + (col - 1)] = (a[(row - 1) * size + (col - 1)] ?? 0) + v;
@@ -775,7 +781,17 @@ export class MnaCircuit implements MnaStamper {
       z[m] = volts;
     });
 
-    luSolveInPlace(a, z, size);
+    // Integrator sub-steps of one size, with no region change, rebuild the same matrix: factor it once.
+    const cached = this.factored;
+    if (cached && sameBits(cached.matrix, a)) {
+      luSolveFactored(cached.lu, z);
+      return z;
+    }
+    const lu = luFactor(a.slice(), size);
+    const matrix = cached?.matrix.length === a.length ? cached.matrix : new Float64Array(a.length);
+    matrix.set(a);
+    this.factored = { matrix, lu };
+    luSolveFactored(lu, z);
     return z;
   }
 
@@ -790,6 +806,20 @@ export class MnaCircuit implements MnaStamper {
       throw new RangeError(`Net ${net} is outside 0..${this.netCount}`);
     }
   }
+}
+
+/**
+ * Bitwise equality of two matrices: equal values with the same sign of zero. NaN never matches, so such
+ * a matrix is always factored afresh; reusing factors stays exactly as safe as recomputing them.
+ */
+function sameBits(x: Float64Array, y: Float64Array): boolean {
+  if (x.length !== y.length) return false;
+  for (let i = 0; i < x.length; i++) {
+    const a = x[i] ?? 0;
+    const b = y[i] ?? 0;
+    if (a !== b || (a === 0 && 1 / a !== 1 / b)) return false;
+  }
+  return true;
 }
 
 /**

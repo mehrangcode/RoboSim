@@ -1,0 +1,557 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 1500,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [],
+  "damaged": { "parts": [], "pins": [] },
+  "final": {
+    "slice": 1500,
+    "pins": {
+      "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+      "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+      "D6": {
+        "mode": "output",
+        "level": 0,
+        "volts": 2.4129356970587343,
+        "duty": 0.50390625,
+        "freqHz": 976.5625
+      },
+      "D8": { "mode": "output", "level": 0, "volts": 0 },
+      "D9": { "mode": "output", "level": 0, "volts": 0 },
+      "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+    },
+    "parts": {
+      "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+      "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+      "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+      "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+      "rgb": {
+        "common": "cathode",
+        "currentMa": [0, 4.263822113762812, 4.23076922916],
+        "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+        "damaged": false
+      },
+      "btn": { "pressed": false },
+      "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+      "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+    }
+  },
+  "serial": "",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [],
+    "findings": [],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": {
+          "D2": { "mode": "input", "level": 0, "volts": 0 },
+          "D5": { "mode": "input", "level": 0, "volts": 0 },
+          "D6": { "mode": "input", "level": 0, "volts": 0 },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "input", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "pot": { "position": 0, "wiperV": 0 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rgb": { "common": "cathode", "currentMa": [0, 0, 0], "brightness": [0, 0, 0], "damaged": false },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 0 },
+          "D6": { "mode": "output", "level": 0, "volts": 0 },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pot": { "position": 0, "wiperV": 4.999450115469751 },
+          "rr": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "rg": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [12.549019605533696, 0, 0],
+            "brightness": [0.6274509802766848, 0, 0],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 0 },
+          "D6": { "mode": "output", "level": 0, "volts": 0 },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pot": { "position": 0, "wiperV": 4.999450115469751 },
+          "rr": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "rg": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [12.549019605533696, 0, 0],
+            "brightness": [0.6274509802766848, 0, 0],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 0 },
+          "D6": { "mode": "output", "level": 0, "volts": 0 },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 4.999450115469751 },
+          "rr": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "rg": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [12.549019605533696, 0, 0],
+            "brightness": [0.6274509802766848, 0, 0],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 1, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 600,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "input", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": true },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 700,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 0, "volts": 0.000007142846938789379 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": true },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": {
+            "sounding": true,
+            "toneHz": 262.5921123894238,
+            "loudness": 0.045849855402683985,
+            "volts": 0,
+            "currentMa": 0
+          }
+        }
+      },
+      {
+        "slice": 800,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 0, "volts": 0.000007142846938789379 },
+          "D5": { "mode": "output", "level": 1, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": true },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 900,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 0, "volts": 0.000007142846938789379 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": true },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": {
+            "sounding": true,
+            "toneHz": 330.69466548168157,
+            "loudness": 0.04963533257534186,
+            "volts": 0,
+            "currentMa": 0
+          }
+        }
+      },
+      {
+        "slice": 1000,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 0, "volts": 0.000007142846938789379 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": true },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 1100,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 0, "volts": 0.000007142846938789379 },
+          "D5": { "mode": "output", "level": 1, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": true },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": {
+            "sounding": true,
+            "toneHz": 393.1783555315086,
+            "loudness": 0.05291420207416471,
+            "volts": 0,
+            "currentMa": 0
+          }
+        }
+      },
+      {
+        "slice": 1200,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 0, "volts": 0.000007142846938789379 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 1300,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 1, "volts": 4.575622875750915 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 16.97508496538778, "powerMw": 63.39377210806951, "damaged": false },
+          "buz": {
+            "sounding": true,
+            "toneHz": 523.0125523012788,
+            "loudness": 0.059381683518615086,
+            "volts": 0.8411041833656043,
+            "currentMa": 16.975084964546678
+          }
+        }
+      },
+      {
+        "slice": 1400,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 1, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      },
+      {
+        "slice": 1500,
+        "pins": {
+          "D2": { "mode": "input_pullup", "level": 1, "volts": 4.999999650577338 },
+          "D5": { "mode": "output", "level": 0, "volts": 2.394230769174558, "duty": 0.5, "freqHz": 976.5625 },
+          "D6": {
+            "mode": "output",
+            "level": 0,
+            "volts": 2.4129356970587343,
+            "duty": 0.50390625,
+            "freqHz": 976.5625
+          },
+          "D8": { "mode": "output", "level": 0, "volts": 0 },
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 2.4999749989973976 }
+        },
+        "parts": {
+          "pot": { "position": 0.5, "wiperV": 2.4999749989973976 },
+          "rr": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "rg": { "currentMa": 4.2638221152376925, "powerMw": 3.9996393866858067, "damaged": false },
+          "rb": { "currentMa": 4.230769230623446, "powerMw": 3.9378698222138233, "damaged": false },
+          "rgb": {
+            "common": "cathode",
+            "currentMa": [0, 4.263822113762812, 4.23076922916],
+            "brightness": [0, 0.2131911056881406, 0.21153846145799998],
+            "damaged": false
+          },
+          "btn": { "pressed": false },
+          "rbz": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "buz": { "sounding": false, "toneHz": 0, "loudness": 0, "volts": 0, "currentMa": 0 }
+        }
+      }
+    ]
+  }
+}

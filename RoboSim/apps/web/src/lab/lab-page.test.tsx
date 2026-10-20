@@ -169,6 +169,17 @@ describe('Simulator Lab', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading the engine');
   });
 
+  it('offers a restart when the worker crashes, and loads the demo again into the fresh worker', async () => {
+    const { worker, user } = await setup();
+    act(() => worker.onerror?.({ message: 'RangeError: boom' } as ErrorEvent));
+    expect(screen.getByRole('alert')).toHaveTextContent('The simulation stopped: RangeError: boom');
+    worker.sent = [];
+    await user.click(screen.getByRole('button', { name: 'Restart simulator' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(worker.sent).toContainEqual({ type: 'load', scenario: 'line-follower' });
+    expect(worker.sent).toContainEqual({ type: 'control', action: 'run' });
+  });
+
   it('bench: shows parts and pins from the worker and sends button presses', async () => {
     const { worker, user } = await setup();
     await user.click(screen.getByRole('radio', { name: 'Component bench' }));

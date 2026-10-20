@@ -6,3 +6,4 @@ Docs
 **/routeTree.gen.ts
 .claude
 apps/grader/golden
+packages/boards/avr-uno/src/decoder.generated.ts

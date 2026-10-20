@@ -138,6 +138,8 @@ sudo apt install -y gcc-avr avr-libc binutils-avr
 pnpm compiler:setup        # pinned Arduino core + libraries → .local/toolchain
 ```
 
+To run the browser simulation tests (`pnpm test:sim:browser`), install the Playwright browsers once: `pnpm --filter @robosim/grader exec playwright install --with-deps chromium firefox`.
+
 ### 4. Build, seed, and run
 
 ```bash
@@ -183,7 +185,10 @@ pnpm dev
 | `pnpm dev --filter web`                                  | Run one app (plus its dependencies)                                                         |
 | `pnpm build`                                             | Build everything (cached by Turborepo)                                                      |
 | `pnpm test`                                              | Unit tests (Vitest)                                                                         |
-| `pnpm test:sim`                                          | Simulation golden-trace tests                                                               |
+| `pnpm test:sim`                                          | All simulation tests: Node + browser legs + 2D frame budget                                 |
+| `pnpm test:sim:node`                                     | Node only: conformance, golden traces, robustness, long run                                 |
+| `pnpm test:sim:browser`                                  | Conformance + golden traces in headless Chromium and Firefox                                |
+| `pnpm test:perf`                                         | Simulation slice, analysis, and netlist performance budgets                                 |
 | `pnpm lint` · `pnpm typecheck` · `pnpm format`           | ESLint, `tsc --noEmit`, Prettier                                                            |
 | `pnpm verify`                                            | Everything CI runs: format, i18n, architecture, lint, typecheck, test, build, bundle budget |
 | `pnpm i18n:check`                                        | Check EN/FA translation parity                                                              |

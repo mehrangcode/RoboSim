@@ -1,0 +1,752 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 2400,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [],
+  "damaged": { "parts": [], "pins": [] },
+  "final": {
+    "slice": 2400,
+    "pins": {
+      "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+      "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+      "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+    },
+    "parts": {
+      "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+      "led": {
+        "color": "red",
+        "currentMa": 12.549019605533696,
+        "brightness": 0.6274509802766848,
+        "damaged": false
+      },
+      "imu": {
+        "powered": true,
+        "sleeping": false,
+        "address": 104,
+        "accelG": [0.573576436351046, 0, 0.8191520442889918],
+        "gyroDps": [0, 0, 0],
+        "temperatureC": 29
+      }
+    }
+  },
+  "serial": "tilt 0.6 deg, turn 0.5 deg/s\r\ntilt 1.2 deg, turn 0.4 deg/s\r\ntilt 33.7 deg, turn 0.5 deg/s\r\ntilt 34.1 deg, turn 0.5 deg/s\r\ntilt 33.9 deg, turn 0.5 deg/s\r\n",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [
+      { "slice": 322, "text": "t" },
+      { "slice": 324, "text": "i" },
+      { "slice": 325, "text": "l" },
+      { "slice": 326, "text": "t" },
+      { "slice": 327, "text": " " },
+      { "slice": 328, "text": "0" },
+      { "slice": 329, "text": "." },
+      { "slice": 330, "text": "6" },
+      { "slice": 331, "text": " " },
+      { "slice": 332, "text": "d" },
+      { "slice": 333, "text": "e" },
+      { "slice": 334, "text": "g" },
+      { "slice": 335, "text": "," },
+      { "slice": 336, "text": " " },
+      { "slice": 337, "text": "t" },
+      { "slice": 338, "text": "u" },
+      { "slice": 339, "text": "r" },
+      { "slice": 340, "text": "n" },
+      { "slice": 341, "text": " " },
+      { "slice": 342, "text": "0" },
+      { "slice": 343, "text": "." },
+      { "slice": 344, "text": "5" },
+      { "slice": 345, "text": " " },
+      { "slice": 346, "text": "d" },
+      { "slice": 347, "text": "e" },
+      { "slice": 348, "text": "g" },
+      { "slice": 350, "text": "/" },
+      { "slice": 351, "text": "s" },
+      { "slice": 352, "text": "\r" },
+      { "slice": 353, "text": "\n" },
+      { "slice": 826, "text": "t" },
+      { "slice": 827, "text": "i" },
+      { "slice": 829, "text": "l" },
+      { "slice": 830, "text": "t" },
+      { "slice": 831, "text": " " },
+      { "slice": 832, "text": "1" },
+      { "slice": 833, "text": "." },
+      { "slice": 834, "text": "2" },
+      { "slice": 835, "text": " " },
+      { "slice": 836, "text": "d" },
+      { "slice": 837, "text": "e" },
+      { "slice": 838, "text": "g" },
+      { "slice": 839, "text": "," },
+      { "slice": 840, "text": " " },
+      { "slice": 841, "text": "t" },
+      { "slice": 842, "text": "u" },
+      { "slice": 843, "text": "r" },
+      { "slice": 844, "text": "n" },
+      { "slice": 845, "text": " " },
+      { "slice": 846, "text": "0" },
+      { "slice": 847, "text": "." },
+      { "slice": 848, "text": "4" },
+      { "slice": 849, "text": " " },
+      { "slice": 850, "text": "d" },
+      { "slice": 851, "text": "e" },
+      { "slice": 852, "text": "g" },
+      { "slice": 853, "text": "/" },
+      { "slice": 855, "text": "s" },
+      { "slice": 856, "text": "\r" },
+      { "slice": 857, "text": "\n" },
+      { "slice": 1330, "text": "t" },
+      { "slice": 1331, "text": "i" },
+      { "slice": 1332, "text": "l" },
+      { "slice": 1334, "text": "t" },
+      { "slice": 1335, "text": " " },
+      { "slice": 1336, "text": "3" },
+      { "slice": 1337, "text": "3" },
+      { "slice": 1338, "text": "." },
+      { "slice": 1339, "text": "7" },
+      { "slice": 1340, "text": " " },
+      { "slice": 1341, "text": "d" },
+      { "slice": 1342, "text": "e" },
+      { "slice": 1343, "text": "g" },
+      { "slice": 1344, "text": "," },
+      { "slice": 1345, "text": " " },
+      { "slice": 1346, "text": "t" },
+      { "slice": 1347, "text": "u" },
+      { "slice": 1348, "text": "r" },
+      { "slice": 1349, "text": "n" },
+      { "slice": 1350, "text": " " },
+      { "slice": 1351, "text": "0" },
+      { "slice": 1352, "text": "." },
+      { "slice": 1353, "text": "5" },
+      { "slice": 1354, "text": " " },
+      { "slice": 1355, "text": "d" },
+      { "slice": 1356, "text": "e" },
+      { "slice": 1357, "text": "g" },
+      { "slice": 1358, "text": "/" },
+      { "slice": 1360, "text": "s" },
+      { "slice": 1361, "text": "\r" },
+      { "slice": 1362, "text": "\n" },
+      { "slice": 1834, "text": "t" },
+      { "slice": 1835, "text": "i" },
+      { "slice": 1836, "text": "l" },
+      { "slice": 1838, "text": "t" },
+      { "slice": 1839, "text": " " },
+      { "slice": 1840, "text": "3" },
+      { "slice": 1841, "text": "4" },
+      { "slice": 1842, "text": "." },
+      { "slice": 1843, "text": "1" },
+      { "slice": 1844, "text": " " },
+      { "slice": 1845, "text": "d" },
+      { "slice": 1846, "text": "e" },
+      { "slice": 1847, "text": "g" },
+      { "slice": 1848, "text": "," },
+      { "slice": 1849, "text": " " },
+      { "slice": 1850, "text": "t" },
+      { "slice": 1851, "text": "u" },
+      { "slice": 1852, "text": "r" },
+      { "slice": 1853, "text": "n" },
+      { "slice": 1854, "text": " " },
+      { "slice": 1855, "text": "0" },
+      { "slice": 1856, "text": "." },
+      { "slice": 1857, "text": "5" },
+      { "slice": 1858, "text": " " },
+      { "slice": 1859, "text": "d" },
+      { "slice": 1860, "text": "e" },
+      { "slice": 1861, "text": "g" },
+      { "slice": 1862, "text": "/" },
+      { "slice": 1864, "text": "s" },
+      { "slice": 1865, "text": "\r" },
+      { "slice": 1866, "text": "\n" },
+      { "slice": 2338, "text": "t" },
+      { "slice": 2339, "text": "i" },
+      { "slice": 2340, "text": "l" },
+      { "slice": 2341, "text": "t" },
+      { "slice": 2343, "text": " " },
+      { "slice": 2344, "text": "3" },
+      { "slice": 2345, "text": "3" },
+      { "slice": 2346, "text": "." },
+      { "slice": 2347, "text": "9" },
+      { "slice": 2348, "text": " " },
+      { "slice": 2349, "text": "d" },
+      { "slice": 2350, "text": "e" },
+      { "slice": 2351, "text": "g" },
+      { "slice": 2352, "text": "," },
+      { "slice": 2353, "text": " " },
+      { "slice": 2354, "text": "t" },
+      { "slice": 2355, "text": "u" },
+      { "slice": 2356, "text": "r" },
+      { "slice": 2357, "text": "n" },
+      { "slice": 2358, "text": " " },
+      { "slice": 2359, "text": "0" },
+      { "slice": 2360, "text": "." },
+      { "slice": 2361, "text": "5" },
+      { "slice": 2362, "text": " " },
+      { "slice": 2363, "text": "d" },
+      { "slice": 2364, "text": "e" },
+      { "slice": 2365, "text": "g" },
+      { "slice": 2366, "text": "/" },
+      { "slice": 2368, "text": "s" },
+      { "slice": 2369, "text": "\r" },
+      { "slice": 2370, "text": "\n" }
+    ],
+    "findings": [],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": {
+          "D13": { "mode": "input", "level": 0, "volts": 0 },
+          "A4": { "mode": "input", "level": 0, "volts": 0 },
+          "A5": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": false,
+            "sleeping": true,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 25
+          }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": true,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 25
+          }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": true,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 25
+          }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 500,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 600,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 700,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 800,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 900,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1000,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1100,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1200,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0, 0, 1],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1300,
+        "pins": {
+          "D13": { "mode": "output", "level": 0, "volts": 0 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1400,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1500,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1600,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1700,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1800,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 1900,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 2000,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 2100,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 2200,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 2300,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      },
+      {
+        "slice": 2400,
+        "pins": {
+          "D13": { "mode": "output", "level": 1, "volts": 4.6862745096963625 },
+          "A4": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 },
+          "A5": { "mode": "input_pullup", "level": 1, "volts": 3.4005376273698547 }
+        },
+        "parts": {
+          "r1": { "currentMa": 12.549019607459206, "powerMw": 34.64513648384703, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 12.549019605533696,
+            "brightness": 0.6274509802766848,
+            "damaged": false
+          },
+          "imu": {
+            "powered": true,
+            "sleeping": false,
+            "address": 104,
+            "accelG": [0.573576436351046, 0, 0.8191520442889918],
+            "gyroDps": [0, 0, 0],
+            "temperatureC": 29
+          }
+        }
+      }
+    ]
+  }
+}

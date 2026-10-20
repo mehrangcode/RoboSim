@@ -1,0 +1,1537 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 4000,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [],
+  "damaged": { "parts": [], "pins": [] },
+  "final": {
+    "slice": 4000,
+    "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+    "parts": {
+      "timer": {
+        "vcc": 4.999174234776951,
+        "output": 0,
+        "outVolts": 0.049999999649300124,
+        "outMa": 5.0099983136587434e-8,
+        "freqHz": 1.0361971009439417,
+        "duty": 0.4962493631637856,
+        "damaged": false
+      },
+      "r1": { "currentMa": 4.924869400083679, "powerMw": 24.254338607880577, "damaged": false },
+      "r2": { "currentMa": -0.028786246208701658, "powerMw": 0.05634806201358337, "damaged": false },
+      "ct": { "volts": 2.031769576884984, "currentMa": -0.02878624824047123, "ratedV": 16, "damaged": false },
+      "cc": {
+        "volts": 3.3327828120767493,
+        "currentMa": -4.174140898495613e-13,
+        "ratedV": 50,
+        "damaged": false
+      },
+      "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+      "led": {
+        "color": "red",
+        "currentMa": 4.9999983132805696e-8,
+        "brightness": 2.4999991566402848e-9,
+        "damaged": false
+      }
+    }
+  },
+  "serial": "period 959 ms, high 49 %\r\n",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [
+      { "slice": 3177, "text": "p" },
+      { "slice": 3178, "text": "e" },
+      { "slice": 3179, "text": "r" },
+      { "slice": 3180, "text": "i" },
+      { "slice": 3181, "text": "o" },
+      { "slice": 3182, "text": "d" },
+      { "slice": 3183, "text": " " },
+      { "slice": 3184, "text": "9" },
+      { "slice": 3185, "text": "5" },
+      { "slice": 3186, "text": "9" },
+      { "slice": 3187, "text": " " },
+      { "slice": 3188, "text": "m" },
+      { "slice": 3189, "text": "s" },
+      { "slice": 3190, "text": "," },
+      { "slice": 3191, "text": " " },
+      { "slice": 3192, "text": "h" },
+      { "slice": 3193, "text": "i" },
+      { "slice": 3194, "text": "g" },
+      { "slice": 3195, "text": "h" },
+      { "slice": 3196, "text": " " },
+      { "slice": 3197, "text": "4" },
+      { "slice": 3198, "text": "9" },
+      { "slice": 3199, "text": " " },
+      { "slice": 3200, "text": "%" },
+      { "slice": 3201, "text": "\r" },
+      { "slice": 3203, "text": "\n" }
+    ],
+    "findings": [],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0 } },
+        "parts": {
+          "timer": {
+            "vcc": 0,
+            "output": null,
+            "outVolts": 0,
+            "outMa": 0,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "r2": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "ct": { "volts": 0, "currentMa": 0, "ratedV": 16, "damaged": false },
+          "cc": { "volts": 0, "currentMa": 0, "ratedV": 50, "damaged": false },
+          "rl": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834000437238975 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999135926473551,
+            "output": 1,
+            "outVolts": 3.5834000437238975,
+            "outMa": 5.245294249884642,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.06268372302455916, "powerMw": 0.003929249132219647, "damaged": false },
+          "r2": { "currentMa": 0.06268371808810749, "powerMw": 0.26718889890775466, "damaged": false },
+          "ct": {
+            "volts": 0.6739593734576825,
+            "currentMa": 0.06268371741414813,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327572730048005,
+            "currentMa": 6.051281007671791e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245294246301241, "powerMw": 9.079326870992698, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245294244448796,
+            "brightness": 0.2622647122224398,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834008812066287 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999136771345836,
+            "output": 1,
+            "outVolts": 3.5834008812066287,
+            "outMa": 5.2452967130691475,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.05423197374925426, "powerMw": 0.0029411069767398034, "damaged": false },
+          "r2": { "currentMa": 0.054231968804349384, "powerMw": 0.19999523794692287, "damaged": false },
+          "ct": {
+            "volts": 1.2571309189008237,
+            "currentMa": 0.054231967547218485,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332757836280231,
+            "currentMa": 5.234010895502469e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.2452967094857454, "powerMw": 9.079335398278856, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245296707633284,
+            "brightness": 0.26226483538166423,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834016055810105 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999137502111757,
+            "output": 1,
+            "outVolts": 3.5834016055810105,
+            "outMa": 5.245298843582033,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.04692169686456449, "powerMw": 0.0022016456366500806, "damaged": false },
+          "r2": { "currentMa": 0.04692169191234792, "powerMw": 0.14971187169037614, "damaged": false },
+          "ct": {
+            "volts": 1.761540755207534,
+            "currentMa": 0.046921690150807174,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327583234810723,
+            "currentMa": 4.5271194170393455e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245298839998633, "powerMw": 9.079342773894032, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245298838146151,
+            "brightness": 0.26226494190730754,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.583402232123174 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999138134182234,
+            "output": 1,
+            "outVolts": 3.583402232123174,
+            "outMa": 5.245300686353105,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.040598727941195456, "powerMw": 0.0016482567104432046, "damaged": false },
+          "r2": { "currentMa": 0.04059872298265523, "powerMw": 0.11208142893192169, "damaged": false },
+          "ct": {
+            "volts": 2.1978262434204825,
+            "currentMa": 0.04059872078482902,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.33275874488177,
+            "currentMa": 3.915697267290737e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245300682769701, "powerMw": 9.079349153379216, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.2453006809172535,
+            "brightness": 0.26226503404586265,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 500,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.583402774045967 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.9991386808866975,
+            "output": 1,
+            "outVolts": 3.583402774045967,
+            "outMa": 5.245302280243674,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.03512972493819433, "powerMw": 0.0012340975742331924, "damaged": false },
+          "r2": { "currentMa": 0.035129719974186006, "powerMw": 0.08391861133160118, "damaged": false },
+          "ct": {
+            "volts": 2.5751879977038548,
+            "currentMa": 0.03512971739899802,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.33275910936904,
+            "currentMa": 3.386852473478936e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245302276660269, "powerMw": 9.07935467126734, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245302274807816,
+            "brightness": 0.2622651137403908,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 600,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834032427781435 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139153754747,
+            "output": 1,
+            "outVolts": 3.5834032427781435,
+            "outMa": 5.245303658867721,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.030399350587415164, "powerMw": 0.0009241205161365785, "damaged": false },
+          "r2": { "currentMa": 0.030399345618674897, "powerMw": 0.0628401745549681, "damaged": false },
+          "ct": {
+            "volts": 2.901584301097439,
+            "currentMa": 0.030399342717090598,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332759424629652,
+            "currentMa": 2.929430683060642e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245303655284318, "powerMw": 9.07935944392588, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245303653431853,
+            "brightness": 0.26226518267159266,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 700,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834036482045115 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.9991395627584065,
+            "output": 1,
+            "outVolts": 3.5834036482045115,
+            "outMa": 5.245304851298215,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.026307848900546382, "powerMw": 0.0006921029137739794, "damaged": false },
+          "r2": { "currentMa": 0.026307843927714302, "powerMw": 0.047062980344498254, "damaged": false },
+          "ct": {
+            "volts": 3.1838983267732877,
+            "currentMa": 0.02630784074381596,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327596973119453,
+            "currentMa": 2.5337918778429718e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245304847714812, "powerMw": 9.079363572001967, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245304845862365,
+            "brightness": 0.2622652422931182,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 800,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.04999999964930012 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174258884379,
+            "output": 0,
+            "outVolts": 0.04999999964930012,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924628309738308, "powerMw": 24.25196398907599, "damaged": false },
+          "r2": { "currentMa": -0.04510163340761549, "powerMw": 0.13832269885037576, "damaged": false },
+          "ct": {
+            "volts": 3.141457020863924,
+            "currentMa": -0.0451016365490725,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828281491563,
+            "currentMa": -6.539900792064639e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.004998311840973e-8, "powerMw": 8.266502673505228e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 900,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174249762791,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924719531697706, "powerMw": 24.252862465884874, "damaged": false },
+          "r2": { "currentMa": -0.03892833938238641, "powerMw": 0.10304826128077745, "damaged": false },
+          "ct": {
+            "volts": 2.7215817960673605,
+            "currentMa": -0.038928342103968214,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782822067799,
+            "currentMa": -5.644709131070818e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.99999831328057e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1000,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.04999999964930012 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.99917424188968,
+            "output": 0,
+            "outVolts": 0.04999999964930012,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924798268064232, "powerMw": 24.253637981128463, "damaged": false },
+          "r2": { "currentMa": -0.03359998703997853, "powerMw": 0.07676922077789733, "damaged": false },
+          "ct": {
+            "volts": 2.359175092543988,
+            "currentMa": -0.033599989399153624,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828168188,
+            "currentMa": -4.872344757446267e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.004998311840973e-8, "powerMw": 8.266502673505228e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1100,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174235094165,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924866227738583, "powerMw": 24.25430736112006, "damaged": false },
+          "r2": { "currentMa": -0.029000929374452502, "powerMw": 0.05719166551157477, "damaged": false },
+          "ct": {
+            "volts": 2.046371204818351,
+            "currentMa": -0.029000931420823713,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782812288235,
+            "currentMa": -4.2053891037392537e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.999998313280569e-8,
+            "brightness": 2.4999991566402844e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1200,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174229215145,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0,
+            "duty": 0,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924925021859114, "powerMw": 24.25488647093399, "damaged": false },
+          "r2": { "currentMa": -0.025022135283893503, "powerMw": 0.04257529328325184, "damaged": false },
+          "ct": {
+            "volts": 1.7757544066607895,
+            "currentMa": -0.02502213705964791,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782808368696,
+            "currentMa": -3.628417497197028e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1300,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834018348713546 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.9991377334252505,
+            "output": 1,
+            "outVolts": 3.5834018348713546,
+            "outMa": 5.245299517965399,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.6095544796849365,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.04460773332655421, "powerMw": 0.0019898498725329753, "damaged": false },
+          "r2": { "currentMa": 0.044607728372023946, "powerMw": 0.13530976127483438, "damaged": false },
+          "ct": {
+            "volts": 1.921204470801068,
+            "currentMa": 0.04460772645081949,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332758477697527,
+            "currentMa": 4.3033616744369964e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245299514381997, "powerMw": 9.079345108540082, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245299512529555,
+            "brightness": 0.2622649756264777,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1400,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.583402431829597 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.9991383356507715,
+            "output": 1,
+            "outVolts": 3.583402431829597,
+            "outMa": 5.245301273724935,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.6095544796849365,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.038583320883600614, "powerMw": 0.0014886726504068915, "damaged": false },
+          "r2": { "currentMa": 0.03858331592304545, "powerMw": 0.10122971419799225, "damaged": false },
+          "ct": {
+            "volts": 2.3368895320000798,
+            "currentMa": 0.03858331358615594,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332758879200624,
+            "currentMa": 3.720809868662781e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245301270141534, "powerMw": 9.079351186800967, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245301268289082,
+            "brightness": 0.2622650634144541,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1500,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.583402946777855 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999138855142691,
+            "output": 1,
+            "outVolts": 3.583402946777855,
+            "outMa": 5.245302788278637,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.6095544796849365,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.03338654080884673, "powerMw": 0.0011146611071807882, "damaged": false },
+          "r2": { "currentMa": 0.033386535843093965, "powerMw": 0.07579693274094947, "damaged": false },
+          "ct": {
+            "volts": 2.695467877003455,
+            "currentMa": 0.03338653314762608,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327592255453196,
+            "currentMa": 3.218289664216869e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245302784695236, "powerMw": 9.079356430033425, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.2453027828427645,
+            "brightness": 0.2622651391421382,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1600,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.583403391146177 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139303431909,
+            "output": 1,
+            "outVolts": 3.583403391146177,
+            "outMa": 5.24530409524429,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.6095544796849365,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.028902042795245997, "powerMw": 0.000835328077738231, "damaged": false },
+          "r2": { "currentMa": 0.028902037825009306, "powerMw": 0.05680228974980226, "damaged": false },
+          "ct": {
+            "volts": 3.0048986885360307,
+            "currentMa": 0.02890203482011063,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327595244192527,
+            "currentMa": 2.7846474022643836e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245304091660886, "powerMw": 9.07936095461816, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245304089808444,
+            "brightness": 0.26226520449042223,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1700,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834037774295457 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139693123661,
+            "output": 1,
+            "outVolts": 3.5834037774295457,
+            "outMa": 5.2453052313718445,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.6095544796849365,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.02500372936607853, "powerMw": 0.000625186482212098, "damaged": false },
+          "r2": { "currentMa": 0.025003724391942553, "powerMw": 0.042512663875839164, "damaged": false },
+          "ct": {
+            "volts": 3.273882705105489,
+            "currentMa": 0.02500372111805985,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327597842263184,
+            "currentMa": 2.4076839888218073e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245305227788442, "powerMw": 9.07936488777937, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245305225935981,
+            "brightness": 0.26226526129679906,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1800,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174255544125,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.009998313658743e-8,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.3846314444012729,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924661714492371, "powerMw": 24.25229300218694, "damaged": false },
+          "r2": { "currentMa": -0.04284102236580756, "powerMw": 0.12480401741963838, "damaged": false },
+          "ct": {
+            "volts": 2.9877020619266688,
+            "currentMa": -0.04284102535350961,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828259222114,
+            "currentMa": -6.212107853335131e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.004998311840973e-8, "powerMw": 8.266502673505228e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1900,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.9991742468596145,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.3846314444012729,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924748565390522, "powerMw": 24.253148432316003, "damaged": false },
+          "r2": { "currentMa": -0.03696353262339045, "powerMw": 0.09290858659203062, "damaged": false },
+          "ct": {
+            "volts": 2.587945899859643,
+            "currentMa": -0.03696353521133636,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828201322536,
+            "currentMa": -5.359871175005066e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2000,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174239383904,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.3846314444012729,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924823327487779, "powerMw": 24.2538848069678, "damaged": false },
+          "r2": { "currentMa": -0.03190413232820808, "powerMw": 0.06921540885387523, "damaged": false },
+          "ct": {
+            "volts": 2.2438319102142743,
+            "currentMa": -0.03190413457204,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828151482013,
+            "currentMa": -4.626345971186114e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2100,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.99917423293139,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.3846314444012729,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.9248878569242045, "powerMw": 24.254520403279486, "damaged": false },
+          "r2": { "currentMa": -0.02753721029579247, "powerMw": 0.05156426065947952, "damaged": false },
+          "ct": {
+            "volts": 1.9468166761210737,
+            "currentMa": -0.027537212242609153,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782810846315,
+            "currentMa": -3.9929710291767596e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2200,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174227374959,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 0.8031340902386906,
+            "duty": 0.3846314444012729,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924943424938562, "powerMw": 24.25506773884558, "damaged": false },
+          "r2": { "currentMa": -0.02377673756212702, "powerMw": 0.038442660938681816, "damaged": false },
+          "ct": {
+            "volts": 1.6910489566610345,
+            "currentMa": -0.02377673925317598,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828071418457,
+            "currentMa": -3.447881351222113e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2300,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834020543303926 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999137954820692,
+            "output": 1,
+            "outVolts": 3.5834020543303926,
+            "outMa": 5.245300163433159,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.49624835143477786,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.04239298585161144, "powerMw": 0.001797165249414928, "damaged": false },
+          "r2": { "currentMa": 0.042392980894865824, "powerMw": 0.1222072083823672, "damaged": false },
+          "ct": {
+            "volts": 2.0740222681182043,
+            "currentMa": 0.042392978820843565,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327586253016257,
+            "currentMa": 4.089198517554388e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245300159849755, "powerMw": 9.079347343083557, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245300157997312,
+            "brightness": 0.2622650078998656,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2400,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.583402620261569 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999138525745379,
+            "output": 1,
+            "outVolts": 3.583402620261569,
+            "outMa": 5.24530182793662,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.49624835143477786,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.036681693862138154, "powerMw": 0.0013455466645956237, "damaged": false },
+          "r2": { "currentMa": 0.03668168889968195, "powerMw": 0.0914971484362474, "damaged": false },
+          "ct": {
+            "volts": 2.4681019867048684,
+            "currentMa": 0.03668168643157996,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332759005936492,
+            "currentMa": 3.5369252386833615e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245301824353217, "powerMw": 9.079353105425854, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245301822500736,
+            "brightness": 0.2622650911250368,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2500,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834031097634442 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139019566388,
+            "output": 1,
+            "outVolts": 3.5834031097634442,
+            "outMa": 5.245303267648017,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.49624835143477786,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.03174171484970678, "powerMw": 0.0010075364616000959, "damaged": false },
+          "r2": { "currentMa": 0.03174170988230833, "powerMw": 0.06851245794517886, "damaged": false },
+          "ct": {
+            "volts": 2.8089610327197145,
+            "currentMa": 0.03174170707334732,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.33275933516642,
+            "currentMa": 3.0592367577168075e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245303264064614, "powerMw": 9.079358089562273, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245303262212153,
+            "brightness": 0.26226516311060766,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2600,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834035331521736 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139446690901,
+            "output": 1,
+            "outVolts": 3.5834035331521736,
+            "outMa": 5.245304512908988,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.49624835143477786,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.027468939717167018, "powerMw": 0.0007545426491853557, "damaged": false },
+          "r2": { "currentMa": 0.027468934745495773, "powerMw": 0.05130888157155674, "damaged": false },
+          "ct": {
+            "volts": 3.103782944280021,
+            "currentMa": 0.027468931641712838,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332759619929866,
+            "currentMa": 2.6460670527261628e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245304509325583, "powerMw": 9.079362400531926, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245304507473136,
+            "brightness": 0.2622652253736568,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2700,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174261906721,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.4962483028630412,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924598084287564, "powerMw": 24.25166629176875, "damaged": false },
+          "r2": { "currentMa": -0.04714709039747199, "powerMw": 0.15115367304042288, "damaged": false },
+          "ct": {
+            "volts": 3.280578324647252,
+            "currentMa": -0.04714709367805031,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782830164151,
+            "currentMa": -6.836548398043972e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2800,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174252349402,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.4962483028630412,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924693663860166, "powerMw": 24.25260768286447, "damaged": false },
+          "r2": { "currentMa": -0.040678902163341225, "powerMw": 0.11252456952259875, "damaged": false },
+          "ct": {
+            "volts": 2.840645935596439,
+            "currentMa": -0.04067890500398716,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782823792291,
+            "currentMa": -5.898518384092108e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 2900,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174244122319,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.4962483028630412,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924775940180147, "powerMw": 24.253418060977253, "damaged": false },
+          "r2": { "currentMa": -0.03511098937236569, "powerMw": 0.0838291470800336, "damaged": false },
+          "ct": {
+            "volts": 2.461945581263039,
+            "currentMa": -0.03511099183431127,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828183072996,
+            "currentMa": -5.091171846548656e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3000,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174237021221,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.4962483028630412,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924846955885041, "powerMw": 24.25411753889016, "damaged": false },
+          "r2": { "currentMa": -0.030305119934675447, "powerMw": 0.0624512200093443, "damaged": false },
+          "ct": {
+            "volts": 2.135075436694111,
+            "currentMa": -0.03030512206975089,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782813573003,
+            "currentMa": -4.394291321573665e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3100,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174230892088,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361970506140485,
+            "duty": 0.4962483028630412,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924908251309169, "powerMw": 24.25472128381314, "damaged": false },
+          "r2": { "currentMa": -0.02615705429298744, "powerMw": 0.046525021271467897, "damaged": false },
+          "ct": {
+            "volts": 1.8529456715060642,
+            "currentMa": -0.02615705614593311,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332782809486713,
+            "currentMa": -3.792976398640256e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3200,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834016377829347 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999137534597816,
+            "output": 1,
+            "outVolts": 3.5834016377829347,
+            "outMa": 5.245298938293577,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962483269666845,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.04659671990038383, "powerMw": 0.0021712543054748265, "damaged": false },
+          "r2": { "currentMa": 0.04659671494784235, "powerMw": 0.14764526138727227, "damaged": false },
+          "ct": {
+            "volts": 1.7839641982441523,
+            "currentMa": 0.04659671316387816,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.332758345139493,
+            "currentMa": 4.495695627042561e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245298934710174, "powerMw": 9.079343101775658, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.2452989328576995,
+            "brightness": 0.26226494664288497,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3300,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834022614172216 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999138163734758,
+            "output": 1,
+            "outVolts": 3.5834022614172216,
+            "outMa": 5.245300772512068,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962483269666845,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.04030309683892064, "powerMw": 0.001624339614807415, "damaged": false },
+          "r2": { "currentMa": 0.04030309188008602, "powerMw": 0.11045506662643656, "damaged": false },
+          "ct": {
+            "volts": 2.218224819049988,
+            "currentMa": 0.040303089661861205,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327587645844057,
+            "currentMa": 3.887110862344285e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245300768928666, "powerMw": 9.079349451652806, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245300767076189,
+            "brightness": 0.26226503835380943,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3400,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834027993799618 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999138706444228,
+            "output": 1,
+            "outVolts": 3.5834027993799618,
+            "outMa": 5.24530235475542,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962483269666845,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.034874058094575666, "powerMw": 0.0012161999279838383, "damaged": false },
+          "r2": { "currentMa": 0.03487405313031086, "powerMw": 0.08270157155803064, "damaged": false },
+          "ct": {
+            "volts": 2.592829035488514,
+            "currentMa": 0.03487405053748183,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327591264082166,
+            "currentMa": 3.362129720311407e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245302351172018, "powerMw": 9.07935492921953, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245302349319569,
+            "brightness": 0.26226511746597847,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3500,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834032646905514 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139175860499,
+            "output": 1,
+            "outVolts": 3.5834032646905514,
+            "outMa": 5.245303723315979,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962483269666845,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.03017821387855779, "powerMw": 0.0009107245928999779, "damaged": false },
+          "r2": { "currentMa": 0.030178208909596497, "powerMw": 0.061929251923404954, "damaged": false },
+          "ct": {
+            "volts": 2.9168427561293795,
+            "currentMa": 0.030178205992753747,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327594393675324,
+            "currentMa": 2.9080495563179638e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245303719732577, "powerMw": 9.079359667039336, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245303717880101,
+            "brightness": 0.26226518589400505,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3600,
+        "pins": { "D2": { "mode": "input", "level": 1, "volts": 3.5834036671553218 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999139581876429,
+            "output": 1,
+            "outVolts": 3.5834036671553218,
+            "outMa": 5.245304907035892,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962483269666845,
+            "damaged": false
+          },
+          "r1": { "currentMa": 0.026116600187086725, "powerMw": 0.0006820768053321384, "damaged": false },
+          "r2": { "currentMa": 0.02611659521406293, "powerMw": 0.0463812050991146, "damaged": false },
+          "ct": {
+            "volts": 3.1970945071330634,
+            "currentMa": 0.02611659201696844,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.33275971005791,
+            "currentMa": 2.5152984916957735e-11,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.245304903452488, "powerMw": 9.079363764960297, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 5.245304901600045,
+            "brightness": 0.26226524508000226,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3700,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.99917425841527,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962493631637856,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924633001137925, "powerMw": 24.252010195896727, "damaged": false },
+          "r2": { "currentMa": -0.04478415075956151, "powerMw": 0.13638217082934914, "damaged": false },
+          "ct": {
+            "volts": 3.1198635089275273,
+            "currentMa": -0.04478415387942502,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828278364016,
+            "currentMa": -6.493879276580458e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3800,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174249336932,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962493631637856,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924723790566803, "powerMw": 24.252904413374665, "damaged": false },
+          "r2": { "currentMa": -0.0386401275162481, "powerMw": 0.10152804290409015, "damaged": false },
+          "ct": {
+            "volts": 2.701979129875,
+            "currentMa": -0.03864013021822724,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828217838795,
+            "currentMa": -5.602996219954156e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 3900,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174241522164,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962493631637856,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.9248019434597055, "powerMw": 24.253674182304497, "damaged": false },
+          "r2": { "currentMa": -0.03335126077857606, "powerMw": 0.07563684849539982, "damaged": false },
+          "ct": {
+            "volts": 2.3422580310056307,
+            "currentMa": -0.03335126312083409,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828165737783,
+            "currentMa": -4.836057660561079e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 4000,
+        "pins": { "D2": { "mode": "input", "level": 0, "volts": 0.049999999649300124 } },
+        "parts": {
+          "timer": {
+            "vcc": 4.999174234776951,
+            "output": 0,
+            "outVolts": 0.049999999649300124,
+            "outMa": 5.0099983136587434e-8,
+            "freqHz": 1.0361971009439417,
+            "duty": 0.4962493631637856,
+            "damaged": false
+          },
+          "r1": { "currentMa": 4.924869400083679, "powerMw": 24.254338607880577, "damaged": false },
+          "r2": { "currentMa": -0.028786246208701658, "powerMw": 0.05634806201358337, "damaged": false },
+          "ct": {
+            "volts": 2.031769576884984,
+            "currentMa": -0.02878624824047123,
+            "ratedV": 16,
+            "damaged": false
+          },
+          "cc": {
+            "volts": 3.3327828120767493,
+            "currentMa": -4.174140898495613e-13,
+            "ratedV": 50,
+            "damaged": false
+          },
+          "rl": { "currentMa": 5.0049983139436684e-8, "powerMw": 8.266502680451058e-16, "damaged": false },
+          "led": {
+            "color": "red",
+            "currentMa": 4.9999983132805696e-8,
+            "brightness": 2.4999991566402848e-9,
+            "damaged": false
+          }
+        }
+      }
+    ]
+  }
+}

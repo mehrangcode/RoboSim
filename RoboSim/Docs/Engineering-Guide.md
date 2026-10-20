@@ -106,7 +106,10 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm test` | Unit tests (Vitest) |
 | `pnpm test:int` | Integration tests against real services via Testcontainers (P1; until then DB integration tests run on PGlite inside `pnpm test`) |
 | `pnpm test:e2e` | Playwright E2E (EN + FA projects, Chrome + Firefox) |
-| `pnpm test:sim` | Simulation conformance + golden traces (Node and browser; browser leg planned) |
+| `pnpm test:sim` | Everything simulation: `test:sim:node` + `test:sim:browser` + 2D frame budget |
+| `pnpm test:sim:node` | Node only: build, peripheral conformance, golden traces, robustness (fuzzing), long run (~80 s) |
+| `pnpm test:sim:browser` | Browser correctness legs only: conformance + golden traces in headless Chromium + Firefox (Vitest browser mode, Playwright provider). Install browsers once: `pnpm --filter @robosim/grader exec playwright install --with-deps chromium firefox` |
+| `pnpm test:perf` | Slice/analysis/netlist budgets (`packages/sim-runtime/scripts/perf-budgets.ts`, against built dist); `ROBOSIM_PERF_SCALE` scales every budget for slower machines |
 | `pnpm golden:update` | Record missing golden traces, or re-record after an `engineVersion` bump (refuses otherwise) |
 | `pnpm compiler:setup` | Fetch the pinned Arduino core and libraries (`apps/compiler/toolchain.lock.json`) into `.local/toolchain`; checks avr-gcc |
 | `pnpm firmware:gen` | Recompile the Lab demo sketches (`packages/sim-runtime/src/firmware/sketches.ts`) into `generated.ts` |
@@ -177,15 +180,16 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | Level | Tooling | Scope | Gate |
 |---|---|---|---|
 | Unit | Vitest | Pure logic: sim-core, component models, safety rules, entitlement resolution, pricing/VAT, state machines, schema migrations | Coverage ≥ 80 % lines for `sim-core`, `safety-rules`, `entitlements`, `billing`, `commerce` domain |
-| Simulation conformance | Vitest + firmware fixtures (`packages/test-fixtures`) | Peripheral behaviour per board (timers, PWM frequencies, ADC, UART, I²C, SPI, interrupts, EEPROM) | 100 % pass |
-| Golden traces | Node + Playwright (Chrome, Firefox) | Fixture projects (line follower, obstacle avoider, sumo…) produce identical traces in grader; browser within tolerance | 100 % pass; change requires `engineVersion` bump |
+| Simulation conformance | Vitest + firmware fixtures (`packages/test-fixtures`; Uno: 10 sketches / 33 tests in `packages/boards/avr-uno/test/conformance`) | Peripheral behaviour per board (timers, PWM frequencies, ADC, UART, I²C, SPI, interrupts, EEPROM); runs in Node and Chromium + Firefox | 100 % pass |
+| Golden traces | Node + Vitest browser mode (Playwright: Chromium, Firefox) | Fixture projects (31 fixtures, one per built-in scenario) produce identical traces in grader; Node, Chromium and Firefox (main thread and Web Worker) are bit-identical (dmath/fdlibm), no tolerance | 100 % pass; change requires `engineVersion` bump |
+| Robustness | Vitest (`apps/grader/test/robustness.test.ts`, `long-run.long.test.ts`) | Seeded fuzzing of grade jobs, corrupted Intel HEX, runaway firmware, full 300 s run; hostile input must grade or fail with a typed error | 100 % pass |
 | Calibration | Vitest | Simulated vs. measured data for sold parts within ± 5 % | Pass for components with calibration data |
 | Integration | Vitest + Testcontainers | API modules with real Postgres/Valkey/MinIO; RLS isolation; outbox; build service with real sandbox image | Pass |
 | Contract | OpenAPI diff + generated client compile | API backward compatibility within `v1` | No breaking diff |
 | E2E | Playwright | User journeys A–F in FA and EN; payment via `fake` and gateway sandbox (staging) | Journeys pass in both locales |
 | Visual regression | Playwright screenshots | Key screens and PDF exports in FA/EN, RTL correctness | Reviewed diffs only |
 | Accessibility | axe-core in Playwright | All non-canvas screens | No serious/critical violations |
-| Performance | Benchmarks + Playwright traces + k6 | Budgets in Technical Design §17; build and API load | Within budget |
+| Performance | `pnpm test:perf`, 2D frame budget (Vitest browser mode), benchmarks, k6 | Budgets in Technical Design §17; build and API load | Within budget |
 | Security | Semgrep, Trivy, secret scan, sandbox escape suite, tenant isolation suite, ZAP baseline (staging) | Per [Security §10](Security-Privacy-Compliance.md#10-secure-development-lifecycle) | No high/critical open |
 | LTI | Moodle 4.x container | Launch, deep link, NRPS, AGS | Pass |
 | AI | `pnpm ai:eval` | 200+ FA/EN tasks; tutor-mode leakage | No regression > 2 points; leakage ≤ 2 % |
@@ -209,6 +213,7 @@ flowchart LR
   tag --> prod["Argo CD → production (progressive 10 % → 50 % → 100 %)"]
 ```
 
+- `sim` job (every PR/push): installs Playwright Chromium + Firefox, gates on `pnpm test:sim:node` and `pnpm test:sim:browser`; the 2D frame budget and `pnpm test:perf` run report-only (`continue-on-error`, shared runners are noisy; budgets are gated locally). Browser cache not yet set up (follow-up: pin `actions/cache` SHA).
 - CI runners: self-hosted runners in-region (dependencies from Verdaccio/Harbor mirrors) so CI is not blocked by upstream outages.
 - Releases: weekly train for SaaS; quarterly LTS for Private Cloud; hotfixes cherry-picked to the LTS branch.
 - Rollback: Argo CD revert to previous tag; DB migrations are backward-compatible, so rollback does not require down-migrations.

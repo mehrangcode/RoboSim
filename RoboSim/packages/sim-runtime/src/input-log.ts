@@ -1,5 +1,6 @@
 import type { SliceContext, SliceObserver } from '@robosim/sim-core';
 import type { InputLogEntry, RunSource } from './protocol.js';
+import { inputValueIssue } from './project-loader.js';
 import { buildRun, type Scenario } from './scenarios.js';
 
 const utf8 = new TextEncoder();
@@ -8,6 +9,34 @@ const utf8 = new TextEncoder();
 export type LiveInput = {
   [K in InputLogEntry['kind']]: Omit<Extract<InputLogEntry, { kind: K }>, 'slice'>;
 }[InputLogEntry['kind']];
+
+export class InputLogError extends Error {
+  constructor(readonly issues: readonly string[]) {
+    super(`Invalid input log: ${issues.join('; ')}`);
+    this.name = 'InputLogError';
+  }
+}
+
+/**
+ * Every problem of a replayed log for this scenario — slice order, parts, input names, value types
+ * and ranges — so a bad log is refused before slice 0, not when the run reaches the bad entry.
+ */
+function replayIssues(scenario: Scenario, entries: readonly InputLogEntry[]): string[] {
+  const parts = new Map(scenario.scene.parts.map((p) => [p.id, p]));
+  const issues: string[] = [];
+  entries.forEach((e, i) => {
+    const at = `entry ${i} (slice ${e.slice})`;
+    if (i > 0 && e.slice < (entries[i - 1]?.slice ?? 0)) issues.push(`${at}: not in slice order`);
+    if (e.kind === 'serial') {
+      if (!scenario.circuit.sim.mcu) issues.push(`${at}: serial input but the scenario has no MCU`);
+      return;
+    }
+    const part = parts.get(e.componentId);
+    const issue = part ? inputValueIssue(part.inputs, e.name, e.value) : `no component '${e.componentId}'`;
+    if (issue) issues.push(`${at}: ${part ? `component '${e.componentId}' ` : ''}${issue}`);
+  });
+  return issues;
+}
 
 /** Applies one user interaction to the running scenario. */
 export function applyInput(scenario: Scenario, entry: InputLogEntry): void {
@@ -35,9 +64,8 @@ export class InputLogger implements SliceObserver {
     private readonly scenario: Scenario,
     replay: readonly InputLogEntry[] = [],
   ) {
-    for (let i = 1; i < replay.length; i++)
-      if ((replay[i]?.slice ?? 0) < (replay[i - 1]?.slice ?? 0))
-        throw new Error('input log is not in slice order');
+    const issues = replayIssues(scenario, replay);
+    if (issues.length > 0) throw new InputLogError(issues);
     this.log = [...replay];
     this.applyDue(scenario.circuit.sim.slice);
   }

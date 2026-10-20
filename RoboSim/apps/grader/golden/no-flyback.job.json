@@ -1,0 +1,158 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "no-flyback",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "pack",
+          "type": "power.battery-4aa",
+          "typeVersion": "1.0.0",
+          "x": 147.32,
+          "y": 55.88,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "rb",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": 10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 1000
+          }
+        },
+        {
+          "id": "q",
+          "type": "semiconductor.tip120",
+          "typeVersion": "1.0.0",
+          "x": 96.52,
+          "y": 15.24,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "motor",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 132.08,
+          "y": 15.24,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "rb",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "rb",
+            "pin": "b"
+          },
+          "to": {
+            "part": "q",
+            "pin": "b"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "q",
+            "pin": "e"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "pack",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "pack",
+            "pin": "pos"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "motor",
+            "pin": "m2"
+          },
+          "to": {
+            "part": "q",
+            "pin": "c"
+          },
+          "color": "yellow",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "void setup() { pinMode(9, OUTPUT); analogWrite(9, 128); }\nvoid loop() {}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Motor without a flyback diode"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C945C000C946E000C946E000C946E00CA\n:100010000C946E000C946E000C946E000C946E00A8\n:100020000C946E000C946E000C946E000C946E0098\n:100030000C946E000C946E000C946E000C946E0088\n:100040000C948C000C946E000C946E000C946E005A\n:100050000C946E000C946E000C946E000C946E0068\n:100060000C946E000C946E00000000080002010069\n:100070000003040700000000000000000000000072\n:10008000250028002B0000000000240027002A0083\n:10009000040404040404040402020202020203032E\n:1000A0000303030301020408102040800102040836\n:1000B000102001020408102011241FBECFEFD8E049\n:1000C000DEBFCDBF21E0A0E0B1E001C01D92A930AC\n:1000D000B207E1F70E94D6000C94B0010C94000026\n:1000E000EDEAF0E02491E9E9F0E08491882399F0C9\n:1000F00090E0880F991FFC01EA57FF4FA591B4913A\n:10010000FC01E458FF4F859194918FB7F894EC91DE\n:10011000E22BEC938FBF08951F920F920FB60F92B0\n:1001200011242F933F938F939F93AF93BF9380910D\n:10013000050190910601A0910701B091080130914D\n:10014000040123E0230F2D3758F50196A11DB11DA1\n:10015000209304018093050190930601A093070169\n:10016000B09308018091000190910101A0910201DA\n:10017000B09103010196A11DB11D809300019093E0\n:100180000101A0930201B0930301BF91AF919F9130\n:100190008F913F912F910F900FBE0F901F90189548\n:1001A00026E8230F0296A11DB11DD2CF789484B505\n:1001B000826084BD84B5816084BD85B5826085BD63\n:1001C00085B5816085BD80916E00816080936E00F1\n:1001D00010928100809181008260809381008091E3\n:1001E0008100816080938100C0E8D0E08091800030\n:1001F0008160809380008091B10084608093B10021\n:100200008091B00081608093B00080917A0084601A\n:1002100080937A0080917A00826080937A00809146\n:100220007A00816080937A0080917A008068809360\n:100230007A001092C1000E9470000E947000E1E7F5\n:10024000F0E08491833009F44DC050F5813009F419\n:1002500037C0823009F440C08491EDEAF0E0949117\n:10026000E9E9F0E0E491EE2381F1882359F083304D\n:1002700009F45FC008F052C0813009F460C08230D8\n:1002800009F461C0F0E0EE0FFF1FE458FF4FA591A5\n:10029000B4918FB7F894EC919E2B9C938FBF15C0AF\n:1002A000873051F1883089F18430B1F68091800037\n:1002B000806280938000D0938B00C0938A0005C039\n:1002C00084B5806884BD80E887BDC0E0D0E0209719\n:1002D000F1F30E940000FBCF84B5806284BD80E80A\n:1002E00088BDF3CF80918000806880938000D09398\n:1002F0008900C0938800E9CF8091B0008068809326\n:10030000B00080E88093B300E0CF8091B0008062BD\n:100310008093B00080E88093B400D7CF8730B1F0ED\n:100320008830D1F0843009F0ADCF809180008F7D8E\n:1003300003C0809180008F7780938000A3CF84B525\n:100340008F7784BD9FCF84B58F7DFBCF8091B00028\n:100350008F778093B00096CF8091B0008F7DF9CFDA\n:04036000F894FFCF3F\n:00000001FF\n",
+      "sha256": "demo:motorPwm"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 0.3
+}

@@ -14,6 +14,11 @@ import { challengeView, damageView, pinViews, robotView } from './views.js';
 export { MAX_SIM_SECONDS };
 /** Trace sample interval: 100 slices = 10 Hz (Technical Design §11.1). */
 export const TRACE_INTERVAL_SLICES = 100;
+/**
+ * Serial output a run records (characters). A sketch printing at 2 Mbaud for the full 300 s would emit
+ * ≈ 60 MB; past this the result keeps the first part and says so (`serialTruncated`).
+ */
+export const MAX_SERIAL_CHARS = 1_000_000;
 
 /**
  * A verified run (Technical Design §11.1): a self-contained input log (project, firmware, seed,
@@ -60,8 +65,10 @@ export interface GradeResult {
   readonly damaged: Damage;
   /** State at `endSlice`, comparable with a live frame paused at the same slice. */
   readonly final: TraceSample;
-  /** All UART output of the run. */
+  /** All UART output of the run, up to {@link MAX_SERIAL_CHARS}. */
   readonly serial: string;
+  /** Present when the output went past {@link MAX_SERIAL_CHARS} and the rest was dropped. */
+  readonly serialTruncated?: true;
   readonly trace: Trace;
 }
 
@@ -95,9 +102,16 @@ export function grade(job: GradeJob): GradeResult {
 
   const serial: { slice: number; text: string }[] = [];
   let pendingSerial = '';
+  let serialChars = 0;
+  let serialTruncated = false;
   const utf8 = new TextDecoder();
   sim.mcu?.uart(0).onData((bytes) => {
-    pendingSerial += utf8.decode(bytes, { stream: true });
+    if (serialTruncated) return;
+    const text = utf8.decode(bytes, { stream: true });
+    const room = MAX_SERIAL_CHARS - serialChars;
+    pendingSerial += text.length > room ? text.slice(0, room) : text;
+    serialChars += Math.min(text.length, room);
+    serialTruncated = text.length > room;
   });
 
   const sample = (): TraceSample => {
@@ -143,6 +157,7 @@ export function grade(job: GradeJob): GradeResult {
     damaged: damageView(s),
     final,
     serial: serial.map((c) => c.text).join(''),
+    ...(serialTruncated ? { serialTruncated: true as const } : {}),
     trace: { intervalSlices: TRACE_INTERVAL_SLICES, samples, serial, findings },
   };
 }

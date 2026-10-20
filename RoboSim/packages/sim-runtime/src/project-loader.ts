@@ -16,6 +16,7 @@ import {
   type ChallengeSpec,
   type ComponentDefinition,
   type Finding,
+  type InputSpec,
   type MountSpec,
   boxInertia,
   robotMass,
@@ -47,6 +48,26 @@ export class ProjectLoadError extends Error {
     super(`Cannot load project: ${issues.join('; ')}`);
     this.name = 'ProjectLoadError';
   }
+}
+
+/**
+ * Why `value` is not a valid `name` input for a part declaring `specs`, or null. Checked when a run
+ * is built, so a bad document or input log is refused up front instead of throwing mid-run.
+ */
+export function inputValueIssue(
+  specs: readonly InputSpec[],
+  name: string,
+  value: number | boolean,
+): string | null {
+  const spec = specs.find((i) => i.name === name);
+  if (!spec)
+    return specs.length > 0
+      ? `has no input '${name}' (has ${specs.map((i) => i.name).join(', ')})`
+      : 'accepts no input';
+  if (typeof value !== spec.type) return `input '${name}' must be a ${spec.type}`;
+  if (typeof value === 'number' && !(value >= (spec.min ?? -Infinity) && value <= (spec.max ?? Infinity)))
+    return `input '${name}' = ${value} is outside [${spec.min ?? '-∞'}, ${spec.max ?? '∞'}]`;
+  return null;
 }
 
 export const UNO_BOARD: BoardInfo = {
@@ -109,6 +130,15 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
       issues.push(
         `component '${c.id}': ${c.type}@${c.typeVersion} is not available (have ${def.manifest.version})`,
       );
+    try {
+      resolveProps(def.manifest, c.props as Record<string, PropValue>);
+    } catch (e) {
+      issues.push(`component '${c.id}': ${e instanceof Error ? e.message : String(e)}`);
+    }
+    for (const [name, value] of Object.entries(c.inputs ?? {})) {
+      const issue = inputValueIssue(def.manifest.inputs, name, value);
+      if (issue) issues.push(`component '${c.id}': ${issue}`);
+    }
     defs.set(c.id, def);
   }
 

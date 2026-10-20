@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ENGINE_VERSION, grade, type GradeJob, type GradeResult } from '@robosim/sim-runtime';
+import { ENGINE_VERSION, SCENARIOS, grade, type GradeJob, type GradeResult } from '@robosim/sim-runtime';
 import { GOLDEN_FIXTURES, firstDifference, fixtureJob, formatResult } from '../src/golden.js';
 import { parseGradeJob } from '../src/job.js';
 
@@ -48,11 +48,10 @@ describe.each(GOLDEN_FIXTURES)('golden trace $name', (fixture) => {
 });
 
 describe('golden suite', () => {
-  it('covers an arena challenge, scripted inputs, serial and a damage run', () => {
-    const scenarios = new Set(GOLDEN_FIXTURES.map((f) => f.scenario));
-    expect(scenarios).toContain('line-follower');
-    expect(scenarios).toContain('serial');
-    expect(scenarios).toContain('motor-on-pin');
+  it('covers every built-in scenario: arena challenges, scripted inputs, serial and damage runs', () => {
+    expect(new Set(GOLDEN_FIXTURES.map((f) => f.scenario))).toEqual(new Set(SCENARIOS));
+    expect(new Set(GOLDEN_FIXTURES.map((f) => f.name)).size).toBe(GOLDEN_FIXTURES.length);
     expect(GOLDEN_FIXTURES.some((f) => f.entries.some((e) => e.kind === 'component'))).toBe(true);
+    expect(GOLDEN_FIXTURES.some((f) => f.entries.some((e) => e.kind === 'serial'))).toBe(true);
   });
 });

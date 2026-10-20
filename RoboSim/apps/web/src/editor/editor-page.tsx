@@ -546,9 +546,23 @@ export function EditorPage({
 
   const alerts = (
     <>
-      {sim.error && run.phase !== 'edit' && (
-        <p role="alert" className="border-b border-danger px-3 py-1 text-sm text-danger">
-          {t('shell:lab.error', { message: sim.error })}
+      {(sim.error || sim.stalled) && run.phase !== 'edit' && (
+        <p
+          role="alert"
+          className="flex items-center gap-2 border-b border-danger px-3 py-1 text-sm text-danger"
+        >
+          {sim.error ? t('shell:lab.error', { message: sim.error }) : t('shell:lab.stalled')}
+          <Button
+            size="sm"
+            variant="secondary"
+            className="ms-auto"
+            onClick={() => {
+              sim.restart();
+              run.stop();
+            }}
+          >
+            {t('shell:lab.restart')}
+          </Button>
         </p>
       )}
       {notice && (

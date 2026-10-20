@@ -14,13 +14,20 @@ export const createSimWorker = (): WorkerLike =>
     name: 'robosim-sim',
   }) as unknown as WorkerLike;
 
+/** A running simulation that delivers no new frame for this long is reported as not responding. */
+export const STALL_MS = 5000;
+/** A longer gap between animation frames means the tab was hidden or throttled, not a stalled worker. */
+const HIDDEN_GAP_MS = 1000;
+
 /**
  * Owns one simulation worker for the lifetime of the component. Events arrive as messages; with a
  * shared snapshot buffer the hook also polls it once per animation frame (Technical Design §5.8).
+ * A worker that dies or stops answering is reported (`error`, `stalled`); `restart` replaces it.
  */
 export function useSimulation(createWorker: () => WorkerLike = createSimWorker) {
   const worker = useRef<WorkerLike | null>(null);
-  const [client] = useState(() => new SimClient());
+  const [client, setClient] = useState(() => new SimClient());
+  const [stalled, setStalled] = useState(false);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
@@ -35,8 +42,21 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     };
     worker.current = w;
     let raf = 0;
-    const poll = () => {
+    let lastSeq = -1;
+    let lastProgress = performance.now();
+    let lastTick = lastProgress;
+    let reported = false;
+    const poll = (now: number) => {
       if (client.poll()) rerender();
+      const frame = client.frame;
+      if (now - lastTick > HIDDEN_GAP_MS || !frame?.running || frame.seq !== lastSeq) {
+        lastProgress = now;
+        lastSeq = frame?.seq ?? -1;
+        if (reported) setStalled((reported = false));
+      } else if (!reported && client.error === null && now - lastProgress > STALL_MS) {
+        setStalled((reported = true));
+      }
+      lastTick = now;
       raf = requestAnimationFrame(poll);
     };
     raf = requestAnimationFrame(poll);
@@ -47,7 +67,18 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     };
   }, [createWorker, client]);
 
-  const send = useCallback((message: MainToWorker) => worker.current?.postMessage(message), []);
+  /** Replaces the worker (and its state) with a fresh one; the caller loads a run again. */
+  const restart = useCallback(() => {
+    setStalled(false);
+    setClient(new SimClient());
+  }, []);
+
+  // A new identity per worker: effects that load or configure a run re-run for a restarted worker.
+  const send = useCallback(
+    (message: MainToWorker) => worker.current?.postMessage(message),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- client marks the worker generation
+    [client],
+  );
 
   /** Asks the worker for the input log of the current run. */
   const exportLog = useCallback(
@@ -71,6 +102,8 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     scene: client.scene,
     frame: client.frame,
     error: client.error,
+    stalled,
+    restart,
     serial: client.serial,
     serialLog: client.serialLog,
     clearSerial,

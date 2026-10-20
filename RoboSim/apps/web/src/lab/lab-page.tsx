@@ -44,8 +44,19 @@ export function LabPage({
 }) {
   const { t, i18n } = useTranslation();
   const fmt = useFormat();
-  const { scene, frame, error, serial, serialLog, clearSerial, replaying, send, exportLog } =
-    useSimulation(createWorker);
+  const {
+    scene,
+    frame,
+    error,
+    stalled,
+    restart,
+    serial,
+    serialLog,
+    clearSerial,
+    replaying,
+    send,
+    exportLog,
+  } = useSimulation(createWorker);
   const verified = useVerifiedRun(createGradeWorker);
   const [tab, setTab] = useState<Tab>('arena');
   const [bench, setBench] = useState<BenchScenarioId>('blink');
@@ -259,9 +270,15 @@ export function LabPage({
         </p>
       </div>
 
-      {error && (
-        <p role="alert" className="mt-4 rounded-md border border-danger p-3 text-sm text-danger">
-          {t('shell:lab.error', { message: error })}
+      {(error || stalled) && (
+        <p
+          role="alert"
+          className="mt-4 flex items-center gap-2 rounded-md border border-danger p-3 text-sm text-danger"
+        >
+          {error ? t('shell:lab.error', { message: error }) : t('shell:lab.stalled')}
+          <Button size="sm" variant="secondary" className="ms-auto" onClick={restart}>
+            {t('shell:lab.restart')}
+          </Button>
         </p>
       )}
 

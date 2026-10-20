@@ -1,0 +1,1187 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 2400,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [],
+  "damaged": { "parts": [], "pins": [] },
+  "final": {
+    "slice": 2400,
+    "pins": {
+      "D9": { "mode": "output", "level": 0, "volts": 0 },
+      "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+    },
+    "parts": {
+      "pack": {
+        "volts": 6.319907082455644,
+        "ocv": 6.319907093703738,
+        "charge": 0.9999767734259344,
+        "currentMa": 0.00001874596651426185
+      },
+      "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+      "q": {
+        "region": "cutoff",
+        "mainMa": 0.000006244467379949778,
+        "controlMa": 0,
+        "volts": 6.244467379949778,
+        "controlVolts": 0,
+        "powerMw": 0.0004136614156562435,
+        "junctionC": 25.24360402497723,
+        "avalanche": false,
+        "partiallyOn": false,
+        "damaged": false
+      },
+      "d": {
+        "currentMa": -7.543970250586619e-8,
+        "volts": -0.07543970250586618,
+        "powerMw": 5.691148714173593e-9,
+        "damaged": false
+      },
+      "motor": {
+        "rpm": 3.583180208627887,
+        "currentMa": -0.03427210965939822,
+        "volts": 0.07543970250586618,
+        "torqueNm": -0.00032850381152400875,
+        "damaged": false
+      },
+      "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+    }
+  },
+  "serial": "duty 100 %\r\nduty 40 %\r\nduty 40 %\r\nduty 0 %\r\n",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [
+      { "slice": 501, "text": "d" },
+      { "slice": 502, "text": "u" },
+      { "slice": 503, "text": "t" },
+      { "slice": 505, "text": "y" },
+      { "slice": 506, "text": " " },
+      { "slice": 507, "text": "1" },
+      { "slice": 508, "text": "0" },
+      { "slice": 509, "text": "0" },
+      { "slice": 510, "text": " " },
+      { "slice": 511, "text": "%" },
+      { "slice": 512, "text": "\r" },
+      { "slice": 513, "text": "\n" },
+      { "slice": 1001, "text": "d" },
+      { "slice": 1002, "text": "u" },
+      { "slice": 1003, "text": "t" },
+      { "slice": 1004, "text": "y" },
+      { "slice": 1005, "text": " " },
+      { "slice": 1006, "text": "4" },
+      { "slice": 1007, "text": "0" },
+      { "slice": 1008, "text": " " },
+      { "slice": 1009, "text": "%" },
+      { "slice": 1010, "text": "\r" },
+      { "slice": 1011, "text": "\n" },
+      { "slice": 1501, "text": "d" },
+      { "slice": 1502, "text": "u" },
+      { "slice": 1503, "text": "t" },
+      { "slice": 1504, "text": "y" },
+      { "slice": 1505, "text": " " },
+      { "slice": 1506, "text": "4" },
+      { "slice": 1507, "text": "0" },
+      { "slice": 1508, "text": " " },
+      { "slice": 1509, "text": "%" },
+      { "slice": 1510, "text": "\r" },
+      { "slice": 1511, "text": "\n" },
+      { "slice": 2002, "text": "d" },
+      { "slice": 2003, "text": "u" },
+      { "slice": 2004, "text": "t" },
+      { "slice": 2005, "text": "y" },
+      { "slice": 2006, "text": " " },
+      { "slice": 2007, "text": "0" },
+      { "slice": 2008, "text": " " },
+      { "slice": 2009, "text": "%" },
+      { "slice": 2010, "text": "\r" },
+      { "slice": 2011, "text": "\n" }
+    ],
+    "findings": [],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": {
+          "D9": { "mode": "input", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0 }
+        },
+        "parts": {
+          "pack": { "volts": 0, "ocv": 6.32, "charge": 1, "currentMa": 0 },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0,
+            "controlMa": 0,
+            "volts": 0,
+            "controlVolts": 0,
+            "powerMw": 0,
+            "junctionC": 25,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": { "currentMa": 0, "volts": 0, "powerMw": 0, "damaged": false },
+          "motor": { "rpm": 0, "currentMa": 0, "volts": 0, "torqueNm": 0, "damaged": false },
+          "pot": { "position": 0, "wiperV": 0 }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.218899295277905,
+            "ocv": 6.319983388164619,
+            "charge": 0.9999958470411549,
+            "currentMa": 168.47221992967783
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 168.4722182878639,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8173888873151456,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 142.2562844797189,
+            "junctionC": 25.04962487315761,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.0000054015104079627606,
+            "volts": -5.401510407962759,
+            "powerMw": 0.000029176314687330017,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 218.04554574985147,
+            "currentMa": 166.0169825183291,
+            "volts": 5.401510407962759,
+            "torqueNm": 0.0052925741345964585,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.2363618689963385,
+            "ocv": 6.319976859808861,
+            "charge": 0.9999942149522151,
+            "currentMa": 139.35681319211886
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 139.35681157359144,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8057427246294366,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 116.83469466482735,
+            "junctionC": 25.06662987706002,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000005430619144366903,
+            "volts": -5.430619144366902,
+            "powerMw": 0.000029491624291164302,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.0211826823331,
+            "currentMa": 136.88834450782386,
+            "volts": 5.430619144366902,
+            "torqueNm": 0.00019185730168314518,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.236988876316491,
+            "ocv": 6.319970700942826,
+            "charge": 0.9999926752357065,
+            "currentMa": 138.3011216934192
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 138.30112007573626,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8053204480302945,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 115.92567755411193,
+            "junctionC": 25.08259769297996,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000005431668428286197,
+            "volts": -5.431668428286196,
+            "powerMw": 0.000029503021914841038,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.31034288939395,
+            "currentMa": 135.83217606083824,
+            "volts": 5.431668428286196,
+            "torqueNm": 0.000006914002545183907,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.237005551425428,
+            "ocv": 6.319964555491367,
+            "charge": 0.9999911388728419,
+            "currentMa": 138.26266311540294
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 138.26266149775043,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8053050645991002,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 115.8925791197752,
+            "junctionC": 25.098494035531434,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.0000054317004868263275,
+            "volts": -5.431700486826328,
+            "powerMw": 0.000029503370178589366,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.32058438811995,
+            "currentMa": 135.79370291072624,
+            "volts": 5.431700486826328,
+            "torqueNm": 2.0338451116232864e-7,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 500,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.237000080743231,
+            "ocv": 6.319958410533457,
+            "charge": 0.9999896026333641,
+            "currentMa": 138.26111454438134
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 138.2611129267301,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8053044451706921,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 115.89124640479137,
+            "junctionC": 25.11435376648912,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000005431695635572539,
+            "volts": -5.431695635572539,
+            "powerMw": 0.000029503317477497767,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.32070539800097,
+            "currentMa": 135.79215654482485,
+            "volts": 5.431695635572539,
+            "torqueNm": -4.011115298501594e-8,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 600,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.23699380650287,
+            "ocv": 6.319952265600259,
+            "charge": 0.9999880664000647,
+            "currentMa": 138.260905258491
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 138.26090364083998,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8053043614563361,
+            "controlVolts": 1.334097282938486,
+            "powerMw": 115.89106629150619,
+            "junctionC": 25.13017822597573,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000005431689445046535,
+            "volts": -5.431689445046533,
+            "powerMw": 0.000029503250227429924,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.32045918467358,
+            "currentMa": 135.79195007281618,
+            "volts": 5.431689445046533,
+            "torqueNm": -4.89463359140338e-8,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 700,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.236987503112885,
+            "ocv": 6.319946120674762,
+            "charge": 0.9999865301686903,
+            "currentMa": 138.2607445686894
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 138.2607429510385,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8053042971804154,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 115.89092800046784,
+            "junctionC": 25.145967537963443,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000005431683205932469,
+            "volts": -5.431683205932469,
+            "powerMw": 0.000029503182449608825,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.32019964697557,
+            "currentMa": 135.79179221898178,
+            "volts": 5.431683205932469,
+            "torqueNm": -4.926687377200881e-8,
+            "damaged": false
+          },
+          "pot": { "position": 0, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 800,
+        "pins": {
+          "D9": { "mode": "output", "level": 1, "volts": 4.910587738488485 },
+          "A0": { "mode": "input", "level": 1, "volts": 4.999450115469751 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.236981198672637,
+            "ocv": 6.319939975756348,
+            "charge": 0.999984993939087,
+            "currentMa": 138.26058564256076
+          },
+          "rb": { "currentMa": 3.5764904555499992, "powerMw": 12.79128397864024, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 138.26058402491014,
+            "controlMa": 3.4097282938485796,
+            "volts": 0.8053042336099641,
+            "controlVolts": 1.3340972829384858,
+            "powerMw": 115.8907912272822,
+            "junctionC": 25.161721782129383,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000005431676965062673,
+            "volts": -5.431676965062673,
+            "powerMw": 0.000029503114652792447,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 226.31993962606592,
+            "currentMa": 135.7916361296183,
+            "volts": 5.431676965062673,
+            "torqueNm": -4.92784272528371e-8,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 4.999450115469751 }
+        }
+      },
+      {
+        "slice": 900,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 3.321398781620557,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.241778678492728,
+            "ocv": 6.319936985466727,
+            "charge": 0.9999842463666817,
+            "currentMa": 130.25984108447523
+          },
+          "rb": { "currentMa": 2.4190487318729277, "powerMw": 5.85179676717602, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 130.25983836665495,
+            "controlMa": 2.306254974752116,
+            "volts": 1.3551117337208347,
+            "controlVolts": 0.9023500497476291,
+            "powerMw": 112.16129901639027,
+            "junctionC": 25.169330085847463,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000004886666944771894,
+            "volts": -4.886666944771893,
+            "powerMw": 0.00002387951382912627,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 184.41821850271086,
+            "currentMa": 128.03862394394295,
+            "volts": 4.886666944771893,
+            "torqueNm": 0.00261513371525322,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1000,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 3.517515379425988,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.223739294759481,
+            "ocv": 6.319932995609676,
+            "charge": 0.9999832489024189,
+            "currentMa": 160.3175882244589
+          },
+          "rb": { "currentMa": 2.561884819441126, "powerMw": 6.563253828082891, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 160.3175854876529,
+            "controlMa": 2.442430998487379,
+            "volts": 1.3646088478950618,
+            "controlVolts": 0.9556305599848619,
+            "powerMw": 139.70095129047434,
+            "junctionC": 25.179799414654248,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.00000485913044686442,
+            "volts": -4.85913044686442,
+            "powerMw": 0.00002361114869964482,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 173.65112478070037,
+            "currentMa": 158.10888770143904,
+            "volts": 4.85913044686442,
+            "torqueNm": 0.00810937583982774,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1100,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 3.713938888965399,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.213280302884222,
+            "ocv": 6.319928743781446,
+            "charge": 0.9999821859453614,
+            "currentMa": 177.74120759279117
+          },
+          "rb": { "currentMa": 2.7049444376630323, "powerMw": 7.316724410844179, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 177.74120496871163,
+            "controlMa": 2.5788201302412332,
+            "volts": 1.3082790414534387,
+            "controlVolts": 1.0089944513023663,
+            "powerMw": 155.57500465522233,
+            "junctionC": 25.19102768488577,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000004905001261430784,
+            "volts": -4.905001261430783,
+            "powerMw": 0.000024059037374637576,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 170.99641627469603,
+            "currentMa": 175.51165665365355,
+            "volts": 4.905001261430783,
+            "torqueNm": 0.010966340182775787,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1200,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 3.9103623985050064,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.000079978402063 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.20439730347232,
+            "ocv": 6.319924425232136,
+            "charge": 0.999981106308034,
+            "currentMa": 192.5380782815166
+          },
+          "rb": { "currentMa": 2.848004055885082, "powerMw": 8.111127102337877, "damaged": false },
+          "q": {
+            "region": "saturation",
+            "mainMa": 192.53807579972954,
+            "controlMa": 2.7152092619952235,
+            "volts": 1.2371727230236291,
+            "controlVolts": 1.0623583426199243,
+            "powerMw": 168.87822378209256,
+            "junctionC": 25.202431745629923,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000004967224580448693,
+            "volts": -4.967224580448692,
+            "powerMw": 0.000024673320032613687,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 170.42600908888178,
+            "currentMa": 190.2802439533382,
+            "volts": 4.967224580448692,
+            "torqueNm": 0.013239030732940157,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.000079978402063 }
+        }
+      },
+      {
+        "slice": 1300,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 0,
+            "volts": 4.007039594605733,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.200250608330678,
+            "ocv": 6.319920093417923,
+            "charge": 0.9999800233544807,
+            "currentMa": 199.44133004818988
+          },
+          "rb": { "currentMa": 2.9184162117281653, "powerMw": 8.517153184877778, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 199.44132746519472,
+            "controlMa": 2.782338287779837,
+            "volts": 1.287753620108075,
+            "controlVolts": 1.088623382877568,
+            "powerMw": 175.09511056790362,
+            "junctionC": 25.213851246418653,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": 5.159747254586671,
+            "volts": -4.912496988222603,
+            "powerMw": 25.347242848146866,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 170.35202915531946,
+            "currentMa": 202.36812412011147,
+            "volts": 4.912496988222603,
+            "torqueNm": 0.015063741101871975,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1400,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 0,
+            "volts": 4.0070395946082344,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.199997710555498,
+            "ocv": 6.31991576142847,
+            "charge": 0.9999789403571173,
+            "currentMa": 199.85515728201509
+          },
+          "rb": { "currentMa": 2.918416211729987, "powerMw": 8.517153184888407, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 199.8551543583762,
+            "controlMa": 2.7823382877815726,
+            "volts": 1.4579903900719733,
+            "controlVolts": 1.0886233828782474,
+            "powerMw": 175.49632567795337,
+            "junctionC": 25.225246728937083,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": 11.396213796160065,
+            "volts": -4.742007320483524,
+            "powerMw": 54.04092924718636,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 170.3209345126852,
+            "currentMa": 209.09591319902805,
+            "volts": 4.742007320483524,
+            "torqueNm": 0.016078416148088547,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1500,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 0,
+            "volts": 4.007346506340315,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.199916392426382,
+            "ocv": 6.319911427759331,
+            "charge": 0.9999778569398328,
+            "currentMa": 199.9830261055097
+          },
+          "rb": { "currentMa": 2.918639742382312, "powerMw": 8.518457945813486, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 199.98302286823903,
+            "controlMa": 2.7825513957988455,
+            "volts": 1.614728053056598,
+            "controlVolts": 1.088706763958003,
+            "powerMw": 175.6193146596457,
+            "junctionC": 25.23662187193596,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": 12.572961618464246,
+            "volts": -4.585188339369784,
+            "powerMw": 57.649397004326104,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 170.27843308821733,
+            "currentMa": 210.47181119987872,
+            "volts": 4.585188339369784,
+            "torqueNm": 0.016289188527659135,
+            "damaged": false
+          },
+          "pot": { "position": 0.6, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1600,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 0,
+            "volts": 4.007653418073199,
+            "duty": 0.4,
+            "freqHz": 490.19607843137254
+          },
+          "A0": { "mode": "input", "level": 0, "volts": 2.0000799784020633 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.199742776129341,
+            "ocv": 6.3199070937113255,
+            "charge": 0.9999767734278314,
+            "currentMa": 200.26471696750536
+          },
+          "rb": { "currentMa": 2.9188632730352215, "powerMw": 8.519762806673885, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 200.26471373564695,
+            "controlMa": 2.7827645038166753,
+            "volts": 1.612023311396245,
+            "controlVolts": 1.088790145037977,
+            "powerMw": 175.89705481617884,
+            "junctionC": 25.247973125228125,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": 12.600569503842344,
+            "volts": -4.587719464733096,
+            "powerMw": 57.80787797949977,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 170.23774499878064,
+            "currentMa": 210.77995943572373,
+            "volts": 4.587719464733096,
+            "torqueNm": 0.016339206188164077,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 2.0000799784020633 }
+        }
+      },
+      {
+        "slice": 1700,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907086308252,
+            "ocv": 6.3199070937090625,
+            "charge": 0.9999767734272654,
+            "currentMa": 0.000012334120933889189
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000004107897709749365,
+            "controlMa": 0,
+            "volts": 4.1078977097493645,
+            "controlVolts": 0,
+            "powerMw": 0.0002633486861826157,
+            "junctionC": 25.247422723538627,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.000002212009376558887,
+            "volts": -2.2120093765588873,
+            "powerMw": 0.0000048929854819844375,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 105.06476845881652,
+            "currentMa": -1.0054486917351164,
+            "volts": 2.2120093765588873,
+            "torqueNm": -0.009632355210132407,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+        }
+      },
+      {
+        "slice": 1800,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448205 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.31990708478277,
+            "ocv": 6.319907093708451,
+            "charge": 0.9999767734271127,
+            "currentMa": 0.000014875456198542496
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000004954727187961131,
+            "controlMa": 0,
+            "volts": 4.95472718796113,
+            "controlVolts": 0,
+            "powerMw": 0.00032183295278486953,
+            "junctionC": 25.246873540579966,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -0.0000013651798968216385,
+            "volts": -1.3651798968216395,
+            "powerMw": 0.000001863716150685941,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 64.84228590203574,
+            "currentMa": -0.6205228127807141,
+            "volts": 1.3651798968216395,
+            "torqueNm": -0.005944750685906271,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448205 }
+        }
+      },
+      {
+        "slice": 1900,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448205 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907083840967,
+            "ocv": 6.319907093707755,
+            "charge": 0.9999767734269387,
+            "currentMa": 0.00001644389408627587
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000005477365604442591,
+            "controlMa": 0,
+            "volts": 5.477365604442591,
+            "controlVolts": 0,
+            "powerMw": 0.0003586434702312962,
+            "junctionC": 25.246325583171004,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -8.425414793983767e-7,
+            "volts": -0.8425414793983759,
+            "powerMw": 7.098761445068045e-7,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 40.01838659785268,
+            "currentMa": -0.3829578046938351,
+            "volts": 0.8425414793983759,
+            "torqueNm": -0.003668890729687223,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448205 }
+        }
+      },
+      {
+        "slice": 2000,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907083259393,
+            "ocv": 6.319907093707002,
+            "charge": 0.9999767734267503,
+            "currentMa": 0.000017411886030059837
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000005799922066962262,
+            "controlMa": 0,
+            "volts": 5.799922066962262,
+            "controlVolts": 0,
+            "powerMw": 0.00038163442000081044,
+            "junctionC": 25.24577884617211,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -5.199850162971309e-7,
+            "volts": -0.5199850162971309,
+            "powerMw": 2.7038441717352746e-7,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 24.6979503825174,
+            "currentMa": -0.2363399400084982,
+            "volts": 0.5199850162971309,
+            "torqueNm": -0.0022643099661470425,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+        }
+      },
+      {
+        "slice": 2100,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907082900142,
+            "ocv": 6.319907093706206,
+            "charge": 0.9999767734265516,
+            "currentMa": 0.000018009285780154173
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.00000599898896116003,
+            "controlMa": 0,
+            "volts": 5.9989889611600296,
+            "controlVolts": 0,
+            "powerMw": 0.0003959272062257217,
+            "junctionC": 25.245233325342024,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -3.2091812174011204e-7,
+            "volts": -0.32091812174011203,
+            "powerMw": 1.0298844086120138e-7,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 15.242716862090004,
+            "currentMa": -0.14585419147048131,
+            "volts": 0.32091812174011203,
+            "torqueNm": -0.0013974524452925986,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+        }
+      },
+      {
+        "slice": 2200,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907082678111,
+            "ocv": 6.319907093705407,
+            "charge": 0.9999767734263517,
+            "currentMa": 0.000018377986007221028
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000006121848084027098,
+            "controlMa": 0,
+            "volts": 6.121848084027098,
+            "controlVolts": 0,
+            "powerMw": 0.0004047879090055334,
+            "junctionC": 25.24468901702049,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -1.9805899865101304e-7,
+            "volts": -0.19805899865101306,
+            "powerMw": 3.922736694664199e-8,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 9.407279796041074,
+            "currentMa": -0.09000864396154085,
+            "volts": 0.19805899865101306,
+            "torqueNm": -0.00086245837866772,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+        }
+      },
+      {
+        "slice": 2300,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907082540752,
+            "ocv": 6.319907093704582,
+            "charge": 0.9999767734261453,
+            "currentMa": 0.000018605532462003246
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000006197671627831794,
+            "controlMa": 0,
+            "volts": 6.197671627831793,
+            "controlVolts": 0,
+            "powerMw": 0.00041027143127633884,
+            "junctionC": 25.244145917917493,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -1.2223545470895836e-7,
+            "volts": -0.12223545470895836,
+            "powerMw": 1.494150638790581e-8,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 5.805853595266424,
+            "currentMa": -0.05554309334515319,
+            "volts": 0.12223545470895836,
+            "torqueNm": -0.0005322789394585721,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+        }
+      },
+      {
+        "slice": 2400,
+        "pins": {
+          "D9": { "mode": "output", "level": 0, "volts": 0 },
+          "A0": { "mode": "input", "level": 0, "volts": 0.0004998950220448206 }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.319907082455644,
+            "ocv": 6.319907093703738,
+            "charge": 0.9999767734259344,
+            "currentMa": 0.00001874596651426185
+          },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0.000006244467379949778,
+            "controlMa": 0,
+            "volts": 6.244467379949778,
+            "controlVolts": 0,
+            "powerMw": 0.0004136614156562435,
+            "junctionC": 25.24360402497723,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "d": {
+            "currentMa": -7.543970250586619e-8,
+            "volts": -0.07543970250586618,
+            "powerMw": 5.691148714173593e-9,
+            "damaged": false
+          },
+          "motor": {
+            "rpm": 3.583180208627887,
+            "currentMa": -0.03427210965939822,
+            "volts": 0.07543970250586618,
+            "torqueNm": -0.00032850381152400875,
+            "damaged": false
+          },
+          "pot": { "position": 1, "wiperV": 0.0004998950220448206 }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,329 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "timer-555",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "timer",
+          "type": "ic.ne555",
+          "typeVersion": "1.0.0",
+          "x": 91.44,
+          "y": 25.4,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "r1",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 76.2,
+          "y": 10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 1000
+          }
+        },
+        {
+          "id": "r2",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 96.52,
+          "y": 10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 68000
+          }
+        },
+        {
+          "id": "ct",
+          "type": "passive.capacitor-electrolytic",
+          "typeVersion": "1.0.0",
+          "x": 111.76,
+          "y": 40.64,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "capacitanceUf": 10,
+            "ratedVoltage": "v16"
+          }
+        },
+        {
+          "id": "cc",
+          "type": "passive.capacitor-ceramic",
+          "typeVersion": "1.0.0",
+          "x": 91.44,
+          "y": 45.72,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "capacitanceNf": 10
+          }
+        },
+        {
+          "id": "rl",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 111.76,
+          "y": 20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 330
+          }
+        },
+        {
+          "id": "led",
+          "type": "actuator.led",
+          "typeVersion": "1.0.0",
+          "x": 127,
+          "y": 20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "color": "red"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "timer",
+            "pin": "vcc"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "timer",
+            "pin": "reset"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "timer",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "r1",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "r1",
+            "pin": "b"
+          },
+          "to": {
+            "part": "timer",
+            "pin": "dis"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "timer",
+            "pin": "dis"
+          },
+          "to": {
+            "part": "r2",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "r2",
+            "pin": "b"
+          },
+          "to": {
+            "part": "timer",
+            "pin": "thr"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "timer",
+            "pin": "thr"
+          },
+          "to": {
+            "part": "timer",
+            "pin": "trig"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "timer",
+            "pin": "thr"
+          },
+          "to": {
+            "part": "ct",
+            "pin": "pos"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "ct",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "timer",
+            "pin": "ctrl"
+          },
+          "to": {
+            "part": "cc",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "cc",
+            "pin": "b"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "timer",
+            "pin": "out"
+          },
+          "to": {
+            "part": "rl",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "rl",
+            "pin": "b"
+          },
+          "to": {
+            "part": "led",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w15",
+          "from": {
+            "part": "led",
+            "pin": "k"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w16",
+          "from": {
+            "part": "timer",
+            "pin": "out"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "color": "yellow",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// 555 blinker: the NE555 runs on its own as an astable (R1 = 1 kΩ, R2 = 68 kΩ, C = 10 µF, about 1 Hz)\n// and blinks the LED. The Uno only watches the 555's output on D2 and reports what it measures.\nconst int TIMER_PIN = 2;\n\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(TIMER_PIN, INPUT);\n}\n\nvoid loop() {\n  unsigned long high = pulseIn(TIMER_PIN, HIGH, 3000000UL); // µs\n  unsigned long low = pulseIn(TIMER_PIN, LOW, 3000000UL);\n  if (high == 0 || low == 0) {\n    Serial.println(\"no pulses\");\n    return;\n  }\n  Serial.print(\"period \");\n  Serial.print((high + low) / 1000);\n  Serial.print(\" ms, high \");\n  Serial.print(100 * high / (high + low));\n  Serial.println(\" %\");\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "555 blinker"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C9458000C9480000C9480000C94800098\n:100010000C9480000C9480000C9480000C94800060\n:100020000C9480000C9480000C9480000C94800050\n:100030000C9480000C9480000C9480000C94800040\n:100040000C945D020C9480000C942B020C9405021D\n:100050000C9480000C9480000C9480000C94800020\n:100060000C9480000C948000000000002500280003\n:100070002B0000000000240027002A0000000000E0\n:1000800023002600290004040404040404040202DA\n:100090000202020203030303030301020408102007\n:1000A0004080010204081020010204081020EC0224\n:1000B00011241FBECFEFD8E0DEBFCDBF11E0A0E01E\n:1000C000B1E0E6E9F8E002C005900D92A633B10771\n:1000D000D9F721E0A6E3B1E001C01D92AC3DB20723\n:1000E000E1F710E0C8E5D0E004C02197FE010E94CE\n:1000F0003404C735D107C9F70E9419030C94490489\n:100100000C940000AF92BF92CF92DF92EF92FF92D9\n:100110000F931F93CF93DF936C017B018B01040F2F\n:10012000151FEB015E01AE18BF08C017D10759F0CB\n:100130006991D601ED91FC910190F081E02DC6010D\n:100140000995892B79F7C501DF91CF911F910F9107\n:10015000FF90EF90DF90CF90BF90AF900895FC019B\n:10016000538D448D252F30E0842F90E0821B930B1C\n:10017000541710F0CF96089501970895FC01918DC2\n:10018000828D981761F0A28DAE0FBF2FB11D5D96C5\n:100190008C91928D9F5F9F73928F90E008958FEF67\n:1001A0009FEF0895FC01918D828D981731F0828D1B\n:1001B000E80FF11D858D90E008958FEF9FEF089572\n:1001C000FC01918D228D892F90E0805C9F4F821BD6\n:1001D00091098F73992708958FE391E00E94E000C1\n:1001E00021E0892B09F420E0822F089580E090E03F\n:1001F000892B29F00E94EC0081110C9400000895D5\n:10020000FC01A48DA80FB92FB11DA35ABF4F2C918B\n:10021000848D90E001968F739927848FA689B78982\n:100220002C93A089B1898C91837080648C93938D79\n:10023000848D981306C00288F389E02D80818F7D1C\n:1002400080830895EF92FF920F931F93CF93DF93D4\n:10025000EC0181E0888F9B8D8C8D98131AC0E88902\n:10026000F989808185FF15C09FB7F894EE89FF89D1\n:100270006083E889F98980818370806480839FBF6F\n:1002800081E090E0DF91CF911F910F91FF90EF906F\n:100290000895F62E0B8D10E00F5F1F4F0F7311277F\n:1002A000E02E8C8D8E110CC00FB607FCFACFE889BA\n:1002B000F989808185FFF5CFCE010E940001F1CF41\n:1002C000EB8DEC0FFD2FF11DE35AFF4FF0829FB72E\n:1002D000F8940B8FEA89FB8980818062CFCFCF931E\n:1002E000DF93EC01888D8823B9F0AA89BB89E8895E\n:1002F000F9898C9185FD03C0808186FD0DC00FB604\n:1003000007FCF7CF8C9185FFF2CF808185FFEDCF81\n:10031000CE010E940001E9CFDF91CF910895FC0149\n:1003200001900020E9F73197AF01481B590BBC0140\n:100330008FE391E00C9482008F929F92AF92BF92D4\n:100340000F931F93CF93DF93CDB7DEB7A1970FB66F\n:10035000F894DEBF0FBECDBF19A2423008F44AE0C8\n:100360008E010F5D1F4F842E912CB12CA12CA50165\n:1003700094010E940704E62FB901CA01EA30F4F49F\n:10038000E05DD801EE938D01232B242B252B79F7EB\n:1003900090E080E0109719F0CD010E948F01A196A6\n:1003A0000FB6F894DEBF0FBECDBFDF91CF911F9186\n:1003B0000F91BF90AF909F908F900895E95CE1CF2F\n:1003C0000F931F93482FECE9F0E06491E8E8F0E028\n:1003D000E4918111462FF0E0EE0FFF1FE458FF4F2C\n:1003E0008591949100EC16EC2DE230E00E94A7027A\n:1003F000611571058105910529F06F5F7F4F8F4F62\n:100400009F4F9F701F910F9108951F920F920FB6EB\n:100410000F9211242F933F934F935F936F937F938A\n:100420008F939F93AF93BF93EF93FF938FE391E0ED\n:100430000E940001FF91EF91BF91AF919F918F9129\n:100440007F916F915F914F913F912F910F900FBED0\n:100450000F901F9018951F920F920FB60F921124B4\n:100460002F938F939F93EF93FF93E0914F01F09120\n:1004700050018081E0915501F091560182FD1BC031\n:100480009081809158018F5F8F732091590182175D\n:1004900041F0E0915801F0E0E15CFE4F958F8093D0\n:1004A0005801FF91EF919F918F912F910F900FBE67\n:1004B0000F901F9018958081F4CF1F920F920FB666\n:1004C0000F9211242F933F938F939F93AF93BF93DA\n:1004D00080913B0190913C01A0913D01B0913E0182\n:1004E00030913A0123E0230F2D3758F50196A11DD5\n:1004F000B11D20933A0180933B0190933C01A0935E\n:100500003D01B0933E018091360190913701A09159\n:100510003801B09139010196A11DB11D80933601BA\n:1005200090933701A0933801B0933901BF91AF91F7\n:100530009F918F913F912F910F900FBE0F901F9021\n:10054000189526E8230F0296A11DB11DD2CFCF9298\n:10055000DF92EF92FF920F931F93E82FF92F05C0C0\n:10056000015011092109310961F1908196239417F5\n:10057000B9F305C0015011092109310911F1908128\n:1005800096239413F7CFC12CD12CE12CF12C0AC067\n:100590008FEFC81AD80AE80AF80A0C151D052E05AF\n:1005A0003F0579F080818623841791F36C2D7D2D92\n:1005B0008E2D9F2D1F910F91FF90EF90DF90CF9088\n:1005C000089560E070E080E090E01F910F91FF904F\n:1005D000EF90DF90CF900895EFE3F1E01382128265\n:1005E00088EE93E0A0E0B0E084839583A683B78390\n:1005F00084E091E09183808385EC90E09587848707\n:1006000084EC90E09787868780EC90E0918B808BDC\n:1006100081EC90E0938B828B82EC90E0958B848BC5\n:1006200086EC90E0978B868B118E128E138E148E33\n:100630000895789484B5826084BD84B5816084BD5A\n:1006400085B5826085BD85B5816085BD80916E0070\n:10065000816080936E0010928100809181008260A1\n:1006600080938100809181008160809381008091DE\n:1006700080008160809380008091B10084608093CD\n:10068000B1008091B00081608093B00080917A00C9\n:10069000846080937A0080917A00826080937A00EF\n:1006A00080917A00816080937A0080917A008068DE\n:1006B00080937A001092C100E0914F01F0915001B7\n:1006C00082E08083E0914B01F0914C011082E09137\n:1006D0004D01F0914E018FEC808310925701E09113\n:1006E0005301F091540186E08083E0915101F09133\n:1006F0005201808180618083E0915101F09152012B\n:10070000808188608083E0915101F0915201808165\n:1007100080688083E0915101F091520180818F7D4A\n:100720008083ECE9F0E02491E8E8F0E0849188230C\n:10073000C1F090E0880F991FFC01EE58FF4FC59162\n:10074000D491FC01E859FF4FA591B4919FB7F8945B\n:100750008881E22FE0958E2388838C91E823EC93A7\n:100760009FBF88EE482E83E0582E612C712CC0E08C\n:10077000D0E081E00E94E0014B015C0180E00E943A\n:10078000E0016B017C0181149104A104B10429F002\n:10079000C114D104E104F10489F482E191E00E94E2\n:1007A0008F018CE191E00E948F01209711F30E944C\n:1007B000EC008823F1F20E940000DBCF8FE191E092\n:1007C0000E948F01C80CD91CEA1CFB1CC701B60192\n:1007D000A30192010E940704CA01B9014AE00E94E4\n:1007E0009C0187E291E00E948F01A4E6B0E0A501A0\n:1007F00094010E942904A70196010E940704CA01DE\n:10080000B9014AE00E949C0182E391E0C8CFA1E2D5\n:100810001A2EAA1BBB1BFD010DC0AA1FBB1FEE1F7A\n:10082000FF1FA217B307E407F50720F0A21BB30BC5\n:10083000E40BF50B661F771F881F991F1A9469F741\n:1008400060957095809590959B01AC01BD01CF019D\n:1008500008950E943A04A59F900DB49F900DA49F07\n:10086000800D911D11240895EE0FFF1F0590F49146\n:10087000E02D0994A29FB001B39FC001A39F700D0A\n:10088000811D1124911DB29F700D811D1124911D98\n:060890000895F894FFCF6B\n:100896000000000022018200AF006F01E000BE00F0\n:1008A600D2006E6F2070756C736573000D0A007050\n:1008B6006572696F642000206D732C206869676813\n:0608C600200020250000C7\n:00000001FF\n",
+      "sha256": "demo:timer555"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 4
+}

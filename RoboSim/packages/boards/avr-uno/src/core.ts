@@ -1,14 +1,16 @@
 import {
   AVRADC,
+  AVREEPROM,
   AVRIOPort,
   AVRSPI,
   AVRTWI,
   AVRTimer,
   AVRUSART,
   CPU,
+  EEPROMMemoryBackend,
   PinState,
   adcConfig,
-  avrInstruction,
+  eepromConfig,
   portBConfig,
   portCConfig,
   portDConfig,
@@ -35,11 +37,13 @@ import type {
   UartPort,
   Unsubscribe,
 } from '@robosim/sim-core';
+import { avrInstruction } from './decoder.generated.js';
 import { parseIntelHex } from './ihex.js';
 import { UNO_MCU_PINS, type McuPinMap, type PortName } from './pins.js';
 import { TIMER0_KIND, TIMER1_KIND, TIMER2_KIND, pwmFromRegisters, type TimerKind } from './pwm.js';
 
 export const ATMEGA328P_FLASH_BYTES = 0x8000;
+export const ATMEGA328P_EEPROM_BYTES = 1024;
 export const UNO_CLOCK_HZ = 16_000_000;
 
 const TIMERS: readonly { readonly config: AVRTimerConfig; readonly kind: TimerKind }[] = [
@@ -65,6 +69,10 @@ interface Machine {
 
 /** Uno R3: TWI on A4/A5 (PC4/PC5), SPI on D11–D13 (PB3–PB5). */
 export const UNO_BUS_PINS: BusPins = { sda: 'A4', scl: 'A5', mosi: 'D11', miso: 'D12', sck: 'D13' };
+
+/** UCSR0A read-only status bits (ATmega328P datasheet §20.11.2). */
+const UCSRA_RXC = 0x80;
+const UCSRA_UDRE = 0x20;
 
 /** I²C clock periods per byte on the wire: 8 data bits and the ACK. */
 const I2C_BYTE_BITS = 9;
@@ -100,7 +108,9 @@ export class AvrUnoCore implements McuCore {
   private machine: Machine;
   private queue: PendingInput[] = [];
   private queueHead = 0;
-  private readonly rxQueue: number[] = [];
+  /** Bytes waiting for the receiver; consumed from `rxHead` (shift() is O(n) per byte on big pastes). */
+  private rxQueue: number[] = [];
+  private rxHead = 0;
   private readonly edgeListeners = new Set<(pin: PinId, level: Level, cycle: number) => void>();
   private readonly uartListeners = new Set<(bytes: Uint8Array) => void>();
   private readonly lastEdgeLevel = new Map<PinId, Level>();
@@ -110,6 +120,8 @@ export class AvrUnoCore implements McuCore {
   /** Last reported mode per pin; every pin resets as an input. */
   private readonly lastMode = new Map<PinId, PinMode>();
   private readonly pinById = new Map(UNO_MCU_PINS.map((p) => [p.id, p]));
+  /** Erased (0xFF) like a new chip; it keeps its contents across `reset()`, as on the real part. */
+  private readonly eeprom = new EEPROMMemoryBackend(ATMEGA328P_EEPROM_BYTES);
 
   constructor(private readonly program: Uint16Array) {
     this.machine = this.build();
@@ -126,9 +138,10 @@ export class AvrUnoCore implements McuCore {
   run(untilCycle: number): void {
     const { cpu, usart } = this.machine;
     while (cpu.cycles < untilCycle) {
-      this.applyDueInputs(cpu.cycles);
-      if (this.rxQueue.length > 0 && usart.rxEnable && !usart.rxBusy)
-        usart.writeByte(this.rxQueue.shift() ?? 0);
+      // Inputs may be scheduled from inside an instruction (edge listeners), so check the head each time.
+      const next = this.queue[this.queueHead];
+      if (next && next.atCycle <= cpu.cycles) this.applyDueInputs(cpu.cycles);
+      if (this.rxHead < this.rxQueue.length && usart.rxEnable && !usart.rxBusy) this.receiveNext(usart);
       avrInstruction(cpu);
       cpu.tick();
     }
@@ -174,7 +187,9 @@ export class AvrUnoCore implements McuCore {
   uart(index: number): UartPort {
     if (index !== 0) throw new Error(`ATmega328P has one USART, got index ${index}`);
     return {
-      write: (bytes) => this.rxQueue.push(...bytes),
+      write: (bytes) => {
+        for (const b of bytes) this.rxQueue.push(b); // no spread: a pasted file can be megabytes
+      },
       baud: () => {
         const usart = this.machine.usart;
         return usart.txEnable ? usart.baudRate : 0;
@@ -203,7 +218,8 @@ export class AvrUnoCore implements McuCore {
   reset(): void {
     this.queue = [];
     this.queueHead = 0;
-    this.rxQueue.length = 0;
+    this.rxQueue = [];
+    this.rxHead = 0;
     this.lastEdgeLevel.clear();
     this.lastMode.clear();
     this.machine = this.build();
@@ -218,6 +234,7 @@ export class AvrUnoCore implements McuCore {
       D: new AVRIOPort(cpu, portDConfig),
     };
     const adc = new AVRADC(cpu, adcConfig);
+    new AVREEPROM(cpu, this.eeprom, eepromConfig);
     const twi = new AVRTWI(cpu, twiConfig, UNO_CLOCK_HZ);
     twi.eventHandler = this.twiEvents(cpu, twi);
     const spi = new AVRSPI(cpu, spiConfig, UNO_CLOCK_HZ);
@@ -227,10 +244,7 @@ export class AvrUnoCore implements McuCore {
       cpu.addClockEvent(() => spi.completeTransfer(miso), spi.transferCycles);
     };
     const usart = new AVRUSART(cpu, usart0Config, UNO_CLOCK_HZ);
-    usart.onByteTransmit = (byte) => {
-      const data = Uint8Array.of(byte);
-      for (const cb of this.uartListeners) cb(data);
-    };
+    this.bufferTransmitter(cpu, usart);
     for (const name of ['B', 'C', 'D'] as const) {
       const pins = UNO_MCU_PINS.filter((p) => p.port === name);
       ports[name].addListener(() => {
@@ -275,6 +289,57 @@ export class AvrUnoCore implements McuCore {
     };
   }
 
+  /**
+   * The ATmega328P transmitter is double-buffered: UDR hands its byte to the shift register at once when
+   * that is idle, so the next byte can wait in UDR and frames go out back to back. avr8js signals UDRE
+   * only after a whole frame, which adds the UDRE interrupt latency to every byte (≈ 5 % slower output at
+   * 115200 baud). This replaces its UDR write hook; a byte is reported when it starts on the wire.
+   */
+  private bufferTransmitter(cpu: CPU, usart: AVRUSART): void {
+    type Interrupt = Parameters<CPU['setInterruptFlag']>[0];
+    const internals = usart as unknown as { UDRE: Interrupt; TXC: Interrupt; cyclesPerChar: number };
+    const { UDRE, TXC } = internals;
+    let shifting = false;
+    let buffered: number | null = null;
+    const startFrame = (byte: number): void => {
+      shifting = true;
+      const data = Uint8Array.of(byte);
+      for (const cb of this.uartListeners) cb(data);
+      cpu.addClockEvent(endFrame, internals.cyclesPerChar);
+    };
+    const endFrame = (): void => {
+      if (buffered === null) {
+        shifting = false;
+        cpu.setInterruptFlag(TXC);
+        return;
+      }
+      const byte = buffered;
+      buffered = null;
+      startFrame(byte);
+      cpu.setInterruptFlag(UDRE);
+    };
+    // RXC and UDRE are read-only status bits; avr8js's UCSRA hook clears them on every write (Serial.write
+    // writes UCSRA to clear TXC), which would stall the buffer and could drop a received byte's flag.
+    const statusHook = cpu.writeHooks[usart0Config.UCSRA];
+    cpu.writeHooks[usart0Config.UCSRA] = (value, oldValue, addr, mask) => {
+      const handled = statusHook?.(value, oldValue, addr, mask);
+      cpu.data[usart0Config.UCSRA] =
+        (cpu.data[usart0Config.UCSRA] ?? 0) | (oldValue & (UCSRA_RXC | UCSRA_UDRE));
+      return handled;
+    };
+    cpu.writeHooks[usart0Config.UDR] = (value) => {
+      cpu.clearInterrupt(TXC);
+      if (shifting) {
+        buffered = value;
+        cpu.clearInterrupt(UDRE);
+      } else {
+        startFrame(value);
+        cpu.setInterruptFlag(UDRE);
+      }
+      return true;
+    };
+  }
+
   private emitModes(port: AVRIOPort, pins: readonly McuPinMap[], cpu: CPU): void {
     if (this.modeListeners.size === 0) return;
     for (const p of pins) {
@@ -298,6 +363,14 @@ export class AvrUnoCore implements McuCore {
       this.lastEdgeLevel.set(p.id, level);
       if (first && level === 0) continue; // pin just became an output at its reset level: not an edge
       for (const cb of this.edgeListeners) cb(p.id, level, cpu.cycles);
+    }
+  }
+
+  private receiveNext(usart: AVRUSART): void {
+    usart.writeByte(this.rxQueue[this.rxHead++] ?? 0);
+    if (this.rxHead > 4096) {
+      this.rxQueue = this.rxQueue.slice(this.rxHead);
+      this.rxHead = 0;
     }
   }
 

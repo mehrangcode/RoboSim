@@ -159,6 +159,8 @@
       "output": "output"
     },
     "error": "The simulation stopped: {message}",
+    "stalled": "The simulator is not responding.",
+    "restart": "Restart simulator",
     "findings": {
       "title": "Safety findings",
       "filterLabel": "Filter findings",

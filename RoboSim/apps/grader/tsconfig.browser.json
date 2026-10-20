@@ -1,0 +1,9 @@
+{
+  "extends": "@robosim/config/tsconfig/base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src/golden.ts", "src/job.ts", "test/**/*.browser.test.ts", "test/**/*.worker.ts"]
+}

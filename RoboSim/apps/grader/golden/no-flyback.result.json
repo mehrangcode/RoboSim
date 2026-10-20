@@ -1,0 +1,220 @@
+{
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "seed": 1,
+  "outcome": "unresolved",
+  "endSlice": 300,
+  "challenge": null,
+  "score": null,
+  "staticFindings": [
+    {
+      "ruleId": "SAF-FLYBACK",
+      "severity": "error",
+      "kind": "static",
+      "componentIds": ["motor", "q"],
+      "pinIds": ["D9"],
+      "messageKey": "safety:SAF-FLYBACK",
+      "params": { "part": "motor", "pin": "D9", "volts": 60, "switch": "q" }
+    }
+  ],
+  "damaged": { "parts": ["q"], "pins": [] },
+  "final": {
+    "slice": 300,
+    "pins": {
+      "D9": {
+        "mode": "output",
+        "level": 1,
+        "volts": 2.509803921443137,
+        "duty": 0.5019607843137255,
+        "freqHz": 490.19607843137254
+      }
+    },
+    "parts": {
+      "pack": {
+        "volts": 6.225965050834586,
+        "ocv": 6.319968931767074,
+        "charge": 0.9999922329417685,
+        "currentMa": 156.67082265174608
+      },
+      "rb": { "currentMa": 2.5098034761583676e-9, "powerMw": 6.299113488936625e-18, "damaged": false },
+      "q": {
+        "region": "cutoff",
+        "mainMa": 156.67082264544177,
+        "controlMa": 0,
+        "volts": 0.07833541132272089,
+        "controlVolts": 2.5098039189333337,
+        "powerMw": 12.272873334199735,
+        "junctionC": 25.041709254332115,
+        "avalanche": false,
+        "partiallyOn": false,
+        "damaged": true
+      },
+      "motor": {
+        "rpm": 256.10911911899854,
+        "currentMa": 153.87644553665112,
+        "volts": 6.147629639511865,
+        "torqueNm": 0.00003173079925484481,
+        "damaged": false
+      }
+    }
+  },
+  "serial": "",
+  "trace": {
+    "intervalSlices": 100,
+    "serial": [],
+    "findings": [
+      {
+        "slice": 55,
+        "ruleId": "SAF-COMPONENT-FAULT",
+        "severity": "error",
+        "kind": "runtime",
+        "componentIds": ["q"],
+        "pinIds": [],
+        "messageKey": "safety:SAF-COMPONENT-FAULT",
+        "params": { "part": "q", "code": "OVER_VOLTAGE" }
+      }
+    ],
+    "samples": [
+      {
+        "slice": 0,
+        "pins": { "D9": { "mode": "input", "level": 0, "volts": 0 } },
+        "parts": {
+          "pack": { "volts": 0, "ocv": 6.32, "charge": 1, "currentMa": 0 },
+          "rb": { "currentMa": 0, "powerMw": 0, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 0,
+            "controlMa": 0,
+            "volts": 0,
+            "controlVolts": 0,
+            "powerMw": 0,
+            "junctionC": 25,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": false
+          },
+          "motor": { "rpm": 0, "currentMa": 0, "volts": 0, "torqueNm": 0, "damaged": false }
+        }
+      },
+      {
+        "slice": 100,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.509803921443137,
+            "duty": 0.5019607843137255,
+            "freqHz": 490.19607843137254
+          }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.151321830861782,
+            "ocv": 6.319984509908883,
+            "charge": 0.9999961274772207,
+            "currentMa": 281.10251371050305
+          },
+          "rb": { "currentMa": 2.5098030320691578e-9, "powerMw": 6.299111259783537e-18, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 281.10251370421116,
+            "controlMa": 0,
+            "volts": 0.1405512568521056,
+            "controlVolts": 2.509803918933334,
+            "powerMw": 39.50931160541312,
+            "junctionC": 25.037509621595753,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": true
+          },
+          "motor": {
+            "rpm": 221.32463401708637,
+            "currentMa": 278.37034526162006,
+            "volts": 6.010770574009677,
+            "torqueNm": 0.021894771848818082,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.509803921443137,
+            "duty": 0.5019607843137255,
+            "freqHz": 490.19607843137254
+          }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.223228339360067,
+            "ocv": 6.319975948051241,
+            "charge": 0.9999939870128103,
+            "currentMa": 161.24420058452358
+          },
+          "rb": { "currentMa": 2.5098034761583676e-9, "powerMw": 6.299113488936625e-18, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 161.2442005782197,
+            "controlMa": 0,
+            "volts": 0.08062210028910985,
+            "controlVolts": 2.5098039189333337,
+            "powerMw": 12.999846110054571,
+            "junctionC": 25.040069336707113,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": true
+          },
+          "motor": {
+            "rpm": 254.83359499244256,
+            "currentMa": 158.4521068332681,
+            "volts": 6.1426062390709575,
+            "torqueNm": 0.0008350211461578736,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": {
+          "D9": {
+            "mode": "output",
+            "level": 1,
+            "volts": 2.509803921443137,
+            "duty": 0.5019607843137255,
+            "freqHz": 490.19607843137254
+          }
+        },
+        "parts": {
+          "pack": {
+            "volts": 6.225965050834586,
+            "ocv": 6.319968931767074,
+            "charge": 0.9999922329417685,
+            "currentMa": 156.67082265174608
+          },
+          "rb": { "currentMa": 2.5098034761583676e-9, "powerMw": 6.299113488936625e-18, "damaged": false },
+          "q": {
+            "region": "cutoff",
+            "mainMa": 156.67082264544177,
+            "controlMa": 0,
+            "volts": 0.07833541132272089,
+            "controlVolts": 2.5098039189333337,
+            "powerMw": 12.272873334199735,
+            "junctionC": 25.041709254332115,
+            "avalanche": false,
+            "partiallyOn": false,
+            "damaged": true
+          },
+          "motor": {
+            "rpm": 256.10911911899854,
+            "currentMa": 153.87644553665112,
+            "volts": 6.147629639511865,
+            "torqueNm": 0.00003173079925484481,
+            "damaged": false
+          }
+        }
+      }
+    ]
+  }
+}

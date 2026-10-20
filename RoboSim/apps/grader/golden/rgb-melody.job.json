@@ -1,0 +1,350 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "rgb-melody",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "pot",
+          "type": "passive.potentiometer",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": 40.64,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "rr",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": -15.24,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rg",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": -10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rb",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": -5.08,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "rgb",
+          "type": "actuator.led-rgb",
+          "typeVersion": "1.0.0",
+          "x": 101.6,
+          "y": -7.62,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "btn",
+          "type": "sensor.push-button",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": 30.48,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "rbz",
+          "type": "passive.resistor",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": 20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "ohms": 220
+          }
+        },
+        {
+          "id": "buz",
+          "type": "actuator.buzzer-passive",
+          "typeVersion": "1.0.0",
+          "x": 101.6,
+          "y": 20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "pot",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "pot",
+            "pin": "wiper"
+          },
+          "to": {
+            "part": "board",
+            "pin": "A0"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "pot",
+            "pin": "b"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "rr",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "rr",
+            "pin": "b"
+          },
+          "to": {
+            "part": "rgb",
+            "pin": "r"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "board",
+            "pin": "D6"
+          },
+          "to": {
+            "part": "rg",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "rg",
+            "pin": "b"
+          },
+          "to": {
+            "part": "rgb",
+            "pin": "g"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "board",
+            "pin": "D5"
+          },
+          "to": {
+            "part": "rb",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "rb",
+            "pin": "b"
+          },
+          "to": {
+            "part": "rgb",
+            "pin": "b"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "rgb",
+            "pin": "common"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "btn",
+            "pin": "b1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "btn",
+            "pin": "a1"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "board",
+            "pin": "D8"
+          },
+          "to": {
+            "part": "rbz",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "rbz",
+            "pin": "b"
+          },
+          "to": {
+            "part": "buz",
+            "pin": "pos"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w15",
+          "from": {
+            "part": "buz",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// RGB mood light: the knob on A0 walks the colour wheel on a common-cathode RGB LED (PWM on\n// D9/D6/D5 — tone() takes Timer2, so D3/D11 cannot PWM). The button on D2 plays a melody on the\n// passive buzzer on D8.\nconst int RED_PIN = 9;\nconst int GREEN_PIN = 6;\nconst int BLUE_PIN = 5;\nconst int BUTTON_PIN = 2;\nconst int BUZZER_PIN = 8;\nconst int MELODY[] = {262, 330, 392, 523}; // C4 E4 G4 C5\n\nvoid setup() { pinMode(BUTTON_PIN, INPUT_PULLUP); }\n\nvoid showHue(int hue) { // 0..767 around the colour wheel\n  int r, g, b;\n  if (hue < 256) { r = 255 - hue; g = hue; b = 0; }\n  else if (hue < 512) { r = 0; g = 511 - hue; b = hue - 256; }\n  else { r = hue - 512; g = 0; b = 767 - hue; }\n  analogWrite(RED_PIN, r);\n  analogWrite(GREEN_PIN, g);\n  analogWrite(BLUE_PIN, b);\n}\n\nvoid loop() {\n  showHue(map(analogRead(A0), 0, 1023, 0, 767));\n  if (digitalRead(BUTTON_PIN) == LOW) {\n    for (int i = 0; i < 4; i++) { tone(BUZZER_PIN, MELODY[i], 150); delay(200); }\n  }\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "RGB mood light + melody"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C9462000C947F000C947F000C947F0091\n:100010000C947F000C947F000C947F000C94D5010D\n:100020000C947F000C947F000C947F000C947F0054\n:100030000C947F000C947F000C947F000C947F0044\n:100040000C948B010C947F000C947F000C947F0027\n:100050000C947F000C947F000C947F000C947F0024\n:100060000C947F000C947F00000000002300260009\n:1000700029000200000000240027002A00000000E0\n:1000800000250028002B00040404040404040402D6\n:100090000202020202030303030303010204081025\n:1000A00020408001020408102001020408102000F2\n:1000B0000000080002010000030407000000000027\n:1000C0000000000011241FBECFEFD8E0DEBFCDBF7F\n:1000D00011E0A0E0B1E0EAE5FBE002C005900D927E\n:1000E000AA30B107D9F721E0AAE0B1E001C01D9222\n:1000F000A432B207E1F70E9457020C94AB050C94AE\n:100100000000833081F028F4813099F08230A9F02A\n:1001100008958730A9F08830C9F08430B1F4809117\n:1001200080008F7D03C0809180008F778093800056\n:10013000089584B58F7784BD089584B58F7DFBCFF6\n:100140008091B0008F778093B00008958091B000C7\n:100150008F7DF9CF1F93CF93DF93282F30E0F901E4\n:10016000E155FF4F8491F901E556FF4FD491F90114\n:10017000E957FF4FC491CC23A9F0162F81110E949B\n:100180008100EC2FF0E0EE0FFF1FE358FF4FA59129\n:10019000B4918FB7F894EC91111108C0D095DE237B\n:1001A000DC938FBFDF91CF911F910895DE2BF8CFA5\n:1001B000CF93DF9390E0FC01E556FF4F24918957E0\n:1001C0009F4FFC0184918823D1F090E0880F991F04\n:1001D000FC01ED58FF4FA591B491FC01E358FF4F8E\n:1001E000C591D491623071F49FB7F8943C91822FFD\n:1001F000809583238C93E8812E2B28839FBFDF91EA\n:10020000CF9108958FB7F894EC912E2B2C938FBF3C\n:10021000F6CF1F93CF93DF93182FEB0161E00E947D\n:10022000D800209739F460E0812FDF91CF911F91A2\n:100230000C94AA00CF3FD10511F461E0F5CFE12F76\n:10024000F0E0E155FF4FE491E33031F140F4E1306B\n:10025000B1F0E230E1F0C038D1057CF7E4CFE7300F\n:1002600029F1E83059F1E430B1F7809180008062E3\n:1002700080938000D0938B00C0938A0004C084B523\n:10028000806884BDC7BDDF91CF911F91089584B56B\n:10029000806284BDC8BDF7CF809180008068809364\n:1002A0008000D0938900C0938800EDCF8091B0008A\n:1002B00080688093B000C093B300E5CF8091B00018\n:1002C00080628093B000C093B400DDCF3FB7F89454\n:1002D0008091200190912101A0912201B0912301F0\n:1002E00026B5A89B05C02F3F19F00196A11DB11D91\n:1002F0003FBFBA2FA92F982F8827BC01CD01620FCD\n:10030000711D811D911D42E0660F771F881F991F87\n:100310004A95D1F708951F920F920FB60F921124AC\n:100320002F933F938F939F93AF93BF9380911C0123\n:1003300090911D01A0911E01B0911F0130911B01F0\n:1003400023E0230F2D3758F50196A11DB11D2093F1\n:100350001B0180931C0190931D01A0931E01B0937B\n:100360001F018091200190912101A0912201B09163\n:1003700023010196A11DB11D8093200190932101BD\n:10038000A0932201B0932301BF91AF919F918F91D0\n:100390003F912F910F900FBE0F901F90189526E858\n:1003A000230F0296A11DB11DD2CF1F920F920FB63F\n:1003B0000F9211242F933F934F935F936F937F93EB\n:1003C0008F939F93AF93BF93EF93FF9380910F0110\n:1003D00090911001A0911101B0911201892B8A2BEB\n:1003E0008B2BD1F190910A01E0910B01F0910C015E\n:1003F00080818927808380910F0190911001A091C5\n:100400001101B0911201181619061A061B069CF468\n:1004100080910F0190911001A0911101B0911201F2\n:100420000197A109B10980930F0190931001A09346\n:100430001101B0931201FF91EF91BF91AF919F9184\n:100440008F917F916F915F914F913F912F910F907D\n:100450000FBE0F901F90189580910001E2E7F0E029\n:10046000E4919FEF90930001E13051F030F0E230E1\n:1004700069F060E00E94AA00DECF10926E00F9CF12\n:1004800090916F009D7F90936F00F3CF90917000DB\n:100490009D7F9093700091E09093B0009091B10097\n:1004A000987F94609093B1001092B300E2CFCF9305\n:1004B000DF9300D000D01F92CDB7DEB7789484B51B\n:1004C000826084BD84B5816084BD85B5826085BD50\n:1004D00085B5816085BD80916E00816080936E00DE\n:1004E00010928100809181008260809381008091D0\n:1004F0008100816080938100809180008160809381\n:1005000080008091B10084608093B1008091B00040\n:1005100081608093B00080917A00846080937A003B\n:1005200080917A00826080937A0080917A00816065\n:1005300080937A0080917A00806880937A0010928C\n:10054000C10062E082E00E94D80008E4402E08EE7C\n:10055000502E66246394712C80E480937C008091FB\n:100560007A00806480937A0080917A0086FDFCCFC7\n:10057000A0917800B09179002FEF32E00E94A4059D\n:100580002FEF33E040E050E00E94540579012F3F07\n:10059000310511F00CF0E9C06FEF70E0621B730BD6\n:1005A000D12CC12C89E00E940901B70186E00E948C\n:1005B0000901B60185E00E940901E1EBF0E08491B8\n:1005C000EDE9F0E024912983E9E8F0E014911111BC\n:1005D000E5C0B1E02B2EB1E03B2EF101019111916C\n:1005E0001F0180910001883009F0F0C0E2E7F0E0DF\n:1005F000F491FD83F7FDD7C161E088E00E94D80047\n:10060000FD81FF2321F02D81223009F0F9C148013D\n:10061000B12CA12C60E072E18AE790E0A50198017D\n:100620000E94540529833A834B835C8369017A01D4\n:1006300081E0C81AD108E108F1089FEFC916D1047A\n:10064000E104F10409F00CF482C160E472E48FE08B\n:1006500090E0A50198010E94540569017A01E1E04A\n:10066000CE1AD108E108F108FD81F23009F025C168\n:1006700082E02FEFC216D104E104F10409F00CF47A\n:100680006DC060E970ED83E090E0A50198010E94E3\n:10069000540569017A0181E0C81AD108E108F1081E\n:1006A00083E09FEFC916D104E104F10409F00CF4D2\n:1006B00055C0C301B201A50198010E94540569010A\n:1006C0007A0181E0C81AD108E108F10884E09FEFBF\n:1006D000C916D104E104F10409F00CF43FC064E24E\n:1006E00074EF80E090E0A50194010E945405690137\n:1006F0007A0181E0C81AD108E108F10885E09FEF8E\n:10070000C916D104E104F10449F140F162E17AE74C\n:1007100080E090E0A50194010E94540569017A01EE\n:10072000E1E0CE1AD108E108F10886E0FFEFCF162C\n:10073000D104E104F10491F088F0C980DA80EB8003\n:10074000FC808AE0F594E794D794C7948A95D1F712\n:10075000F1E0CF1AD108E108F10887E09091B100EB\n:10076000987F892B8093B100FAC0211592E0390758\n:100770005CF4EE24EA94FF24F394E21AF30A69018C\n:10078000DA9470E060E00ECFB90172508FEF92E022\n:100790006C01C21AD30AF12CE12C04CF81110E9402\n:1007A0008100E12FF0E0EE0FFF1FE859FF4FA59108\n:1007B000B491EC9189818E2309F40BCF80E090E015\n:1007C000892B09F4C9CE0E940000C6CE8F3F09F0E4\n:1007D000EAC088E080930001E2E7F0E0F491FD8355\n:1007E000FF3F09F4E0C0F13031F158F0F23009F484\n:1007F00041C09D8197FDD7C061E088E00E94D8008C\n:1008000002CF14BC15BC84B5826084BD85B58160FF\n:1008100085BDEFE8F0E08491E82FF0E0EE0FFF1FD8\n:10082000E358FF4F85919491E3EAF0E0849180933F\n:100830000E011D82E1CE1092800010928100809105\n:100840008100886080938100809181008160809325\n:100850008100EFE8F0E08491E82FF0E0EE0FFF1F59\n:10086000E358FF4F85919491E3EAF0E084918093FF\n:100870000D01C2CE1092B0001092B1008091B00074\n:1008800082608093B0008091B10081608093B1005C\n:10089000EFE8F0E08491E82FF0E0EE0FFF1FE3585F\n:1008A000FF4F8591949190930C0180930B01E3EAA3\n:1008B000F0E0849180930A019FCEEFEFCE16D10431\n:1008C000E104F10409F00CF499C0C301B201A501DF\n:1008D00098010E94540569017A01F1E0CF1AD1080C\n:1008E000E108F1082D8184E0211109CF83E02FEF89\n:1008F000C216D104E104F10471F16CF162E17AE70E\n:1009000080E090E0A50194010E94540569017A01FC\n:1009100091E0C91AD108E108F10884E0EFEFCE16A2\n:10092000D104E104F104B9F0B0F0C980DA80EB80C1\n:10093000FC809AE0F594E794D794C7949A95D1F700\n:10094000E1E0CE1AD108E108F10885E004C081E0B9\n:10095000FD81F11103CF95B5987F892B85BD980155\n:10096000220F331FA6E9B0E00E94950528EE33E080\n:1009700040E050E00E9473058D81813009F472C01F\n:10098000823009F481C081110EC0C7BC20931701C9\n:10099000309318014093190150931A0180916E0011\n:1009A000826080936E000E9466014B015C0128EC1E\n:1009B000C22ED12CE12CF12C0E9466016819790914\n:1009C0008A099B09683E734081059105A8F391E06F\n:1009D000C91AD108E108F108E8EE8E0EE3E09E1E88\n:1009E000A11CB11CC114D104E104F10429F789E070\n:1009F00091E08215930509F0F0CDE0CE82E0A8CF1A\n:100A0000B12CA12C60E072E18AE790E0A501980189\n:100A10000E94540569017A0181E0C81AD108E108F1\n:100A2000F108C114D10491E0E906F10464F491E005\n:100A3000FD81F13009F093CF80918100887F892B6F\n:100A4000809381008CCFC301B201A50198010E945F\n:100A5000540569017A01E1E0CE1AD108E108F108F4\n:100A600093E0E6CFD0928900C092880020931301D2\n:100A700030931401409315015093160180916F003B\n:100A8000826080936F008FCFC092B30020930F01DC\n:100A90003093100140931101509312018091700026\n:100AA0008260809370007FCF052E97FB1EF4009428\n:100AB0000E946B0557FD07D00E94730507FC03D009\n:100AC0004EF40C946B0550954095309521953F4F11\n:100AD0004F4F5F4F089590958095709561957F4F2A\n:100AE0008F4F9F4F0895A1E21A2EAA1BBB1BFD0139\n:100AF0000DC0AA1FBB1FEE1FFF1FA217B307E407FD\n:100B0000F50720F0A21BB30BE40BF50B661F771F54\n:100B1000881F991F1A9469F7609570958095909534\n:100B20009B01AC01BD01CF010895A29FB001B39F0D\n:100B3000C001A39F700D811D1124911DB29F700DE6\n:100B4000811D1124911D08950E949505B7FF0895F8\n:0A0B5000821B930B0895F894FFCF69\n:0A0B5A00FF06014A0188010B0200AA\n:00000001FF\n",
+      "sha256": "demo:rgbMelody"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 0,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 0
+      },
+      {
+        "slice": 300,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 0.5
+      },
+      {
+        "slice": 600,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": true
+      },
+      {
+        "slice": 1200,
+        "kind": "component",
+        "componentId": "btn",
+        "name": "pressed",
+        "value": false
+      }
+    ]
+  },
+  "maxSimSeconds": 1.5
+}

@@ -1,5 +1,12 @@
 export { avrUno, UNO_ELECTRICAL } from './board.js';
-export { AvrUnoCore, loadFirmware, ATMEGA328P_FLASH_BYTES, UNO_BUS_PINS, UNO_CLOCK_HZ } from './core.js';
+export {
+  AvrUnoCore,
+  loadFirmware,
+  ATMEGA328P_EEPROM_BYTES,
+  ATMEGA328P_FLASH_BYTES,
+  UNO_BUS_PINS,
+  UNO_CLOCK_HZ,
+} from './core.js';
 export { parseIntelHex, toIntelHex, IntelHexError } from './ihex.js';
 export { UNO_BODY, UNO_MCU_PINS, UNO_PINS, type McuPinMap, type PortName } from './pins.js';
 export {

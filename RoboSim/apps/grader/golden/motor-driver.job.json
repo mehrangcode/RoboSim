@@ -1,0 +1,273 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "motor-driver",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "drv",
+          "type": "driver.tb6612fng",
+          "typeVersion": "1.0.0",
+          "x": 91.44,
+          "y": 20.32,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "motorA",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 157.48,
+          "y": 10.16,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "motorB",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 157.48,
+          "y": 35.56,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "pack",
+          "type": "power.battery-4aa",
+          "typeVersion": "1.0.0",
+          "x": 152.4,
+          "y": 60.96,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "pack",
+            "pin": "pos"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "vm"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "pack",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "vcc"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "drv",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "board",
+            "pin": "D7"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "stby"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "board",
+            "pin": "D5"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "pwma"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "board",
+            "pin": "D4"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "ain1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "ain2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "board",
+            "pin": "D6"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "pwmb"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "board",
+            "pin": "D8"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "bin1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "bin2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "drv",
+            "pin": "ao1"
+          },
+          "to": {
+            "part": "motorA",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "drv",
+            "pin": "ao2"
+          },
+          "to": {
+            "part": "motorA",
+            "pin": "m2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "drv",
+            "pin": "bo1"
+          },
+          "to": {
+            "part": "motorB",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w15",
+          "from": {
+            "part": "drv",
+            "pin": "bo2"
+          },
+          "to": {
+            "part": "motorB",
+            "pin": "m2"
+          },
+          "color": "yellow",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// Two TT motors on a TB6612FNG, powered from 4xAA. STBY (D7) must be HIGH or the driver sleeps.\n// Motor A: PWMA D5, AIN1 D4, AIN2 D2. Motor B: PWMB D6, BIN1 D8, BIN2 D9. The speeds ramp in opposite\n// directions, from full reverse to full forward.\nconst int STBY = 7;\n\nvoid drive(int pwm, int in1, int in2, int speed) { // speed -255..255\n  digitalWrite(in1, speed > 0 ? HIGH : LOW);\n  digitalWrite(in2, speed < 0 ? HIGH : LOW);\n  analogWrite(pwm, abs(speed));\n}\n\nvoid setup() {\n  for (int p = 2; p <= 9; p++) pinMode(p, OUTPUT);\n  digitalWrite(STBY, HIGH);\n}\n\nvoid loop() {\n  for (int s = -255; s <= 255; s += 5) {\n    drive(5, 4, 2, s);\n    drive(6, 8, 9, -s);\n    delay(40);\n  }\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Two motors on a TB6612FNG"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C945C000C946E000C946E000C946E00CA\n:100010000C946E000C946E000C946E000C946E00A8\n:100020000C946E000C946E000C946E000C946E0098\n:100030000C946E000C946E000C946E000C946E0088\n:100040000C945C010C946E000C946E000C946E0089\n:100050000C946E000C946E000C946E000C946E0068\n:100060000C946E000C946E00000000080002010069\n:100070000003040700000000000000000000000072\n:10008000250028002B0000000000240027002A0083\n:10009000040404040404040402020202020203032E\n:1000A0000303030301020408102040800102040836\n:1000B000102001020408102011241FBECFEFD8E049\n:1000C000DEBFCDBF21E0A0E0B1E001C01D92A930AC\n:1000D000B207E1F70E94A6010C9453020C940000B1\n:1000E00090E0FC01EC55FF4F249180579F4FFC019D\n:1000F0008491882399F090E0880F991FFC01EA57BA\n:10010000FF4FA591B491FC01E458FF4F8591949164\n:100110008FB7F894EC91E22BEC938FBF089590E0A9\n:10012000FC01E859FF4F2491FC01EC55FF4F34913D\n:10013000FC01E057FF4FE491EE23C9F0222339F090\n:10014000233001F1A8F4213019F1223029F1F0E037\n:10015000EE0FFF1FE458FF4FA591B4918FB7F894AD\n:10016000EC91611126C030953E233C938FBF0895DA\n:100170002730A9F02830C9F0243049F78091800059\n:100180008F7D03C0809180008F7780938000DFCFC8\n:1001900084B58F7784BDDBCF84B58F7DFBCF809115\n:1001A000B0008F778093B000D2CF8091B0008F7D68\n:1001B000F9CF3E2BDACF1F93CF93DF93182FEB01AC\n:1001C0000E947000209739F460E0812FDF91CF9179\n:1001D0001F910C948F00CF3FD10511F461E0F5CF52\n:1001E000E12FF0E0E859FF4FE491E33031F140F4C2\n:1001F000E130B1F0E230E1F0C038D1057CF7E4CF76\n:10020000E73029F1E83059F1E430B1F7809180000E\n:10021000806280938000D0938B00C0938A0004C0DA\n:1002200084B5806884BDC7BDDF91CF911F910895CB\n:1002300084B5806284BDC8BDF7CF8091800080689E\n:1002400080938000D0938900C0938800EDCF809187\n:10025000B00080688093B000C093B300E5CF809178\n:10026000B00080628093B000C093B400DDCF3FB790\n:10027000F8948091050190910601A0910701B09139\n:10028000080126B5A89B05C02F3F19F00196A11DB6\n:10029000B11D3FBFBA2FA92F982F8827BC01CD01D0\n:1002A000620F711D811D911D42E0660F771F881F2F\n:1002B000991F4A95D1F708951F920F920FB60F928A\n:1002C00011242F933F938F939F93AF93BF9380916C\n:1002D000010190910201A0910301B09104013091BC\n:1002E000000123E0230F2D3758F50196A11DB11D04\n:1002F000209300018093010190930201A0930301D8\n:10030000B09304018091050190910601A09107012D\n:10031000B09108010196A11DB11D80930501909334\n:100320000601A0930701B0930801BF91AF919F917F\n:100330008F913F912F910F900FBE0F901F901895A6\n:1003400026E8230F0296A11DB11DD2CF789484B563\n:10035000826084BD84B5816084BD85B5826085BDC1\n:1003600085B5816085BD80916E00816080936E004F\n:100370001092810080918100826080938100809141\n:1003800081008160809381008091800081608093F2\n:1003900080008091B10084608093B1008091B000B2\n:1003A00081608093B00080917A00846080937A00AD\n:1003B00080917A00826080937A0080917A008160D7\n:1003C00080937A0080917A00806880937A001092FE\n:1003D000C100C2E08C2F0E947000CF5FCA30D1F7FD\n:1003E00061E087E00E948F0000E010E0C1E0DFEFF5\n:1003F00061E01C161D060CF060E084E00E948F0096\n:10040000BD2EBB1CBB24BB1C6B2D82E00E948F0049\n:100410007E01CC24DD24CC1ADD0AD7FD7601B7019C\n:1004200085E00E94DB006B2D88E00E948F006D2D1F\n:10043000661F6627661F89E00E948F00B70186E06D\n:100440000E94DB000E9437014B015C0188E2C82E4C\n:10045000D12CE12CF12C0E943701681979098A0905\n:100460009B09683E734081059105A8F321E0C21AFB\n:10047000D108E108F10888EE880E83E0981EA11CDF\n:10048000B11CC114D104E104F10429F72596C4304C\n:1004900081E0D80709F0ACCF0115110509F4A6CF0A\n:0A04A0000E940000A3CFF894FFCFE4\n:00000001FF\n",
+      "sha256": "demo:motorDriver"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 2
+}

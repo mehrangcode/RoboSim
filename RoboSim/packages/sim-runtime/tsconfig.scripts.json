@@ -1,0 +1,9 @@
+{
+  "extends": "@robosim/config/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "paths": { "@robosim/sim-runtime": ["./src/index.ts"] }
+  },
+  "include": ["scripts"]
+}

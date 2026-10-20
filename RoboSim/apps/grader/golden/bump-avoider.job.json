@@ -1,0 +1,496 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "bump-avoider",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0",
+        "mount": {
+          "x": -30,
+          "y": 0,
+          "z": 75,
+          "yaw": 0
+        }
+      },
+      "components": [
+        {
+          "id": "chassis",
+          "type": "mechanical.chassis-2wd",
+          "typeVersion": "1.0.0",
+          "x": -91.44,
+          "y": 30.48,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "bat",
+          "type": "power.battery-4aa",
+          "typeVersion": "1.0.0",
+          "x": 167.64000000000001,
+          "y": 76.2,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": -95,
+            "y": 0,
+            "z": 45,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "sw",
+          "type": "power.switch",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": 76.2,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "inputs": {
+            "on": true
+          },
+          "mount": {
+            "x": -125,
+            "y": 55,
+            "z": 45,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "drv",
+          "type": "driver.l298n",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": -60.96,
+          "rotation": 0,
+          "flipped": false,
+          "props": {
+            "enaJumper": false,
+            "enbJumper": false,
+            "regulatorJumper": false
+          },
+          "mount": {
+            "x": -30,
+            "y": 0,
+            "z": 45,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "motorL",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 71.12,
+          "y": -43.18,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 0,
+            "y": 45,
+            "z": 20,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "motorR",
+          "type": "actuator.tt-motor",
+          "typeVersion": "1.0.0",
+          "x": 157.48,
+          "y": -43.18,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 0,
+            "y": -45,
+            "z": 20,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "bumpL",
+          "type": "sensor.bump-switch",
+          "typeVersion": "1.0.0",
+          "x": 101.6,
+          "y": 96.52,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 70,
+            "y": 55,
+            "z": 20,
+            "yaw": 25
+          }
+        },
+        {
+          "id": "bumpC",
+          "type": "sensor.bump-switch",
+          "typeVersion": "1.0.0",
+          "x": 101.6,
+          "y": 104.28111111111112,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 70,
+            "y": 0,
+            "z": 20,
+            "yaw": 0
+          }
+        },
+        {
+          "id": "bumpR",
+          "type": "sensor.bump-switch",
+          "typeVersion": "1.0.0",
+          "x": 101.6,
+          "y": 112.04222222222224,
+          "rotation": 0,
+          "flipped": false,
+          "props": {},
+          "mount": {
+            "x": 70,
+            "y": -55,
+            "z": 20,
+            "yaw": -25
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "bat",
+            "pin": "pos"
+          },
+          "to": {
+            "part": "sw",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "sw",
+            "pin": "b"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "vs"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "v5"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "D5"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "ena"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "board",
+            "pin": "D6"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "enb"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "board",
+            "pin": "D7"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "board",
+            "pin": "D8"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in3"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "board",
+            "pin": "D10"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in4"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "drv",
+            "pin": "out1"
+          },
+          "to": {
+            "part": "motorL",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "drv",
+            "pin": "out2"
+          },
+          "to": {
+            "part": "motorL",
+            "pin": "m2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "drv",
+            "pin": "out3"
+          },
+          "to": {
+            "part": "motorR",
+            "pin": "m1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "drv",
+            "pin": "out4"
+          },
+          "to": {
+            "part": "motorR",
+            "pin": "m2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "bat",
+            "pin": "neg"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w15",
+          "from": {
+            "part": "drv",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w16",
+          "from": {
+            "part": "bumpL",
+            "pin": "no"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w17",
+          "from": {
+            "part": "bumpC",
+            "pin": "no"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D4"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w18",
+          "from": {
+            "part": "bumpR",
+            "pin": "no"
+          },
+          "to": {
+            "part": "board",
+            "pin": "D3"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w19",
+          "from": {
+            "part": "bumpL",
+            "pin": "com"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w20",
+          "from": {
+            "part": "bumpC",
+            "pin": "com"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w21",
+          "from": {
+            "part": "bumpR",
+            "pin": "com"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND3"
+          },
+          "color": "black",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// Bump-and-turn obstacle avoider: three lever switches across the front (left D2, centre D4, right D3;\n// NO to the pin, COM to GND, INPUT_PULLUP). After a bump the robot backs up and turns away; once clear\n// for a while it turns back by the amount it turned, so it keeps heading for the goal.\n// L298N: ENA D5, ENB D6, IN1-IN4 D7-D10.\nconst int SPEED = 200;\nconst int TURN_MS = 300;\nlong heading = 0; // net spin time in ms, right positive\nunsigned long clearSince = 0;\n\nvoid drive(int left, int right) { // -255..255\n  digitalWrite(7, left > 0 ? HIGH : LOW);\n  digitalWrite(8, left < 0 ? HIGH : LOW);\n  analogWrite(5, abs(left));\n  digitalWrite(9, right > 0 ? HIGH : LOW);\n  digitalWrite(10, right < 0 ? HIGH : LOW);\n  analogWrite(6, abs(right));\n}\n\nvoid spin(int dir, int ms) { // dir 1 = right\n  drive(dir * SPEED, -dir * SPEED);\n  delay(ms);\n  heading += dir * ms;\n}\n\nvoid setup() {\n  for (int p = 5; p <= 10; p++) pinMode(p, OUTPUT);\n  pinMode(2, INPUT_PULLUP);\n  pinMode(3, INPUT_PULLUP);\n  pinMode(4, INPUT_PULLUP);\n}\n\nvoid loop() {\n  bool left = digitalRead(2) == LOW;\n  bool right = digitalRead(3) == LOW;\n  bool centre = digitalRead(4) == LOW;\n  if (left || right || centre) {\n    drive(-SPEED, -SPEED);\n    delay(250);\n    // Turn away from the side that hit; head-on, turn back toward the goal heading.\n    int dir = left ? 1 : right ? -1 : (heading > 0 ? -1 : 1);\n    spin(dir, TURN_MS);\n    clearSince = millis();\n  } else if (heading != 0 && millis() - clearSince > 1200) {\n    long back = constrain(-heading, -TURN_MS, TURN_MS);\n    spin(back > 0 ? 1 : -1, abs(back));\n    clearSince = millis();\n  } else {\n    drive(SPEED, SPEED);\n  }\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "arena": {
+        "arenaVersionId": "obstacle-course",
+        "startPose": {
+          "x": 0.3,
+          "y": 0.8,
+          "heading": 0
+        }
+      },
+      "successConditions": {
+        "id": "obstacle-course-goal",
+        "condition": {
+          "all": [
+            {
+              "type": "reachZone",
+              "zone": "goal"
+            },
+            {
+              "type": "timeLimit",
+              "seconds": 120
+            }
+          ]
+        },
+        "score": [
+          {
+            "type": "timeBonus",
+            "under": 40,
+            "weight": 60
+          },
+          {
+            "type": "noCollision",
+            "weight": 40
+          }
+        ]
+      },
+      "meta": {
+        "title": "Bump-and-turn obstacle avoider"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C9461000C9473000C9473000C947300B6\n:100010000C9473000C9473000C9473000C94730094\n:100020000C9473000C9473000C9473000C94730084\n:100030000C9473000C9473000C9473000C94730074\n:100040000C9456020C9473000C9473000C9473007F\n:100050000C9473000C9473000C9473000C94730054\n:100060000C9473000C94730000000000240027001F\n:100070002A0000000000250028002B0000000000DE\n:1000800023002600290004040404040404040202DA\n:100090000202020203030303030301020408102007\n:1000A0004080010204081020010204081020000012\n:1000B0000008000201000003040700000000000027\n:1000C000000011241FBECFEFD8E0DEBFCDBF21E07E\n:1000D000A0E0B1E001C01D92A131B207E1F70E949A\n:1000E000A0020C94A8030C940000833081F028F443\n:1000F000813099F08230A9F008958730A9F08830D6\n:10010000C9F08430B1F4809180008F7D03C080916C\n:1001100080008F7780938000089584B58F7784BDA9\n:10012000089584B58F7DFBCF8091B0008F77809349\n:10013000B00008958091B0008F7DF9CFCF93DF9309\n:10014000282F30E0F901E255FF4F8491F901E6567E\n:10015000FF4FD491F901EA57FF4FC491CC23A1F08E\n:1001600081110E947500EC2FF0E0EE0FFF1FE458A4\n:10017000FF4FA591B491EC91ED2381E090E009F45B\n:1001800080E0DF91CF91089580E090E0FACF1F9357\n:10019000CF93DF93282F30E0F901E255FF4F849190\n:1001A000F901E656FF4FD491F901EA57FF4FC49188\n:1001B000CC23A9F0162F81110E947500EC2FF0E0DE\n:1001C000EE0FFF1FEE58FF4FA591B4918FB7F89433\n:1001D000EC91111108C0D095DE23DC938FBFDF9125\n:1001E000CF911F910895DE2BF8CFCF93DF9390E04E\n:1001F000FC01E656FF4F24918A579F4FFC018491E2\n:100200008823D1F090E0880F991FFC01E859FF4F37\n:10021000A591B491FC01EE58FF4FC591D491623085\n:1002200071F49FB7F8943C91822F809583238C932F\n:10023000E8812E2B28839FBFDF91CF9108958FB740\n:10024000F894EC912E2B2C938FBFF6CF1F93CF9366\n:10025000DF93182FEB0161E00E94F500209739F43D\n:1002600060E0812FDF91CF911F910C94C700CF3FA9\n:10027000D10511F461E0F5CFE12FF0E0E255FF4F39\n:10028000E491E33031F140F4E130B1F0E230E1F0FB\n:10029000C038D1057CF7E4CFE73029F1E83059F1D7\n:1002A000E430B1F780918000806280938000D09329\n:1002B0008B00C0938A0004C084B5806884BDC7BD2C\n:1002C000DF91CF911F91089584B5806284BDC8BD30\n:1002D000F7CF80918000806880938000D093890060\n:1002E000C0938800EDCF8091B00080688093B0000B\n:1002F000C093B300E5CF8091B00080628093B000DE\n:10030000C093B400DDCF3FB7F89480910D01909178\n:100310000E01A0910F01B091100126B5A89B05C058\n:100320002F3F19F00196A11DB11D3FBFBA2FA92F74\n:10033000982F8827BC01CD01620F711D811D911D71\n:1003400042E0660F771F881F991F4A95D1F70895DD\n:100350008F929F92AF92BF92CF92DF92EF92FF92D5\n:100360006B017C010E9483014B015C01C114D1042B\n:10037000E104F104B9F00E948301681979098A093E\n:100380009B09683E73408105910580F321E0C21A04\n:10039000D108E108F10888EE880E83E0981EA11CC0\n:1003A000B11CE4CFFF90EF90DF90CF90BF90AF9063\n:1003B0009F908F9008950F931F93CF93DF938C019D\n:1003C000EB0161E0181619060CF060E087E00E946E\n:1003D000C700612F661F6627661F88E00E94C7005E\n:1003E000B80117FF03C071956195710985E00E94FE\n:1003F000260161E01C161D060CF060E089E00E94F9\n:10040000C7006D2F661F6627661F8AE00E94C7001F\n:10041000BE01D7FF03C071956195710986E0DF9138\n:10042000CF911F910F910C9426010F931F93CF939F\n:10043000DF93EC018B0188E38C9FB0018D9F700DE1\n:100440007C1B112488EC282F2C9FC0012D9F900D20\n:1004500011240E94DB01B801012E000C880B990BBE\n:100460000E94A801C09FC001C19F900DD09F900D18\n:100470001124092E000CAA0BBB0B409104015091D2\n:1004800005016091060170910701840F951FA61F59\n:10049000B71F8093040190930501A0930601B093C8\n:1004A0000701DF91CF911F910F9108951F920F9235\n:1004B0000FB60F9211242F933F938F939F93AF9377\n:1004C000BF938091090190910A01A0910B01B09115\n:1004D0000C013091080123E0230F2D3758F50196C8\n:1004E000A11DB11D209308018093090190930A0179\n:1004F000A0930B01B0930C0180910D0190910E011E\n:10050000A0910F01B09110010196A11DB11D809322\n:100510000D0190930E01A0930F01B0931001BF91B4\n:10052000AF919F918F913F912F910F900FBE0F90A0\n:100530001F90189526E8230F0296A11DB11DD2CF5A\n:10054000789484B5826084BD84B5816084BD85B5AE\n:10055000826085BD85B5816085BD80916E008160BA\n:1005600080936E0010928100809181008260809360\n:100570008100809181008160809381008091800062\n:100580008160809380008091B10084608093B1008D\n:100590008091B00081608093B00080917A00846087\n:1005A00080937A0080917A00826080937A008091B3\n:1005B0007A00816080937A0080917A0080688093CD\n:1005C0007A001092C100C5E061E08C2F0E94F50016\n:1005D000CF5FCB30C9F762E082E00E94F50062E0B5\n:1005E00083E00E94F50062E084E00E94F500C0E034\n:1005F000D0E082E00E949E007C0183E00E949E0089\n:100600008C0184E00E949E00E114F10429F00115A0\n:10061000110511F0892BD1F568E37FEF88E39FEF97\n:100620000E94DB016AEF70E080E090E00E94A80188\n:10063000EF2849F1012B69F08091040190910501A7\n:10064000A0910601B0910701181619061A061B069B\n:10065000D4F48FEF9FEF6CE271E00E9415022FB788\n:10066000F8948091090190910A01A0910B01B09139\n:100670000C012FBF8093000190930101A093020110\n:10068000B093030146C081E090E0E5CF8091040182\n:1006900090910501A0910601B0910701892B8A2B49\n:1006A0008B2B89F12FB7F8948091090190910A0161\n:1006B000A0910B01B0910C012FBF4091000150910E\n:1006C00001016091020170910301841B950BA60B3F\n:1006D000B70B813B9440A105B105A8F040910401FE\n:1006E0005091050160910601709107014D3281E042\n:1006F0005807610571059CF08CE291E02FEF3FEF08\n:10070000BC01C901AACF68EC70E088EC90E00E94BF\n:10071000DB01209709F46DCF0E9400006ACF443DB1\n:100720002EEF52072FEF620772077CF0CA0177FFA6\n:1007300007C088279927DC01841B950BA60BB70BF4\n:1007400077FFDCCF21E030E0DBCF8CE291E0FACF25\n:04075000F894FFCF4B\n:00000001FF\n",
+      "sha256": "demo:bumpAvoider"
+    },
+    "seed": 1,
+    "entries": []
+  },
+  "maxSimSeconds": 60
+}

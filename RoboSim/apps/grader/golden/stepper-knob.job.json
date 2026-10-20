@@ -1,0 +1,258 @@
+{
+  "log": {
+    "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+    "scenario": "stepper-knob",
+    "project": {
+      "schemaVersion": 3,
+      "board": {
+        "id": "avr-uno",
+        "version": "1.0.0"
+      },
+      "components": [
+        {
+          "id": "pot",
+          "type": "passive.potentiometer",
+          "typeVersion": "1.0.0",
+          "x": 81.28,
+          "y": 40.64,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "drv",
+          "type": "ic.uln2003a",
+          "typeVersion": "1.0.0",
+          "x": 86.36,
+          "y": 15.24,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        },
+        {
+          "id": "motor",
+          "type": "actuator.stepper-28byj48",
+          "typeVersion": "1.0.0",
+          "x": 127,
+          "y": 50.8,
+          "rotation": 0,
+          "flipped": false,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "pot",
+            "pin": "a"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w2",
+          "from": {
+            "part": "pot",
+            "pin": "wiper"
+          },
+          "to": {
+            "part": "board",
+            "pin": "A0"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w3",
+          "from": {
+            "part": "pot",
+            "pin": "b"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND2"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w4",
+          "from": {
+            "part": "board",
+            "pin": "D8"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in1"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w5",
+          "from": {
+            "part": "board",
+            "pin": "D9"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in2"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w6",
+          "from": {
+            "part": "board",
+            "pin": "D10"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in3"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w7",
+          "from": {
+            "part": "board",
+            "pin": "D11"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "in4"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w8",
+          "from": {
+            "part": "drv",
+            "pin": "gnd"
+          },
+          "to": {
+            "part": "board",
+            "pin": "GND1"
+          },
+          "color": "black",
+          "points": []
+        },
+        {
+          "id": "w9",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "drv",
+            "pin": "com"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w10",
+          "from": {
+            "part": "drv",
+            "pin": "out1"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "blue"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w11",
+          "from": {
+            "part": "drv",
+            "pin": "out2"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "pink"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w12",
+          "from": {
+            "part": "drv",
+            "pin": "out3"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "yellow"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w13",
+          "from": {
+            "part": "drv",
+            "pin": "out4"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "orange"
+          },
+          "color": "yellow",
+          "points": []
+        },
+        {
+          "id": "w14",
+          "from": {
+            "part": "board",
+            "pin": "5V"
+          },
+          "to": {
+            "part": "motor",
+            "pin": "red"
+          },
+          "color": "yellow",
+          "points": []
+        }
+      ],
+      "code": {
+        "language": "cpp",
+        "files": [
+          {
+            "name": "sketch.ino",
+            "content": "// The 28BYJ-48 output shaft follows the knob: one knob turn = one shaft turn (2048 steps).\n// The Stepper library energises the ULN2003A inputs IN1..IN4 on D8..D11 in the order IN1, IN3, IN2, IN4.\n#include <Stepper.h>\nconst int STEPS_PER_TURN = 2048;\nStepper stepper(STEPS_PER_TURN, 8, 10, 9, 11);\nint previous = 0;\n\nvoid setup() { stepper.setSpeed(12); }\n\nvoid loop() {\n  int target = map(analogRead(A0), 0, 1023, 0, STEPS_PER_TURN);\n  stepper.step(target - previous);\n  previous = target;\n}\n"
+          }
+        ]
+      },
+      "libraries": [],
+      "meta": {
+        "title": "Stepper follows a knob"
+      }
+    },
+    "firmware": {
+      "format": "ihex",
+      "text": ":100000000C945D000C9485000C9485000C94850084\n:100010000C9485000C9485000C9485000C9485004C\n:100020000C9485000C9485000C9485000C9485003C\n:100030000C9485000C9485000C9485000C9485002C\n:100040000C9402020C9485000C9485000C9485009D\n:100050000C9485000C9485000C9485000C9485000C\n:100060000C9485000C94850000000008000201003B\n:100070000003040700000000000000000000000072\n:10008000250028002B0000000000240027002A0083\n:10009000040404040404040402020202020203032E\n:1000A0000303030301020408102040800102040836\n:1000B00010200102040810208F0311241FBECFEF6F\n:1000C000D8E0DEBFCDBF11E0A0E0B1E0EAE6F8E0A5\n:1000D00002C005900D92A030B107D9F721E0A0E051\n:1000E000B1E001C01D92A532B207E1F710E0CDE505\n:1000F000D0E004C02197FE010E941904CC35D1073D\n:10010000C9F70E944C020C9433040C94000090E058\n:10011000FC01EC55FF4F249180579F4FFC018491C7\n:10012000882399F090E0880F991FFC01EA57FF4F50\n:10013000A591B491FC01E458FF4F859194918FB73C\n:10014000F894EC91E22BEC938FBF089590E0FC01C2\n:10015000E859FF4F2491FC01EC55FF4F3491FC010D\n:10016000E057FF4FE491EE23C9F0222339F023300A\n:1001700001F1A8F4213019F1223029F1F0E0EE0F5D\n:10018000FF1FE458FF4FA591B4918FB7F894EC91FD\n:10019000611126C030953E233C938FBF08952730D0\n:1001A000A9F02830C9F0243049F7809180008F7D74\n:1001B00003C0809180008F7780938000DFCF84B56B\n:1001C0008F7784BDDBCF84B58F7DFBCF8091B0006E\n:1001D0008F778093B000D2CF8091B0008F7DF9CF20\n:1001E0003E2BDACFCF93DF93EC01809113019091F6\n:1001F0001401029749F4C130D10509F43BC06CF5F4\n:1002000060E0209709F437C08091130190911401A8\n:10021000049749F4C130D10509F45CC00CF037C033\n:10022000209709F442C08091130190911401059721\n:1002300009F0E5C0CA30D10508F0E1C0FE01ED5D6E\n:10024000FE4F0C94190482018E019F01B501D0016B\n:10025000D201D901E501F601FD01C230D105A9F0B5\n:1002600060E0C330D10581F6809117010E94A6009D\n:1002700060E006C061E0809117010E94A60061E085\n:10028000809119010E94A600BFCF61E0EDCFC2307E\n:10029000D10539F1C330D10509F0C5CF61E08091B6\n:1002A00017010E94A60060E022C061E08091170162\n:1002B0000E94A60060E0809119010E94A60061E002\n:1002C00080911B010E94A60060E080911D010E94A8\n:1002D000A600A9CF60E0809117010E94A60061E00E\n:1002E000EACF60E0809117010E94A60061E0809152\n:1002F00019010E94A60060E080911B010E94A600E7\n:1003000061E0E3CF60E0809117010E94A60061E008\n:10031000809119010E94A60061E00BC060E080910D\n:1003200017010E94A60061E0809119010E94A600B9\n:1003300060E080911B010E94A60060E010C060E0B8\n:10034000809117010E94A60061E0809119010E942E\n:10035000A60060E080911B010E94A60061E08091F0\n:100360001D010E94A60061E015C060E080911701A8\n:100370000E94A60061E0809119010E94A60060E041\n:1003800080911B010E94A60061E080911D010E94E6\n:10039000A60060E080911F01DF91CF910C94A60030\n:1003A00061E0E4CF61E0809117010E94A60060E067\n:1003B000E2CF61E0809117010E94A60060E0809189\n:1003C00019010E94A60061E0DBCF61E08091170176\n:1003D0000E94A60060E0809119010E94A60061E0E1\n:1003E00080911B010E94A60060E0CFCF61E0809168\n:1003F00017010E94A60060E08BCF60E0F8CFDF918C\n:10040000CF9108951F920F920FB60F9211242F9340\n:100410003F938F939F93AF93BF93809107019091E8\n:100420000801A0910901B0910A013091060123E071\n:10043000230F2D3758F50196A11DB11D20930601FC\n:100440008093070190930801A0930901B0930A01DA\n:100450008091020190910301A0910401B0910501E6\n:100460000196A11DB11D8093020190930301A093F9\n:100470000401B0930501BF91AF919F918F913F917E\n:100480002F910F900FBE0F901F90189526E8230F05\n:100490000296A11DB11DD2CF789484B5826084BD2F\n:1004A00084B5816084BD85B5826085BD85B5816078\n:1004B00085BD80916E00816080936E0010928100F6\n:1004C00080918100826080938100809181008160B1\n:1004D0008093810080918000816080938000809172\n:1004E000B10084608093B1008091B00081608093FE\n:1004F000B00080917A00846080937A0080917A00C5\n:10050000826080937A0080917A00816080937A0083\n:1005100080917A00806880937A001092C1002091C7\n:10052000110130911201032E000C440B550B60E0B9\n:1005300077E883E993E00E94C403CA01B9012CE083\n:1005400030E040E050E00E94C40320930D0130935E\n:100550000E0140930F015093100188248A9463E0A8\n:10056000962EA12CB12C70E0672E70E0772E01E062\n:1005700010E020E420937C0080917A0080648093D6\n:100580007A0080917A0086FDFCCF609178007091AE\n:100590007900072E000C880B990B5BE0660F771F24\n:1005A000881F991F5A95D1F7A50194010E94C40391\n:1005B00069018091000190910101281B390BC9014B\n:1005C000E90137FF04C0CC27DD27C21BD30B181667\n:1005D00019060CF07DC010930C0100930B012097BD\n:1005E00009F492C03FB7F894809102019091030101\n:1005F000A0910401B091050126B5A89B05C02F3F2D\n:1006000019F00196A11DB11D3FBFBA2FA92F982F38\n:100610008827820F911DA11DB11D42E0880F991FEF\n:10062000AA1FBB1F4A95D1F7409121015091220189\n:1006300060912301709124011C012D01241A350AB7\n:10064000460A570A40910D0150910E0160910F0129\n:1006500070911001241635064606570608F4BFCFE0\n:100660008093210190932201A0932301B093240150\n:10067000809115019091160120910B0130910C0190\n:100680002130310569F5019690931601809315018B\n:1006900020911101309112018217930721F41092D9\n:1006A0001601109215012197809115019091160164\n:1006B00020911301309114016AE070E0253031057A\n:1006C00011F064E070E00E9405040E94F20087CF00\n:1006D000892B09F484CF10920C0110920B017FCF6B\n:1006E000892B41F480911101909112019093160190\n:1006F00080931501809115019091160101979093B7\n:10070000160180931501CFCFD0920101C092000154\n:100710006114710409F42DCF0E9400002ACFCF93F9\n:10072000DF93CBE0D1E01B861A86198218821E8ADD\n:100730001F8A188E198E80E098E09F838E8388E050\n:1007400090E09D878C878AE090E09F878E8789E084\n:1007500090E0998B888B8BE090E09B8B8A8B88E074\n:100760000E9487008E850E94870088890E948700EA\n:100770008A890E9487001D8A1C8A84E090E09987FC\n:100780008887DF91CF910895052E97FB1EF4009482\n:100790000E94DB0357FD07D00E94E30307FC03D050\n:1007A0004EF40C94DB0350954095309521953F4FC6\n:1007B0004F4F5F4F089590958095709561957F4F4D\n:1007C0008F4F9F4F0895A1E21A2EAA1BBB1BFD015C\n:1007D0000DC0AA1FBB1FEE1FFF1FA217B307E40720\n:1007E000F50720F0A21BB30BE40BF50B661F771F78\n:1007F000881F991F1A9469F7609570958095909558\n:100800009B01AC01BD01CF01089597FB072E16F4A3\n:10081000009407D077FD09D00E941F0407FC05D083\n:100820003EF4909581959F4F0895709561957F4F07\n:100830000895EE0FFF1F0590F491E02D0994AA1B77\n:10084000BB1B51E107C0AA1FBB1FA617B70710F0BB\n:10085000A61BB70B881F991F5A95A9F780959095ED\n:0A086000BC01CD010895F894FFCF0C\n:00000001FF\n",
+      "sha256": "demo:stepperKnob"
+    },
+    "seed": 1,
+    "entries": [
+      {
+        "slice": 0,
+        "kind": "component",
+        "componentId": "pot",
+        "name": "position",
+        "value": 0.75
+      }
+    ]
+  },
+  "maxSimSeconds": 2.5
+}

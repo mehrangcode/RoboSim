@@ -1,30 +1,196 @@
 {
-  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.3.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
   "seed": 1,
   "outcome": "unresolved",
   "endSlice": 1000,
   "challenge": null,
   "score": null,
-  "staticFindings": [{"ruleId":"SAF-INDUCTIVE-ON-PIN","severity":"error","kind":"static","componentIds":["motor"],"pinIds":["D9"],"messageKey":"safety:SAF-INDUCTIVE-ON-PIN","params":{"part":"motor","pin":"D9"}},{"ruleId":"SAF-PIN-CURRENT","severity":"error","kind":"static","componentIds":[],"pinIds":["D9"],"messageKey":"safety:SAF-PIN-CURRENT","params":{"pin":"D9","ma":150.1,"limit":40}}],
-  "damaged": {"parts":[],"pins":["D9"]},
-  "final": {"slice":1000,"pins":{"D9":{"mode":"output","level":1,"volts":0.012179628930922682}},"parts":{"motor":{"rpm":0.5784998593466363,"currentMa":-0.005536194980780848,"volts":0.012179628930922682,"torqueNm":-0.00005303697220669224,"damaged":false}}},
+  "staticFindings": [
+    {
+      "ruleId": "SAF-INDUCTIVE-ON-PIN",
+      "severity": "error",
+      "kind": "static",
+      "componentIds": ["motor"],
+      "pinIds": ["D9"],
+      "messageKey": "safety:SAF-INDUCTIVE-ON-PIN",
+      "params": { "part": "motor", "pin": "D9" }
+    },
+    {
+      "ruleId": "SAF-PIN-CURRENT",
+      "severity": "error",
+      "kind": "static",
+      "componentIds": [],
+      "pinIds": ["D9"],
+      "messageKey": "safety:SAF-PIN-CURRENT",
+      "params": { "pin": "D9", "ma": 150.1, "limit": 40 }
+    }
+  ],
+  "damaged": { "parts": [], "pins": ["D9"] },
+  "final": {
+    "slice": 1000,
+    "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.012179628930922682 } },
+    "parts": {
+      "motor": {
+        "rpm": 0.5784998593466363,
+        "currentMa": -0.005536194980780848,
+        "volts": 0.012179628930922682,
+        "torqueNm": -0.00005303697220669224,
+        "damaged": false
+      }
+    }
+  },
   "serial": "",
   "trace": {
     "intervalSlices": 100,
     "serial": [],
-    "findings": [{"slice":55,"ruleId":"SAF-PIN-CURRENT","severity":"error","kind":"runtime","componentIds":[],"pinIds":["D9"],"messageKey":"safety:SAF-PIN-CURRENT","params":{"pin":"D9","ma":128.6,"limit":40}}],
+    "findings": [
+      {
+        "slice": 55,
+        "ruleId": "SAF-PIN-CURRENT",
+        "severity": "error",
+        "kind": "runtime",
+        "componentIds": [],
+        "pinIds": ["D9"],
+        "messageKey": "safety:SAF-PIN-CURRENT",
+        "params": { "pin": "D9", "ma": 128.6, "limit": 40 }
+      }
+    ],
     "samples": [
-      {"slice":0,"pins":{"D9":{"mode":"input","level":0,"volts":0}},"parts":{"motor":{"rpm":0,"currentMa":0,"volts":0,"torqueNm":0,"damaged":false}}},
-      {"slice":100,"pins":{"D9":{"mode":"output","level":1,"volts":0.9376148882037958}},"parts":{"motor":{"rpm":44.534114636065006,"currentMa":-0.42618858648479474,"volts":0.9376148882037958,"torqueNm":-0.004082895849588185,"damaged":false}}},
-      {"slice":200,"pins":{"D9":{"mode":"output","level":1,"volts":0.578661756024149}},"parts":{"motor":{"rpm":27.4848886093189,"currentMa":-0.26302807149872953,"volts":0.578661756024149,"torqueNm":-0.0025198195811539825,"damaged":false}}},
-      {"slice":300,"pins":{"D9":{"mode":"output","level":1,"volts":0.3571296763360811}},"parts":{"motor":{"rpm":16.962706228627397,"currentMa":-0.16233167141898472,"volts":0.3571296763360811,"torqueNm":-0.0015551439888232149,"damaged":false}}},
-      {"slice":400,"pins":{"D9":{"mode":"output","level":1,"volts":0.2204078710839406}},"parts":{"motor":{"rpm":10.468785473195187,"currentMa":-0.10018539616765362,"volts":0.2204078710839406,"torqueNm":-0.0009597801541503607,"damaged":false}}},
-      {"slice":500,"pins":{"D9":{"mode":"output","level":1,"volts":0.13602798325294307}},"parts":{"motor":{"rpm":6.460966062705223,"currentMa":-0.06183090161463848,"volts":0.13602798325294307,"torqueNm":-0.0005923425424564388,"damaged":false}}},
-      {"slice":600,"pins":{"D9":{"mode":"output","level":1,"volts":0.08395168529318335}},"parts":{"motor":{"rpm":3.987480933078022,"currentMa":-0.03815985703539867,"volts":0.08395168529318335,"torqueNm":-0.0003655729763897029,"damaged":false}}},
-      {"slice":700,"pins":{"D9":{"mode":"output","level":1,"volts":0.051812026430327944}},"parts":{"motor":{"rpm":2.4609329374813926,"currentMa":-0.023550921156506546,"volts":0.051812026430327944,"torqueNm":-0.00022561877881032718,"damaged":false}}},
-      {"slice":800,"pins":{"D9":{"mode":"output","level":1,"volts":0.03197655977556646}},"parts":{"motor":{"rpm":1.5188012243615316,"currentMa":-0.014534799929961314,"volts":0.03197655977556646,"torqueNm":-0.00013924397218510937,"damaged":false}}},
-      {"slice":900,"pins":{"D9":{"mode":"output","level":1,"volts":0.019734807639140223}},"parts":{"motor":{"rpm":0.9373506785982736,"currentMa":-0.008970367128434908,"volts":0.019734807639140223,"torqueNm":-0.00008593648051166084,"damaged":false}}},
-      {"slice":1000,"pins":{"D9":{"mode":"output","level":1,"volts":0.012179628930922682}},"parts":{"motor":{"rpm":0.5784998593466363,"currentMa":-0.005536194980780848,"volts":0.012179628930922682,"torqueNm":-0.00005303697220669224,"damaged":false}}}
+      {
+        "slice": 0,
+        "pins": { "D9": { "mode": "input", "level": 0, "volts": 0 } },
+        "parts": { "motor": { "rpm": 0, "currentMa": 0, "volts": 0, "torqueNm": 0, "damaged": false } }
+      },
+      {
+        "slice": 100,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.9376148882037958 } },
+        "parts": {
+          "motor": {
+            "rpm": 44.534114636065006,
+            "currentMa": -0.42618858648479474,
+            "volts": 0.9376148882037958,
+            "torqueNm": -0.004082895849588185,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 200,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.578661756024149 } },
+        "parts": {
+          "motor": {
+            "rpm": 27.4848886093189,
+            "currentMa": -0.26302807149872953,
+            "volts": 0.578661756024149,
+            "torqueNm": -0.0025198195811539825,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 300,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.3571296763360811 } },
+        "parts": {
+          "motor": {
+            "rpm": 16.962706228627397,
+            "currentMa": -0.16233167141898472,
+            "volts": 0.3571296763360811,
+            "torqueNm": -0.0015551439888232149,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 400,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.2204078710839406 } },
+        "parts": {
+          "motor": {
+            "rpm": 10.468785473195187,
+            "currentMa": -0.10018539616765362,
+            "volts": 0.2204078710839406,
+            "torqueNm": -0.0009597801541503607,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 500,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.13602798325294307 } },
+        "parts": {
+          "motor": {
+            "rpm": 6.460966062705223,
+            "currentMa": -0.06183090161463848,
+            "volts": 0.13602798325294307,
+            "torqueNm": -0.0005923425424564388,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 600,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.08395168529318335 } },
+        "parts": {
+          "motor": {
+            "rpm": 3.987480933078022,
+            "currentMa": -0.03815985703539867,
+            "volts": 0.08395168529318335,
+            "torqueNm": -0.0003655729763897029,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 700,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.051812026430327944 } },
+        "parts": {
+          "motor": {
+            "rpm": 2.4609329374813926,
+            "currentMa": -0.023550921156506546,
+            "volts": 0.051812026430327944,
+            "torqueNm": -0.00022561877881032718,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 800,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.03197655977556646 } },
+        "parts": {
+          "motor": {
+            "rpm": 1.5188012243615316,
+            "currentMa": -0.014534799929961314,
+            "volts": 0.03197655977556646,
+            "torqueNm": -0.00013924397218510937,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 900,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.019734807639140223 } },
+        "parts": {
+          "motor": {
+            "rpm": 0.9373506785982736,
+            "currentMa": -0.008970367128434908,
+            "volts": 0.019734807639140223,
+            "torqueNm": -0.00008593648051166084,
+            "damaged": false
+          }
+        }
+      },
+      {
+        "slice": 1000,
+        "pins": { "D9": { "mode": "output", "level": 1, "volts": 0.012179628930922682 } },
+        "parts": {
+          "motor": {
+            "rpm": 0.5784998593466363,
+            "currentMa": -0.005536194980780848,
+            "volts": 0.012179628930922682,
+            "torqueNm": -0.00005303697220669224,
+            "damaged": false
+          }
+        }
+      }
     ]
   }
 }
