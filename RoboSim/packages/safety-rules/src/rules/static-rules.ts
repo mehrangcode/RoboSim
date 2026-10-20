@@ -18,6 +18,7 @@ import {
   signalGroups,
   supplies,
 } from '../helpers.js';
+import { CODE_RULES } from './code-rules.js';
 
 const PIN_WARN_MA = 20;
 const PIN_ERROR_MA = 40;
@@ -66,7 +67,7 @@ export const ledNoResistor: StaticRule = {
           flagged.set(f.componentId, pin);
     };
     scan(ctx.idle.faults, null);
-    for (const { pin } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin } of drivableMcuPins(ctx.circuit, ctx.code)) {
       scan(ctx.drive(pin, 1).faults, pin);
       scan(ctx.drive(pin, 0).faults, pin);
     }
@@ -195,7 +196,7 @@ export const pinCurrent: StaticRule = {
   kind: 'static',
   check(ctx) {
     const out: Finding[] = [];
-    for (const { pin } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin } of drivableMcuPins(ctx.circuit, ctx.code)) {
       const ma = Math.max(
         Math.abs(ctx.drive(pin, 1).pinCurrentMa(pin)),
         Math.abs(ctx.drive(pin, 0).pinCurrentMa(pin)),
@@ -223,7 +224,7 @@ export const mcuTotalCurrent: StaticRule = {
   check(ctx) {
     if (!ctx.board) return [];
     let total = 0;
-    for (const { pin } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin } of drivableMcuPins(ctx.circuit, ctx.code)) {
       total += Math.max(
         Math.abs(ctx.drive(pin, 1).pinCurrentMa(pin)),
         Math.abs(ctx.drive(pin, 0).pinCurrentMa(pin)),
@@ -355,7 +356,7 @@ export const capacitorStress: StaticRule = {
       }
     };
     scan(ctx.idle.faults, null);
-    for (const { pin } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin } of drivableMcuPins(ctx.circuit, ctx.code)) {
       scan(ctx.drive(pin, 1).faults, pin);
       scan(ctx.drive(pin, 0).faults, pin);
     }
@@ -382,7 +383,7 @@ export const baseNoResistor: StaticRule = {
     const bjts = ctx.circuit.parts.filter((p) => hasTrait(p, 'bjt'));
     if (bjts.length === 0) return [];
     const out: Finding[] = [];
-    for (const { pin, net } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin, net } of drivableMcuPins(ctx.circuit, ctx.code)) {
       const direct = bjts.filter((p) => p.pins['b'] === net);
       if (direct.length === 0) continue;
       const ma = Math.max(
@@ -423,7 +424,7 @@ export const mosfetGate: StaticRule = {
           });
     };
     scan(ctx.idle.faults, null);
-    for (const { pin } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin } of drivableMcuPins(ctx.circuit, ctx.code)) {
       scan(ctx.drive(pin, 1).faults, pin);
       scan(ctx.drive(pin, 0).faults, pin);
     }
@@ -464,7 +465,7 @@ export const flyback: StaticRule = {
     let ceiling = 0;
     for (let net = 1; net <= ctx.circuit.netCount; net++) ceiling = Math.max(ceiling, ctx.idle.volts(net));
     const flagged = new Map<string, { pin: string; volts: number; switchId: string }>();
-    for (const { pin, net } of drivableMcuPins(ctx.circuit)) {
+    for (const { pin, net } of drivableMcuPins(ctx.circuit, ctx.code)) {
       if (!controls.has(group(net))) continue;
       for (const [from, to] of [
         [1, 0],
@@ -655,4 +656,5 @@ export const STATIC_RULES: readonly StaticRule[] = [
   i2cPullUp,
   i2cAddress,
   i2cLevel,
+  ...CODE_RULES,
 ];

@@ -87,6 +87,8 @@ export interface FindingView {
   readonly pinIds: readonly string[];
   readonly messageKey: string;
   readonly params: Readonly<Record<string, string | number>>;
+  /** Sketch lines (file, 1-based line and column) of a code-aware finding. */
+  readonly codeRefs?: readonly { readonly file: string; readonly line: number; readonly column: number }[];
 }
 
 /** A user interaction, stamped with the slice it was applied at (the simulation was at that slice). */

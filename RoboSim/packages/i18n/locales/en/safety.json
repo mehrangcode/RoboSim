@@ -69,6 +69,26 @@
     "why": "Gates are wired in a loop that feeds an output back to an input of opposite sense, so the circuit oscillates instead of holding a value.",
     "fix": "Break the feedback loop, or add a clock or latch where you meant to store a value."
   },
+  "SAF-CODE-FLOATING-INPUT": {
+    "title": "Pin {pin} is read but nothing pulls it HIGH or LOW",
+    "why": "When the switch or sensor is not connecting it, the pin floats and digitalRead returns random values.",
+    "fix": "Use pinMode({pinArg}, INPUT_PULLUP), or add a 10 kΩ pull-up or pull-down resistor."
+  },
+  "SAF-CODE-OUTPUT-CONFLICT": {
+    "title": "The code drives pin {pin}, but {other} drives the same wire",
+    "why": "Two outputs on one wire fight: when one is HIGH and the other LOW, a large current flows through both and can destroy them.",
+    "fix": "Read this pin as an input (pinMode INPUT), or wire the output to a free pin."
+  },
+  "SAF-CODE-PWM-PIN": {
+    "title": "analogWrite on pin {pin}, which has no PWM",
+    "why": "Only pins {pwmPins} have hardware PWM on the Uno; on other pins analogWrite just switches the pin fully on or off.",
+    "fix": "Move the wire and the code to one of the PWM pins {pwmPins}."
+  },
+  "SAF-CODE-SERVO-PWM": {
+    "title": "analogWrite on pin {pin} stops working while a servo is attached",
+    "why": "The Servo library uses Timer1, which also makes the PWM on pins 9 and 10.",
+    "fix": "Use another PWM pin (3, 5, 6 or 11) for analogWrite."
+  },
   "codes": {
     "OVER_CURRENT": "over-current",
     "SHORT_CIRCUIT": "short circuit",

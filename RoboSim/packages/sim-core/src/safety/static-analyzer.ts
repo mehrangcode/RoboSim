@@ -9,7 +9,15 @@ import type {
   UartPort,
   Unsubscribe,
 } from '../contracts.js';
-import type { BoardInfo, Finding, StaticContext, StaticProbe, StaticRule, TransitionProbe } from './types.js';
+import type {
+  BoardInfo,
+  CodeFacts,
+  Finding,
+  StaticContext,
+  StaticProbe,
+  StaticRule,
+  TransitionProbe,
+} from './types.js';
 import type { Fault } from '../contracts.js';
 
 /** Slices to let state-dependent models (regulators, batteries) settle before reading the operating point. */
@@ -63,6 +71,7 @@ function probe(
     volts: (net: NetId) => solution.voltage(net),
     pinCurrentMa: (pin: string) => (sim.mcuBus?.pinCurrent(solution, pin) ?? 0) * 1000,
     faults: sim.snapshot().faults,
+    netResistance: (net: NetId) => sim.netResistance(net),
   };
 }
 
@@ -106,6 +115,7 @@ export function analyzeCircuit(
   circuit: AssembledCircuit,
   rules: readonly StaticRule[],
   board: BoardInfo | null,
+  code: CodeFacts | null = null,
 ): Finding[] {
   const inputs = new Map<PinId, PinOutput>(
     circuit.mcuPins.map(({ pin }) => [pin, { mode: 'input', level: 0 }]),
@@ -116,6 +126,7 @@ export function analyzeCircuit(
   const ctx: StaticContext = {
     circuit,
     board,
+    code,
     idle,
     drive(pin: string, level: Level): StaticProbe {
       const key = `${pin}:${level}`;

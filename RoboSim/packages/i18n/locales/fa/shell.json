@@ -271,6 +271,7 @@
       "failed": "{count, plural, =0 {ساخت ناموفق بود.} other {# خطا — آن‌ها را برطرف کنید و دوباره کامپایل کنید.}}",
       "unreachable": "دسترسی به سرویس ساخت ممکن نشد: {message}",
       "diagnostics": "پیام‌های کامپایلر",
+      "safety": "بررسی‌های ایمنی در کد",
       "location": "{file}، خط {line}، ستون {column}",
       "severity": {
         "error": "خطا",

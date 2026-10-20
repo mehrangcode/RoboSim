@@ -291,6 +291,7 @@ export function EditorPage({
       onFilesChange={setFiles}
       state={run.build}
       modified={current !== doc}
+      findings={scene?.staticFindings}
     />
   ) : null;
   const canvas = (

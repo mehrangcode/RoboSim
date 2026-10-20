@@ -18,6 +18,7 @@
     "grade": "node --enable-source-maps dist/main.js"
   },
   "dependencies": {
+    "@robosim/code-analysis": "workspace:*",
     "@robosim/sim-runtime": "workspace:*",
     "zod": "^4.6.6"
   },

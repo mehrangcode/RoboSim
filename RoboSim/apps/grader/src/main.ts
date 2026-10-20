@@ -3,6 +3,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
+import { initCodeAnalysis } from '@robosim/code-analysis';
+import { nodeCodeAnalysisWasm } from '@robosim/code-analysis/node';
 import { MAX_SIM_SECONDS, grade, traceDigest } from '@robosim/sim-runtime';
 import { parseGradeJob } from './job.js';
 
@@ -49,6 +51,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
       JSON.parse(await readFile(file, 'utf8')),
       cap === undefined ? undefined : Number(cap),
     );
+    await initCodeAnalysis(nodeCodeAnalysisWasm()); // code-aware safety rules (FR-SAF-03)
     const started = performance.now();
     const result = grade(job);
     const wallMs = performance.now() - started;

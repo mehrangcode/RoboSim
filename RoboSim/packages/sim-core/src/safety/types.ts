@@ -17,6 +17,41 @@ export interface Finding {
   readonly learnMoreSlug: string;
   /** Static (wiring, before Run) or runtime (observed while running). */
   readonly kind: 'static' | 'runtime';
+  /** Sketch lines the finding is about (code-aware rules, FR-SAF-03); the editor marks them. */
+  readonly codeRefs?: readonly CodeRef[];
+}
+
+/** A position in the sketch: file name as in the project, 1-based line and column. */
+export interface CodeRef {
+  readonly file: string;
+  readonly line: number;
+  readonly column: number;
+}
+
+/** How a sketch uses a pin (FR-COD-06). `servo` is `Servo.attach`; `tone` drives the pin like an output. */
+export type PinUseKind =
+  'pinMode' | 'digitalWrite' | 'digitalRead' | 'analogWrite' | 'analogRead' | 'servo' | 'tone';
+
+export interface PinUse {
+  /** Board pin id: 'D0'…'D13', 'A0'…'A5'. */
+  readonly pin: string;
+  readonly use: PinUseKind;
+  /** `pinMode` only. */
+  readonly mode?: 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP';
+  readonly at: CodeRef;
+}
+
+/** Pin usage extracted from the sketch (`@robosim/code-analysis`), input to the code-aware rules. */
+export interface CodeFacts {
+  readonly uses: readonly PinUse[];
+  /**
+   * Pin calls whose pin or mode is not a compile-time constant (a variable, an array element), and direct
+   * port register access (`DDRB`, `PORTD`). While any remain the pin set is incomplete, so rules that need
+   * every output stay conservative.
+   */
+  readonly unresolved: readonly { readonly call: string; readonly at: CodeRef }[];
+  /** Library `#include`s, e.g. 'Servo.h' (the project's own files are left out): libraries drive pins without calls the analysis sees. */
+  readonly includes: readonly string[];
 }
 
 export interface BoardInfo {
@@ -34,6 +69,8 @@ export interface StaticProbe {
   pinCurrentMa(pin: string): number;
   /** Faults reported by component models in this probe. */
   readonly faults: readonly Fault[];
+  /** Small-signal resistance from `net` to ground (Ω); very large means the net floats. */
+  netResistance(net: NetId): number;
 }
 
 /** What happens right after a pin switches (reactive circuits): extreme voltages and faults. */
@@ -46,6 +83,8 @@ export interface TransitionProbe {
 export interface StaticContext {
   readonly circuit: AssembledCircuit;
   readonly board: BoardInfo | null;
+  /** Pin usage of the sketch, when the project has one (code-aware rules). */
+  readonly code: CodeFacts | null;
   /** Power-on state: every MCU pin high-impedance, before any firmware runs. */
   readonly idle: StaticProbe;
   /** Worst case for one pin: driven as an output at `level`, every other MCU pin high-impedance. */

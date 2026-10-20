@@ -13,6 +13,7 @@ describe('engine version', () => {
     expect(ENGINE_PACKAGES['sim-core']).toBe(version('sim-core'));
     expect(ENGINE_PACKAGES['board-avr-uno']).toBe(version('boards/avr-uno'));
     expect(ENGINE_PACKAGES['safety-rules']).toBe(version('safety-rules'));
+    expect(ENGINE_PACKAGES['code-analysis']).toBe(version('code-analysis'));
     expect(ENGINE_PACKAGES['sim-runtime']).toBe(version('sim-runtime'));
     for (const dir of readdirSync(join(packages, 'components')))
       expect(version(`components/${dir}`), dir).toBe(ENGINE_PACKAGES.components);
@@ -20,7 +21,7 @@ describe('engine version', () => {
 
   it('is one readable string', () => {
     expect(ENGINE_VERSION).toBe(
-      'sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0',
+      'sim-core@0.5.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.4.0+code-analysis@0.1.0+sim-runtime@0.6.0',
     );
   });
 });

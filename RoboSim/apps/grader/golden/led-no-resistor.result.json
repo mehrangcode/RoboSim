@@ -1,93 +1,25 @@
 {
-  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "engineVersion": "sim-core@0.5.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.4.0+code-analysis@0.1.0+sim-runtime@0.6.0",
   "seed": 1,
   "outcome": "unresolved",
   "endSlice": 500,
   "challenge": null,
   "score": null,
-  "staticFindings": [
-    {
-      "ruleId": "SAF-LED-NO-RESISTOR",
-      "severity": "error",
-      "kind": "static",
-      "componentIds": ["led"],
-      "pinIds": ["D13"],
-      "messageKey": "safety:SAF-LED-NO-RESISTOR",
-      "params": { "part": "led" }
-    },
-    {
-      "ruleId": "SAF-PIN-CURRENT",
-      "severity": "error",
-      "kind": "static",
-      "componentIds": [],
-      "pinIds": ["D13"],
-      "messageKey": "safety:SAF-PIN-CURRENT",
-      "params": { "pin": "D13", "ma": 91.4, "limit": 40 }
-    }
-  ],
-  "damaged": { "parts": ["led"], "pins": ["D13"] },
-  "final": {
-    "slice": 500,
-    "pins": { "D13": { "mode": "output", "level": 1, "volts": 0 } },
-    "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": true } }
-  },
+  "staticFindings": [{"ruleId":"SAF-LED-NO-RESISTOR","severity":"error","kind":"static","componentIds":["led"],"pinIds":["D13"],"messageKey":"safety:SAF-LED-NO-RESISTOR","params":{"part":"led"}},{"ruleId":"SAF-PIN-CURRENT","severity":"error","kind":"static","componentIds":[],"pinIds":["D13"],"messageKey":"safety:SAF-PIN-CURRENT","params":{"pin":"D13","ma":91.4,"limit":40}}],
+  "damaged": {"parts":["led"],"pins":["D13"]},
+  "final": {"slice":500,"pins":{"D13":{"mode":"output","level":1,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":true}}},
   "serial": "",
   "trace": {
     "intervalSlices": 100,
     "serial": [],
-    "findings": [
-      {
-        "slice": 55,
-        "ruleId": "SAF-COMPONENT-FAULT",
-        "severity": "error",
-        "kind": "runtime",
-        "componentIds": ["led"],
-        "pinIds": [],
-        "messageKey": "safety:SAF-COMPONENT-FAULT",
-        "params": { "part": "led", "code": "OVER_CURRENT" }
-      },
-      {
-        "slice": 55,
-        "ruleId": "SAF-PIN-CURRENT",
-        "severity": "error",
-        "kind": "runtime",
-        "componentIds": [],
-        "pinIds": ["D13"],
-        "messageKey": "safety:SAF-PIN-CURRENT",
-        "params": { "pin": "D13", "ma": 91.4, "limit": 40 }
-      }
-    ],
+    "findings": [{"slice":55,"ruleId":"SAF-COMPONENT-FAULT","severity":"error","kind":"runtime","componentIds":["led"],"pinIds":[],"messageKey":"safety:SAF-COMPONENT-FAULT","params":{"part":"led","code":"OVER_CURRENT"}},{"slice":55,"ruleId":"SAF-PIN-CURRENT","severity":"error","kind":"runtime","componentIds":[],"pinIds":["D13"],"messageKey":"safety:SAF-PIN-CURRENT","params":{"pin":"D13","ma":91.4,"limit":40}}],
     "samples": [
-      {
-        "slice": 0,
-        "pins": { "D13": { "mode": "input", "level": 0, "volts": 0 } },
-        "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": false } }
-      },
-      {
-        "slice": 100,
-        "pins": { "D13": { "mode": "output", "level": 1, "volts": 0 } },
-        "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": true } }
-      },
-      {
-        "slice": 200,
-        "pins": { "D13": { "mode": "output", "level": 1, "volts": 0 } },
-        "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": true } }
-      },
-      {
-        "slice": 300,
-        "pins": { "D13": { "mode": "output", "level": 1, "volts": 0 } },
-        "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": true } }
-      },
-      {
-        "slice": 400,
-        "pins": { "D13": { "mode": "output", "level": 1, "volts": 0 } },
-        "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": true } }
-      },
-      {
-        "slice": 500,
-        "pins": { "D13": { "mode": "output", "level": 1, "volts": 0 } },
-        "parts": { "led": { "color": "red", "currentMa": 0, "brightness": 0, "damaged": true } }
-      }
+      {"slice":0,"pins":{"D13":{"mode":"input","level":0,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":100,"pins":{"D13":{"mode":"output","level":1,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":true}}},
+      {"slice":200,"pins":{"D13":{"mode":"output","level":1,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":true}}},
+      {"slice":300,"pins":{"D13":{"mode":"output","level":1,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":true}}},
+      {"slice":400,"pins":{"D13":{"mode":"output","level":1,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":true}}},
+      {"slice":500,"pins":{"D13":{"mode":"output","level":1,"volts":0}},"parts":{"led":{"color":"red","currentMa":0,"brightness":0,"damaged":true}}}
     ]
   }
 }

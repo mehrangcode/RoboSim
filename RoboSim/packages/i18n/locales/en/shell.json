@@ -271,6 +271,7 @@
       "failed": "{count, plural, =0 {The build failed.} one {# error — fix it and compile again.} other {# errors — fix them and compile again.}}",
       "unreachable": "The build service could not be reached: {message}",
       "diagnostics": "Compiler messages",
+      "safety": "Safety checks in the code",
       "location": "{file}, line {line}, column {column}",
       "severity": {
         "error": "Error",

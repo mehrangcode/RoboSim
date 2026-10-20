@@ -5,5 +5,12 @@
     "noEmit": true,
     "lib": ["ES2023", "DOM"]
   },
-  "include": ["src/golden.ts", "src/job.ts", "test/**/*.browser.test.ts", "test/**/*.worker.ts"]
+  "include": [
+    "src/golden.ts",
+    "src/job.ts",
+    "test/**/*.browser.test.ts",
+    "test/**/*.worker.ts",
+    "test/**/*.browser.ts",
+    "test/url-imports.d.ts"
+  ]
 }

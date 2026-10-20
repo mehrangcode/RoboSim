@@ -216,6 +216,7 @@ RoboSim/
 │   ├── components/       # One package per simulated part
 │   ├── catalog/          # Parts registry with EN/FA names
 │   ├── safety-rules/     # Safety checker rules
+│   ├── code-analysis/    # Sketch pin-usage analysis (tree-sitter C++, WASM)
 │   ├── circuit-canvas/   # Breadboard circuit editor (React)
 │   ├── renderer-2d/      # Canvas 2D arena renderer
 │   ├── content/          # Arenas and challenges

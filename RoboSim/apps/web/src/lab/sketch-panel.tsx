@@ -1,4 +1,5 @@
 import type { BuildDiagnostic } from '@robosim/shared';
+import type { FindingView } from '@robosim/sim-runtime/client';
 import { Button, Card, cn } from '@robosim/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,7 @@ export function SketchPanel({
   modified,
   fill = false,
   title,
+  findings = [],
 }: {
   files: readonly SketchFile[];
   onChange: (name: string, content: string) => void;
@@ -37,6 +39,8 @@ export function SketchPanel({
   /** Fill the parent's height (workspace pane) instead of a fixed-height editor. */
   fill?: boolean;
   title?: string | undefined;
+  /** Safety findings of the loaded run; code-aware ones (FR-SAF-03) are marked on their sketch lines. */
+  findings?: readonly FindingView[] | undefined;
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
@@ -45,9 +49,25 @@ export function SketchPanel({
   const active = files.some((f) => f.name === selected) ? selected : main;
   const [reveal, setReveal] = useState<RevealRequest | null>(null);
   const diagnostics = state.status === 'done' ? state.result.diagnostics : [];
+  // One marker per sketch line a code-aware finding points at, titled like the Safety panel.
+  const inCode = findings.flatMap((f) =>
+    (f.codeRefs ?? [])
+      .filter((r) => files.some((file) => file.name === r.file))
+      .map((r) => ({ finding: f, ...r, title: t(`${f.messageKey}.title`, f.params) })),
+  );
+  const markers: BuildDiagnostic[] = [
+    ...diagnostics,
+    ...inCode.map((c) => ({
+      file: c.file,
+      line: c.line,
+      column: c.column,
+      severity: c.finding.severity,
+      message: c.title,
+    })),
+  ];
 
   /** Opens the diagnostic's file and puts the caret on its line. */
-  const show = (d: BuildDiagnostic) => {
+  const show = (d: Pick<BuildDiagnostic, 'file' | 'line' | 'column'>) => {
     if (d.line < 1 || !files.some((f) => f.name === d.file)) return;
     setSelected(d.file);
     setReveal((r) => ({ file: d.file, line: d.line, column: d.column, seq: (r?.seq ?? 0) + 1 }));
@@ -80,7 +100,7 @@ export function SketchPanel({
         onActiveChange={setSelected}
         onChange={onChange}
         onFilesChange={onFilesChange}
-        diagnostics={diagnostics}
+        diagnostics={markers}
         reveal={reveal}
         label={t('shell:lab.sketch.editor')}
         className={fill ? 'min-h-0 flex-1' : 'h-72'}
@@ -136,6 +156,38 @@ export function SketchPanel({
                 </code>
               </button>
               {d.explanationKey && <p className="mt-1 text-ink">{t(`build:explain.${d.explanationKey}`)}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {inCode.length > 0 && (
+        <ul
+          aria-label={t('shell:lab.sketch.safety')}
+          className={cn('mt-2 flex flex-col gap-2', fill && 'max-h-[40%] overflow-y-auto')}
+        >
+          {inCode.map((c, k) => (
+            <li key={k} className="rounded-md border border-line p-2 text-sm">
+              <button
+                type="button"
+                onClick={() => show(c)}
+                className={cn(
+                  'flex w-full flex-wrap items-baseline gap-x-2 text-start',
+                  c.finding.severity === 'error' && 'text-danger',
+                )}
+              >
+                <span aria-hidden>{SEVERITY_ICON[c.finding.severity]}</span>
+                <span className="font-semibold">{t(`shell:lab.sketch.severity.${c.finding.severity}`)}</span>
+                <span className="text-ink-muted">
+                  {t('shell:lab.sketch.location', {
+                    file: c.file,
+                    line: fmt(c.line, 0),
+                    column: fmt(c.column, 0),
+                  })}
+                </span>
+                <span>{c.title}</span>
+              </button>
+              <p className="mt-1 text-ink">{t(`${c.finding.messageKey}.fix`, c.finding.params)}</p>
             </li>
           ))}
         </ul>

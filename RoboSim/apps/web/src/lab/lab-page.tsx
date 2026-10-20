@@ -205,6 +205,7 @@ export function LabPage({
             }}
             state={build.state}
             modified={draft !== mainFile.content}
+            findings={scene?.staticFindings}
           />
         </div>
       )}

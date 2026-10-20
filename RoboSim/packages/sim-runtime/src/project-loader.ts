@@ -1,5 +1,6 @@
 import { UNO_BODY, UNO_ELECTRICAL, UNO_MCU_PINS, avrUno } from '@robosim/board-avr-uno';
 import { findDefinition } from '@robosim/catalog';
+import { analyzeSketch } from '@robosim/code-analysis';
 import { chassisGeometry, type Chassis2wdProps } from '@robosim/component-chassis-2wd';
 import { mountProblem } from '@robosim/component-chassis-2wd/mounting';
 import { ARENAS, startPoseProblem } from '@robosim/content';
@@ -95,6 +96,7 @@ export function findingView(f: Finding): FindingView {
     pinIds: f.pinIds,
     messageKey: f.messageKey,
     params: f.params,
+    ...(f.codeRefs ? { codeRefs: f.codeRefs } : {}),
   };
 }
 
@@ -344,7 +346,9 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
   };
 
   // Safety: static analysis before running, runtime monitor while running (Technical Design §5.6).
-  const staticFindings = analyzeCircuit(circuit.assembled, STATIC_RULES, UNO_BOARD).map(findingView);
+  // Code-aware rules (FR-SAF-03) read the sketch's pin usage; the host has awaited initCodeAnalysis().
+  const code = doc.code.files.length > 0 ? analyzeSketch(doc.code.files) : null;
+  const staticFindings = analyzeCircuit(circuit.assembled, STATIC_RULES, UNO_BOARD, code).map(findingView);
   const safety = new SafetyMonitor(circuit.sim, circuit.assembled, UNO_BOARD, RUNTIME_RULES);
   circuit.sim.addObserver(safety);
 

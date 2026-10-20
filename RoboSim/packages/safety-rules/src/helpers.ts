@@ -1,4 +1,4 @@
-import type { AssembledCircuit, AssembledPart, NetId } from '@robosim/sim-core';
+import type { AssembledCircuit, AssembledPart, CodeFacts, NetId } from '@robosim/sim-core';
 
 export interface NetUser {
   readonly partId: string | null; // null = MCU pin
@@ -28,12 +28,36 @@ export function wiredMcuPins(circuit: AssembledCircuit): { pin: string; net: Net
  * `output` pin (a sensor output, a comparator) is an input by design — driving it would fight that
  * output — so worst-case drive probes skip it until code analysis knows the real pin modes (FR-SAF-03).
  */
-export function drivableMcuPins(circuit: AssembledCircuit): { pin: string; net: NetId }[] {
+export function drivableMcuPins(
+  circuit: AssembledCircuit,
+  code: CodeFacts | null = null,
+): { pin: string; net: NetId }[] {
   const outputNets = new Set<NetId>();
   for (const p of circuit.parts) {
     for (const pin of p.def.manifest.pins) if (pin.kind === 'output') outputNets.add(p.pins[pin.name] ?? -1);
   }
-  return wiredMcuPins(circuit).filter((m) => !outputNets.has(m.net));
+  const outputs = code && codeIsComplete(code) ? codeOutputPins(code) : null;
+  return wiredMcuPins(circuit).filter((m) => !outputNets.has(m.net) && (!outputs || outputs.has(m.pin)));
+}
+
+/** Libraries whose pin use the analysis sees (`Servo.attach`) or that only use the I²C pins. */
+const KNOWN_INCLUDES = new Set(['Arduino.h', 'Servo.h', 'Wire.h', 'EEPROM.h']);
+
+/**
+ * True when the sketch names every pin it drives: no unresolved pin calls or port registers, and no
+ * library that could drive pins internally (LiquidCrystal, SPI, SoftwareSerial…).
+ */
+export function codeIsComplete(code: CodeFacts): boolean {
+  return code.unresolved.length === 0 && code.includes.every((i) => KNOWN_INCLUDES.has(i));
+}
+
+/** Pins the sketch drives as outputs: pinMode(OUTPUT), analogWrite, tone and Servo.attach set the pin to output. */
+export function codeOutputPins(code: CodeFacts): Set<string> {
+  return new Set(
+    code.uses
+      .filter((u) => u.mode === 'OUTPUT' || u.use === 'analogWrite' || u.use === 'tone' || u.use === 'servo')
+      .map((u) => u.pin),
+  );
 }
 
 /** Enabled supply outputs (battery +, regulator out with its jumper fitted). */

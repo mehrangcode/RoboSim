@@ -1,161 +1,30 @@
 {
-  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "engineVersion": "sim-core@0.5.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.4.0+code-analysis@0.1.0+sim-runtime@0.6.0",
   "seed": 1,
   "outcome": "unresolved",
   "endSlice": 1000,
   "challenge": null,
   "score": null,
-  "staticFindings": [],
-  "damaged": { "parts": [], "pins": ["D2", "D3"] },
-  "final": {
-    "slice": 1000,
-    "pins": {
-      "D2": { "mode": "output", "level": 1, "volts": 0 },
-      "D3": { "mode": "output", "level": 0, "volts": 0 }
-    },
-    "parts": {
-      "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-      "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-    }
-  },
+  "staticFindings": [{"ruleId":"SAF-CODE-OUTPUT-CONFLICT","severity":"error","kind":"static","componentIds":[],"pinIds":["D2","D3"],"messageKey":"safety:SAF-CODE-OUTPUT-CONFLICT","params":{"pin":"D2","other":"D3"},"codeRefs":[{"file":"sketch.ino","line":1,"column":16},{"file":"sketch.ino","line":1,"column":56},{"file":"sketch.ino","line":1,"column":36},{"file":"sketch.ino","line":1,"column":79}]}],
+  "damaged": {"parts":[],"pins":["D2","D3"]},
+  "final": {"slice":1000,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
   "serial": "",
   "trace": {
     "intervalSlices": 100,
     "serial": [],
-    "findings": [
-      {
-        "slice": 15,
-        "ruleId": "SAF-OUTPUTS-FIGHTING",
-        "severity": "error",
-        "kind": "runtime",
-        "componentIds": [],
-        "pinIds": ["D2", "D3"],
-        "messageKey": "safety:SAF-OUTPUTS-FIGHTING",
-        "params": { "pins": "D2, D3" }
-      }
-    ],
+    "findings": [{"slice":15,"ruleId":"SAF-OUTPUTS-FIGHTING","severity":"error","kind":"runtime","componentIds":[],"pinIds":["D2","D3"],"messageKey":"safety:SAF-OUTPUTS-FIGHTING","params":{"pins":"D2, D3"}}],
     "samples": [
-      {
-        "slice": 0,
-        "pins": {
-          "D2": { "mode": "input", "level": 0, "volts": 0 },
-          "D3": { "mode": "input", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 100,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 200,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 300,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 400,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 500,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 600,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 700,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 800,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 900,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      },
-      {
-        "slice": 1000,
-        "pins": {
-          "D2": { "mode": "output", "level": 1, "volts": 0 },
-          "D3": { "mode": "output", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "r1": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "led": { "color": "green", "currentMa": 0, "brightness": 0, "damaged": false }
-        }
-      }
+      {"slice":0,"pins":{"D2":{"mode":"input","level":0,"volts":0},"D3":{"mode":"input","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":100,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":200,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":300,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":400,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":500,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":600,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":700,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":800,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":900,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}},
+      {"slice":1000,"pins":{"D2":{"mode":"output","level":1,"volts":0},"D3":{"mode":"output","level":0,"volts":0}},"parts":{"r1":{"currentMa":0,"powerMw":0,"damaged":false},"led":{"color":"green","currentMa":0,"brightness":0,"damaged":false}}}
     ]
   }
 }

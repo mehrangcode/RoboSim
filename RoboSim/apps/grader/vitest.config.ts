@@ -7,5 +7,6 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     exclude: ['test/**/*.browser.test.ts', 'test/**/*.long.test.ts'],
     testTimeout: 60_000,
+    setupFiles: ['./test/setup.ts'],
   },
 });

@@ -4,9 +4,13 @@
 // budget is exceeded. ROBOSIM_PERF_SCALE scales every budget for machines slower than the reference.
 import { buildNetlist, type NetlistInput } from '@robosim/sim-core';
 import type { ProjectDocument } from '@robosim/shared';
+import { initCodeAnalysis } from '@robosim/code-analysis';
+import { nodeCodeAnalysisWasm } from '@robosim/code-analysis/node';
 import { buildRun, builtinSource } from '@robosim/sim-runtime';
 
 const SCALE = Number(process.env['ROBOSIM_PERF_SCALE'] ?? 1);
+
+await initCodeAnalysis(nodeCodeAnalysisWasm()); // loading a project runs the code-aware safety rules
 
 const median = (samples: number[]): number =>
   [...samples].sort((a, b) => a - b)[Math.floor(samples.length / 2)] ?? NaN;

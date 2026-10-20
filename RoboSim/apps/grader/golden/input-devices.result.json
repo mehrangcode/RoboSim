@@ -1,181 +1,24 @@
 {
-  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "engineVersion": "sim-core@0.5.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.4.0+code-analysis@0.1.0+sim-runtime@0.6.0",
   "seed": 1,
   "outcome": "unresolved",
   "endSlice": 400,
   "challenge": null,
   "score": null,
   "staticFindings": [],
-  "damaged": { "parts": [], "pins": [] },
-  "final": {
-    "slice": 400,
-    "pins": {
-      "D2": { "mode": "input", "level": 1, "volts": 4.999899956998137 },
-      "D3": { "mode": "input", "level": 1, "volts": 4.999899956998136 },
-      "D4": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-      "D5": { "mode": "input_pullup", "level": 0, "volts": 0.000014285673469502947 },
-      "A0": { "mode": "input", "level": 1, "volts": 4.999400066985438 },
-      "A1": { "mode": "input", "level": 0, "volts": 2.499949997248693 }
-    },
-    "parts": {
-      "enc": { "detents": 1, "a": false, "b": false, "pressed": false },
-      "joy": { "x": 1, "y": 0, "pressed": true }
-    }
-  },
+  "damaged": {"parts":[],"pins":[]},
+  "final": {"slice":400,"pins":{"D2":{"mode":"input","level":1,"volts":4.999899956998137},"D3":{"mode":"input","level":1,"volts":4.999899956998136},"D4":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"D5":{"mode":"input_pullup","level":0,"volts":0.000014285673469502947},"A0":{"mode":"input","level":1,"volts":4.999400066985438},"A1":{"mode":"input","level":0,"volts":2.499949997248693}},"parts":{"enc":{"detents":1,"a":false,"b":false,"pressed":false},"joy":{"x":1,"y":0,"pressed":true}}},
   "serial": "x 7 y 7\r\ncount 1\r\ncount 2\r\ncount 3\r\ncount 2\r\ncount 1\r\nx 15 y 7 pressed\r\n",
   "trace": {
     "intervalSlices": 100,
-    "serial": [
-      { "slice": 1, "text": "x" },
-      { "slice": 2, "text": " " },
-      { "slice": 3, "text": "7" },
-      { "slice": 4, "text": " " },
-      { "slice": 5, "text": "y" },
-      { "slice": 6, "text": " " },
-      { "slice": 7, "text": "7" },
-      { "slice": 8, "text": "\r" },
-      { "slice": 9, "text": "\n" },
-      { "slice": 52, "text": "c" },
-      { "slice": 53, "text": "o" },
-      { "slice": 54, "text": "u" },
-      { "slice": 55, "text": "n" },
-      { "slice": 56, "text": "t" },
-      { "slice": 57, "text": " " },
-      { "slice": 58, "text": "1" },
-      { "slice": 59, "text": "\r" },
-      { "slice": 60, "text": "\n" },
-      { "slice": 61, "text": "c" },
-      { "slice": 62, "text": "o" },
-      { "slice": 63, "text": "u" },
-      { "slice": 64, "text": "n" },
-      { "slice": 65, "text": "t" },
-      { "slice": 66, "text": " " },
-      { "slice": 67, "text": "2" },
-      { "slice": 68, "text": "\r" },
-      { "slice": 69, "text": "\n" },
-      { "slice": 70, "text": "c" },
-      { "slice": 71, "text": "o" },
-      { "slice": 72, "text": "u" },
-      { "slice": 73, "text": "n" },
-      { "slice": 74, "text": "t" },
-      { "slice": 76, "text": " " },
-      { "slice": 77, "text": "3" },
-      { "slice": 78, "text": "\r" },
-      { "slice": 79, "text": "\n" },
-      { "slice": 154, "text": "c" },
-      { "slice": 155, "text": "o" },
-      { "slice": 156, "text": "u" },
-      { "slice": 157, "text": "n" },
-      { "slice": 158, "text": "t" },
-      { "slice": 159, "text": " " },
-      { "slice": 160, "text": "2" },
-      { "slice": 161, "text": "\r" },
-      { "slice": 162, "text": "\n" },
-      { "slice": 163, "text": "c" },
-      { "slice": 164, "text": "o" },
-      { "slice": 165, "text": "u" },
-      { "slice": 166, "text": "n" },
-      { "slice": 167, "text": "t" },
-      { "slice": 168, "text": " " },
-      { "slice": 169, "text": "1" },
-      { "slice": 170, "text": "\r" },
-      { "slice": 171, "text": "\n" },
-      { "slice": 252, "text": "x" },
-      { "slice": 253, "text": " " },
-      { "slice": 254, "text": "1" },
-      { "slice": 255, "text": "5" },
-      { "slice": 256, "text": " " },
-      { "slice": 257, "text": "y" },
-      { "slice": 258, "text": " " },
-      { "slice": 259, "text": "7" },
-      { "slice": 260, "text": " " },
-      { "slice": 261, "text": "p" },
-      { "slice": 262, "text": "r" },
-      { "slice": 263, "text": "e" },
-      { "slice": 264, "text": "s" },
-      { "slice": 265, "text": "s" },
-      { "slice": 266, "text": "e" },
-      { "slice": 267, "text": "d" },
-      { "slice": 269, "text": "\r" },
-      { "slice": 270, "text": "\n" }
-    ],
+    "serial": [{"slice":1,"text":"x"},{"slice":2,"text":" "},{"slice":3,"text":"7"},{"slice":4,"text":" "},{"slice":5,"text":"y"},{"slice":6,"text":" "},{"slice":7,"text":"7"},{"slice":8,"text":"\r"},{"slice":9,"text":"\n"},{"slice":52,"text":"c"},{"slice":53,"text":"o"},{"slice":54,"text":"u"},{"slice":55,"text":"n"},{"slice":56,"text":"t"},{"slice":57,"text":" "},{"slice":58,"text":"1"},{"slice":59,"text":"\r"},{"slice":60,"text":"\n"},{"slice":61,"text":"c"},{"slice":62,"text":"o"},{"slice":63,"text":"u"},{"slice":64,"text":"n"},{"slice":65,"text":"t"},{"slice":66,"text":" "},{"slice":67,"text":"2"},{"slice":68,"text":"\r"},{"slice":69,"text":"\n"},{"slice":70,"text":"c"},{"slice":71,"text":"o"},{"slice":72,"text":"u"},{"slice":73,"text":"n"},{"slice":74,"text":"t"},{"slice":76,"text":" "},{"slice":77,"text":"3"},{"slice":78,"text":"\r"},{"slice":79,"text":"\n"},{"slice":154,"text":"c"},{"slice":155,"text":"o"},{"slice":156,"text":"u"},{"slice":157,"text":"n"},{"slice":158,"text":"t"},{"slice":159,"text":" "},{"slice":160,"text":"2"},{"slice":161,"text":"\r"},{"slice":162,"text":"\n"},{"slice":163,"text":"c"},{"slice":164,"text":"o"},{"slice":165,"text":"u"},{"slice":166,"text":"n"},{"slice":167,"text":"t"},{"slice":168,"text":" "},{"slice":169,"text":"1"},{"slice":170,"text":"\r"},{"slice":171,"text":"\n"},{"slice":252,"text":"x"},{"slice":253,"text":" "},{"slice":254,"text":"1"},{"slice":255,"text":"5"},{"slice":256,"text":" "},{"slice":257,"text":"y"},{"slice":258,"text":" "},{"slice":259,"text":"7"},{"slice":260,"text":" "},{"slice":261,"text":"p"},{"slice":262,"text":"r"},{"slice":263,"text":"e"},{"slice":264,"text":"s"},{"slice":265,"text":"s"},{"slice":266,"text":"e"},{"slice":267,"text":"d"},{"slice":269,"text":"\r"},{"slice":270,"text":"\n"}],
     "findings": [],
     "samples": [
-      {
-        "slice": 0,
-        "pins": {
-          "D2": { "mode": "input", "level": 0, "volts": 0 },
-          "D3": { "mode": "input", "level": 0, "volts": 0 },
-          "D4": { "mode": "input", "level": 0, "volts": 0 },
-          "D5": { "mode": "input", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 0, "volts": 0 },
-          "A1": { "mode": "input", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "enc": { "detents": 0, "a": false, "b": false, "pressed": false },
-          "joy": { "x": 0, "y": 0, "pressed": false }
-        }
-      },
-      {
-        "slice": 100,
-        "pins": {
-          "D2": { "mode": "input", "level": 1, "volts": 4.999899951999211 },
-          "D3": { "mode": "input", "level": 1, "volts": 4.999899951999211 },
-          "D4": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-          "D5": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-          "A0": { "mode": "input", "level": 0, "volts": 2.49994999474923 },
-          "A1": { "mode": "input", "level": 0, "volts": 2.49994999474923 }
-        },
-        "parts": {
-          "enc": { "detents": 3, "a": false, "b": false, "pressed": false },
-          "joy": { "x": 0, "y": 0, "pressed": false }
-        }
-      },
-      {
-        "slice": 200,
-        "pins": {
-          "D2": { "mode": "input", "level": 1, "volts": 4.999899951999211 },
-          "D3": { "mode": "input", "level": 1, "volts": 4.999899951999211 },
-          "D4": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-          "D5": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-          "A0": { "mode": "input", "level": 0, "volts": 2.49994999474923 },
-          "A1": { "mode": "input", "level": 0, "volts": 2.49994999474923 }
-        },
-        "parts": {
-          "enc": { "detents": 1, "a": false, "b": false, "pressed": false },
-          "joy": { "x": 0, "y": 0, "pressed": false }
-        }
-      },
-      {
-        "slice": 300,
-        "pins": {
-          "D2": { "mode": "input", "level": 1, "volts": 4.999899956998137 },
-          "D3": { "mode": "input", "level": 1, "volts": 4.999899956998136 },
-          "D4": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-          "D5": { "mode": "input_pullup", "level": 0, "volts": 0.000014285673469502947 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.999400066985438 },
-          "A1": { "mode": "input", "level": 0, "volts": 2.499949997248693 }
-        },
-        "parts": {
-          "enc": { "detents": 1, "a": false, "b": false, "pressed": false },
-          "joy": { "x": 1, "y": 0, "pressed": true }
-        }
-      },
-      {
-        "slice": 400,
-        "pins": {
-          "D2": { "mode": "input", "level": 1, "volts": 4.999899956998137 },
-          "D3": { "mode": "input", "level": 1, "volts": 4.999899956998136 },
-          "D4": { "mode": "input_pullup", "level": 1, "volts": 4.999999825000007 },
-          "D5": { "mode": "input_pullup", "level": 0, "volts": 0.000014285673469502947 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.999400066985438 },
-          "A1": { "mode": "input", "level": 0, "volts": 2.499949997248693 }
-        },
-        "parts": {
-          "enc": { "detents": 1, "a": false, "b": false, "pressed": false },
-          "joy": { "x": 1, "y": 0, "pressed": true }
-        }
-      }
+      {"slice":0,"pins":{"D2":{"mode":"input","level":0,"volts":0},"D3":{"mode":"input","level":0,"volts":0},"D4":{"mode":"input","level":0,"volts":0},"D5":{"mode":"input","level":0,"volts":0},"A0":{"mode":"input","level":0,"volts":0},"A1":{"mode":"input","level":0,"volts":0}},"parts":{"enc":{"detents":0,"a":false,"b":false,"pressed":false},"joy":{"x":0,"y":0,"pressed":false}}},
+      {"slice":100,"pins":{"D2":{"mode":"input","level":1,"volts":4.999899951999211},"D3":{"mode":"input","level":1,"volts":4.999899951999211},"D4":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"D5":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"A0":{"mode":"input","level":0,"volts":2.49994999474923},"A1":{"mode":"input","level":0,"volts":2.49994999474923}},"parts":{"enc":{"detents":3,"a":false,"b":false,"pressed":false},"joy":{"x":0,"y":0,"pressed":false}}},
+      {"slice":200,"pins":{"D2":{"mode":"input","level":1,"volts":4.999899951999211},"D3":{"mode":"input","level":1,"volts":4.999899951999211},"D4":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"D5":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"A0":{"mode":"input","level":0,"volts":2.49994999474923},"A1":{"mode":"input","level":0,"volts":2.49994999474923}},"parts":{"enc":{"detents":1,"a":false,"b":false,"pressed":false},"joy":{"x":0,"y":0,"pressed":false}}},
+      {"slice":300,"pins":{"D2":{"mode":"input","level":1,"volts":4.999899956998137},"D3":{"mode":"input","level":1,"volts":4.999899956998136},"D4":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"D5":{"mode":"input_pullup","level":0,"volts":0.000014285673469502947},"A0":{"mode":"input","level":1,"volts":4.999400066985438},"A1":{"mode":"input","level":0,"volts":2.499949997248693}},"parts":{"enc":{"detents":1,"a":false,"b":false,"pressed":false},"joy":{"x":1,"y":0,"pressed":true}}},
+      {"slice":400,"pins":{"D2":{"mode":"input","level":1,"volts":4.999899956998137},"D3":{"mode":"input","level":1,"volts":4.999899956998136},"D4":{"mode":"input_pullup","level":1,"volts":4.999999825000007},"D5":{"mode":"input_pullup","level":0,"volts":0.000014285673469502947},"A0":{"mode":"input","level":1,"volts":4.999400066985438},"A1":{"mode":"input","level":0,"volts":2.499949997248693}},"parts":{"enc":{"detents":1,"a":false,"b":false,"pressed":false},"joy":{"x":1,"y":0,"pressed":true}}}
     ]
   }
 }

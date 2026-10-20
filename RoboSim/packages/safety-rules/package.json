@@ -1,6 +1,6 @@
 {
   "name": "@robosim/safety-rules",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@robosim/board-avr-uno": "workspace:*",
     "@robosim/catalog": "workspace:*",
+    "@robosim/code-analysis": "workspace:*",
     "@robosim/config": "workspace:*",
     "@robosim/test-fixtures": "workspace:*",
     "eslint": "^10.12.0",

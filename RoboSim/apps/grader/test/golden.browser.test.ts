@@ -3,6 +3,7 @@ import { commands } from 'vitest/browser';
 import { ENGINE_VERSION, grade, type GradeJob, type GradeResult } from '@robosim/sim-runtime';
 import { GOLDEN_FIXTURES, firstDifference } from '../src/golden.js';
 import { parseGradeJob } from '../src/job.js';
+import { codeAnalysisReady } from './code-analysis.browser.js';
 
 /*
  * Golden traces in the browser (P1 exit: Node, Chrome and Firefox): every committed job graded on the
@@ -10,10 +11,13 @@ import { parseGradeJob } from '../src/job.js';
  * the committed result bit for bit. Recording stays in Node (`pnpm golden:update`).
  */
 const read = async (file: string): Promise<unknown> => JSON.parse(await commands.readFile(`golden/${file}`));
-const golden = async (name: string) => ({
-  job: parseGradeJob(await read(`${name}.job.json`)),
-  recorded: (await read(`${name}.result.json`)) as GradeResult,
-});
+async function golden(name: string) {
+  await codeAnalysisReady; // loading a project runs the code-aware safety rules
+  return {
+    job: parseGradeJob(await read(`${name}.job.json`)),
+    recorded: (await read(`${name}.result.json`)) as GradeResult,
+  };
+}
 
 describe.each(GOLDEN_FIXTURES)('golden trace $name in the browser', ({ name }) => {
   it('reproduces the committed result bit for bit', async () => {

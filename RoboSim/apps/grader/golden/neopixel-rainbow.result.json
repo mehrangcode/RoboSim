@@ -1,174 +1,28 @@
 {
-  "engineVersion": "sim-core@0.4.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.3.0+sim-runtime@0.5.0",
+  "engineVersion": "sim-core@0.5.0+board-avr-uno@0.4.0+components@0.3.0+safety-rules@0.4.0+code-analysis@0.1.0+sim-runtime@0.6.0",
   "seed": 1,
   "outcome": "unresolved",
   "endSlice": 800,
   "challenge": null,
   "score": null,
   "staticFindings": [],
-  "damaged": { "parts": [], "pins": [] },
-  "final": {
-    "slice": 800,
-    "pins": {
-      "D6": { "mode": "output", "level": 0, "volts": 0 },
-      "A0": { "mode": "input", "level": 0, "volts": 0.500207474567834 }
-    },
-    "parts": {
-      "pot": { "position": 0.9, "wiperV": 0.500207474567834 },
-      "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-      "strip": {
-        "powered": true,
-        "colors": [7424, 7429, 3101, 29, 983069, 1900548, 1900800, 1776896],
-        "currentMa": 18.729411764705883
-      }
-    }
-  },
+  "damaged": {"parts":[],"pins":[]},
+  "final": {"slice":800,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":0,"volts":0.500207474567834}},"parts":{"pot":{"position":0.9,"wiperV":0.500207474567834},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[7424,7429,3101,29,983069,1900548,1900800,1776896],"currentMa":18.729411764705883}}},
   "serial": "",
   "trace": {
     "intervalSlices": 100,
     "serial": [],
     "findings": [],
     "samples": [
-      {
-        "slice": 0,
-        "pins": {
-          "D6": { "mode": "input", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 0, "volts": 0 }
-        },
-        "parts": {
-          "pot": { "position": 0, "wiperV": 0 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": { "powered": false, "colors": [0, 0, 0, 0, 0, 0, 0, 0], "currentMa": 0 }
-        }
-      },
-      {
-        "slice": 100,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.9867973894833995 }
-        },
-        "parts": {
-          "pot": { "position": 0, "wiperV": 4.9867973894833995 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [16646656, 16700928, 851456, 65053, 37886, 254, 6226174, 16646200],
-            "currentMa": 126.54117647058821
-          }
-        }
-      },
-      {
-        "slice": 200,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.986820916307472 }
-        },
-        "parts": {
-          "pot": { "position": 0, "wiperV": 4.986820916307472 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [16652800, 10223104, 65024, 65113, 15614, 131326, 13435134, 16646157],
-            "currentMa": 126.30588235294118
-          }
-        }
-      },
-      {
-        "slice": 300,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.986835032401916 }
-        },
-        "parts": {
-          "pot": { "position": 0, "wiperV": 4.986835032401916 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [16667648, 4259328, 65025, 65220, 4094, 1573118, 16646307, 16646144],
-            "currentMa": 126.16470588235296
-          }
-        }
-      },
-      {
-        "slice": 400,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.986844443131544 }
-        },
-        "parts": {
-          "pot": { "position": 0, "wiperV": 4.986844443131544 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [16694016, 1179136, 65045, 44030, 254, 5177598, 16646213, 16646400],
-            "currentMa": 126.07058823529412
-          }
-        }
-      },
-      {
-        "slice": 500,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 1, "volts": 4.9868491484963595 }
-        },
-        "parts": {
-          "pot": { "position": 0.9, "wiperV": 4.9868491484963595 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [11795968, 65024, 65098, 19198, 254, 11731198, 16646163, 16651008],
-            "currentMa": 126.0235294117647
-          }
-        }
-      },
-      {
-        "slice": 600,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 0, "volts": 0.5002079455277555 }
-        },
-        "parts": {
-          "pot": { "position": 0.9, "wiperV": 0.5002079455277555 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [597248, 7424, 7444, 541, 131101, 1900566, 1900544, 1902592],
-            "currentMa": 18.682352941176468
-          }
-        }
-      },
-      {
-        "slice": 700,
-        "pins": {
-          "D6": { "mode": "output", "level": 1, "volts": 4.99999999975 },
-          "A0": { "mode": "input", "level": 0, "volts": 0.5002079455277555 }
-        },
-        "parts": {
-          "pot": { "position": 0.9, "wiperV": 0.5002079455277555 },
-          "rd": { "currentMa": 5.000000413701855e-9, "powerMw": 8.250001365216178e-18, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [204032, 7425, 6685, 29, 393245, 1900555, 1900544, 1904640],
-            "currentMa": 18.682352941176468
-          }
-        }
-      },
-      {
-        "slice": 800,
-        "pins": {
-          "D6": { "mode": "output", "level": 0, "volts": 0 },
-          "A0": { "mode": "input", "level": 0, "volts": 0.500207474567834 }
-        },
-        "parts": {
-          "pot": { "position": 0.9, "wiperV": 0.500207474567834 },
-          "rd": { "currentMa": 0, "powerMw": 0, "damaged": false },
-          "strip": {
-            "powered": true,
-            "colors": [7424, 7429, 3101, 29, 983069, 1900548, 1900800, 1776896],
-            "currentMa": 18.729411764705883
-          }
-        }
-      }
+      {"slice":0,"pins":{"D6":{"mode":"input","level":0,"volts":0},"A0":{"mode":"input","level":0,"volts":0}},"parts":{"pot":{"position":0,"wiperV":0},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":false,"colors":[0,0,0,0,0,0,0,0],"currentMa":0}}},
+      {"slice":100,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":1,"volts":4.9867973894833995}},"parts":{"pot":{"position":0,"wiperV":4.9867973894833995},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[16646656,16700928,851456,65053,37886,254,6226174,16646200],"currentMa":126.54117647058821}}},
+      {"slice":200,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":1,"volts":4.986820916307472}},"parts":{"pot":{"position":0,"wiperV":4.986820916307472},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[16652800,10223104,65024,65113,15614,131326,13435134,16646157],"currentMa":126.30588235294118}}},
+      {"slice":300,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":1,"volts":4.986835032401916}},"parts":{"pot":{"position":0,"wiperV":4.986835032401916},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[16667648,4259328,65025,65220,4094,1573118,16646307,16646144],"currentMa":126.16470588235296}}},
+      {"slice":400,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":1,"volts":4.986844443131544}},"parts":{"pot":{"position":0,"wiperV":4.986844443131544},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[16694016,1179136,65045,44030,254,5177598,16646213,16646400],"currentMa":126.07058823529412}}},
+      {"slice":500,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":1,"volts":4.9868491484963595}},"parts":{"pot":{"position":0.9,"wiperV":4.9868491484963595},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[11795968,65024,65098,19198,254,11731198,16646163,16651008],"currentMa":126.0235294117647}}},
+      {"slice":600,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":0,"volts":0.5002079455277555}},"parts":{"pot":{"position":0.9,"wiperV":0.5002079455277555},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[597248,7424,7444,541,131101,1900566,1900544,1902592],"currentMa":18.682352941176468}}},
+      {"slice":700,"pins":{"D6":{"mode":"output","level":1,"volts":4.99999999975},"A0":{"mode":"input","level":0,"volts":0.5002079455277555}},"parts":{"pot":{"position":0.9,"wiperV":0.5002079455277555},"rd":{"currentMa":5.000000413701855e-9,"powerMw":8.250001365216178e-18,"damaged":false},"strip":{"powered":true,"colors":[204032,7425,6685,29,393245,1900555,1900544,1904640],"currentMa":18.682352941176468}}},
+      {"slice":800,"pins":{"D6":{"mode":"output","level":0,"volts":0},"A0":{"mode":"input","level":0,"volts":0.500207474567834}},"parts":{"pot":{"position":0.9,"wiperV":0.500207474567834},"rd":{"currentMa":0,"powerMw":0,"damaged":false},"strip":{"powered":true,"colors":[7424,7429,3101,29,983069,1900548,1900800,1776896],"currentMa":18.729411764705883}}}
     ]
   }
 }
