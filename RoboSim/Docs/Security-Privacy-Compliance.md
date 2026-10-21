@@ -97,6 +97,8 @@ Authorization = **role** (platform or workspace) × **resource relationship** (o
 | Teacher of the class (assignment projects) | ✓ | ✓ | — | — | — |
 | org_admin (org-owned projects) | ✓ | — | — | ✓ (policy) | ✓ |
 
+*Enforced (2026-10-21):* by `ProjectsService` / `SharingService` access checks **and** RLS policies (`projects_shared_read`, `projects_shared_edit`, `project_shares_*`), so a bug in one layer does not open another user's project. Viewers (share role `view` or a link) can also copy the project into their own workspace, credited to the owner. Share-link tokens are HMAC-derived and stored hashed (§9); `SHARE_LINK_SECRET` must be a private value outside local and test.
+
 ## 5. Untrusted code execution sandbox
 
 User C++ is untrusted input executed by the compiler toolchain (preprocessor, compiler, linker can all be abused). Controls, all mandatory:

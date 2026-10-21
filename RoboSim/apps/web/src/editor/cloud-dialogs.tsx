@@ -8,7 +8,7 @@ import type { CloudConflict, CloudSync } from './use-cloud-sync.js';
 
 const STAMP = { dateStyle: 'medium', timeStyle: 'short' } as const;
 
-function Modal({
+export function Modal({
   id,
   title,
   onClose,

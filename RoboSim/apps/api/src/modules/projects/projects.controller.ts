@@ -4,8 +4,14 @@ import {
   parseIfMatch,
   projectEtag,
   projectListQuerySchema,
+  shareLinkRequestSchema,
+  shareRequestSchema,
   updateProjectSchema,
   type CreateVersionInput,
+  type ProjectSharing,
+  type ShareLinkRequest,
+  type ShareRequest,
+  type SharedProjectList,
   type Project,
   type ProjectListQuery,
   type ProjectPage,
@@ -33,12 +39,63 @@ import type { FastifyReply } from 'fastify';
 import type { z } from 'zod';
 import { CallerGuard, CallerScope, type Caller } from '../iam/index.js';
 import { ProjectsService } from './projects.service.js';
+import { SharingService } from './sharing.service.js';
 
 /** API Spec §4.4. Mutations of the project need `If-Match` with the ETag from the last response. */
 @Controller('projects')
 @UseGuards(CallerGuard)
 export class ProjectsController {
-  constructor(private readonly projects: ProjectsService) {}
+  constructor(
+    private readonly projects: ProjectsService,
+    private readonly sharing: SharingService,
+  ) {}
+
+  /** Projects other people shared with the caller (FR-PRJ-04). */
+  @Get('shared')
+  async shared(@CallerScope() caller: Caller): Promise<SharedProjectList> {
+    return { items: await this.sharing.sharedWithMe(caller) };
+  }
+
+  @Get(':id/shares')
+  shares(@CallerScope() caller: Caller, @Param('id') id: string): Promise<ProjectSharing> {
+    return this.sharing.sharing(caller, id);
+  }
+
+  /** Shares with a RoboSim user by email, or changes their role. */
+  @Put(':id/shares')
+  share(
+    @CallerScope() caller: Caller,
+    @Param('id') id: string,
+    @Body({ schema: shareRequestSchema }) body: ShareRequest,
+  ): Promise<ProjectSharing> {
+    return this.sharing.share(caller, id, body);
+  }
+
+  /** The owner removes a person, or a sharee removes themself. */
+  @Delete(':id/shares/:userId')
+  @HttpCode(204)
+  async unshare(
+    @CallerScope() caller: Caller,
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ): Promise<void> {
+    await this.sharing.unshare(caller, id, userId);
+  }
+
+  @Post(':id/share-link')
+  @HttpCode(200)
+  setLink(
+    @CallerScope() caller: Caller,
+    @Param('id') id: string,
+    @Body({ schema: shareLinkRequestSchema }) body: ShareLinkRequest,
+  ): Promise<ProjectSharing> {
+    return this.sharing.setLink(caller, id, body);
+  }
+
+  @Delete(':id/share-link')
+  removeLink(@CallerScope() caller: Caller, @Param('id') id: string): Promise<ProjectSharing> {
+    return this.sharing.removeLink(caller, id);
+  }
 
   @Get()
   list(

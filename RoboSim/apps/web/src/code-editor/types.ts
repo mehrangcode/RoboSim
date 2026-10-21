@@ -21,4 +21,6 @@ export interface EditorImplProps {
   readonly diagnostics: readonly BuildDiagnostic[];
   readonly reveal: RevealRequest | null;
   readonly label: string;
+  /** Shown but not editable (a project shared with the caller read-only). */
+  readonly readOnly?: boolean | undefined;
 }

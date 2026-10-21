@@ -1,0 +1,60 @@
+{
+  "button": "Share",
+  "dialog": {
+    "title": "Share “{name}”",
+    "close": "Close"
+  },
+  "link": {
+    "title": "Anyone with the link",
+    "off": "Off: only the people below can open this project.",
+    "enable": "Create a link",
+    "disable": "Turn off the link",
+    "label": "Share link",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "regenerate": "New link",
+    "regenerateHint": "Making a new link stops the old one from working.",
+    "remixable": "Let visitors remix it (copy it into their own account)",
+    "viewOnly": "Visitors can open and run the project but not change it."
+  },
+  "people": {
+    "title": "People",
+    "email": "Email of a RoboSim user",
+    "role": "Access",
+    "add": "Share",
+    "remove": "Remove",
+    "none": "Not shared with anyone yet.",
+    "notFound": "No RoboSim account uses this email.",
+    "self": "That's your own account."
+  },
+  "role": {
+    "view": "Can view",
+    "edit": "Can edit"
+  },
+  "tabs": {
+    "label": "Which projects",
+    "mine": "My projects",
+    "shared": "Shared with me"
+  },
+  "sharedList": {
+    "empty": "Nothing has been shared with you yet.",
+    "by": "by {owner}",
+    "leave": "Remove from my list"
+  },
+  "viewer": {
+    "banner": "Shared by {owner} · read-only",
+    "editBanner": "Shared by {owner} · you can edit",
+    "remix": "Remix",
+    "copy": "Make a copy",
+    "remixSignIn": "Sign in to remix",
+    "notRemixable": "The owner hasn't allowed remixes.",
+    "missing": "This link no longer works. Ask the owner for a new one.",
+    "opening": "Opening the shared project…",
+    "copyFailed": "Could not make a copy: {message}"
+  },
+  "remixedFrom": "Remixed from “{name}” by {author}",
+  "mail": {
+    "subject": "{sharer} shared “{project}” with you",
+    "body": "Hi {name},\n\n{sharer} shared the RoboSim project “{project}” with you ({role}). Open it here:\n{link}\n\nYou'll also find it under “Shared with me” on your projects page."
+  }
+}

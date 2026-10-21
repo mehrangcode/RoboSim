@@ -15,7 +15,15 @@ const darkScheme = () => window.matchMedia('(prefers-color-scheme: dark)');
  * Monaco on the sketch files (FR-COD-01): one model per file (undo history survives tab switches),
  * build diagnostics as inline markers (FR-COD-03), theme follows the system colour scheme.
  */
-export function MonacoEditor({ files, active, onChange, diagnostics, reveal, label }: EditorImplProps) {
+export function MonacoEditor({
+  files,
+  active,
+  onChange,
+  diagnostics,
+  reveal,
+  label,
+  readOnly = false,
+}: EditorImplProps) {
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const models = useRef(new Map<string, monaco.editor.ITextModel>());
@@ -26,6 +34,10 @@ export function MonacoEditor({ files, active, onChange, diagnostics, reveal, lab
     onChangeRef.current = onChange;
   });
   const scope = useId().replace(/[^a-z0-9]/gi, '');
+
+  useEffect(() => {
+    editor.current?.updateOptions({ readOnly });
+  }, [readOnly]);
 
   useEffect(() => {
     const el = host.current;
@@ -47,6 +59,7 @@ export function MonacoEditor({ files, active, onChange, diagnostics, reveal, lab
       renderLineHighlight: 'line',
       fixedOverflowWidgets: true,
       unicodeHighlight: { ambiguousCharacters: true, invisibleCharacters: true },
+      readOnly,
     });
     editor.current = ed;
     const changes = ed.onDidChangeModelContent(() => {

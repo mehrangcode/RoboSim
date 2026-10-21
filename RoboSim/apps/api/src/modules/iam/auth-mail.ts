@@ -1,18 +1,6 @@
-import { createI18n } from '@robosim/i18n';
 import type { Locale } from '@robosim/shared';
+import { i18nFor } from '../../common/i18n.js';
 import type { MailMessage } from './mailer.js';
-
-type I18nInstance = Awaited<ReturnType<typeof createI18n>>;
-
-const instances = new Map<Locale, Promise<I18nInstance>>();
-function i18nFor(locale: Locale): Promise<I18nInstance> {
-  let instance = instances.get(locale);
-  if (!instance) {
-    instance = createI18n({ lng: locale });
-    instances.set(locale, instance);
-  }
-  return instance;
-}
 
 export interface MailRecipient {
   email: string;

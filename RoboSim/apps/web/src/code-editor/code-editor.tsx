@@ -56,6 +56,7 @@ export function CodeEditor({
   reveal,
   label,
   className,
+  readOnly = false,
 }: {
   files: readonly SketchFile[];
   active: string;
@@ -66,6 +67,7 @@ export function CodeEditor({
   reveal: RevealRequest | null;
   label: string;
   className?: string;
+  readOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const [form, setForm] = useState<{ kind: 'new' | 'rename'; name: string } | null>(null);
@@ -93,7 +95,7 @@ export function CodeEditor({
     setConfirmDelete(false);
   };
 
-  const editorProps = { files, active, onChange, diagnostics, reveal, label };
+  const editorProps = { files, active, onChange, diagnostics, reveal, label, readOnly };
   const count = (name: string) => diagnostics.filter((d) => d.file === name && d.severity === 'error').length;
 
   return (

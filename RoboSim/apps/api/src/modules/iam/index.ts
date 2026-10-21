@@ -3,3 +3,5 @@ export { createUserSchema, UsersService, type CreatedUser, type CreateUserInput 
 export { CallerGuard, CallerScope, type Caller } from './caller.guard.js';
 export { SessionsService } from './sessions.service.js';
 export { DevMailSink, MAILER, type Mailer, type MailMessage } from './mailer.js';
+export { normalizeEmail } from './identity-rules.js';
+export { hashSecret } from './http-identity.js';

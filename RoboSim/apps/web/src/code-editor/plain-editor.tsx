@@ -10,7 +10,15 @@ const LINE_MARK = { error: '●', warning: '○', note: '' } as const;
  * Textarea editor with line numbers and diagnostic marks: shown while Monaco loads, and the editor
  * itself where Monaco cannot run (tests).
  */
-export function PlainEditor({ files, active, onChange, diagnostics, reveal, label }: EditorImplProps) {
+export function PlainEditor({
+  files,
+  active,
+  onChange,
+  diagnostics,
+  reveal,
+  label,
+  readOnly = false,
+}: EditorImplProps) {
   const editor = useRef<HTMLTextAreaElement>(null);
   const gutter = useRef<HTMLDivElement>(null);
   const code = files.find((f) => f.name === active)?.content ?? '';
@@ -58,6 +66,7 @@ export function PlainEditor({ files, active, onChange, diagnostics, reveal, labe
       <textarea
         ref={editor}
         value={code}
+        readOnly={readOnly}
         onChange={(e) => onChange(active, e.target.value)}
         onScroll={syncScroll}
         spellCheck={false}

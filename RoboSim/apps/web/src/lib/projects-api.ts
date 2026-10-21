@@ -5,6 +5,11 @@ import {
   type ProjectDocument,
   type ProjectListQueryInput,
   type ProjectPage,
+  type ProjectSharing,
+  type ShareLinkRequest,
+  type ShareRequest,
+  type SharedLink,
+  type SharedProject,
   type ProjectSummary,
   type ProjectVersion,
   type ProjectVersionSummary,
@@ -26,6 +31,15 @@ export interface ProjectsClient {
   checkpoint(id: string, label: string): Promise<ProjectVersionSummary>;
   version(id: string, versionId: string): Promise<ProjectVersion>;
   restoreVersion(id: string, versionId: string, revision: number): Promise<Project>;
+  /** Sharing (FR-PRJ-04): owner-only management, the recipient's list, and share links. */
+  sharing(id: string): Promise<ProjectSharing>;
+  share(id: string, input: ShareRequest): Promise<ProjectSharing>;
+  unshare(id: string, userId: string): Promise<void>;
+  setLink(id: string, input: ShareLinkRequest): Promise<ProjectSharing>;
+  removeLink(id: string): Promise<ProjectSharing>;
+  sharedWithMe(): Promise<SharedProject[]>;
+  openShared(token: string): Promise<SharedLink>;
+  remixShared(token: string): Promise<Project>;
 }
 
 const ifMatch = (revision: number) => ({ 'If-Match': projectEtag(revision) });
@@ -60,5 +74,14 @@ export function projectsApi(locale: string | (() => string)): ProjectsClient {
         lang(),
         ifMatch(revision),
       ),
+    sharing: (id) => apiGet(`${p(id)}/shares`, lang()),
+    share: (id, input) => apiSend('PUT', `${p(id)}/shares`, input, lang()),
+    unshare: (id, userId) =>
+      apiSend('DELETE', `${p(id)}/shares/${encodeURIComponent(userId)}`, undefined, lang()),
+    setLink: (id, input) => apiSend('POST', `${p(id)}/share-link`, input, lang()),
+    removeLink: (id) => apiSend('DELETE', `${p(id)}/share-link`, undefined, lang()),
+    sharedWithMe: async () => (await apiGet<{ items: SharedProject[] }>('/projects/shared', lang())).items,
+    openShared: (token) => apiGet(`/shared/${encodeURIComponent(token)}`, lang()),
+    remixShared: (token) => apiSend('POST', `/shared/${encodeURIComponent(token)}/remix`, undefined, lang()),
   };
 }

@@ -195,7 +195,13 @@ gantt
   - **Mail:** a `Mailer` port with a development sink. Messages (verify, reset, password changed) are FA/EN in the user's language; the web app's **/dev/mail** page shows them with a one-click link.
   - **Web:** Sign in, Create account, Forgot / Reset password, Verify email and Account (profile and language, password, sessions) pages, an account menu in the header, an email-verification banner, and a sign-in prompt on My projects and cloud projects that returns to the page afterwards (FA/EN, RTL).
   - **Development identity:** now opt-in (`DEV_IDENTITY=true`), meant for tests and scripts; local development signs in like production.
-  - **Not yet:** SMS OTP (US-IAM-01 AC1), TOTP and recovery codes (US-IAM-02 AC1), guardian consent (13–15 accounts stay `pending_consent` with a notice), the breached-password list (a short common-password list stands in), the SMTP adapter, `/me/workspaces`, data export and deletion, and a Jalali date picker for the date of birth.
+  - **Not yet (auth):** SMS OTP (US-IAM-01 AC1), TOTP and recovery codes (US-IAM-02 AC1), guardian consent (13–15 accounts stay `pending_consent` with a notice), the breached-password list (a short common-password list stands in), the SMTP adapter, `/me/workspaces`, data export and deletion, and a Jalali date picker for the date of birth.
+
+**Sharing done (2026-10-21):** share links and sharing with people (FR-PRJ-04 without org policy; US-PRJ-03 AC1; API Spec §4.4; pulled forward from P2).
+  - **Links:** the owner turns on a read-only link, optionally remixable, can copy it again at any time, make a new one (the old stops working) or turn it off. Anyone with the link opens the project in the editor read-only and can run it (builds as a guest); **Remix** copies it into the visitor's account with "Remixed from … by …", and asks a signed-out visitor to sign in first.
+  - **People:** share by email with an existing account as **Can view** or **Can edit**, change the role or remove them; the person gets an email (FA/EN) and finds it under **Shared with me** on the projects page, where they can also leave it. Editors save with the usual autosave and conflict handling and take versions; viewers get the read-only editor with **Make a copy**; only the owner deletes, tags or shares.
+  - **Data and security:** migration `0004_sharing` (`project_shares`, link and attribution columns). Access is enforced twice, in the services and by RLS policies for sharees. Link tokens are HMAC-derived from `SHARE_LINK_SECRET` and stored only as a hash; link lookups are limited per address.
+  - **Not yet:** the `comment` role (comments are P4), workspace-wide sharing and org policy limits (US-PRJ-03 AC2, with organizations in P3), invitations for emails without an account, and real-time co-editing (FR-PRJ-08).
 
 ### P2 — Individual product & commerce
 

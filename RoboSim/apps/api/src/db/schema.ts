@@ -239,11 +239,21 @@ export const projects = pgTable(
     document: jsonb().notNull(),
     documentSha256: text().notNull(),
     revision: integer().notNull().default(1),
+    // Share link (FR-PRJ-04): the token is HMAC(secret, id.nonce), so the owner can see it again; only its
+    // SHA-256 is stored for lookup. A new nonce retires the old link.
+    shareLinkNonce: text(),
+    shareTokenHash: text(),
+    linkRemixable: boolean().notNull().default(false),
+    // Attribution of a remix or copy (US-CMY-02 AC1); name and author are kept if the source goes away.
+    remixedFromId: uuid().references((): AnyPgColumn => projects.id, { onDelete: 'set null' }),
+    remixedFromName: text(),
+    remixedFromAuthor: text(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
+    uniqueIndex('projects_share_token_hash_key').on(t.shareTokenHash),
     index('projects_workspace_updated_idx').on(t.workspaceId, t.updatedAt, t.id),
     index('projects_workspace_name_idx').on(t.workspaceId, t.name, t.id),
     index('projects_owner_idx').on(t.ownerUserId),
@@ -321,5 +331,30 @@ export const authTokens = pgTable(
   (t) => [
     uniqueIndex('auth_tokens_token_hash_key').on(t.tokenHash),
     index('auth_tokens_user_purpose_idx').on(t.userId, t.purpose),
+  ],
+);
+
+export const sharePrincipalKindEnum = pgEnum('share_principal_kind', ['user', 'workspace']);
+export const projectShareRoleEnum = pgEnum('project_share_role', ['view', 'comment', 'edit']);
+
+/** People a project is shared with (FR-PRJ-04). `workspace_id` is the project's, for the owner's RLS scope. */
+export const projectShares = pgTable(
+  'project_shares',
+  {
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    principalKind: sharePrincipalKindEnum().notNull(),
+    principalId: uuid().notNull(),
+    role: projectShareRoleEnum().notNull(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'restrict' }),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.projectId, t.principalKind, t.principalId] }),
+    index('project_shares_principal_idx').on(t.principalKind, t.principalId),
   ],
 );

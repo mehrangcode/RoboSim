@@ -6,25 +6,119 @@ import {
   type ProjectSort,
   type ProjectSummary,
 } from '@robosim/shared';
-import { Button, cn } from '@robosim/ui';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, SegmentedControl, cn } from '@robosim/ui';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SignInGate } from '../auth/auth-ui.js';
+import { useAuth } from '../auth/use-auth.js';
 import { starterProject } from '../editor/starter.js';
 import { ApiError } from '../lib/api.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 
 const SORTS: readonly ProjectSort[] = ['-updatedAt', 'name', '-createdAt'];
 
-/** The workspace's cloud projects (FR-PRJ-01 thin): search, sort, open, rename, duplicate, delete and trash. */
+type Tab = 'mine' | 'shared';
+
+/** Cloud projects: the workspace's own, and those other people shared with the caller (FR-PRJ-01, FR-PRJ-04). */
 export function ProjectsPage({ projects: injected }: { projects?: ProjectsClient }) {
   const { t, i18n } = useTranslation();
-  const locale = (i18n.language === 'fa' ? 'fa' : 'en') satisfies Locale;
   // The i18n instance is stable; reading its language per request follows language switches.
   const [fallback] = useState(() => projectsApi(() => i18n.language));
   const client = injected ?? fallback;
+  const [tab, setTab] = useState<Tab>('mine');
+  return (
+    <div className="mx-auto max-w-4xl py-6">
+      <SegmentedControl
+        label={t('share:tabs.label')}
+        value={tab}
+        options={(['mine', 'shared'] as const).map((v) => ({
+          value: v,
+          label: v === 'mine' ? t('share:tabs.mine') : t('share:tabs.shared'),
+        }))}
+        onChange={setTab}
+      />
+      {tab === 'mine' ? <MyProjects client={client} /> : <SharedWithMe client={client} />}
+    </div>
+  );
+}
+
+/** Projects shared with the caller, with the owner and the caller's role; the caller may leave a share. */
+function SharedWithMe({ client }: { client: ProjectsClient }) {
+  const { t, i18n } = useTranslation();
+  const locale = (i18n.language === 'fa' ? 'fa' : 'en') satisfies Locale;
+  const { me } = useAuth();
+  const queryClient = useQueryClient();
+  const shared = useQuery({
+    queryKey: ['projects', 'shared'],
+    queryFn: () => client.sharedWithMe(),
+    retry: false,
+  });
+  if (shared.error instanceof ApiError && shared.error.problem.code === 'unauthenticated')
+    return <SignInGate />;
+  const leave = async (id: string) => {
+    if (me) await client.unshare(id, me.id);
+    await queryClient.invalidateQueries({ queryKey: ['projects', 'shared'] });
+  };
+  return (
+    <div className="mt-4">
+      <h1 className="text-2xl font-bold tracking-tight">{t('share:tabs.shared')}</h1>
+      <div className="mt-4">
+        {shared.isPending ? (
+          <p role="status" className="text-sm text-ink-muted">
+            {t('common:status.loading')}
+          </p>
+        ) : shared.isError ? (
+          <p role="alert" className="text-sm text-danger">
+            {t('shell:projects.loadFailed', {
+              message: shared.error instanceof ApiError ? shared.error.problem.title : shared.error.message,
+            })}
+          </p>
+        ) : shared.data.length === 0 ? (
+          <p className="text-sm text-ink-muted">{t('share:sharedList.empty')}</p>
+        ) : (
+          <ul
+            aria-label={t('share:tabs.shared')}
+            className="divide-y divide-line rounded-md border border-line"
+          >
+            {shared.data.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to="/editor/$projectId"
+                    params={{ projectId: p.id }}
+                    className="block truncate font-medium text-brand-600 hover:underline"
+                  >
+                    {p.name}
+                  </Link>
+                  <span className="block text-xs text-ink-muted">
+                    {t('share:sharedList.by', { owner: p.ownerName })} ·{' '}
+                    {p.role === 'edit' ? t('share:role.edit') : t('share:role.view')} ·{' '}
+                    {t('shell:projects.updatedAt', {
+                      date: formatDate(locale, new Date(p.updatedAt), {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }),
+                    })}
+                  </span>
+                </div>
+                <Button size="sm" variant="secondary" onClick={() => void leave(p.id)}>
+                  {t('share:sharedList.leave')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** The workspace's cloud projects (FR-PRJ-01 thin): search, sort, open, rename, duplicate, delete and trash. */
+function MyProjects({ client }: { client: ProjectsClient }) {
+  const { t, i18n } = useTranslation();
+  const locale = (i18n.language === 'fa' ? 'fa' : 'en') satisfies Locale;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [q, setQ] = useState('');
@@ -110,7 +204,7 @@ export function ProjectsPage({ projects: injected }: { projects?: ProjectsClient
 
   if (signedOut) return <SignInGate />;
   return (
-    <div className="mx-auto max-w-4xl py-6">
+    <div className="mt-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="me-auto text-2xl font-bold tracking-tight">{t('shell:projects.title')}</h1>
         <Button size="sm" onClick={() => void create()} disabled={busy}>

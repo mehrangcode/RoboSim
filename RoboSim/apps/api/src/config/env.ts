@@ -1,6 +1,8 @@
 import { parseFlagOverrides, type FlagOverrides } from '@robosim/shared';
 import { z } from 'zod';
 
+export const DEV_SHARE_LINK_SECRET = 'robosim-development-share-link-secret-not-for-production';
+
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 
 const envSchema = z
@@ -39,6 +41,9 @@ const envSchema = z
     PUBLIC_APP_URL: z.url().default('http://localhost:5173'),
     // `dev` keeps messages in memory and serves them at GET /dev/mail (local and test only). SMTP lands with staging.
     MAIL_TRANSPORT: z.enum(['dev']).default('dev'),
+    // Signs share links (FR-PRJ-04); changing it retires every link. Must be set outside local and test.
+    SHARE_LINK_SECRET: z.string().min(32).default(DEV_SHARE_LINK_SECRET),
+    SHARED_LINK_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(60),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_DRIVER === 'postgres' && !env.DATABASE_URL) {
@@ -68,6 +73,16 @@ const envSchema = z
         code: 'custom',
         path: ['MAIL_TRANSPORT'],
         message: 'the development mail sink is for local and test environments only',
+      });
+    }
+    if (
+      (env.APP_ENV === 'production' || env.APP_ENV === 'staging') &&
+      env.SHARE_LINK_SECRET === DEV_SHARE_LINK_SECRET
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SHARE_LINK_SECRET'],
+        message: 'set a private secret of at least 32 characters',
       });
     }
     if (env.APP_ENV === 'production' && env.DATABASE_DRIVER === 'pglite') {

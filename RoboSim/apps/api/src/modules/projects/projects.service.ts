@@ -7,6 +7,7 @@ import {
   ProjectDocumentError,
   type CreateProjectInput,
   type Project,
+  type ProjectAccess,
   type ProjectDocument,
   type ProjectListQuery,
   type ProjectPage,
@@ -19,8 +20,8 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, isNotNull, isNull, lt, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database, type Tx } from '../../db/client.js';
-import { projects, projectVersions } from '../../db/schema.js';
-import { withScope } from '../../db/scope.js';
+import { projects, projectShares, projectVersions, users } from '../../db/schema.js';
+import { withScope, withSystem } from '../../db/scope.js';
 import { AuditService } from '../audit/index.js';
 import type { Caller } from '../iam/index.js';
 import { OutboxService } from '../outbox/index.js';
@@ -34,11 +35,21 @@ interface Prepared {
 }
 
 const DAY_MS = 86_400_000;
+const RANK: Record<ProjectAccess, number> = { view: 0, edit: 1, owner: 2 };
+
+/** A copy's source, recorded on the copy (US-CMY-02 AC1). */
+export interface Attribution {
+  projectId: string;
+  name: string;
+  author: string;
+}
 
 /**
- * Projects (FR-PRJ-01/02/03 thin, API Spec §4.4). Every query runs under the caller's RLS scope, so another
- * workspace's project is indistinguishable from a missing one. Saves overwrite the working document guarded by
- * `revision` (`If-Match`); versions are immutable snapshots numbered per project.
+ * Projects (FR-PRJ-01/02/03 thin, API Spec §4.4). Every query runs under the caller's RLS scope, so a project
+ * in another workspace that is not shared with the caller is indistinguishable from a missing one. Saves
+ * overwrite the working document guarded by `revision` (`If-Match`); versions are immutable snapshots numbered
+ * per project. Shared projects (FR-PRJ-04, Security §4.3): editors change the document and take versions,
+ * viewers read and copy; only the owner's workspace deletes, restores and shares.
  */
 @Injectable()
 export class ProjectsService {
@@ -104,11 +115,50 @@ export class ProjectsService {
       await this.recordCreated(tx, caller, created);
       return created;
     });
-    return toProject(row);
+    return this.present(row, 'owner');
   }
 
   async get(caller: Caller, id: string): Promise<Project> {
-    return toProject(await withScope(this.database.db, caller, (tx) => this.live(tx, id)));
+    const { row, access } = await withScope(this.database.db, caller, async (tx) => {
+      const found = await this.live(tx, id);
+      return { row: found, access: await this.accessOf(tx, found, caller) };
+    });
+    return this.present(row, access);
+  }
+
+  /** Copies a document into the caller's workspace as a new project, crediting its source. */
+  async createCopy(
+    caller: Caller,
+    source: { document: unknown; name: string; tags: string[] },
+    attribution: Attribution | null,
+    copyOf?: string,
+  ): Promise<Project> {
+    const prepared = prepare(source.document, source.name.slice(0, PROJECT_LIMITS.maxNameLength));
+    const now = new Date();
+    const row = await withScope(this.database.db, caller, async (tx) => {
+      const [created] = await tx
+        .insert(projects)
+        .values({
+          workspaceId: caller.workspaceId,
+          ownerUserId: caller.userId,
+          ...columnsOf(prepared),
+          tags: source.tags,
+          ...(attribution
+            ? {
+                remixedFromId: attribution.projectId,
+                remixedFromName: attribution.name,
+                remixedFromAuthor: attribution.author,
+              }
+            : {}),
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+      if (!created) throw new Error('insert returned no row');
+      await this.recordCreated(tx, caller, created, copyOf);
+      return created;
+    });
+    return this.present(row, 'owner');
   }
 
   async update(
@@ -117,17 +167,18 @@ export class ProjectsService {
     ifMatch: number | undefined,
     input: UpdateProjectInput,
   ): Promise<Project> {
-    return withScope(this.database.db, caller, async (tx) => {
+    const { row, access } = await withScope(this.database.db, caller, async (tx) => {
       const current = await this.live(tx, id);
+      const level = await this.require(tx, current, caller, input.tags ? 'owner' : 'edit');
       checkRevision(current, ifMatch);
       const renamed = input.name === undefined ? undefined : prepare(current.document, input.name);
-      return toProject(
-        await this.write(tx, current, {
-          ...(renamed ? columnsOf(renamed) : {}),
-          ...(input.tags ? { tags: input.tags } : {}),
-        }),
-      );
+      const written = await this.write(tx, current, {
+        ...(renamed ? columnsOf(renamed) : {}),
+        ...(input.tags ? { tags: input.tags } : {}),
+      });
+      return { row: written, access: level };
     });
+    return this.present(row, access);
   }
 
   /** `PUT /projects/:id/document`: validates (and migrates) the document; its `meta.title` names the project. */
@@ -140,6 +191,7 @@ export class ProjectsService {
     const prepared = prepare(document);
     return withScope(this.database.db, caller, async (tx) => {
       const current = await this.live(tx, id);
+      await this.require(tx, current, caller, 'edit');
       checkRevision(current, ifMatch);
       if (current.documentSha256 === prepared.sha256) return toSummary(current);
       return toSummary(await this.write(tx, current, columnsOf(prepared)));
@@ -150,6 +202,7 @@ export class ProjectsService {
   async remove(caller: Caller, id: string, ifMatch: number | undefined): Promise<void> {
     await withScope(this.database.db, caller, async (tx) => {
       const current = await this.live(tx, id);
+      await this.require(tx, current, caller, 'owner');
       if (ifMatch !== undefined) checkRevision(current, ifMatch);
       const now = new Date();
       await this.write(tx, current, { deletedAt: now }, now);
@@ -165,10 +218,11 @@ export class ProjectsService {
   }
 
   async restore(caller: Caller, id: string, now: Date = new Date()): Promise<Project> {
-    return withScope(this.database.db, caller, async (tx) => {
+    const row = await withScope(this.database.db, caller, async (tx) => {
       const current = await this.find(tx, id);
       if (
         !current?.deletedAt ||
+        current.workspaceId !== caller.workspaceId ||
         now.getTime() - current.deletedAt.getTime() > PROJECT_LIMITS.trashDays * DAY_MS
       )
         throw new DomainError('not_found');
@@ -181,32 +235,28 @@ export class ProjectsService {
         targetKind: 'project',
         targetId: id,
       });
-      return toProject(restored);
+      return restored;
     });
+    return this.present(row, 'owner');
   }
 
-  /** A copy of the working document under a new name; versions stay with the original. */
+  /**
+   * A copy of the working document under a new name; versions stay with the original. Anyone who can see the
+   * project may copy it; a copy of someone else's project credits it (US-CMY-02 AC1).
+   */
   async duplicate(caller: Caller, id: string, name?: string): Promise<Project> {
-    return withScope(this.database.db, caller, async (tx) => {
-      const source = await this.live(tx, id);
-      const copyName = name ?? `${source.name} (copy)`.slice(0, PROJECT_LIMITS.maxNameLength);
-      const prepared = prepare(source.document, copyName);
-      const now = new Date();
-      const [created] = await tx
-        .insert(projects)
-        .values({
-          workspaceId: caller.workspaceId,
-          ownerUserId: caller.userId,
-          ...columnsOf(prepared),
-          tags: source.tags,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
-      if (!created) throw new Error('insert returned no row');
-      await this.recordCreated(tx, caller, created, id);
-      return toProject(created);
+    const { source, access } = await withScope(this.database.db, caller, async (tx) => {
+      const found = await this.live(tx, id);
+      return { source: found, access: await this.accessOf(tx, found, caller) };
     });
+    const own = access === 'owner';
+    const copyName = name ?? (own ? `${source.name} (copy)` : source.name);
+    return this.createCopy(
+      caller,
+      { document: source.document, name: copyName, tags: own ? source.tags : [] },
+      own ? null : { projectId: source.id, name: source.name, author: await this.ownerName(source) },
+      source.id,
+    );
   }
 
   async listVersions(
@@ -249,6 +299,8 @@ export class ProjectsService {
   /** Named checkpoint of the current working document. */
   async createVersion(caller: Caller, id: string, label: string): Promise<ProjectVersionSummary> {
     return withScope(this.database.db, caller, async (tx) => {
+      // Viewers cannot lock the row (FOR UPDATE applies the update policy), so check access first.
+      await this.require(tx, await this.live(tx, id), caller, 'edit');
       const current = await this.live(tx, id, true);
       return toVersionSummary(await this.snapshot(tx, caller, current, 'manual', { label }));
     });
@@ -261,7 +313,8 @@ export class ProjectsService {
     versionId: string,
     ifMatch: number | undefined,
   ): Promise<Project> {
-    return withScope(this.database.db, caller, async (tx) => {
+    const { row, access } = await withScope(this.database.db, caller, async (tx) => {
+      const level = await this.require(tx, await this.live(tx, id), caller, 'edit');
       const current = await this.live(tx, id, true);
       checkRevision(current, ifMatch);
       const version = await this.version(tx, id, versionId);
@@ -280,8 +333,9 @@ export class ProjectsService {
         targetId: id,
         after: { versionNumber: version.number },
       });
-      return toProject(restored);
+      return { row: restored, access: level };
     });
+    return this.present(row, access);
   }
 
   /**
@@ -299,6 +353,7 @@ export class ProjectsService {
       return await withScope(this.database.db, caller, async (tx) => {
         const current = await this.find(tx, id, true);
         if (!current || current.deletedAt) return false;
+        if (RANK[await this.accessOf(tx, current, caller)] < RANK.edit) return false;
         const code = (current.document as ProjectDocument).code.files;
         const same =
           code.length === files.length &&
@@ -349,6 +404,46 @@ export class ProjectsService {
       .returning();
     if (!inserted) throw new Error('insert returned no row');
     return inserted;
+  }
+
+  /** Owner: the project lives in the caller's workspace. Otherwise the caller's share role (RLS let them see it). */
+  async accessOf(tx: Tx, row: ProjectRow, caller: Caller): Promise<ProjectAccess> {
+    if (row.workspaceId === caller.workspaceId) return 'owner';
+    const [share] = await tx
+      .select({ role: projectShares.role })
+      .from(projectShares)
+      .where(
+        and(
+          eq(projectShares.projectId, row.id),
+          eq(projectShares.principalKind, 'user'),
+          eq(projectShares.principalId, caller.userId),
+        ),
+      );
+    return share?.role === 'edit' ? 'edit' : 'view';
+  }
+
+  /** `forbidden` when the caller can see the project but not do this to it. */
+  private async require(
+    tx: Tx,
+    row: ProjectRow,
+    caller: Caller,
+    need: ProjectAccess,
+  ): Promise<ProjectAccess> {
+    const access = await this.accessOf(tx, row, caller);
+    if (RANK[access] < RANK[need]) throw new DomainError('forbidden', { access, need });
+    return access;
+  }
+
+  /** The owner's display name; sharees cannot read other users' rows under RLS, so this is a system read. */
+  async ownerName(row: { ownerUserId: string }): Promise<string> {
+    const [owner] = await withSystem(this.database.db, (tx) =>
+      tx.select({ name: users.displayName }).from(users).where(eq(users.id, row.ownerUserId)),
+    );
+    return owner?.name ?? '';
+  }
+
+  private async present(row: ProjectRow, access: ProjectAccess): Promise<Project> {
+    return toProject(row, access, await this.ownerName(row));
   }
 
   /** Bumps `revision` (the ETag) with every change. */
@@ -503,8 +598,20 @@ function toSummary(row: ProjectRow): ProjectSummary {
   };
 }
 
-function toProject(row: ProjectRow): Project {
-  return { ...toSummary(row), document: row.document as ProjectDocument };
+function toProject(row: ProjectRow, access: ProjectAccess, ownerName: string): Project {
+  return {
+    ...toSummary(row),
+    document: row.document as ProjectDocument,
+    access,
+    ownerName,
+    remixedFrom: remixedFromOf(row),
+  };
+}
+
+export function remixedFromOf(row: ProjectRow): Project['remixedFrom'] {
+  return row.remixedFromName
+    ? { projectId: row.remixedFromId, name: row.remixedFromName, author: row.remixedFromAuthor ?? '' }
+    : null;
 }
 
 function toVersionSummary(row: VersionRow): ProjectVersionSummary {

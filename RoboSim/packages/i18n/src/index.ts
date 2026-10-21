@@ -8,6 +8,7 @@ import enCommon from '../locales/en/common.json' with { type: 'json' };
 import enEditor from '../locales/en/editor.json' with { type: 'json' };
 import enComponents from '../locales/en/components.json' with { type: 'json' };
 import enErrors from '../locales/en/errors.json' with { type: 'json' };
+import enShare from '../locales/en/share.json' with { type: 'json' };
 import enSafety from '../locales/en/safety.json' with { type: 'json' };
 import enShell from '../locales/en/shell.json' with { type: 'json' };
 import faAdmin from '../locales/fa/admin.json' with { type: 'json' };
@@ -17,6 +18,7 @@ import faCommon from '../locales/fa/common.json' with { type: 'json' };
 import faEditor from '../locales/fa/editor.json' with { type: 'json' };
 import faComponents from '../locales/fa/components.json' with { type: 'json' };
 import faErrors from '../locales/fa/errors.json' with { type: 'json' };
+import faShare from '../locales/fa/share.json' with { type: 'json' };
 import faSafety from '../locales/fa/safety.json' with { type: 'json' };
 import faShell from '../locales/fa/shell.json' with { type: 'json' };
 
@@ -30,6 +32,7 @@ export const NAMESPACES = [
   'build',
   'editor',
   'auth',
+  'share',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -44,6 +47,7 @@ export const resources = {
     build: enBuild,
     editor: enEditor,
     auth: enAuth,
+    share: enShare,
   },
   fa: {
     common: faCommon,
@@ -55,6 +59,7 @@ export const resources = {
     build: faBuild,
     editor: faEditor,
     auth: faAuth,
+    share: faShare,
   },
 } as const;
 

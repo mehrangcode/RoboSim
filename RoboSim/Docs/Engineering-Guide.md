@@ -92,6 +92,7 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `ARTIFACT_STORE_DIR` | `.local/artifacts` | Firmware store (filesystem adapter of the object-storage port) |
 | `DEV_IDENTITY` · `DEV_IDENTITY_EMAIL` | `false` · `learner@dev.local` | Opt-in for tests and scripts: requests without a session act as this user (created on first use); `X-Dev-User: <email>` switches user per request. The API test helper turns it on. Refused in staging/production |
 | `AUTH_RATE_LIMIT_PER_MIN` · `PUBLIC_APP_URL` | `10` · `http://localhost:5173` | Auth requests per client address per minute; origin used in emailed links |
+| `SHARE_LINK_SECRET` · `SHARED_LINK_RATE_LIMIT_PER_MIN` | development constant · `60` | Signs share links (≥ 32 characters; rotating it retires every link; the default is refused in staging/production); share-link lookups per address per minute |
 | `MAIL_TRANSPORT` | `dev` | `dev` keeps sent mail in memory; open **/dev/mail** in the web app (or `GET /api/v1/dev/mail`) to read verification and reset links. Refused in staging/production until the SMTP adapter lands |
 | `PAYMENT_PROVIDER` | `fake` | `fake` simulates success/failure/timeout; `zarinpal_sandbox` in staging |
 | `SMS_PROVIDER` / `EMAIL_PROVIDER` | `console` / `smtp` (Mailpit) | Notifications |

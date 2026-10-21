@@ -1,4 +1,10 @@
-import { parseProjectDocument, type ProjectDocument, type ProjectVersionSummary } from '@robosim/shared';
+import {
+  parseProjectDocument,
+  type ProjectAccess,
+  type ProjectDocument,
+  type ProjectVersionSummary,
+  type RemixedFrom,
+} from '@robosim/shared';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ApiError } from '../lib/api.js';
 import type { ProjectsClient } from '../lib/projects-api.js';
@@ -19,6 +25,10 @@ export interface CloudOpen {
   readonly staleDraft: ProjectDocument | null;
   /** The server was unreachable; the editor opened this browser's copy. */
   readonly offline: boolean;
+  /** What the caller may do (FR-PRJ-04); `view` opens the project read-only. */
+  readonly access: ProjectAccess;
+  readonly ownerName: string;
+  readonly remixedFrom: RemixedFrom | null;
 }
 
 export type OpenResult =
@@ -33,6 +43,25 @@ export async function openCloudProject(client: ProjectsClient, id: string): Prom
   try {
     const project = await client.get(id);
     const saved = parseProjectDocument(project.document);
+    const sharing = {
+      access: project.access,
+      ownerName: project.ownerName,
+      remixedFrom: project.remixedFrom,
+    };
+    // A viewer has no drafts: what they see is always the server's copy.
+    if (project.access === 'view')
+      return {
+        kind: 'ready',
+        open: {
+          id,
+          revision: project.revision,
+          saved,
+          start: saved,
+          staleDraft: null,
+          offline: false,
+          ...sharing,
+        },
+      };
     const differs = draft !== null && JSON.stringify(draft.document) !== JSON.stringify(saved);
     const current = differs && draft.baseRevision === project.revision;
     return {
@@ -44,6 +73,7 @@ export async function openCloudProject(client: ProjectsClient, id: string): Prom
         start: current ? draft.document : saved,
         staleDraft: differs && !current ? draft.document : null,
         offline: false,
+        ...sharing,
       },
     };
   } catch (e) {
@@ -59,6 +89,9 @@ export async function openCloudProject(client: ProjectsClient, id: string): Prom
           start: draft.document,
           staleDraft: null,
           offline: true,
+          access: 'owner',
+          ownerName: '',
+          remixedFrom: null,
         },
       };
     return { kind: 'failed', message: e instanceof ApiError ? e.problem.title : (e as Error).message };

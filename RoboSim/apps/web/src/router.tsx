@@ -31,6 +31,12 @@ const cloudEditorRoute = createRoute({
   path: '/editor/$projectId',
   component: lazyRouteComponent(() => import('./editor/editor-page.js'), 'EditorPage'),
 });
+// A share link (US-PRJ-03): the editor chunk in read-only mode.
+const sharedLinkRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/s/$token',
+  component: lazyRouteComponent(() => import('./editor/editor-page.js'), 'SharedLinkPage'),
+});
 const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/projects',
@@ -65,6 +71,7 @@ const routeTree = rootRoute.addChildren([
   projectsRoute,
   editorRoute,
   cloudEditorRoute,
+  sharedLinkRoute,
   labRoute,
   authPage('/login', 'LoginPage'),
   authPage('/register', 'RegisterPage'),

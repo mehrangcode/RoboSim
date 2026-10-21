@@ -26,6 +26,7 @@ export function SketchPanel({
   fill = false,
   title,
   findings = [],
+  readOnly = false,
 }: {
   files: readonly SketchFile[];
   onChange: (name: string, content: string) => void;
@@ -41,6 +42,7 @@ export function SketchPanel({
   title?: string | undefined;
   /** Safety findings of the loaded run; code-aware ones (FR-SAF-03) are marked on their sketch lines. */
   findings?: readonly FindingView[] | undefined;
+  readOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
@@ -107,6 +109,7 @@ export function SketchPanel({
         diagnostics={markers}
         reveal={reveal}
         label={t('shell:lab.sketch.editor')}
+        readOnly={readOnly}
         className={fill ? 'min-h-0 flex-1' : 'h-72'}
       />
 

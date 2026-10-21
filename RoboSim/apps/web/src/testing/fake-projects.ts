@@ -3,14 +3,23 @@ import {
   type Project,
   type ProjectDocument,
   type ProjectListQueryInput,
+  type ProjectSharing,
+  type ShareLinkRequest,
+  type ShareRequest,
+  type SharedLink,
+  type SharedProject,
   type ProjectSummary,
   type ProjectVersion,
 } from '@robosim/shared';
 import { ApiError } from '../lib/api.js';
 import type { ProjectsClient } from '../lib/projects-api.js';
 
-const problem = (code: 'not_found' | 'precondition_failed', status: number) =>
-  new ApiError({ type: code, title: code, status, code, requestId: 'test' });
+const problem = (
+  code: 'not_found' | 'precondition_failed' | 'forbidden',
+  status: number,
+  params?: Record<string, unknown>,
+) =>
+  new ApiError({ type: code, title: code, status, code, requestId: 'test', ...(params ? { params } : {}) });
 
 /** In-memory projects API with the server's revision and 412 semantics; every call is recorded. */
 export class FakeProjects implements ProjectsClient {
@@ -35,6 +44,9 @@ export class FakeProjects implements ProjectsClient {
       updatedAt: new Date(Date.UTC(2026, 9, 21, 9, n)).toISOString(),
       deletedAt: null,
       document,
+      access: 'owner',
+      ownerName: 'Sara',
+      remixedFrom: null,
       ...over,
     };
     this.projects.set(id, project);
@@ -62,7 +74,13 @@ export class FakeProjects implements ProjectsClient {
     if (p.revision !== revision) throw problem('precondition_failed', 412);
   }
 
-  private summary({ document: _, ...s }: Project): ProjectSummary {
+  private summary({
+    document: _,
+    access: _a,
+    ownerName: _o,
+    remixedFrom: _r,
+    ...s
+  }: Project): ProjectSummary {
     return s;
   }
 
@@ -180,5 +198,102 @@ export class FakeProjects implements ProjectsClient {
     };
     this.versionsOf.set(id, [...list, v]);
     return v;
+  }
+
+  readonly sharingOf = new Map<string, ProjectSharing>();
+  shared: SharedProject[] = [];
+  /** Share links: token → project id and whether remixes are allowed. */
+  readonly links = new Map<string, { id: string; remixable: boolean }>();
+
+  private sharingFor(id: string): ProjectSharing {
+    return this.sharingOf.get(id) ?? { link: null, people: [] };
+  }
+
+  async sharing(id: string) {
+    this.record('sharing', id);
+    this.must(id);
+    return Promise.resolve(this.sharingFor(id));
+  }
+  async share(id: string, input: ShareRequest) {
+    this.record('share', id, input);
+    if (input.email.startsWith('ghost')) throw problem('not_found', 404, { field: 'email' });
+    const current = this.sharingFor(id);
+    const people = current.people.filter((p) => p.email !== input.email);
+    const next = {
+      ...current,
+      people: [
+        ...people,
+        {
+          userId: `u-${input.email}`,
+          email: input.email,
+          displayName: input.email.split('@')[0] ?? '',
+          role: input.role,
+        },
+      ],
+    };
+    this.sharingOf.set(id, next);
+    return Promise.resolve(next);
+  }
+  async unshare(id: string, userId: string) {
+    this.record('unshare', id, userId);
+    const current = this.sharingFor(id);
+    this.sharingOf.set(id, { ...current, people: current.people.filter((p) => p.userId !== userId) });
+    this.shared = this.shared.filter((p) => p.id !== id);
+    return Promise.resolve();
+  }
+  async setLink(id: string, input: ShareLinkRequest) {
+    this.record('setLink', id, input);
+    const current = this.sharingFor(id);
+    const token =
+      current.link && !input.regenerate
+        ? (current.link.url.split('/s/')[1] ?? '')
+        : `t${id}${this.calls.length}`.padEnd(43, 'x');
+    this.links.set(token, { id, remixable: input.remixable });
+    const next = {
+      ...current,
+      link: { url: `http://localhost:5173/s/${token}`, remixable: input.remixable },
+    };
+    this.sharingOf.set(id, next);
+    return Promise.resolve(next);
+  }
+  async removeLink(id: string) {
+    this.record('removeLink', id);
+    const next = { ...this.sharingFor(id), link: null };
+    this.sharingOf.set(id, next);
+    return Promise.resolve(next);
+  }
+  async sharedWithMe() {
+    this.record('sharedWithMe');
+    return Promise.resolve(this.shared);
+  }
+  async openShared(token: string): Promise<SharedLink> {
+    this.record('openShared', token);
+    const link = this.links.get(token);
+    if (!link) throw problem('not_found', 404);
+    const p = this.must(link.id);
+    return Promise.resolve({
+      project: {
+        id: p.id,
+        name: p.name,
+        updatedAt: p.updatedAt,
+        document: p.document,
+        remixedFrom: p.remixedFrom,
+      },
+      ownerName: p.ownerName,
+      remixable: link.remixable,
+    });
+  }
+  async remixShared(token: string) {
+    this.record('remixShared', token);
+    const link = this.links.get(token);
+    if (!link) throw problem('not_found', 404);
+    if (!link.remixable) throw problem('forbidden', 403);
+    const p = this.must(link.id);
+    return Promise.resolve(
+      this.seed(p.document, {
+        remixedFrom: { projectId: p.id, name: p.name, author: p.ownerName },
+        ownerName: 'Me',
+      }),
+    );
   }
 }

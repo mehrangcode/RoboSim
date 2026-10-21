@@ -93,7 +93,25 @@ export const projectSummarySchema = z.object({
 });
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 
-export const projectSchema = projectSummarySchema.extend({ document: projectDocumentSchema });
+/** What the caller may do with a project (Security §4.3): owners manage it, editors change it, viewers read it. */
+export const PROJECT_ACCESS = ['owner', 'edit', 'view'] as const;
+export const projectAccessSchema = z.enum(PROJECT_ACCESS);
+export type ProjectAccess = z.infer<typeof projectAccessSchema>;
+
+/** Attribution of a remix or copy of someone else's project (US-CMY-02 AC1), kept even if the source goes away. */
+export const remixedFromSchema = z.object({
+  projectId: z.string().nullable(),
+  name: z.string(),
+  author: z.string(),
+});
+export type RemixedFrom = z.infer<typeof remixedFromSchema>;
+
+export const projectSchema = projectSummarySchema.extend({
+  document: projectDocumentSchema,
+  access: projectAccessSchema,
+  ownerName: z.string(),
+  remixedFrom: remixedFromSchema.nullable(),
+});
 export type Project = z.infer<typeof projectSchema>;
 
 export const projectPageSchema = z.object({

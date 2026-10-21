@@ -5,9 +5,14 @@ import {
   useCircuitEditor,
   type CanvasMode,
 } from '@robosim/circuit-canvas';
-import { ProjectDocumentError, parseProjectDocument, type ProjectDocument } from '@robosim/shared';
+import {
+  ProjectDocumentError,
+  parseProjectDocument,
+  type ProjectDocument,
+  type SharedLink,
+} from '@robosim/shared';
 import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
-import { Button, ResizeHandle, SegmentedControl, cn } from '@robosim/ui';
+import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@robosim/ui';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { findArena } from '@robosim/content/arenas';
 import type { Pose } from '@robosim/renderer-2d';
@@ -36,10 +41,12 @@ import { SketchPanel } from '../lab/sketch-panel.js';
 import { compileWithApi, type CompileSketch } from '../lab/use-build.js';
 import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
 import { SignInGate } from '../auth/auth-ui.js';
+import { useAuth } from '../auth/use-auth.js';
 import { ApiError } from '../lib/api.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { HelpDialog } from './help-dialog.js';
+import { ShareDialog } from './share-dialog.js';
 import {
   downloadJson,
   fileName,
@@ -123,6 +130,115 @@ interface EditorProps {
   projects?: ProjectsClient | undefined;
 }
 
+/** A read-only workspace (a shared project the caller may only view): what to say and offer above it. */
+interface Viewer {
+  readonly banner: ReactNode;
+}
+
+/** The strip under the toolbar that says whose project this is and what the caller can do. */
+function ShareBanner({ text, children }: { text: string; children?: ReactNode }) {
+  return (
+    <p
+      role="note"
+      className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-3 py-1.5 text-sm"
+    >
+      <span className="me-auto">{text}</span>
+      {children}
+    </p>
+  );
+}
+
+/** "Make a copy" / "Remix": copies the project into the caller's workspace and opens it there. */
+function CopyButton({ label, copy }: { label: string; copy: () => Promise<{ id: string }> }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <>
+      {error && (
+        <span role="alert" className="text-danger">
+          {error}
+        </span>
+      )}
+      <Button
+        size="sm"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          setError(null);
+          copy()
+            .then((p) => navigate({ to: '/editor/$projectId', params: { projectId: p.id } }))
+            .catch((e: unknown) =>
+              setError(
+                t('share:viewer.copyFailed', {
+                  message: e instanceof ApiError ? e.problem.title : (e as Error).message,
+                }),
+              ),
+            )
+            .finally(() => setBusy(false));
+        }}
+      >
+        {label}
+      </Button>
+    </>
+  );
+}
+
+/** `/s/$token` (US-PRJ-03): anyone with the link runs the project read-only; remixing needs an account. */
+export function SharedLinkPage(props: EditorProps) {
+  const { t, i18n } = useTranslation();
+  const { token } = useParams({ strict: false }) as { token?: string };
+  const [fallback] = useState(() => projectsApi(() => i18n.language));
+  const projects = props.projects ?? fallback;
+  const { me } = useAuth();
+  const [state, setState] = useState<
+    { kind: 'opening' } | { kind: 'missing' } | { kind: 'ready'; link: SharedLink }
+  >({ kind: 'opening' });
+  useEffect(() => {
+    if (!token) return;
+    let live = true;
+    void projects.openShared(token).then(
+      (link) => live && setState({ kind: 'ready', link }),
+      () => live && setState({ kind: 'missing' }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [projects, token]);
+  if (!token || state.kind !== 'ready')
+    return (
+      <div className="mx-auto max-w-xl py-16 text-center">
+        <h1 className="sr-only">{t('shell:editor.title')}</h1>
+        <p
+          role={!token || state.kind === 'missing' ? 'alert' : 'status'}
+          className={!token || state.kind === 'missing' ? 'text-danger' : 'text-ink-muted'}
+        >
+          {!token || state.kind === 'missing' ? t('share:viewer.missing') : t('share:viewer.opening')}
+        </p>
+      </div>
+    );
+  const { link } = state;
+  const banner = (
+    <ShareBanner text={t('share:viewer.banner', { owner: link.ownerName })}>
+      {!link.remixable ? (
+        <span className="text-ink-muted">{t('share:viewer.notRemixable')}</span>
+      ) : me === null ? (
+        <Link
+          to="/login"
+          search={{ redirect: `/s/${token ?? ''}` }}
+          className={buttonVariants({ size: 'sm' })}
+        >
+          {t('share:viewer.remixSignIn')}
+        </Link>
+      ) : (
+        <CopyButton label={t('share:viewer.remix')} copy={() => projects.remixShared(token ?? '')} />
+      )}
+    </ShareBanner>
+  );
+  return <Workspace {...props} projects={projects} initial={link.project.document} viewer={{ banner }} />;
+}
+
 /**
  * `/editor` edits a project kept in this browser; `/editor/$projectId` a cloud project (API Spec §4.4),
  * opened before the workspace mounts so the editor starts from its document.
@@ -148,6 +264,14 @@ function CloudWorkspace({ id, ...props }: EditorProps & { id: string; projects: 
       live = false;
     };
   }, [projects, id]);
+  if (result?.kind === 'ready' && result.open.access === 'view') {
+    const banner = (
+      <ShareBanner text={t('share:viewer.banner', { owner: result.open.ownerName })}>
+        <CopyButton label={t('share:viewer.copy')} copy={() => projects.duplicate(id)} />
+      </ShareBanner>
+    );
+    return <Workspace {...props} initial={result.open.saved} viewer={{ banner }} />;
+  }
   if (result?.kind === 'ready') return <Workspace {...props} cloudOpen={result.open} />;
   if (result?.kind === 'unauthenticated') return <SignInGate />;
   return (
@@ -178,16 +302,25 @@ function Workspace({
   compileSketch,
   projects,
   cloudOpen,
-}: EditorProps & { projects: ProjectsClient; cloudOpen?: CloudOpen }) {
+  initial,
+  viewer,
+}: EditorProps & {
+  projects: ProjectsClient;
+  cloudOpen?: CloudOpen;
+  /** Starts from this document instead of the browser's own project (shared projects). */
+  initial?: ProjectDocument;
+  viewer?: Viewer;
+}) {
   const { t, i18n } = useTranslation();
   const fmt = useFormat();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { demo?: string };
   const sim = useSimulation(createWorker);
   const { scene, frame, serialLog, clearSerial, send } = sim;
-  const [stored] = useState(() => (cloudOpen ? null : loadStored()));
+  const readOnly = viewer !== undefined;
+  const [stored] = useState(() => (cloudOpen || initial ? null : loadStored()));
   const editor = useCircuitEditor(
-    () => cloudOpen?.start ?? stored?.project ?? starterProject(t('shell:editor.starterTitle')),
+    () => cloudOpen?.start ?? initial ?? stored?.project ?? starterProject(t('shell:editor.starterTitle')),
   );
   const { doc, reset } = editor;
   const [files, setFiles] = useState<readonly SourceFile[]>(() => doc.code.files);
@@ -203,6 +336,7 @@ function Workspace({
   const [help, setHelp] = useState(false);
   const [arenaPicker, setArenaPicker] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const { layout, resize, toggle } = useLayout();
@@ -222,7 +356,8 @@ function Workspace({
 
   // Autosave on every change (a cloud project's draft is kept by useCloudSync); an edit while running stops the run.
   useEffect(() => {
-    if (!cloudOpen) saveStored({ project: current, pristine });
+    // A shared project the caller only views must never overwrite the browser's own project.
+    if (!cloudOpen && !readOnly) saveStored({ project: current, pristine });
   });
   const { watch } = run;
   useEffect(() => watch(current));
@@ -279,7 +414,7 @@ function Workspace({
   // /editor?demo=blink (the Lab's "Open in editor").
   const requested = SCENARIOS.find((s) => s === search.demo);
   useEffect(() => {
-    if (!requested) return;
+    if (!requested || readOnly) return;
     openDemo(requested);
     void navigate({ to: '/editor', search: {}, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per requested demo
@@ -302,6 +437,7 @@ function Workspace({
   };
 
   const save = () => {
+    if (readOnly) return;
     if (cloudOpen) void cloud.save();
     else
       setNotice(
@@ -335,7 +471,8 @@ function Workspace({
 
   const live = run.ready ? frame : null;
   const sound = useBuzzerAudio(live?.parts, running);
-  const canvasMode: CanvasMode = run.phase === 'live' ? 'run' : size === 'narrow' ? 'view' : 'edit';
+  const canvasMode: CanvasMode =
+    run.phase === 'live' ? 'run' : size === 'narrow' || readOnly ? 'view' : 'edit';
 
   // Arena (FR-ARN-05/06): picked from the built-ins; the start pose is edited on the stopped view.
   const docRobot = useMemo(() => robotOf(doc), [doc]);
@@ -386,8 +523,11 @@ function Workspace({
       fill
       title={t('shell:editor.pane.code')}
       files={files}
-      onChange={(name, content) => setFiles((fs) => fs.map((f) => (f.name === name ? { ...f, content } : f)))}
-      onFilesChange={setFiles}
+      onChange={(name, content) =>
+        !readOnly && setFiles((fs) => fs.map((f) => (f.name === name ? { ...f, content } : f)))
+      }
+      onFilesChange={readOnly ? undefined : setFiles}
+      readOnly={readOnly}
       state={run.build}
       modified={current !== doc}
       findings={scene?.staticFindings}
@@ -518,6 +658,7 @@ function Workspace({
         aria-label={t('shell:editor.titleLabel')}
         key={doc.meta.title}
         defaultValue={doc.meta.title}
+        readOnly={readOnly}
         maxLength={200}
         onBlur={(e) => {
           const title = e.target.value.trim();
@@ -525,7 +666,12 @@ function Workspace({
         }}
         className="w-40 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold hover:border-line focus:border-line"
       />
-      {size !== 'narrow' && (
+      {size !== 'narrow' && readOnly && (
+        <Button size="sm" variant="secondary" onClick={() => downloadJson(fileName(current), current)}>
+          {t('shell:editor.export')}
+        </Button>
+      )}
+      {size !== 'narrow' && !readOnly && (
         <>
           {cloudOpen ? (
             <Link
@@ -579,14 +725,26 @@ function Workspace({
             {t('shell:editor.save')}
           </Button>
           {cloudOpen ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setVersionsOpen(true)}
-              aria-haspopup="dialog"
-            >
-              {t('shell:cloud.versions.button')}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setVersionsOpen(true)}
+                aria-haspopup="dialog"
+              >
+                {t('shell:cloud.versions.button')}
+              </Button>
+              {cloudOpen.access === 'owner' && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setShareOpen(true)}
+                  aria-haspopup="dialog"
+                >
+                  {t('share:button')}
+                </Button>
+              )}
+            </>
           ) : (
             <Button size="sm" variant="secondary" onClick={() => void saveToCloud()} disabled={uploading}>
               {t('shell:cloud.saveToCloud')}
@@ -688,6 +846,18 @@ function Workspace({
 
   const alerts = (
     <>
+      {viewer?.banner}
+      {cloudOpen?.access === 'edit' && (
+        <ShareBanner text={t('share:viewer.editBanner', { owner: cloudOpen.ownerName })} />
+      )}
+      {cloudOpen?.remixedFrom && (
+        <ShareBanner
+          text={t('share:remixedFrom', {
+            name: cloudOpen.remixedFrom.name,
+            author: cloudOpen.remixedFrom.author,
+          })}
+        />
+      )}
       {(sim.error || sim.stalled) && run.phase !== 'edit' && (
         <p
           role="alert"
@@ -736,6 +906,14 @@ function Workspace({
           }}
         />
       )}
+      {shareOpen && cloudOpen && (
+        <ShareDialog
+          projectId={cloudOpen.id}
+          name={doc.meta.title}
+          projects={projects}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
       {versionsOpen && (
         <VersionsDialog
           cloud={cloud}
@@ -759,7 +937,7 @@ function Workspace({
     const tabs: MobileTab[] =
       size === 'narrow'
         ? ['circuit', ...robotTab, 'sim', 'monitor']
-        : ['parts', 'circuit', ...robotTab, 'code', 'sim', 'monitor'];
+        : [...(readOnly ? [] : (['parts'] as const)), 'circuit', ...robotTab, 'code', 'sim', 'monitor'];
     const tab = tabs.includes(mobileTab) ? mobileTab : 'circuit';
     return (
       <div className={frameClass}>
@@ -816,7 +994,7 @@ function Workspace({
       {toolbar}
       {alerts}
       <div className="flex min-h-0 flex-1">
-        {collapsed.left ? (
+        {readOnly ? null : collapsed.left ? (
           <Rail title={titles.left} vertical onExpand={() => toggle('left')} />
         ) : (
           <>
