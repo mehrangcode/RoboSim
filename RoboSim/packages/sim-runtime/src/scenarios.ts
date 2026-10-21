@@ -250,6 +250,107 @@ function laserAvoider(): ProjectDocument {
   };
 }
 
+/** The line follower's drive train and power, without its sensor wiring: the base of the arena robots. */
+function driveTrain(): Pick<ProjectDocument, 'components' | 'wires'> & { base: ProjectDocument } {
+  const base = lineFollower();
+  return {
+    base,
+    components: base.components.filter((c) => c.type !== 'sensor.line-3ch'),
+    wires: base.wires.filter((w) => w.from.part !== 'line' && w.to.part !== 'line'),
+  };
+}
+
+const pairsOf = (list: readonly Wire[]) =>
+  list.map((w) => [`${w.from.part}.${w.from.pin}`, `${w.to.part}.${w.to.pin}`] as const);
+
+/** Arena + start pose + the arena's default challenge, from `@robosim/content`. */
+function arenaOf(id: string): Pick<ProjectDocument, 'arena' | 'successConditions'> {
+  const spec = ARENAS[id];
+  const challenge = CHALLENGES[id];
+  if (!spec || !challenge) throw new Error(`arena '${id}' missing from @robosim/content`);
+  return {
+    arena: {
+      arenaVersionId: id,
+      startPose: {
+        x: spec.start.x,
+        y: spec.start.y,
+        heading: Math.round((spec.start.angle * 180e6) / Math.PI) / 1e6,
+      },
+    },
+    successConditions: clone(challenge) as ProjectDocument['successConditions'],
+  };
+}
+
+/**
+ * Right-hand wall follower for the 5 × 5 maze: three HC-SR04s (front, left, right) on the line
+ * follower's drive train, with NewPing.
+ */
+function mazeSolver(): ProjectDocument {
+  const { base, components, wires: drive } = driveTrain();
+  const sonar = (id: string, y: number, mount: NonNullable<ComponentInstance['mount']>) =>
+    part(id, 'sensor.hc-sr04', g(40), g(y), { mount });
+  return {
+    ...base,
+    components: [
+      ...components,
+      sonar('sonarF', 36, { x: 60, y: 0, z: 60, yaw: 0 }),
+      sonar('sonarL', 42, { x: 40, y: 55, z: 45, yaw: 90 }),
+      sonar('sonarR', 48, { x: 40, y: -55, z: 45, yaw: -90 }),
+    ],
+    wires: wires(
+      ...pairsOf(drive),
+      ['board.5V', 'sonarF.vcc'],
+      ['board.5V', 'sonarL.vcc'],
+      ['board.5V', 'sonarR.vcc'],
+      ['board.D2', 'sonarF.trig'],
+      ['sonarF.echo', 'board.D3'],
+      ['board.D4', 'sonarL.trig'],
+      ['sonarL.echo', 'board.D11'],
+      ['board.A0', 'sonarR.trig'],
+      ['sonarR.echo', 'board.A1'],
+      ['sonarF.gnd', 'board.GND3'],
+      ['sonarL.gnd', 'board.GND3'],
+      ['sonarR.gnd', 'board.GND3'],
+    ),
+    code: { language: 'cpp', files: [{ name: 'sketch.ino', content: SKETCH.mazeSolver.trim() + '\n' }] },
+    ...arenaOf('maze'),
+    meta: { title: 'Wall-following maze solver' },
+  };
+}
+
+/**
+ * Sumo bot for the ring: an HC-SR04 looks for the opponent and the 3-channel line sensor, now facing
+ * the white edge of the ring, keeps the robot inside.
+ */
+function sumoBot(): ProjectDocument {
+  const { base, components, wires: drive } = driveTrain();
+  const line = base.components.find((c) => c.type === 'sensor.line-3ch');
+  if (!line) throw new Error('line follower has no line sensor');
+  return {
+    ...base,
+    components: [
+      ...components,
+      line,
+      part('sonar', 'sensor.hc-sr04', g(40), g(36), { mount: { x: 60, y: 0, z: 60, yaw: 0 } }),
+    ],
+    wires: wires(
+      ...pairsOf(drive),
+      ['board.5V', 'line.vcc'],
+      ['line.left', 'board.D11'],
+      ['line.center', 'board.D12'],
+      ['line.right', 'board.A0'],
+      ['line.gnd', 'board.GND3'],
+      ['board.5V', 'sonar.vcc'],
+      ['board.D2', 'sonar.trig'],
+      ['sonar.echo', 'board.D3'],
+      ['sonar.gnd', 'board.GND3'],
+    ),
+    code: { language: 'cpp', files: [{ name: 'sketch.ino', content: SKETCH.sumoBot.trim() + '\n' }] },
+    ...arenaOf('sumo'),
+    meta: { title: 'Sumo bot' },
+  };
+}
+
 /** I²C module wiring to the Uno: power, ground and SDA/SCL on A4/A5. */
 const i2cWires = (id: string, vcc = 'vcc', supply = '5V', gnd = 'GND1') =>
   [
@@ -269,6 +370,8 @@ function builtins(): Record<ScenarioId, { project: ProjectDocument; firmware: Fi
     'line-follower': { project: lineFollower(), firmware: 'lineFollower' },
     'bump-avoider': { project: bumpAvoider(), firmware: 'bumpAvoider' },
     'laser-avoider': { project: laserAvoider(), firmware: 'laserAvoider' },
+    'maze-solver': { project: mazeSolver(), firmware: 'mazeSolver' },
+    'sumo-bot': { project: sumoBot(), firmware: 'sumoBot' },
     blink: { project: project('Blink', SKETCH.blink, blink.parts, wires(...blink.wires)), firmware: 'blink' },
     button: {
       project: project(

@@ -33,7 +33,13 @@ export type BenchScenarioId =
 export type SafetyScenarioId =
   'led-no-resistor' | 'outputs-fighting' | 'motor-on-pin' | 'floating-input' | 'no-flyback';
 export type ScenarioId =
-  'line-follower' | 'bump-avoider' | 'laser-avoider' | BenchScenarioId | SafetyScenarioId;
+  | 'line-follower'
+  | 'bump-avoider'
+  | 'laser-avoider'
+  | 'maze-solver'
+  | 'sumo-bot'
+  | BenchScenarioId
+  | SafetyScenarioId;
 
 export const BENCH_SCENARIOS: readonly BenchScenarioId[] = [
   'blink',
@@ -74,6 +80,8 @@ export const SCENARIOS: readonly ScenarioId[] = [
   'line-follower',
   'bump-avoider',
   'laser-avoider',
+  'maze-solver',
+  'sumo-bot',
   ...BENCH_SCENARIOS,
   ...SAFETY_SCENARIOS,
 ];

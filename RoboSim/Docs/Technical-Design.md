@@ -447,13 +447,13 @@ Declarative JSON evaluated each slice (no user-supplied code on the server):
 }
 ```
 
-Types at GA: `reachZone`, `laps`, `checkpointsInOrder`, `timeLimit`, `noCollision`, `onLineRatio`, `serialMatches` (regex, bounded), `pinState`, `pushOut` (sumo), combined with `all` / `any` / `not`.
+Types at GA: `reachZone`, `laps`, `checkpointsInOrder`, `timeLimit`, `noCollision`, `onLineRatio`, `serialMatches` (regex, bounded), `pinState`, `pushOut` (sumo), `stayInZone` (the robot's axle midpoint never leaves a zone; sumo ring), combined with `all` / `any` / `not`.
 
 **Implementation notes (P1 slice 6, `sim-core/src/challenge`):**
 
 | Topic | Rule |
 |---|---|
-| Node status | `pending` / `met` / `failed`, each with a `final` flag. Goals start pending and finalise when reached. Constraints (`timeLimit`, `noCollision`, `onLineRatio`) start met and finalise only on violation or at the end of the run. |
+| Node status | `pending` / `met` / `failed`, each with a `final` flag. Goals start pending and finalise when reached. Constraints (`timeLimit`, `noCollision`, `onLineRatio`, `stayInZone`) start met and finalise only on violation or at the end of the run. |
 | Combinators | `all` fails on the first final failure and succeeds when every child is met *and* final, or at end of run. `any` is the dual. `not` inverts. The run is decided when the root becomes final. |
 | `laps` | Every `checkpoint` zone in arena order, then back into the `start` zone. |
 | `onLineRatio` | Sampled every 10 ms: on-line = floor darker than 0.5 within ±25 mm of the axle midpoint, along the lateral axis. It stays provisional until the run ends. |

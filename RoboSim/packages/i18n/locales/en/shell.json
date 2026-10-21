@@ -72,6 +72,8 @@
       "mosfet-ramp": "MOSFET soft start",
       "no-flyback": "Motor without a flyback diode",
       "laser-avoider": "Laser-ranging obstacle avoider",
+      "maze-solver": "Wall-following maze solver",
+      "sumo-bot": "Sumo bot",
       "oled-knob": "OLED display",
       "lcd-hello": "Character LCD",
       "imu-tilt": "Tilt sensor (MPU-6050)",
@@ -105,6 +107,8 @@
       "mosfet-ramp": "An IRLZ44N logic-level MOSFET, fully on with 5 V on its gate, ramps the motor up over 2 s, runs it, ramps it down and rests. 220 Ω limits the gate charging current; 10 kΩ keeps the gate low while the Uno boots.",
       "no-flyback": "The same TIP120 motor switch, but without the diode. The checker flags it before you run. Run it: each time the PWM switches the motor off, its coil kicks the collector up to 60 V until the transistor breaks down, and soon it fails.",
       "laser-avoider": "A VL53L0X time-of-flight sensor on the front measures the gap ahead with an infrared laser. Something within 45 cm: the robot veers right; with a clear view it veers back left until it has undone its turns, so it works its way to the goal. It talks I²C on A4/A5; XSHUT on D11 lets the sketch reset it.",
+      "maze-solver": "Three HC-SR04 ultrasonic sensors look ahead, left and right. In the middle of each cell the robot turns right if it can, else goes straight, else left, else turns around: keeping its right hand on the wall leads it through the 5 × 5 maze to the goal. Between cells it steers to the middle of the corridor, and the front sensor measures how far it has driven.",
+      "sumo-bot": "An HC-SR04 on the front spins around looking for the opponent and charges anything within 60 cm; farther echoes are the arena walls. The line sensor, facing down, sees the white edge of the black ring: the robot backs off and turns, so it pushes the block out without leaving the ring itself.",
       "oled-knob": "Turn the knob: the Adafruit_SSD1306 library draws the title, the reading and a bar into a 1 KB frame buffer in the Uno's RAM and sends it to the 128×64 OLED over I²C (A4/A5, address 0x3C) ten times a second.",
       "lcd-hello": "A 16×2 character LCD driven through a PCF8574 I²C backpack: only two data wires instead of six. The sketch defines a heart as a custom character and counts the seconds on the second line. Turn the contrast knob if the text fades.",
       "imu-tilt": "Tilt the MPU-6050 (its sliders set the angles) and watch the serial monitor: the sketch works out the tilt from gravity on the three axes and lights the LED past 20°. The gyroscope reports how fast it turns.",
@@ -182,7 +186,13 @@
     "challenge": {
       "title": "Challenge",
       "name": {
-        "oval-one-lap": "One lap of the oval in under 60 s, without collisions, staying on the line"
+        "oval-one-lap": "One lap of the oval in under 60 s, without collisions, staying on the line",
+        "oval-gaps-one-lap": "One lap of the oval with gaps in under 60 s, without collisions, staying on the line",
+        "square-one-lap": "One lap of the 90° track in under 90 s, without collisions, staying on the line",
+        "figure-eight-one-lap": "One lap of the figure eight in under 90 s, without collisions, staying on the line",
+        "obstacle-course-goal": "Reach the goal of the obstacle course in under 2 min",
+        "maze-goal": "Reach the goal of the maze in under 4 min",
+        "sumo-push-out": "Push the block out of the ring in under 60 s without leaving it"
       },
       "status": {
         "running": "In progress",
@@ -199,7 +209,8 @@
         "checkpointsInOrder": "Checkpoints in order {passed, number}/{total, number}",
         "serialMatches": "Serial output matches {pattern}",
         "pinState": "Pin {pin} stays {level, number} for {forS, number} s",
-        "pushOut": "Push {object} out of {zone}"
+        "pushOut": "Push {object} out of {zone}",
+        "stayInZone": "Stay inside {zone}"
       },
       "stateLabel": {
         "met": "done",
@@ -439,7 +450,7 @@
     },
     "sumo": {
       "name": "Sumo ring",
-      "goal": "push the block out in under 60 s"
+      "goal": "push the block out in under 60 s, staying in the ring"
     },
     "open-floor": {
       "name": "Open floor"

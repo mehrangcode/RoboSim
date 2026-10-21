@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRun } from './scenarios.js';
+import { buildRun, builtinSource } from './scenarios.js';
 
 /** Catalogue expansion demos (slice 16a), run headless from their compiled sketches. */
 describe('catalogue Tier A demos', () => {
@@ -390,6 +390,38 @@ describe('catalogue Tier C demos', () => {
     expect(run.challenge?.result().status).toBe('success');
     expect(run.safety.findings()).toEqual([]);
   }, 120_000);
+
+  it('maze solver: three HC-SR04s keep its right hand on the wall and it reaches the goal', () => {
+    const run = buildRun({ scenario: 'maze-solver' });
+    expect(run.scene.staticFindings).toEqual([]);
+    const serial = serialOf(run);
+    for (let s = 0; s < 240 && run.challenge?.result().status === 'running'; s++) run.circuit.sim.run(1000);
+    const result = run.challenge?.result();
+    expect(result?.status).toBe('success');
+    expect(result?.decidedAt).toBeLessThan(40);
+    expect(result?.metrics.collisions).toBe(0);
+    expect(serial.text).toMatch(/^right\r?\n/); // the start cell is open to the right
+    expect(serial.text).toContain('left');
+    expect(run.safety.findings()).toEqual([]);
+  }, 180_000);
+
+  it('sumo bot: finds the block from any heading and pushes it out without leaving the ring', () => {
+    for (const heading of [0, 90, 180]) {
+      const { project, firmware } = builtinSource('sumo-bot');
+      const start = project.arena?.startPose;
+      if (!project.arena || !start) throw new Error('sumo bot has no arena');
+      project.arena.startPose = { ...start, heading };
+      const run = buildRun({ project, firmware });
+      expect(run.scene.staticFindings).toEqual([]);
+      for (let s = 0; s < 60 && run.challenge?.result().status === 'running'; s++) run.circuit.sim.run(1000);
+      const result = run.challenge?.result();
+      expect(result?.status, `heading ${heading}`).toBe('success');
+      const stay = result?.tree.children?.find((c) => c.type === 'stayInZone');
+      expect(stay?.status).toBe('met');
+      if (heading === 0) expect(result?.score?.total).toBe(100); // facing the block: out in under 15 s
+      expect(run.safety.findings()).toEqual([]);
+    }
+  }, 300_000);
 
   it('thermometers: DHT11 (Adafruit DHT) and DS18B20 (OneWire + DallasTemperature) report the bench', () => {
     const run = buildRun({ scenario: 'thermometers' });

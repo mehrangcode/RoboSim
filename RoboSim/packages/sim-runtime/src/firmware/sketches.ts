@@ -583,6 +583,154 @@ void loop() {
     drive(SPEED, SPEED);
   }
 }`,
+  mazeSolver: `
+// Maze solver: right-hand wall follower, one 45 cm cell at a time. Three HC-SR04s (NewPing) look ahead
+// (D2/D3), left (D4/D11) and right (A0/A1). In the middle of each cell it turns right if it can, else
+// goes straight, else left, else turns around. Between cells it steers off the side walls, and the front
+// sonar works as its odometer: a cell is done when the wall ahead is 45 cm closer.
+// L298N: ENA D5, ENB D6, IN1-IN4 D7-D10.
+#include <NewPing.h>
+
+NewPing front(2, 3, 200);
+NewPing left(4, 11, 200);
+NewPing right(A0, A1, 200);
+
+const int SPEED = 110;
+const int TURN_SPEED = 120;
+const int CELL_MM = 450;
+const int SIDE_MM = 150;  // side wall distance when centred in a corridor
+const int OPEN_MM = 300;  // farther than this: no wall on that side
+const int STOP_MM = 155;  // the wall ahead when the robot is in the middle of the cell
+const int TURN_90_MS = 370;
+const int CELL_MS = 1750; // one cell without a wall ahead to measure against
+
+int mm(NewPing &sonar) {
+  unsigned int us = sonar.ping();
+  return us == 0 ? 2000 : us * 10L / US_ROUNDTRIP_CM; // no echo: nothing within range
+}
+
+void drive(int l, int r) { // -255..255
+  digitalWrite(7, l > 0 ? HIGH : LOW);
+  digitalWrite(8, l < 0 ? HIGH : LOW);
+  analogWrite(5, abs(l));
+  digitalWrite(9, r > 0 ? HIGH : LOW);
+  digitalWrite(10, r < 0 ? HIGH : LOW);
+  analogWrite(6, abs(r));
+}
+
+void brake() { // enables on, inputs low: the L298N shorts the motors and they stop at once
+  drive(0, 0);
+  analogWrite(5, 255);
+  analogWrite(6, 255);
+  delay(150);
+}
+
+void turn(int dir, int ms) { // dir 1 = right
+  drive(dir * TURN_SPEED, -dir * TURN_SPEED);
+  delay(ms);
+  brake();
+}
+
+// One cell ahead, steering to the middle between the side walls (or off the one wall there is).
+void step() {
+  int ahead = mm(front);
+  int target = ahead < 1800 ? max(ahead - CELL_MM, STOP_MM) : 0;
+  unsigned long end = millis() + CELL_MS;
+  int last = 0;
+  for (;;) {
+    int f = mm(front);
+    if (f <= STOP_MM || (target > 0 ? f <= target : millis() >= end)) break;
+    int l = mm(left);
+    int r = mm(right);
+    int err = 0; // positive: too far left
+    if (l < OPEN_MM && r < OPEN_MM) err = (r - l) / 2;
+    else if (r < OPEN_MM) err = r - SIDE_MM;
+    else if (l < OPEN_MM) err = SIDE_MM - l;
+    int steer = constrain(err / 4 + (err - last), -40, 40);
+    last = err;
+    drive(SPEED + steer, SPEED - steer);
+  }
+  brake();
+}
+
+void setup() {
+  Serial.begin(9600);
+  for (int p = 5; p <= 10; p++) pinMode(p, OUTPUT);
+  delay(500);
+}
+
+void loop() {
+  if (mm(right) > OPEN_MM) {
+    Serial.println("right");
+    turn(1, TURN_90_MS);
+  } else if (mm(front) > OPEN_MM) {
+    Serial.println("ahead");
+  } else if (mm(left) > OPEN_MM) {
+    Serial.println("left");
+    turn(-1, TURN_90_MS);
+  } else {
+    Serial.println("back");
+    turn(1, 2 * TURN_90_MS);
+  }
+  step();
+}`,
+  sumoBot: `
+// Sumo bot: an HC-SR04 (NewPing, D2/D3) finds the opponent and the 3-channel line sensor (D11, D12,
+// A0; HIGH over the black ring, LOW over the white edge) keeps the robot in the ring. It turns slowly
+// to search and charges anything within 85 cm. Seen from the middle of the ring, the opponent is always
+// that close and the arena walls are farther, so after backing off the edge it heads for the middle.
+// Pressed against the opponent the echo is too close to measure, so it keeps pushing for a moment.
+// L298N: ENA D5, ENB D6, IN1-IN4 D7-D10.
+#include <NewPing.h>
+
+NewPing sonar(2, 3, 120);
+const int SEE_CM = 85;
+const int CHARGE = 255;
+const int SEARCH = 100;
+unsigned long seen = 0; // when the opponent was last in sight
+
+void drive(int l, int r) { // -255..255
+  digitalWrite(7, l > 0 ? HIGH : LOW);
+  digitalWrite(8, l < 0 ? HIGH : LOW);
+  analogWrite(5, abs(l));
+  digitalWrite(9, r > 0 ? HIGH : LOW);
+  digitalWrite(10, r < 0 ? HIGH : LOW);
+  analogWrite(6, abs(r));
+}
+
+bool onEdge() {
+  return digitalRead(11) == LOW || digitalRead(12) == LOW || digitalRead(A0) == LOW;
+}
+
+void setup() {
+  Serial.begin(9600);
+  for (int p = 5; p <= 10; p++) pinMode(p, OUTPUT);
+  pinMode(11, INPUT);
+  pinMode(12, INPUT);
+  pinMode(A0, INPUT);
+  delay(1000); // the start signal
+}
+
+void loop() {
+  if (onEdge()) {
+    Serial.println("edge");
+    drive(-CHARGE, -CHARGE); // back off the edge,
+    delay(250);
+    drive(150, -150); // turn around
+    delay(550);
+    drive(180, 180); // and head for the middle
+    for (int i = 0; i < 60 && !onEdge(); i++) delay(10);
+    return;
+  }
+  int d = sonar.ping_cm();
+  if (d > 0 && d < SEE_CM) seen = millis();
+  // Pressed against the opponent the echo is too close to measure (under 2 cm): keep pushing.
+  if (seen > 0 && millis() - seen < 400) {
+    drive(CHARGE, CHARGE);
+  } else {
+    drive(SEARCH, -SEARCH);
+  }
+}`,
   thermometers: `
 // Two thermometers: a DHT11 module on D2 (temperature + humidity) and a DS18B20 on D4 (1-Wire, with a
 // 4.7 kΩ pull-up). Both are read every 2 s and printed to the serial monitor.

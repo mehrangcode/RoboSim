@@ -77,9 +77,11 @@ export const GOLDEN_FIXTURES: readonly GoldenFixture[] = [
   { name: 'led-no-resistor', scenario: 'led-no-resistor', maxSimSeconds: 0.5, entries: [] },
   { name: 'floating-input', scenario: 'floating-input', maxSimSeconds: 0.5, entries: [] },
   { name: 'no-flyback', scenario: 'no-flyback', maxSimSeconds: 0.3, entries: [] },
-  // Robots that decide their challenge (obstacle course goal).
+  // Robots that decide their challenge (obstacle course goal, maze goal, sumo push-out).
   { name: 'bump-avoider', scenario: 'bump-avoider', maxSimSeconds: 60, entries: [] },
   { name: 'laser-avoider', scenario: 'laser-avoider', maxSimSeconds: 60, entries: [] },
+  { name: 'maze-solver', scenario: 'maze-solver', maxSimSeconds: 60, entries: [] },
+  { name: 'sumo-bot', scenario: 'sumo-bot', maxSimSeconds: 30, entries: [] },
   // Catalogue Tier A demos.
   {
     name: 'rgb-melody',

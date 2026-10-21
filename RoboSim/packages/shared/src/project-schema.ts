@@ -69,6 +69,7 @@ const goal = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('timeLimit'), seconds: z.number().positive() }),
   z.strictObject({ type: z.literal('noCollision'), tolerance: z.number().int().nonnegative() }),
   z.strictObject({ type: z.literal('onLineRatio'), min: z.number().min(0).max(1) }),
+  z.strictObject({ type: z.literal('stayInZone'), zone: z.string().min(1) }),
 ]);
 
 export type ConditionDoc =
@@ -168,7 +169,7 @@ export const projectDocumentSchema = z
     });
     if (doc.successConditions && !doc.arena) {
       const needsArena = JSON.stringify(doc.successConditions.condition).match(
-        /"type":"(reachZone|laps|checkpointsInOrder|pushOut|noCollision|onLineRatio)"/,
+        /"type":"(reachZone|laps|checkpointsInOrder|pushOut|stayInZone|noCollision|onLineRatio)"/,
       );
       if (needsArena)
         ctx.addIssue({

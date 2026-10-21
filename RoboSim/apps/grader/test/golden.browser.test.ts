@@ -36,8 +36,11 @@ const inWorker = (job: GradeJob) =>
   });
 
 describe('golden traces in a Web Worker', () => {
-  it.each(['line-follower-lap', 'laser-avoider', 'timer-555', 'neopixel-rainbow'])('%s', async (name) => {
-    const { job, recorded } = await golden(name);
-    expect(firstDifference(recorded, await inWorker(job))).toBeNull();
-  });
+  it.each(['line-follower-lap', 'laser-avoider', 'sumo-bot', 'timer-555', 'neopixel-rainbow'])(
+    '%s',
+    async (name) => {
+      const { job, recorded } = await golden(name);
+      expect(firstDifference(recorded, await inWorker(job))).toBeNull();
+    },
+  );
 });

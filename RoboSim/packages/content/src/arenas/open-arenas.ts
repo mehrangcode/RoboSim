@@ -140,7 +140,7 @@ export const mazeChallenge: ChallengeSpec = {
 
 /*
  * Sumo ring: a 1.54 m black dohyo with a 5 cm white edge on a grey floor, and a pushable 500 g
- * block as the opponent. Push it out of the ring.
+ * block as the opponent. Push it out of the ring without leaving it yourself (axle midpoint).
  */
 const RING = { x: 1.0, y: 1.0 };
 const RING_R = 0.77;
@@ -174,6 +174,7 @@ export const sumoChallenge: ChallengeSpec = {
   condition: {
     all: [
       { type: 'pushOut', object: 'opponent', zone: 'ring' },
+      { type: 'stayInZone', zone: 'ring' },
       { type: 'timeLimit', seconds: 60 },
     ],
   },

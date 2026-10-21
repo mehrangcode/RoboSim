@@ -21,7 +21,9 @@ export type ConstraintSpec =
   /** At most `tolerance` contacts between the robot and walls/obstacles. */
   | { readonly type: 'noCollision'; readonly tolerance: number }
   /** Share of the run with the line under the robot (judged when the run is decided). */
-  | { readonly type: 'onLineRatio'; readonly min: number };
+  | { readonly type: 'onLineRatio'; readonly min: number }
+  /** The robot's axle midpoint never leaves the zone (sumo: stay in the ring). */
+  | { readonly type: 'stayInZone'; readonly zone: string };
 
 export type ConditionSpec =
   | GoalSpec
@@ -81,6 +83,7 @@ export function validateChallenge(
     }
     switch (c.type) {
       case 'reachZone':
+      case 'stayInZone':
         if (!zoneIds.has(c.zone)) errors.push(`${path}: unknown zone '${c.zone}'`);
         break;
       case 'laps':

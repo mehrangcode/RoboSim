@@ -261,6 +261,24 @@ class NoCollision extends Leaf {
   }
 }
 
+/** Holds while the robot is inside the zone; latches failed the first tick it is outside. */
+class StayInZone extends Leaf {
+  override status: NodeStatus = 'met';
+  constructor(private readonly zone: string) {
+    super();
+  }
+  update(s: TickState): void {
+    if (this.final || s.robot === null) return;
+    if (!s.inZone(this.zone)) {
+      this.status = 'failed';
+      this.final = true;
+    }
+  }
+  view(): NodeView {
+    return { type: 'stayInZone', status: this.status, final: this.final, params: { zone: this.zone } };
+  }
+}
+
 class OnLineRatio extends Leaf {
   override status: NodeStatus = 'met';
   ratio = 1;
@@ -418,6 +436,8 @@ export class ConditionTree {
             return new NoCollision(c.tolerance);
           case 'onLineRatio':
             return new OnLineRatio(c.min);
+          case 'stayInZone':
+            return new StayInZone(c.zone);
         }
       })();
       this.leaves.push(leaf);

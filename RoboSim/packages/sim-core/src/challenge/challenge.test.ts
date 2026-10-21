@@ -172,6 +172,35 @@ describe('condition tree', () => {
     ).toBe('met!');
   });
 
+  it('stayInZone holds while the robot is inside and latches failed when it leaves', () => {
+    const sumo: ConditionSpec = {
+      all: [
+        { type: 'pushOut', object: 'can', zone: 'goal' },
+        { type: 'stayInZone', zone: 'goal' },
+      ],
+    };
+    expect(
+      run(sumo, [
+        { t: 1, zone: 'goal', objectIn: true },
+        { t: 2, zone: 'goal', objectIn: false },
+      ]).trace,
+    ).toEqual(['pending', 'met!']);
+    expect(
+      run(sumo, [
+        { t: 1, zone: 'goal' },
+        { t: 2 }, // robot left the ring
+        { t: 3, zone: 'goal', objectIn: false },
+      ]).trace,
+    ).toEqual(['pending', 'failed!', 'failed!']);
+    expect(run({ type: 'stayInZone', zone: 'goal' }, [{ t: 1, zone: 'goal' }], true).last).toBe('met!');
+    expect(
+      validateChallenge(
+        { id: 'x', condition: { type: 'stayInZone', zone: 'ring' } },
+        { ...ARENA, objects: [] },
+      ),
+    ).toEqual(["condition: unknown zone 'ring'"]);
+  });
+
   it('finish() fails pending goals at the end of a graded run', () => {
     expect(run({ type: 'reachZone', zone: 'goal' }, [{ t: 1 }], true).last).toBe('failed!');
   });
