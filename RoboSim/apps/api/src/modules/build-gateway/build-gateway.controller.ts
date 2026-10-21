@@ -31,7 +31,7 @@ import { BUILDS_PATH, BuildGatewayService } from './build-gateway.service.js';
 import type { BuildOwner } from './build-queue.js';
 import { DailyBuildQuota } from './build-quota.js';
 import { IdempotencyStore } from './idempotency.js';
-import { FixedWindowRateLimiter } from './rate-limiter.js';
+import { FixedWindowRateLimiter } from '../../common/rate-limiter.js';
 
 const HEARTBEAT_MS = 15_000;
 

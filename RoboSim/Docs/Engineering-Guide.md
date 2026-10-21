@@ -90,7 +90,9 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `COMPILER_MAX_CONCURRENCY` · `BUILD_RATE_LIMIT_PER_MIN` · `BUILD_GUEST_RATE_LIMIT_PER_MIN` | `2` · `20` · `5` | Parallel builds per API process; build requests per user / per guest address per minute |
 | `BUILD_DAILY_QUOTA` · `BUILD_USER_CONCURRENCY` | `200` · `2` | Queued (non-cached) builds per user per UTC day; running builds per user. Stand-ins for the `build.*` entitlements until plans (P2) |
 | `ARTIFACT_STORE_DIR` | `.local/artifacts` | Firmware store (filesystem adapter of the object-storage port) |
-| `DEV_IDENTITY` · `DEV_IDENTITY_EMAIL` | on for `APP_ENV=local`/`test` · `learner@dev.local` | Until sessions (P2), tenant routes act as this user (created on first use); `X-Dev-User: <email>` switches user per request. Refused in staging/production |
+| `DEV_IDENTITY` · `DEV_IDENTITY_EMAIL` | `false` · `learner@dev.local` | Opt-in for tests and scripts: requests without a session act as this user (created on first use); `X-Dev-User: <email>` switches user per request. The API test helper turns it on. Refused in staging/production |
+| `AUTH_RATE_LIMIT_PER_MIN` · `PUBLIC_APP_URL` | `10` · `http://localhost:5173` | Auth requests per client address per minute; origin used in emailed links |
+| `MAIL_TRANSPORT` | `dev` | `dev` keeps sent mail in memory; open **/dev/mail** in the web app (or `GET /api/v1/dev/mail`) to read verification and reset links. Refused in staging/production until the SMTP adapter lands |
 | `PAYMENT_PROVIDER` | `fake` | `fake` simulates success/failure/timeout; `zarinpal_sandbox` in staging |
 | `SMS_PROVIDER` / `EMAIL_PROVIDER` | `console` / `smtp` (Mailpit) | Notifications |
 | `AI_DEFAULT_PROVIDER` | `ollama` | Server-level default provider in dev |

@@ -189,6 +189,14 @@ gantt
   - **Web:** the editor and the Lab follow a queued build over `EventSource`, falling back to polling. The status bar and the Run/Compile buttons show "Queued, #n in line" and then "Compiling" (FA/EN).
   - **Not yet:** cancellation, plan entitlements (env defaults stand in), and per-IP limits for signed-in users. A restart forgets jobs that were queued or running.
 
+**Authentication done (2026-10-21):** email + password accounts with sessions and recovery (FR-IAM-01 email half, FR-IAM-03; US-IAM-02 AC2; API Spec §2, §4.1; pulled forward from P2).
+  - **API:** sign-up (date of birth applies the minors rules), sign-in, sign-out, email verification with resend, password reset, password change, profile (`/me`), and session list / revoke / sign out everywhere else. Migration `0003_auth` adds `sessions` and `auth_tokens` (TD §8.2) and lockout columns on `users`; sessions are readable only by their owner under RLS, tokens only by system code.
+  - **Security:** argon2id (m = 64 MiB, t = 3, p = 1) from `node:crypto` (Node ≥ 24.7); `__Host-` HttpOnly Secure SameSite=Lax cookies; double-submit CSRF; a new session on every sign-in; sessions bound to the browser family and ended after 30 idle days; 10 auth requests/min per address; five failures lock sign-in for 15 minutes; the same `invalid_credentials` (and the same argon2 time) for unknown emails; reset requests always answer `202`.
+  - **Mail:** a `Mailer` port with a development sink. Messages (verify, reset, password changed) are FA/EN in the user's language; the web app's **/dev/mail** page shows them with a one-click link.
+  - **Web:** Sign in, Create account, Forgot / Reset password, Verify email and Account (profile and language, password, sessions) pages, an account menu in the header, an email-verification banner, and a sign-in prompt on My projects and cloud projects that returns to the page afterwards (FA/EN, RTL).
+  - **Development identity:** now opt-in (`DEV_IDENTITY=true`), meant for tests and scripts; local development signs in like production.
+  - **Not yet:** SMS OTP (US-IAM-01 AC1), TOTP and recovery codes (US-IAM-02 AC1), guardian consent (13–15 accounts stay `pending_consent` with a notice), the breached-password list (a short common-password list stands in), the SMTP adapter, `/me/workspaces`, data export and deletion, and a Jalali date picker for the date of birth.
+
 ### P2 — Individual product & commerce
 
 **Scope** (FR-WRK-04…06, FR-CIR-09, FR-COD-02, 05, 07, FR-BLD-07, FR-SIM-07 (plotter), 08, FR-SAF-03 (pulled forward to P1, done 2026-10-20), 07, FR-BOM-*, FR-PRJ-01…04, 06, FR-LRN-01 (2 projects), FR-BIL-01…06, 09, FR-SHP-01…06, 08, FR-AI-01…05, 07…10, FR-I18N-05, FR-EXT-04, 05, FR-IAM-01…03, 04, 07, FR-ADM-01…06, 08, 10, FR-NTF-*, FR-ANL-01, 04)

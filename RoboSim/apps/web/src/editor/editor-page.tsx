@@ -35,6 +35,7 @@ import { SerialMonitor } from '../lab/serial-monitor.js';
 import { SketchPanel } from '../lab/sketch-panel.js';
 import { compileWithApi, type CompileSketch } from '../lab/use-build.js';
 import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
+import { SignInGate } from '../auth/auth-ui.js';
 import { ApiError } from '../lib/api.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
@@ -148,6 +149,7 @@ function CloudWorkspace({ id, ...props }: EditorProps & { id: string; projects: 
     };
   }, [projects, id]);
   if (result?.kind === 'ready') return <Workspace {...props} cloudOpen={result.open} />;
+  if (result?.kind === 'unauthenticated') return <SignInGate />;
   return (
     <div className="mx-auto max-w-xl py-16 text-center">
       <h1 className="sr-only">{t('shell:editor.title')}</h1>

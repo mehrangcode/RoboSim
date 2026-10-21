@@ -1,6 +1,7 @@
 import { AppShell } from '@robosim/ui';
 import { Link, Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { AccountBanner, AccountMenu } from '../auth/auth-ui.js';
 import { LanguageSwitch } from '../language-switch.js';
 
 export function RootLayout() {
@@ -43,10 +44,24 @@ export function RootLayout() {
           >
             {t('shell:nav.lab')}
           </Link>
+          {import.meta.env.DEV && (
+            <Link
+              to="/dev/mail"
+              className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+            >
+              {t('auth:devMail.title')}
+            </Link>
+          )}
         </>
       }
-      actions={<LanguageSwitch />}
+      actions={
+        <>
+          <LanguageSwitch />
+          <AccountMenu />
+        </>
+      }
     >
+      <AccountBanner />
       <Outlet />
     </AppShell>
   );

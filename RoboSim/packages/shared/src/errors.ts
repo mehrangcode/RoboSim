@@ -4,8 +4,10 @@ import { z } from 'zod';
 export const ERROR_STATUS = {
   validation_failed: 400,
   unauthenticated: 401,
+  invalid_credentials: 401,
   mfa_required: 401,
   forbidden: 403,
+  csrf_failed: 403,
   entitlement_required: 403,
   quota_exceeded: 403,
   policy_restricted: 403,
@@ -20,6 +22,7 @@ export const ERROR_STATUS = {
   build_failed: 422,
   compiler_unavailable: 503,
   rate_limited: 429,
+  account_locked: 429,
   build_quota_exceeded: 429,
   ai_credits_exhausted: 429,
   internal_error: 500,

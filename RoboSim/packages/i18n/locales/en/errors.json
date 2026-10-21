@@ -1,8 +1,10 @@
 {
   "validation_failed": "The request is invalid",
   "unauthenticated": "You need to sign in",
+  "invalid_credentials": "The email or password is incorrect",
   "mfa_required": "Additional verification is required",
   "forbidden": "You don't have permission to do this",
+  "csrf_failed": "Your session check failed — reload the page and try again",
   "entitlement_required": "This feature requires a higher plan",
   "quota_exceeded": "You have reached your plan's limit",
   "policy_restricted": "Your organization's policy does not allow this",
@@ -17,6 +19,7 @@
   "build_failed": "The code could not be compiled",
   "compiler_unavailable": "The compiler is not available right now",
   "rate_limited": "Too many requests — please wait a moment",
+  "account_locked": "Too many failed sign-in attempts — try again later",
   "build_quota_exceeded": "Today's build limit has been reached",
   "ai_credits_exhausted": "Your AI credits are used up",
   "internal_error": "Something went wrong on our side",

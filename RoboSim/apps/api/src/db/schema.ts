@@ -68,6 +68,9 @@ export const users = pgTable(
     status: userStatusEnum().notNull().default('active'),
     emailVerifiedAt: timestamp({ withTimezone: true }),
     phoneVerifiedAt: timestamp({ withTimezone: true }),
+    // Password lockout (Security §4): consecutive failures since the last success, and the lock they caused.
+    failedLoginCount: integer().notNull().default(0),
+    lockedUntil: timestamp({ withTimezone: true }),
     personalWorkspaceId: uuid().references((): AnyPgColumn => workspaces.id, { onDelete: 'restrict' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -269,5 +272,54 @@ export const projectVersions = pgTable(
   (t) => [
     uniqueIndex('project_versions_project_number_key').on(t.projectId, t.number),
     index('project_versions_workspace_idx').on(t.workspaceId),
+  ],
+);
+
+// Identity (Technical Design §8.2 `iam`). Sessions and one-time tokens are looked up by the SHA-256 of a secret
+// that only the client holds; the secret itself is never stored.
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text().notNull(),
+    createdAt: createdAt(),
+    lastSeenAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    revokedAt: timestamp({ withTimezone: true }),
+    ip: text(),
+    userAgent: text(),
+    mfaLevel: integer().notNull().default(1),
+  },
+  (t) => [uniqueIndex('sessions_token_hash_key').on(t.tokenHash), index('sessions_user_idx').on(t.userId)],
+);
+
+export const authTokenPurposeEnum = pgEnum('auth_token_purpose', [
+  'email_verify',
+  'password_reset',
+  'otp_login',
+  'guardian_consent',
+  'invite',
+  'email_change',
+]);
+
+export const authTokens = pgTable(
+  'auth_tokens',
+  {
+    id: id(),
+    userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
+    purpose: authTokenPurposeEnum().notNull(),
+    tokenHash: text().notNull(),
+    target: text().notNull(),
+    attempts: integer().notNull().default(0),
+    createdAt: createdAt(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    consumedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('auth_tokens_token_hash_key').on(t.tokenHash),
+    index('auth_tokens_user_purpose_idx').on(t.userId, t.purpose),
   ],
 );

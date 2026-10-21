@@ -11,6 +11,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SignInGate } from '../auth/auth-ui.js';
 import { starterProject } from '../editor/starter.js';
 import { ApiError } from '../lib/api.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
@@ -49,6 +50,7 @@ export function ProjectsPage({ projects: injected }: { projects?: ProjectsClient
   });
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['projects'] });
+  const signedOut = list.error instanceof ApiError && list.error.problem.code === 'unauthenticated';
 
   const message = (e: unknown) =>
     e instanceof ApiError
@@ -106,6 +108,7 @@ export function ProjectsPage({ projects: injected }: { projects?: ProjectsClient
       await refresh();
     });
 
+  if (signedOut) return <SignInGate />;
   return (
     <div className="mx-auto max-w-4xl py-6">
       <div className="flex flex-wrap items-center gap-2">

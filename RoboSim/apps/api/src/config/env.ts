@@ -29,9 +29,16 @@ const envSchema = z
     BUILD_USER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
     // Firmware store (filesystem adapter of the object-storage port); default `.local/artifacts`.
     ARTIFACT_STORE_DIR: z.string().optional(),
-    // Until sessions land (P2), local and test runs act as a fixed development user (X-Dev-User overrides it).
-    DEV_IDENTITY: bool.optional(),
+    // Opt-in for tests and scripts: requests without a session act as a fixed development user (X-Dev-User
+    // overrides it). Off by default; refused in staging and production.
+    DEV_IDENTITY: bool.default(false),
     DEV_IDENTITY_EMAIL: z.email().default('learner@dev.local'),
+    // Authentication (API Spec §2, Security §4). Auth endpoints share one per-IP budget.
+    AUTH_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(10),
+    // Where links in emails point (the web app's origin).
+    PUBLIC_APP_URL: z.url().default('http://localhost:5173'),
+    // `dev` keeps messages in memory and serves them at GET /dev/mail (local and test only). SMTP lands with staging.
+    MAIL_TRANSPORT: z.enum(['dev']).default('dev'),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_DRIVER === 'postgres' && !env.DATABASE_URL) {
@@ -56,6 +63,13 @@ const envSchema = z
         message: 'the development identity is for local and test environments only',
       });
     }
+    if ((env.APP_ENV === 'production' || env.APP_ENV === 'staging') && env.MAIL_TRANSPORT === 'dev') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['MAIL_TRANSPORT'],
+        message: 'the development mail sink is for local and test environments only',
+      });
+    }
     if (env.APP_ENV === 'production' && env.DATABASE_DRIVER === 'pglite') {
       ctx.addIssue({
         code: 'custom',
@@ -67,8 +81,10 @@ const envSchema = z
 
 export type Env = z.infer<typeof envSchema> & {
   flagOverrides: FlagOverrides;
-  /** Whether requests act as the development identity: on by default only for `local` and `test`. */
+  /** Whether requests without a session act as the development identity (`DEV_IDENTITY`). */
   devIdentity: boolean;
+  /** Whether development-only endpoints (`/dev/*`) are served. */
+  devEndpoints: boolean;
 };
 
 /** Validates configuration at startup and fails fast with every problem listed. */
@@ -83,8 +99,8 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   return {
     ...parsed.data,
     flagOverrides: parseFlagOverrides(parsed.data.FEATURE_FLAGS_OVERRIDE),
-    devIdentity:
-      parsed.data.DEV_IDENTITY ?? (parsed.data.APP_ENV === 'local' || parsed.data.APP_ENV === 'test'),
+    devIdentity: parsed.data.DEV_IDENTITY,
+    devEndpoints: parsed.data.APP_ENV === 'local' || parsed.data.APP_ENV === 'test',
   };
 }
 

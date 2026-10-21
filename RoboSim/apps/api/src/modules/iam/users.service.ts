@@ -48,7 +48,11 @@ export class UsersService {
    * Creates a user together with their personal workspace and owner membership in one RLS-scoped transaction:
    * every user always owns exactly one personal workspace (ADR-007).
    */
-  async createUser(input: CreateUserInput, now: Date = new Date()): Promise<CreatedUser> {
+  async createUser(
+    input: CreateUserInput,
+    now: Date = new Date(),
+    credentials?: { passwordHash: string },
+  ): Promise<CreatedUser> {
     const parsed = createUserSchema.safeParse(input);
     if (!parsed.success)
       throw new DomainError('validation_failed', {
@@ -68,6 +72,7 @@ export class UsersService {
           id: userId,
           email,
           phone,
+          passwordHash: credentials?.passwordHash ?? null,
           displayName: data.displayName,
           locale: data.locale,
           dateOfBirth: data.dateOfBirth ?? null,

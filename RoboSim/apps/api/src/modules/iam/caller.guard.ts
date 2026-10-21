@@ -1,4 +1,4 @@
-import { DomainError, isUuid } from '@robosim/shared';
+import { DomainError, isUuid, SESSION_COOKIE } from '@robosim/shared';
 import {
   type CanActivate,
   createParamDecorator,
@@ -13,22 +13,27 @@ import { DATABASE, type Database } from '../../db/client.js';
 import { users } from '../../db/schema.js';
 import { withSystem } from '../../db/scope.js';
 import { WorkspacesService } from '../org/index.js';
+import { readCookie } from './http-identity.js';
 import { normalizeEmail } from './identity-rules.js';
+import { SessionsService } from './sessions.service.js';
 import { UsersService } from './users.service.js';
 
 /** The authenticated caller of a tenant-scoped request: drives `withScope` and RLS. */
 export interface Caller {
   userId: string;
   workspaceId: string;
+  /** The session the request came with; absent for the development identity. */
+  sessionId?: string;
 }
 
 type CallerRequest = FastifyRequest & { caller?: Caller };
 
 /**
- * Resolves the caller for tenant-scoped routes (API Spec §2). Sessions arrive in P2; until then local and test
- * runs act as a development user (`DEV_IDENTITY_EMAIL`, or the `X-Dev-User` header), created on first use with
- * a personal workspace, and every other environment answers `401`. `X-Workspace-Id` picks one of the caller's
- * workspaces (default: personal); membership is checked under RLS.
+ * Resolves the caller for tenant-scoped routes (API Spec §2) from the `__Host-rs_sid` session cookie. Without a
+ * live session the request answers `401`, unless `DEV_IDENTITY` is on (tests and scripts): then it acts as a
+ * development user (`DEV_IDENTITY_EMAIL`, or the `X-Dev-User` header), created on first use with a personal
+ * workspace. `X-Workspace-Id` picks one of the caller's workspaces (default: personal); membership is checked
+ * under RLS.
  */
 @Injectable()
 export class CallerGuard implements CanActivate {
@@ -39,6 +44,7 @@ export class CallerGuard implements CanActivate {
     @Inject(DATABASE) private readonly database: Database,
     private readonly usersService: UsersService,
     private readonly workspaces: WorkspacesService,
+    private readonly sessions: SessionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -49,10 +55,7 @@ export class CallerGuard implements CanActivate {
 
   /** The caller of `request`, for routes that are also open to guests (builds). */
   async resolve(request: FastifyRequest): Promise<Caller> {
-    if (!this.env.devIdentity) throw new DomainError('unauthenticated');
-    const header = request.headers['x-dev-user'];
-    const email = normalizeEmail(typeof header === 'string' && header ? header : this.env.DEV_IDENTITY_EMAIL);
-    const user = await this.devUser(email);
+    const user = await this.identify(request);
 
     const requested = request.headers['x-workspace-id'];
     let workspaceId = user.personalWorkspaceId;
@@ -62,7 +65,25 @@ export class CallerGuard implements CanActivate {
       if (!mine.some((w) => w.id === requested)) throw new DomainError('forbidden');
       workspaceId = requested;
     }
-    return { userId: user.userId, workspaceId };
+    return { userId: user.userId, workspaceId, ...(user.sessionId ? { sessionId: user.sessionId } : {}) };
+  }
+
+  private async identify(
+    request: FastifyRequest,
+  ): Promise<{ userId: string; personalWorkspaceId: string; sessionId?: string }> {
+    const secret = readCookie(request, SESSION_COOKIE);
+    if (secret) {
+      const session = await this.sessions.resolve(secret, {
+        ip: request.ip,
+        userAgent: request.headers['user-agent'],
+      });
+      if (session) return session;
+    }
+    if (!this.env.devIdentity) throw new DomainError('unauthenticated');
+    const header = request.headers['x-dev-user'];
+    return this.devUser(
+      normalizeEmail(typeof header === 'string' && header ? header : this.env.DEV_IDENTITY_EMAIL),
+    );
   }
 
   private async devUser(email: string): Promise<{ userId: string; personalWorkspaceId: string }> {

@@ -24,6 +24,7 @@ export interface CloudOpen {
 export type OpenResult =
   | { readonly kind: 'ready'; readonly open: CloudOpen }
   | { readonly kind: 'missing' }
+  | { readonly kind: 'unauthenticated' }
   | { readonly kind: 'failed'; readonly message: string };
 
 /** Fetches a project and reconciles it with this browser's draft. */
@@ -47,6 +48,7 @@ export async function openCloudProject(client: ProjectsClient, id: string): Prom
     };
   } catch (e) {
     if (e instanceof ApiError && e.problem.code === 'not_found') return { kind: 'missing' };
+    if (e instanceof ApiError && e.problem.code === 'unauthenticated') return { kind: 'unauthenticated' };
     if (!(e instanceof ApiError) && draft)
       return {
         kind: 'ready',

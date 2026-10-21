@@ -18,6 +18,7 @@
     "shell:lab.verify.outcome.",
     "shell:lab.verify.match.",
     "build:explain.",
+    "auth:passwordRule.",
     "shell:lab.sketch.severity.",
     "editor:prop.",
     "editor:option.",

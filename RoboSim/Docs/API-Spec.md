@@ -36,7 +36,7 @@ This document defines the contract style and the endpoint inventory. The **machi
 | LTI platforms | OIDC login + signed `id_token` (JWT, RS256) per LTI 1.3; service calls to the platform use OAuth2 client credentials with the tool's private key |
 | Webhook consumers | HMAC-SHA256 signature header (§8) |
 | Internal services | mTLS inside the cluster + service tokens; never exposed through ingress |
-| *Development (until sessions, P2)* | With `DEV_IDENTITY` (default on only for `APP_ENV` `local`/`test`, refused in staging/production) every request acts as `DEV_IDENTITY_EMAIL`, or the `X-Dev-User` header; the user and their personal workspace are created on first use. `X-Workspace-Id` must name one of the caller's workspaces (`403` otherwise). With it off, tenant routes answer `401 unauthenticated` |
+| *Development identity (tests, scripts)* | Opt-in with `DEV_IDENTITY=true` (off by default, refused in staging/production): a request **without a live session** acts as `DEV_IDENTITY_EMAIL`, or the `X-Dev-User` header; the user and their personal workspace are created on first use. A session cookie always wins. `X-Workspace-Id` must name one of the caller's workspaces (`403` otherwise). With it off, tenant routes need a session (`401 unauthenticated`) |
 
 Admin endpoints live under `/api/v1/admin/*` on the admin origin only, require a platform staff role and MFA (`mfa_level ≥ 2`), and are rejected from the public origin.
 
@@ -65,8 +65,10 @@ All errors use RFC 9457 Problem Details:
 |---|---|---|
 | 400 | `validation_failed` | Body/query invalid; `params.errors[]` with JSON pointers |
 | 401 | `unauthenticated` | No/expired session |
+| 401 | `invalid_credentials` | Email or password wrong, or no such account (deliberately indistinguishable) |
 | 401 | `mfa_required` | Step-up MFA needed |
 | 403 | `forbidden` | Role/ownership/policy denies the action |
+| 403 | `csrf_failed` | Missing or mismatched `X-CSRF-Token` on an unsafe request (§2) |
 | 403 | `entitlement_required` | Plan does not include the feature (`params.entitlement`, `params.suggestedPlan`) |
 | 403 | `quota_exceeded` | Count quota reached (`params.quota`, `params.limit`) |
 | 403 | `policy_restricted` | Org policy or age-band restriction (`params.policy`) |
@@ -80,6 +82,7 @@ All errors use RFC 9457 Problem Details:
 | 422 | `safety_errors_present` | Action blocked by unresolved safety Errors (`params.findings[]`) |
 | 422 | `build_failed` | Compile failed (diagnostics attached) — returned in build results, not as transport error |
 | 429 | `rate_limited` | Request rate exceeded |
+| 429 | `account_locked` | Password sign-in locked after repeated failures (`Retry-After`, `params.retryAfterSeconds`) |
 | 429 | `build_quota_exceeded` | Daily build quota exceeded (`params.resetAt`) |
 | 429 | `ai_credits_exhausted` | Platform AI credits used up |
 | 502 | `provider_error` | Payment/AI/SMS provider failure (`params.provider`) |
@@ -112,6 +115,8 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 | `POST /me/data-export` · `POST /me/deletion` · `DELETE /me/deletion` | ses | Data export; schedule/cancel deletion |
 | `GET /me/entitlements` | ws | Effective entitlements and remaining quotas |
 | `GET /me/owned-parts` · `PUT /me/owned-parts` | ses | "I already own" inventory |
+
+*Implemented (2026-10-21):* `GET /auth/csrf`; email + password `register` (`{ email, password, displayName, dateOfBirth, locale }` → `201 Me` and a session; under-13 `403 policy_restricted`, 13–15 `status: pending_consent`), `login` (`200 Me`), `logout` (`204`); `email/verify` (`{ token }`, `204`, used/expired/unknown `410 gone`) and `POST /auth/email/resend` (ses, retires the earlier link); `password-reset/request` (always `202`) and `/confirm` (`{ token, password }`, `204`, signs out every session and counts the email as verified); `GET/PATCH /me` (`displayName`, `locale`); `POST /me/password` (`{ currentPassword, newPassword }`, `204`, other sessions signed out, this one rotated); `GET /me/sessions` (`{ items: [{ id, current, createdAt, lastSeenAt, expiresAt, device, ip }] }`), `DELETE /me/sessions/:id`, `DELETE /me/sessions` (all **but** the current one). Sessions: 256-bit secret in `__Host-rs_sid`, SHA-256 stored, 30 days idle (sliding), bound to the browser family, a new session on every sign-in. CSRF: double-submit (`__Host-rs_csrf` cookie = `X-CSRF-Token`) on every unsafe `/auth/*` call and on any unsafe request that carries a session cookie. Passwords: 10–128 characters, ≥ 4 distinct, no edge spaces, not a common password or built from the email name (`400 validation_failed`, `params.errors[{ path: 'password', message: 'common' | 'contains_email' }]`). Auth endpoints: 10 requests/min per client address (`AUTH_RATE_LIMIT_PER_MIN`); five failed sign-ins lock the account for 15 minutes (`429 account_locked`). Development only (`APP_ENV` `local`/`test`): `GET /dev/mail[?to=]` lists messages captured by the mail sink. Not yet: SMS OTP, MFA, SSO, guardian consent, `/me/workspaces`, data export and deletion.
 
 ### 4.2 Organizations (ORG)
 
@@ -166,9 +171,9 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 | `GET/POST /projects/:id/comments` · `PATCH/DELETE …/:commentId` | ws | Comments |
 | `POST /projects/import` (multipart `.robosim`) · `GET /projects/:id/export.robosim` | ws | Import/export |
 | `GET /projects/:id/bom` | ws | BOM (prices/stock as of now) |
+| `GET /projects/:id/wiring-guide` | ws | Wiring guide (JSON) |
 
 *Implemented (2026-10-21):* list (`q`, `tag`, `sort` = `±updatedAt|±createdAt|±name`, `limit` ≤ 200, keyset `cursor`, `deleted=true` for the trash), create (`{ name?, tags?, document }`, name defaults to `meta.title`), get, `PATCH` (name, tags), `PUT …/document`, `DELETE` (soft, 30-day trash) and `restore`, `duplicate`, versions list/create/get/restore, and an automatic `auto_build` version when `POST /builds` carries `projectId` and succeeds with exactly the saved sources (deduplicated by document hash). Documents are migrated and validated on write (`400 validation_failed` with `params.errors[{path,message}]`), ≤ 1 MiB (`413 payload_too_large`), ≤ 500 versions per project (`403 quota_exceeded`). ETag `"r<revision>"` on every project response; `PUT`, `PATCH` and version restore require `If-Match` (`412 precondition_failed`, `params.revision` = current). Not yet: `move`, diff, shares, remix, comments, `.robosim` import/export, BOM, wiring guide, plan quotas (`projects.cloud_max`, retention).
-| `GET /projects/:id/wiring-guide` | ws | Wiring guide (JSON) |
 
 ### 4.5 Builds (BLD)
 

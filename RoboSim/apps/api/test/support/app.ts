@@ -9,6 +9,8 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
     APP_ENV: 'test',
     DATABASE_DRIVER: 'pglite',
     LOG_LEVEL: 'silent',
+    // Most suites act as the development user; auth suites turn it off to exercise real sessions.
+    DEV_IDENTITY: 'true',
     ...overrides,
   });
 }
