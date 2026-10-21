@@ -87,7 +87,9 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `BAO_ADDR` | `http://localhost:8200` | OpenBao (dev mode) |
 | `COMPILER_RUNTIME` | `local` (dev) · `gvisor` (staging/prod) | Build sandbox. `local` runs avr-gcc in Linux namespaces on the host ([ADR-022](decisions.md#adr-022--build-service-drives-avr-gcc-directly-linux-namespace-sandbox-for-development)); refused in staging/production |
 | `COMPILER_TOOLCHAIN_DIR` / `COMPILER_CACHE_DIR` | `.local/toolchain` / `.local/compiler-cache` | Pinned core + libraries (`pnpm compiler:setup`); content-addressed builds |
-| `COMPILER_MAX_CONCURRENCY` · `BUILD_RATE_LIMIT_PER_MIN` | `2` · `20` | Parallel builds per API process; builds per client per minute |
+| `COMPILER_MAX_CONCURRENCY` · `BUILD_RATE_LIMIT_PER_MIN` · `BUILD_GUEST_RATE_LIMIT_PER_MIN` | `2` · `20` · `5` | Parallel builds per API process; build requests per user / per guest address per minute |
+| `BUILD_DAILY_QUOTA` · `BUILD_USER_CONCURRENCY` | `200` · `2` | Queued (non-cached) builds per user per UTC day; running builds per user. Stand-ins for the `build.*` entitlements until plans (P2) |
+| `ARTIFACT_STORE_DIR` | `.local/artifacts` | Firmware store (filesystem adapter of the object-storage port) |
 | `DEV_IDENTITY` · `DEV_IDENTITY_EMAIL` | on for `APP_ENV=local`/`test` · `learner@dev.local` | Until sessions (P2), tenant routes act as this user (created on first use); `X-Dev-User: <email>` switches user per request. Refused in staging/production |
 | `PAYMENT_PROVIDER` | `fake` | `fake` simulates success/failure/timeout; `zarinpal_sandbox` in staging |
 | `SMS_PROVIDER` / `EMAIL_PROVIDER` | `console` / `smtp` (Mailpit) | Notifications |

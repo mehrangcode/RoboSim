@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { errorCodeSchema } from './errors.js';
 
 /** Build service contract (API Spec §4.5, Technical Design §6). Shared by the API, the compiler and the web client. */
 
@@ -95,3 +96,32 @@ export const buildResultSchema = z.strictObject({
   durationMs: z.number().nonnegative(),
 });
 export type BuildResult = z.infer<typeof buildResultSchema>;
+
+export const BUILD_JOB_STATES = ['queued', 'running', 'succeeded', 'failed', 'error'] as const;
+export const buildJobStateSchema = z.enum(BUILD_JOB_STATES);
+export type BuildJobState = z.infer<typeof buildJobStateSchema>;
+
+/**
+ * A queued build as `GET /builds/:id` returns it, and the `data` of every SSE event on `/builds/:id/events` (the
+ * event name is `state`). `position` is set while queued, `result` once the build `succeeded` or `failed` (a compile
+ * error is a result), `error` when the service could not build at all.
+ */
+export const buildStatusSchema = z.strictObject({
+  buildId: z.string(),
+  state: buildJobStateSchema,
+  position: z.number().int().positive().optional(),
+  result: buildResultSchema.optional(),
+  error: z.strictObject({ code: errorCodeSchema }).optional(),
+});
+export type BuildStatus = z.infer<typeof buildStatusSchema>;
+
+/**
+ * `202 Accepted` from `POST /builds` when the sources are not in the cache: the job's status (usually `queued` with
+ * its position) plus where to follow it, `statusUrl` (poll) and `eventsUrl` (SSE). A cache hit answers
+ * `200 BuildResult` instead.
+ */
+export const buildAcceptedSchema = buildStatusSchema.extend({ statusUrl: z.string(), eventsUrl: z.string() });
+export type BuildAccepted = z.infer<typeof buildAcceptedSchema>;
+
+export const isTerminalBuildState = (state: BuildJobState): boolean =>
+  state === 'succeeded' || state === 'failed' || state === 'error';

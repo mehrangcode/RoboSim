@@ -98,7 +98,7 @@ gantt
   - **API:** `POST /api/v1/builds` is synchronous, with `Idempotency-Key`, a 20/min rate limit and a 503 when the toolchain is missing. `GET /api/v1/artifacts/:id` serves the HEX.
   - **Demo firmware:** the built-in demos now run firmware compiled from their sketches, and the golden traces were re-recorded. The line follower still laps in 14.47 s. The compiled build exposed a real wiring bug: D10/IN4 was left floating, and the safety checker flagged it.
   - **Lab:** a **Your code** tab edits a demo's sketch, compiles it, shows errors on their lines with plain-language explanations, and runs the firmware on the same circuit. Replay, export and Verify all work on these runs.
-  - **Next:** the queue/SSE/MinIO/quota half of §6 (with Redis), editors and renderers.
+  - **Next:** the queue/SSE/MinIO/quota half of §6 (with Redis), editors and renderers. *The queue, SSE and quotas were done 2026-10-21 with in-process adapters (build queue, below); Redis and MinIO adapters wait for the deployment track.*
 
   **Slice 11 done (2026-10-15):** circuit canvas, thin vertical (FR-CIR-01..06, 10; ADR-005).
   - **Canvas:** `packages/circuit-canvas` is a React SVG breadboard editor with one root transform for pan, wheel zoom and zoom-to-fit. Parts drag on the 0.1" grid and can be rotated, flipped, duplicated and deleted, with keyboard shortcuts and arrow-key nudging. Undo/redo keeps 200 steps.
@@ -180,6 +180,14 @@ gantt
   - **Identity until sign-in (P2):** a development identity (`DEV_IDENTITY`, `X-Dev-User`) creates the user and personal workspace on first use; it is refused in staging and production, where tenant routes answer `401`.
   - **Web:** a **My projects** page (`/projects`: search, sort, new, import, rename, duplicate, delete with undo, trash). `/editor/$projectId` opens a cloud project: autosave every 30 s, on Ctrl+S, when the tab is hidden and when the connection returns; a per-project draft in the browser keeps unsaved work across closed tabs and offline periods; a conflict dialog when another tab or device saved first; a **Versions** dialog (checkpoint, restore). Run saves first and builds with the project id, so the build becomes a version. The browser project in `/editor` gets **Save to my projects**.
   - **Not yet:** plan quotas (`projects.cloud_max`, version retention) wait for the entitlement resolver; move between workspaces, diff, sharing and `.robosim` files stay in P2; the trash is not purged yet.
+
+**Build queue done (2026-10-21):** the queue/SSE/quota half of the build service (TD §6, API Spec §4.5; closes slice 10's "Next").
+  - **API:** `POST /builds` answers a cache hit with `200 BuildResult` and queues everything else (`202` + `Location`). `GET /builds/:id` returns the job status, and `GET /builds/:id/events` streams it over SSE: `queued{position}` → `running` → `succeeded` / `failed` with the result, or `error` with a code. Each connection starts with the current status. Builds are scoped to the user (guests by client address).
+  - **Fair share:** deficit round robin across workspace queues, weighted by `build.priority`, with at most 2 running builds per user. A crashed build is retried once.
+  - **Limits:** 20 builds/min per user and 5 per guest. A daily quota of queued builds per user (`BUILD_DAILY_QUOTA`, default 200, UTC day) answers `429 build_quota_exceeded` with the reset time; cache hits are free.
+  - **Ports:** queue (`BuildQueue`) and firmware store (`ArtifactStore`) have in-process and filesystem adapters (`.local/artifacts`), because there is no Docker in development. The Redis and S3/MinIO adapters, and the shared rate/quota/idempotency store, come with the platform deployment track.
+  - **Web:** the editor and the Lab follow a queued build over `EventSource`, falling back to polling. The status bar and the Run/Compile buttons show "Queued, #n in line" and then "Compiling" (FA/EN).
+  - **Not yet:** cancellation, plan entitlements (env defaults stand in), and per-IP limits for signed-in users. A restart forgets jobs that were queued or running.
 
 ### P2 — Individual product & commerce
 

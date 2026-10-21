@@ -193,7 +193,17 @@ type BuildResult = {
                        message: string; explanationKey?: string }>;
   durationMs: number;
 };
+// GET /builds/:id, and the data of every SSE event (event name = state, id = job event sequence)
+type BuildStatus = {
+  buildId: string; state: 'queued' | 'running' | 'succeeded' | 'failed' | 'error';
+  position?: number;                 // while queued; 1 = next
+  result?: BuildResult;              // succeeded / failed
+  error?: { code: ErrorCode };       // service failure: internal_error | compiler_unavailable
+};
+type BuildAccepted = BuildStatus & { statusUrl: string; eventsUrl: string }; // 202 body, plus Location
 ```
+
+*Implemented (2026-10-21):* everything above except signed redirects (`GET /artifacts/:id` serves the HEX directly) and real entitlements. A cache hit answers `200`; otherwise `202 BuildAccepted` with `Location`. Builds are scoped to the calling user (guests by client address); another user's build is `404`. Limits: 20 builds/min per user, 5/min per guest (`429 rate_limited`), and a daily quota of queued builds per user (`BUILD_DAILY_QUOTA`, UTC day; `429 build_quota_exceeded` with `params.limit`, `params.resetAt` and `Retry-After`; cache hits are free). The SSE stream sends the current status first on every connection (so `Last-Event-ID` resumes without replay), a heartbeat comment every 15 s, and closes after the final event. Finished builds stay readable for 1 h.
 
 ### 4.6 Learning (LRN) and grading
 

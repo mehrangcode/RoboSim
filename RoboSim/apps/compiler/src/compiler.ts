@@ -131,6 +131,13 @@ export class Compiler {
     );
   }
 
+  /** The stored result for these sources, without compiling; lets a gateway answer cache hits before queueing. */
+  async cached(request: BuildRequest): Promise<CompileOutput | undefined> {
+    const started = performance.now();
+    const cached = await this.readResult(this.cacheKey(request));
+    return cached && { ...cached, cacheHit: true, durationMs: performance.now() - started };
+  }
+
   async build(request: BuildRequest): Promise<CompileOutput> {
     const started = performance.now();
     const key = this.cacheKey(request);

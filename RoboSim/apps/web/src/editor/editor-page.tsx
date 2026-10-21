@@ -351,9 +351,15 @@ function Workspace({
     editor.apply((d) => withArena(d, id));
   };
   const findings = live && scene ? [...scene.staticFindings, ...live.findings] : [];
+  const queuedAt =
+    run.phase === 'building' && run.build.status === 'building' && run.build.progress?.phase === 'queued'
+      ? run.build.progress.position
+      : null;
   const status =
     run.phase === 'building'
-      ? t('shell:editor.status.building')
+      ? queuedAt !== null
+        ? t('shell:editor.status.queued', { position: queuedAt })
+        : t('shell:editor.status.building')
       : run.ready && live
         ? [
             t('shell:lab.status.time', { seconds: fmt(live.simTime, 2) }),
@@ -608,7 +614,9 @@ function Workspace({
         aria-keyshortcuts="F5"
       >
         {run.phase === 'building'
-          ? t('shell:editor.building')
+          ? queuedAt !== null
+            ? t('shell:editor.queued', { position: queuedAt })
+            : t('shell:editor.building')
           : run.ready && running
             ? t('shell:lab.controls.pause')
             : t('shell:lab.controls.run')}

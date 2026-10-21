@@ -89,7 +89,11 @@ export function SketchPanel({
           )}
           {onCompile && (
             <Button size="sm" onClick={onCompile} disabled={building} aria-busy={building}>
-              {building ? t('shell:lab.sketch.compiling') : t('shell:lab.sketch.compile')}
+              {state.status === 'building' && state.progress?.phase === 'queued'
+                ? t('shell:lab.sketch.queued', { position: state.progress.position })
+                : building
+                  ? t('shell:lab.sketch.compiling')
+                  : t('shell:lab.sketch.compile')}
             </Button>
           )}
         </div>

@@ -478,7 +478,11 @@ describe('Simulator Lab', () => {
       await user.paste(edited);
       await user.click(screen.getByRole('button', { name: 'Compile & run' }));
       const files = [{ name: 'sketch.ino', content: edited }];
-      expect(compile).toHaveBeenCalledWith({ board: 'avr-uno', files, libraries: [] }, 'en');
+      expect(compile).toHaveBeenCalledWith(
+        { board: 'avr-uno', files, libraries: [] },
+        'en',
+        expect.anything(),
+      );
       await vi.waitFor(() =>
         expect(worker.sent.slice(-2)).toEqual([
           {

@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initI18n } from '../lib/i18n.js';
-import type { CompileSketch } from '../lab/use-build.js';
+import type { BuildProgress, CompileSketch } from '../lab/use-build.js';
 import { FakeWorker } from '../testing/fake-worker.js';
 import { EditorPage } from './editor-page.js';
 
@@ -100,6 +100,27 @@ describe('editor workspace', () => {
       'digitalWrite(13, HIGH)',
     );
     expect(status()).toHaveTextContent('Editing · press Run (F5) to simulate');
+  });
+
+  it('shows the queue position while the build waits, then compiling, then runs', async () => {
+    let report: ((p: BuildProgress) => void) | undefined;
+    let finish: (() => void) | undefined;
+    const compile = vi.fn<CompileSketch>(
+      (_request, _locale, options) =>
+        new Promise((resolve) => {
+          report = options?.onProgress;
+          finish = () => resolve({ result: built, hex: ':00000001FF\n' });
+        }),
+    );
+    const { loads, user } = await setup(compile);
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+    act(() => report?.({ phase: 'queued', position: 2 }));
+    expect(status()).toHaveTextContent('Waiting in the build queue, #2 in line…');
+    expect(screen.getByRole('button', { name: 'Queued #2' })).toBeDisabled();
+    act(() => report?.({ phase: 'running' }));
+    expect(status()).toHaveTextContent('Compiling the sketch…');
+    await act(async () => finish?.());
+    expect(loads()).toHaveLength(1);
   });
 
   it('Run compiles, loads exactly the drawn project and shows live values; an edit stops it', async () => {

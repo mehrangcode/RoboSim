@@ -8,6 +8,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, locale: string, init: RequestInit = {}): Promise<T> {
+  return (await send(path, locale, init)).body as T;
+}
+
+async function send(
+  path: string,
+  locale: string,
+  init: RequestInit = {},
+): Promise<{ status: number; body: unknown }> {
   const response = await fetch(`/api/v1${path}`, {
     ...init,
     headers: { Accept: 'application/json', 'Accept-Language': locale, ...init.headers },
@@ -19,7 +27,7 @@ async function request<T>(path: string, locale: string, init: RequestInit = {}):
     if (problem.success) throw new ApiError(problem.data);
     throw new Error(`HTTP ${response.status} from ${path}`);
   }
-  return body as T;
+  return { status: response.status, body };
 }
 
 /** JSON fetch against `/api/v1` that turns RFC 9457 responses into typed `ApiError`s. */
@@ -36,6 +44,20 @@ export function apiPost<T>(path: string, body: unknown, locale: string, idempote
       'Content-Type': 'application/json',
       ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
     },
+  });
+}
+
+/** Like {@link apiPost}, but also returns the status code, for endpoints that answer `200` or `202`. */
+export function apiPostWithStatus(
+  path: string,
+  body: unknown,
+  locale: string,
+  idempotencyKey: string,
+): Promise<{ status: number; body: unknown }> {
+  return send(path, locale, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
   });
 }
 

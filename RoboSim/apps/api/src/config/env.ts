@@ -23,6 +23,12 @@ const envSchema = z
     COMPILER_CACHE_DIR: z.string().optional(),
     COMPILER_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(2),
     BUILD_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(20),
+    BUILD_GUEST_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(5),
+    // Stand-ins for the `build.daily_quota` entitlement and TD §6's per-user concurrency until plans land (P2).
+    BUILD_DAILY_QUOTA: z.coerce.number().int().min(1).default(200),
+    BUILD_USER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
+    // Firmware store (filesystem adapter of the object-storage port); default `.local/artifacts`.
+    ARTIFACT_STORE_DIR: z.string().optional(),
     // Until sessions land (P2), local and test runs act as a fixed development user (X-Dev-User overrides it).
     DEV_IDENTITY: bool.optional(),
     DEV_IDENTITY_EMAIL: z.email().default('learner@dev.local'),

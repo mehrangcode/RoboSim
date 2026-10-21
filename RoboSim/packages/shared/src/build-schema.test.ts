@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILD_LIMITS, buildRequestSchema } from './build-schema.js';
+import { BUILD_LIMITS, buildRequestSchema, buildStatusSchema, isTerminalBuildState } from './build-schema.js';
 
 const ok = {
   board: 'avr-uno',
@@ -48,5 +48,22 @@ describe('buildRequestSchema (API Spec §4.5, Security §5 input limits)', () =>
 
   it('only knows the boards the build service supports', () => {
     expect(issues({ ...ok, board: 'esp32' }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('buildStatusSchema (GET /builds/:id, SSE data)', () => {
+  it('carries the queue position, the result, or a service error code', () => {
+    expect(buildStatusSchema.parse({ buildId: 'b', state: 'queued', position: 3 }).position).toBe(3);
+    const result = { buildId: 'b', status: 'failed', cacheHit: false, diagnostics: [], durationMs: 5 };
+    expect(buildStatusSchema.parse({ buildId: 'b', state: 'failed', result }).result?.status).toBe('failed');
+    expect(
+      buildStatusSchema.safeParse({ buildId: 'b', state: 'error', error: { code: 'nope' } }).success,
+    ).toBe(false);
+    expect(buildStatusSchema.safeParse({ buildId: 'b', state: 'queued', position: 0 }).success).toBe(false);
+  });
+
+  it('knows which states end a build', () => {
+    expect(['queued', 'running'].map((s) => isTerminalBuildState(s as 'queued'))).toEqual([false, false]);
+    expect(['succeeded', 'failed', 'error'].every((s) => isTerminalBuildState(s as 'error'))).toBe(true);
   });
 });

@@ -289,7 +289,8 @@
         "error": "Error",
         "warning": "Warning",
         "note": "Note"
-      }
+      },
+      "queued": "Queued, #{position, number} in line…"
     },
     "openInEditor": "Open in editor →"
   },
@@ -315,7 +316,8 @@
     "status": {
       "building": "Compiling the sketch…",
       "editing": "Editing · press Run (F5) to simulate",
-      "stoppedByEdit": "Stopped: the project changed. Press Run to build and start again."
+      "stoppedByEdit": "Stopped: the project changed. Press Run to build and start again.",
+      "queued": "Waiting in the build queue, #{position, number} in line…"
     },
     "panes": "Panes",
     "pane": {
@@ -359,7 +361,8 @@
       "close": "Close"
     },
     "centreView": "Centre pane view",
-    "sound": "Sound"
+    "sound": "Sound",
+    "queued": "Queued #{position, number}"
   },
   "code": {
     "files": "Sketch files",

@@ -54,6 +54,18 @@ describe('successful builds', () => {
     expect(second.artifact).toEqual(first.artifact);
   });
 
+  it('looks up a stored result without compiling', async () => {
+    const files = (content: string) => ({
+      board: 'avr-uno' as const,
+      files: [{ name: 's.ino', content }],
+      libraries: [],
+    });
+    expect(await compiler.cached(files('void setup() {}\nvoid loop() { delay(7); }\n'))).toBeUndefined();
+    const built = await compiler.build(files('void setup() {}\nvoid loop() { delay(7); }\n'));
+    const hit = await compiler.cached(files('void setup() {}\nvoid loop() { delay(7); }\n'));
+    expect(hit).toMatchObject({ cacheHit: true, cacheKey: built.cacheKey, artifact: built.artifact });
+  });
+
   it('is deterministic: sandboxed and direct builds produce the same HEX', async () => {
     const direct = await Compiler.create({
       cacheDir: await mkdtemp(join(tmpdir(), 'robosim-direct-')),
