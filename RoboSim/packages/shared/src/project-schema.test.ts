@@ -176,6 +176,15 @@ describe('project document migrations', () => {
     expect(parseProjectDocument(mounted).board.mount).toEqual({ x: -30, y: 0, z: 75, yaw: 0 });
   });
 
+  it('upgrades a v3 document (board at the origin) and accepts a placed board in v4', () => {
+    expect(parseProjectDocument({ ...valid(), schemaVersion: 3 })).toEqual(valid());
+    const placed = { ...valid(), board: { ...valid().board, position: { x: 25.4, y: -50.8, rotation: 90 } } };
+    expect(parseProjectDocument(placed).board.position).toEqual({ x: 25.4, y: -50.8, rotation: 90 });
+    expect(() =>
+      parseProjectDocument({ ...placed, board: { ...placed.board, position: { x: 0, y: 0, rotation: 45 } } }),
+    ).toThrow(/board\.position\.rotation/);
+  });
+
   it('fails loudly on a gap in the chain', () => {
     expect(() => migrateDocument({ schemaVersion: 1 }, 3, { 2: chain[2] })).toThrow(
       /no migration from schemaVersion 1/,

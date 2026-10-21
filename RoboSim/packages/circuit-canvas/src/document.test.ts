@@ -4,24 +4,32 @@ import { describe, expect, it } from 'vitest';
 import {
   HISTORY_LIMIT,
   addComponent,
+  alignComponents,
   addWire,
   blankProject,
   commit,
   deleteComponents,
+  distributeComponents,
   duplicateComponents,
   flipComponents,
   moveComponents,
+  partBox,
   pinNamesOf,
   redo,
   rotateComponents,
   startHistory,
   undo,
 } from './document.js';
-import { PITCH, footprintOf, hasArt, pinPosition, place, withSeats } from './geometry.js';
+import { PITCH, boardBox, footprintOf, hasArt, pinPosition, place, withSeats, type Box } from './geometry.js';
 import { CircuitNets } from './nets.js';
 
 const at = (gx: number, gy: number) => [gx * PITCH, gy * PITCH] as const;
 const pos = (doc: ProjectDocument, part: string, pin: string) => pinPosition(doc, { part, pin }, pinNamesOf);
+function boxOf(doc: ProjectDocument, id: string) {
+  const box = partBox(doc, id);
+  if (!box) throw new Error(`no part ${id}`);
+  return box;
+}
 
 /** Half breadboard at the origin, a resistor in 10a–14a and an LED in 14c/15c. */
 function breadboardCircuit() {
@@ -111,6 +119,82 @@ describe('editing a project document', () => {
     ({ doc } = addComponent(dup.doc, 'passive.resistor', at(40, 40)));
     expect(doc.components.at(-1)?.id).toBe('r3');
     expect(addWire(doc, { part: 'r1', pin: 'a' }, { part: 'r1', pin: 'a' }, [], 'red').id).toBeNull();
+  });
+
+  it('duplicates a group with the wires between its parts, and a breadboard with its passengers', () => {
+    let doc = breadboardCircuit();
+    ({ doc } = addWire(doc, { part: 'r1', pin: 'b' }, { part: 'led1', pin: 'a' }, [[0, 0]], 'green'));
+    ({ doc } = addWire(doc, { part: 'board', pin: 'D13' }, { part: 'r1', pin: 'a' }, [], 'yellow'));
+    const dup = duplicateComponents(doc, ['r1', 'led1']);
+    expect(dup.doc.wires.slice(2)).toEqual([
+      {
+        id: 'w3',
+        from: { part: 'r2', pin: 'b' },
+        to: { part: 'led2', pin: 'a' },
+        color: 'green',
+        points: [[2 * PITCH, 2 * PITCH]],
+      },
+    ]);
+    const whole = duplicateComponents(doc, ['bb1']);
+    expect(whole.ids).toEqual(['bb2', 'r2', 'led2']);
+    expect(whole.doc.components.find((c) => c.id === 'r2')?.seats?.['a']).toEqual({
+      part: 'bb2',
+      pin: '10a',
+    });
+    expect(duplicateComponents(doc, ['board']).ids).toEqual([]);
+  });
+
+  it('turns a group as one rigid body around its centre, passengers included', () => {
+    let doc = breadboardCircuit();
+    const nets = (d: ProjectDocument) => new CircuitNets(d).connectedTo({ part: 'r1', pin: 'b' });
+    const before = nets(doc);
+    doc = rotateComponents(doc, ['bb1']);
+    expect(doc.components.map((c) => c.rotation)).toEqual([90, 90, 90]);
+    expect(nets(doc)).toEqual(before);
+    doc = rotateComponents(rotateComponents(rotateComponents(doc, ['bb1']), ['bb1']), ['bb1']);
+    expect(doc).toEqual(breadboardCircuit());
+    let pair = flipComponents(breadboardCircuit(), ['r1', 'led1']);
+    expect(pair.components.slice(1).map((c) => c.flipped)).toEqual([true, true]);
+    pair = flipComponents(pair, ['r1', 'led1']);
+    expect(pair).toEqual(breadboardCircuit());
+  });
+
+  it('aligns and distributes parts on the grid; passengers of a selected breadboard ride along', () => {
+    let doc = blankProject('t', '');
+    for (const [gx, gy] of [
+      [0, 0],
+      [9, 4],
+      [30, 9],
+    ] as const)
+      ({ doc } = addComponent(doc, 'passive.resistor', at(gx, gy)));
+    const top = alignComponents(doc, ['r1', 'r2', 'r3'], 'top');
+    expect(new Set(top.components.map((c) => partBox(top, c.id)?.y))).toEqual(
+      new Set([partBox(doc, 'r1')?.y]),
+    );
+    const right = alignComponents(doc, ['r1', 'r2', 'r3'], 'right');
+    expect(right.components.map((c) => c.x)).toEqual([30 * PITCH, 30 * PITCH, 30 * PITCH]);
+    const spread = distributeComponents(doc, ['r1', 'r2', 'r3'], 'horizontal');
+    const [a, b, c] = ['r1', 'r2', 'r3'].map((id) => boxOf(spread, id)) as [Box, Box, Box];
+    expect(b.x - (a.x + a.w)).toBeCloseTo(c.x - (b.x + b.w), 5);
+    expect(distributeComponents(doc, ['r1', 'r2'], 'vertical')).toBe(doc);
+
+    const bb = alignComponents(breadboardCircuit(), ['bb1', 'r1', 'board'], 'left');
+    expect(bb.components.find((v) => v.id === 'r1')?.seats).toEqual(breadboardCircuit().components[1]?.seats);
+    expect(Math.abs(boardBox(bb).x - boxOf(bb, 'bb1').x)).toBeLessThanOrEqual(PITCH / 2);
+  });
+
+  it('moves and turns the board like a part, but never deletes or mirrors it', () => {
+    let doc = breadboardCircuit();
+    ({ doc } = addWire(doc, { part: 'board', pin: 'D13' }, { part: 'bb1', pin: '10e' }, [], 'yellow'));
+    const [x13, y13] = pos(doc, 'board', 'D13') ?? [NaN, NaN];
+    doc = moveComponents(doc, ['board'], 3 * PITCH, -2 * PITCH);
+    expect(doc.board.position).toEqual({ x: 3 * PITCH, y: -2 * PITCH, rotation: 0 });
+    expect(pos(doc, 'board', 'D13')).toEqual([x13 + 3 * PITCH, y13 - 2 * PITCH]);
+    doc = rotateComponents(doc, ['board']);
+    expect(doc.board.position?.rotation).toBe(90);
+    expect(flipComponents(doc, ['board'])).toBe(doc);
+    expect(deleteComponents(doc, ['board'])).toBe(doc);
+    expect(parseProjectDocument(JSON.parse(JSON.stringify(doc)))).toEqual(doc);
   });
 
   it('keeps at least 100 undo steps and redoes them', () => {

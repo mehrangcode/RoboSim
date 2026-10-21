@@ -1,4 +1,4 @@
-import { findManifest } from '@robosim/catalog/manifests';
+import { breadboardLayout, findManifest } from '@robosim/catalog/manifests';
 import {
   BOARD_PART,
   PROJECT_SCHEMA_VERSION,
@@ -7,7 +7,20 @@ import {
   type ProjectDocument,
   type Wire,
 } from '@robosim/shared';
-import { PITCH, footprintOf, place, snap, withSeats, type Point } from './geometry.js';
+import {
+  BOARD_FOOTPRINT,
+  PITCH,
+  boardPlacement,
+  footprintOf,
+  place,
+  placedBox,
+  snap,
+  withSeats,
+  type Box,
+  type Footprint,
+  type Placement,
+  type Point,
+} from './geometry.js';
 
 /*
  * Editing operations on a project document (FR-CIR-01/02/05). Every operation is pure and returns
@@ -127,67 +140,224 @@ export function addComponent(
   return { doc: reseat({ ...doc, components: [...doc.components, part] }), id };
 }
 
+/** The board (`board`) or a part, as the canvas places it. */
+function placementOf(doc: ProjectDocument, id: string): Placement | undefined {
+  return id === BOARD_PART ? boardPlacement(doc) : doc.components.find((c) => c.id === id);
+}
+
+function footprintFor(doc: ProjectDocument, id: string): Footprint {
+  if (id === BOARD_PART) return BOARD_FOOTPRINT;
+  const type = doc.components.find((c) => c.id === id)?.type ?? '';
+  return footprintOf(type, pinNamesOf(type));
+}
+
+/** Document-space bounding box of the board or a part; null when it does not exist. */
+export function partBox(doc: ProjectDocument, id: string): Box | null {
+  const at = placementOf(doc, id);
+  return at ? placedBox(at, footprintFor(doc, id)) : null;
+}
+
+/** Parts plugged only into the given parts (a breadboard's passengers): they travel with them. */
+export function passengersOf(doc: ProjectDocument, ids: Iterable<string>): Set<string> {
+  const hosts = new Set(ids);
+  const riders = new Set<string>();
+  for (const c of doc.components) {
+    const seats = Object.values(c.seats ?? {});
+    if (!hosts.has(c.id) && seats.length > 0 && seats.every((v) => hosts.has(v.part))) riders.add(c.id);
+  }
+  return riders;
+}
+
+/** Writes new placements for parts and the board, then re-seats every leg. */
+function placeAll(doc: ProjectDocument, next: ReadonlyMap<string, Placement>): ProjectDocument {
+  if (next.size === 0) return doc;
+  const board = next.get(BOARD_PART);
+  return reseat({
+    ...doc,
+    board: board
+      ? { ...doc.board, position: { x: board.x, y: board.y, rotation: board.rotation } }
+      : doc.board,
+    components: doc.components.map((c) => {
+      const p = next.get(c.id);
+      return p ? { ...c, x: p.x, y: p.y, rotation: p.rotation, flipped: p.flipped } : c;
+    }),
+  });
+}
+
 /**
- * Moves parts by a whole number of grid steps. Parts plugged into a moving breadboard move with it.
+ * Moves each part (or the board) by its own delta, rounded to whole grid steps. A breadboard's passengers
+ * move with it when every breadboard they are plugged into moves the same way.
  */
+function shiftParts(doc: ProjectDocument, deltas: ReadonlyMap<string, Point>): ProjectDocument {
+  const steps = new Map<string, Point>();
+  for (const [id, [dx, dy]] of deltas) {
+    const sx = snap(dx);
+    const sy = snap(dy);
+    if (sx !== 0 || sy !== 0) steps.set(id, [sx, sy]);
+  }
+  for (const c of doc.components) {
+    if (steps.has(c.id) || deltas.has(c.id)) continue;
+    const hosts = [...new Set(Object.values(c.seats ?? {}).map((v) => v.part))];
+    const [first, ...rest] = hosts.map((h) => steps.get(h));
+    if (first && rest.every((d) => d && d[0] === first[0] && d[1] === first[1])) steps.set(c.id, first);
+  }
+  const next = new Map<string, Placement>();
+  for (const [id, [dx, dy]] of steps) {
+    const at = placementOf(doc, id);
+    if (at) next.set(id, { ...at, x: snap(at.x + dx), y: snap(at.y + dy) });
+  }
+  return placeAll(doc, next);
+}
+
+/** Moves parts (and the board) by a whole number of grid steps; breadboards carry their passengers. */
 export function moveComponents(
   doc: ProjectDocument,
   ids: readonly string[],
   dx: number,
   dy: number,
 ): ProjectDocument {
-  const sx = snap(dx);
-  const sy = snap(dy);
-  if (sx === 0 && sy === 0) return doc;
-  const moving = new Set(ids);
-  for (const c of doc.components) {
-    const seats = Object.values(c.seats ?? {});
-    if (seats.length > 0 && seats.every((s) => moving.has(s.part))) moving.add(c.id);
+  return shiftParts(doc, new Map(ids.map((id) => [id, [dx, dy] as Point])));
+}
+
+/**
+ * Turns or mirrors parts as one rigid group, passengers included. One part turns around its first pin,
+ * so a leg stays on its hole; a group turns around the grid point nearest the centre of its box. The board
+ * turns but never mirrors.
+ */
+function turnGroup(doc: ProjectDocument, ids: readonly string[], how: 'rotate' | 'flip'): ProjectDocument {
+  const own = [...new Set(ids)].filter(
+    (id) => placementOf(doc, id) && (how === 'rotate' || id !== BOARD_PART),
+  );
+  if (own.length === 0) return doc;
+  const anchorOf = (id: string): Point => Object.values(footprintFor(doc, id).pins)[0] ?? [0, 0];
+  let pivot: Point;
+  if (own.length === 1) {
+    const [id = ''] = own;
+    pivot = place(placementOf(doc, id) as Placement, anchorOf(id));
+  } else {
+    const b = unionBox(own.map((id) => partBox(doc, id) as Box));
+    pivot = [snap(b.x + b.w / 2), snap(b.y + b.h / 2)];
   }
-  return reseat({
-    ...doc,
-    components: doc.components.map((c) =>
-      moving.has(c.id) ? { ...c, x: snap(c.x + sx), y: snap(c.y + sy) } : c,
-    ),
-  });
+  const [cx, cy] = pivot;
+  const map = ([x, y]: Point): Point => (how === 'rotate' ? [cx - (y - cy), cy + (x - cx)] : [2 * cx - x, y]);
+  const next = new Map<string, Placement>();
+  for (const id of [...own, ...passengersOf(doc, own)]) {
+    const at = placementOf(doc, id) as Placement;
+    const turned: Placement =
+      how === 'rotate'
+        ? { ...at, rotation: ((at.rotation + 90) % 360) as Placement['rotation'] }
+        : { ...at, flipped: !at.flipped };
+    const anchor = anchorOf(id);
+    const target = map(place(at, anchor));
+    const after = place(turned, anchor);
+    next.set(id, {
+      ...turned,
+      x: snap(turned.x + target[0] - after[0]),
+      y: snap(turned.y + target[1] - after[1]),
+    });
+  }
+  return placeAll(doc, next);
 }
 
-/** Turns parts 90° clockwise around their first pin, so a leg stays on its hole. */
-export function rotateComponents(doc: ProjectDocument, ids: readonly string[]): ProjectDocument {
-  return transform(doc, ids, (c) => ({
-    ...c,
-    rotation: ((c.rotation + 90) % 360) as ComponentInstance['rotation'],
-  }));
+/** Turns parts 90° clockwise (one part around its first pin, a group around its centre). */
+export const rotateComponents = (doc: ProjectDocument, ids: readonly string[]): ProjectDocument =>
+  turnGroup(doc, ids, 'rotate');
+
+/** Mirrors parts left–right (one part around its first pin, a group around its centre). */
+export const flipComponents = (doc: ProjectDocument, ids: readonly string[]): ProjectDocument =>
+  turnGroup(doc, ids, 'flip');
+
+export function unionBox(boxes: readonly Box[]): Box {
+  const x0 = Math.min(...boxes.map((b) => b.x));
+  const y0 = Math.min(...boxes.map((b) => b.y));
+  const x1 = Math.max(...boxes.map((b) => b.x + b.w));
+  const y1 = Math.max(...boxes.map((b) => b.y + b.h));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
-/** Mirrors parts left–right around their first pin. */
-export function flipComponents(doc: ProjectDocument, ids: readonly string[]): ProjectDocument {
-  return transform(doc, ids, (c) => ({ ...c, flipped: !c.flipped }));
+/** Selected parts that move on their own: a passenger of another selected part rides along instead. */
+function alignUnits(doc: ProjectDocument, ids: readonly string[]): { id: string; box: Box }[] {
+  const set = new Set(ids);
+  const riders = passengersOf(doc, set);
+  return [...set]
+    .filter((id) => {
+      if (riders.has(id)) return false;
+      const seats = Object.values(doc.components.find((c) => c.id === id)?.seats ?? {});
+      return !(seats.length > 0 && seats.every((v) => set.has(v.part)));
+    })
+    .flatMap((id) => {
+      const box = partBox(doc, id);
+      return box ? [{ id, box }] : [];
+    });
 }
 
-function transform(
+/** How many selected parts align or distribute on their own (passengers ride with their breadboard). */
+export const alignableCount = (doc: ProjectDocument, ids: readonly string[]): number =>
+  alignUnits(doc, ids).length;
+
+export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
+
+/** Lines up two or more parts' boxes on an edge or centre line; every move stays on the grid. */
+export function alignComponents(
   doc: ProjectDocument,
   ids: readonly string[],
-  change: (c: ComponentInstance) => ComponentInstance,
+  how: Alignment,
 ): ProjectDocument {
-  const set = new Set(ids);
-  return reseat({
-    ...doc,
-    components: doc.components.map((c) => {
-      if (!set.has(c.id)) return c;
-      const fp = footprintOf(c.type, pinNamesOf(c.type));
-      const anchor = Object.values(fp.pins)[0] ?? ([0, 0] as Point);
-      const before = place(c, anchor);
-      const next = change(c);
-      const after = place(next, anchor);
-      return { ...next, x: snap(next.x + before[0] - after[0]), y: snap(next.y + before[1] - after[1]) };
-    }),
-  });
+  const units = alignUnits(doc, ids);
+  if (units.length < 2) return doc;
+  const all = unionBox(units.map((u) => u.box));
+  const horizontal = how === 'left' || how === 'center' || how === 'right';
+  const delta = ({ x, y, w, h }: Box): number => {
+    switch (how) {
+      case 'left':
+        return all.x - x;
+      case 'center':
+        return all.x + all.w / 2 - (x + w / 2);
+      case 'right':
+        return all.x + all.w - (x + w);
+      case 'top':
+        return all.y - y;
+      case 'middle':
+        return all.y + all.h / 2 - (y + h / 2);
+      case 'bottom':
+        return all.y + all.h - (y + h);
+    }
+  };
+  return shiftParts(
+    doc,
+    new Map(units.map((u) => [u.id, (horizontal ? [delta(u.box), 0] : [0, delta(u.box)]) as Point])),
+  );
 }
 
-/** Removes parts, their wires, and legs seated in them. */
+/** Spaces three or more parts evenly between the outermost two (equal gaps between their boxes). */
+export function distributeComponents(
+  doc: ProjectDocument,
+  ids: readonly string[],
+  axis: 'horizontal' | 'vertical',
+): ProjectDocument {
+  const units = alignUnits(doc, ids);
+  if (units.length < 3) return doc;
+  const start = (b: Box) => (axis === 'horizontal' ? b.x : b.y);
+  const size = (b: Box) => (axis === 'horizontal' ? b.w : b.h);
+  units.sort((a, b) => start(a.box) + size(a.box) / 2 - (start(b.box) + size(b.box) / 2));
+  const first = units[0] as (typeof units)[number];
+  const last = units.at(-1) as (typeof units)[number];
+  const span = start(last.box) + size(last.box) - start(first.box);
+  const gap = (span - units.reduce((sum, u) => sum + size(u.box), 0)) / (units.length - 1);
+  const deltas = new Map<string, Point>();
+  let cursor = start(first.box) + size(first.box) + gap;
+  for (const u of units.slice(1, -1)) {
+    const d = cursor - start(u.box);
+    deltas.set(u.id, axis === 'horizontal' ? [d, 0] : [0, d]);
+    cursor += size(u.box) + gap;
+  }
+  return shiftParts(doc, deltas);
+}
+
+/** Removes parts, their wires, and legs seated in them. The board stays. */
 export function deleteComponents(doc: ProjectDocument, ids: readonly string[]): ProjectDocument {
-  const gone = new Set(ids);
+  const gone = new Set(ids.filter((id) => id !== BOARD_PART));
+  if (gone.size === 0) return doc;
   return reseat({
     ...doc,
     components: doc.components.filter((c) => !gone.has(c.id)),
@@ -195,21 +365,50 @@ export function deleteComponents(doc: ProjectDocument, ids: readonly string[]): 
   });
 }
 
-/** Copies parts two grid steps down-right (wires stay with the originals). */
+/**
+ * Copies parts (and a breadboard's passengers) two grid steps down-right, or below the original when the copy
+ * has a breadboard, with the wires that run between copied parts. Wires to anything outside the copy stay with the originals. The board is not copied.
+ */
 export function duplicateComponents(
   doc: ProjectDocument,
   ids: readonly string[],
 ): { doc: ProjectDocument; ids: string[] } {
+  const own = new Set(ids.filter((id) => id !== BOARD_PART));
+  for (const id of passengersOf(doc, own)) own.add(id);
   const taken = new Set(doc.components.map((c) => c.id));
+  const renamed = new Map<string, string>();
   const copies: ComponentInstance[] = [];
-  for (const c of doc.components.filter((v) => ids.includes(v.id))) {
+  // A copied breadboard goes below the original: overlapping holes would seat the copies in the old one.
+  const boards = [...own].filter((id) =>
+    breadboardLayout(doc.components.find((c) => c.id === id)?.type ?? ''),
+  );
+  const box = boards.length > 0 ? unionBox([...own].map((id) => partBox(doc, id) as Box)) : null;
+  const [ox, oy]: Point = box ? [0, snap(box.h) + 2 * PITCH] : [2 * PITCH, 2 * PITCH];
+  for (const c of doc.components.filter((v) => own.has(v.id))) {
     const id = nextId(taken, PREFIX[c.type] ?? 'part');
     taken.add(id);
+    renamed.set(c.id, id);
     const { seats: _seats, mount: _mount, ...rest } = c;
-    copies.push({ ...rest, id, x: snap(c.x + 2 * PITCH), y: snap(c.y + 2 * PITCH) });
+    copies.push({ ...rest, id, x: snap(c.x + ox), y: snap(c.y + oy) });
+  }
+  const wireIds = new Set(doc.wires.map((w) => w.id));
+  const wires: Wire[] = [];
+  for (const w of doc.wires) {
+    const from = renamed.get(w.from.part);
+    const to = renamed.get(w.to.part);
+    if (!from || !to) continue;
+    const id = nextId(wireIds, 'w');
+    wireIds.add(id);
+    wires.push({
+      ...w,
+      id,
+      from: { part: from, pin: w.from.pin },
+      to: { part: to, pin: w.to.pin },
+      points: w.points.map(([x, y]) => [snap(x + ox), snap(y + oy)] as [number, number]),
+    });
   }
   return {
-    doc: reseat({ ...doc, components: [...doc.components, ...copies] }),
+    doc: reseat({ ...doc, components: [...doc.components, ...copies], wires: [...doc.wires, ...wires] }),
     ids: copies.map((c) => c.id),
   };
 }

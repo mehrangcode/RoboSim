@@ -85,9 +85,10 @@ export function PropertyPanel({ editor }: { editor: CircuitEditorState }) {
   const { doc, selection, apply, setSelection } = editor;
   const wire = selection.wire ? doc.wires.find((w) => w.id === selection.wire) : undefined;
   const parts = doc.components.filter((c) => selection.parts.includes(c.id));
-  const part = parts.length === 1 ? parts[0] : undefined;
+  const boardSelected = selection.parts.includes(BOARD_PART);
+  const part = parts.length === 1 && !boardSelected ? parts[0] : undefined;
   const manifest = part ? findManifest(part.type) : undefined;
-  const ids = parts.map((p) => p.id);
+  const ids = boardSelected ? [BOARD_PART, ...parts.map((p) => p.id)] : parts.map((p) => p.id);
 
   if (wire)
     return (
@@ -131,6 +132,21 @@ export function PropertyPanel({ editor }: { editor: CircuitEditorState }) {
       </section>
     );
 
+  if (boardSelected && parts.length === 0)
+    return (
+      <section aria-labelledby="props-title" className="flex flex-col gap-3">
+        <h2 id="props-title" className="text-sm font-semibold">
+          {t('editor:props.board')}
+        </h2>
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" variant="secondary" onClick={() => apply((d) => rotateComponents(d, ids))}>
+            {t('editor:actions.rotate')}
+          </Button>
+        </div>
+        <p className="text-xs text-ink-muted">{t('editor:props.boardNote')}</p>
+      </section>
+    );
+
   if (parts.length > 0)
     return (
       <section aria-labelledby="props-title" className="flex flex-col gap-3">
@@ -143,7 +159,7 @@ export function PropertyPanel({ editor }: { editor: CircuitEditorState }) {
               </span>
             </>
           ) : (
-            t('editor:props.multiple', { count: parts.length })
+            t('editor:props.multiple', { count: ids.length })
           )}
         </h2>
         <div className="flex flex-wrap gap-1.5">
@@ -157,13 +173,8 @@ export function PropertyPanel({ editor }: { editor: CircuitEditorState }) {
             size="sm"
             variant="secondary"
             onClick={() => {
-              let copies: string[] = [];
-              apply((d) => {
-                const dup = duplicateComponents(d, ids);
-                copies = dup.ids;
-                return dup.doc;
-              });
-              setSelection({ parts: copies, wire: null });
+              apply((d) => duplicateComponents(d, ids).doc);
+              setSelection({ parts: duplicateComponents(doc, ids).ids, wire: null });
             }}
           >
             {t('editor:actions.duplicate')}

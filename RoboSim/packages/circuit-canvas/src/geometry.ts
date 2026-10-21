@@ -459,7 +459,7 @@ export function hasArt(type: string): boolean {
   return type in FOOTPRINTS || breadboardLayout(type) !== undefined;
 }
 
-type Placement = Pick<ComponentInstance, 'x' | 'y' | 'rotation' | 'flipped'>;
+export type Placement = Pick<ComponentInstance, 'x' | 'y' | 'rotation' | 'flipped'>;
 
 /** Grid-unit point of a footprint → document mm, applying flip (mirror x), then clockwise rotation. */
 export function place(c: Placement, [px, py]: Point): Point {
@@ -475,8 +475,11 @@ export function place(c: Placement, [px, py]: Point): Point {
   return [c.x + rx * PITCH, c.y + ry * PITCH];
 }
 
-/** The board sits at the document origin (it has no position in the project document). */
-const BOARD_PLACEMENT: Placement = { x: 0, y: 0, rotation: 0, flipped: false };
+/** Where the board sits: `board.position` (schema v4), else the document origin. It never flips. */
+export function boardPlacement(doc: Pick<ProjectDocument, 'board'>): Placement {
+  const p = doc.board.position;
+  return { x: p?.x ?? 0, y: p?.y ?? 0, rotation: p?.rotation ?? 0, flipped: false };
+}
 
 /** Document-space bounding box of a placed footprint. */
 export function placedBox(c: Placement, fp: Footprint): Box {
@@ -492,7 +495,8 @@ export function placedBox(c: Placement, fp: Footprint): Box {
   };
 }
 
-export const boardBox = (): Box => placedBox(BOARD_PLACEMENT, BOARD_FOOTPRINT);
+export const boardBox = (doc: Pick<ProjectDocument, 'board'>): Box =>
+  placedBox(boardPlacement(doc), BOARD_FOOTPRINT);
 
 /** Pin names of a part type, as the footprint knows them. */
 export type PinNames = (type: string) => readonly string[];
@@ -501,13 +505,16 @@ export type PinNames = (type: string) => readonly string[];
 export function pinPosition(doc: ProjectDocument, ref: PinRef, pinNames: PinNames): Point | null {
   if (ref.part === BOARD_PART) {
     const p = BOARD_FOOTPRINT.pins[ref.pin];
-    return p ? place(BOARD_PLACEMENT, p) : null;
+    return p ? place(boardPlacement(doc), p) : null;
   }
   const c = doc.components.find((v) => v.id === ref.part);
   if (!c) return null;
   const p = footprintOf(c.type, pinNames(c.type)).pins[ref.pin];
   return p ? place(c, p) : null;
 }
+
+export const samePin = (a: PinRef | null, b: PinRef | null): boolean =>
+  !!a && !!b && a.part === b.part && a.pin === b.pin;
 
 export const snap = (v: number): number => Math.round(v / PITCH) * PITCH;
 

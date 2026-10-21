@@ -35,13 +35,9 @@ export function LibraryPanel({
   );
 
   const add = (type: string) => {
-    let id = '';
-    editor.apply((d) => {
-      const added = addComponent(d, type, editor.viewCenterRef.current);
-      id = added.id;
-      return added.doc;
-    });
-    editor.setSelection({ parts: [id], wire: null });
+    const at = editor.viewCenterRef.current;
+    editor.apply((d) => addComponent(d, type, at).doc);
+    editor.setSelection({ parts: [addComponent(editor.doc, type, at).id], wire: null });
   };
 
   return (

@@ -69,6 +69,9 @@ jobs:
       - name: 2D frame budget (report-only)
         continue-on-error: true
         run: pnpm --filter @robosim/renderer-2d run test:browser
+      - name: Circuit canvas frame budget, 200 parts / 400 wires (report-only)
+        continue-on-error: true
+        run: pnpm --filter @robosim/circuit-canvas run test:browser
       - name: Simulation slice budgets (report-only)
         continue-on-error: true
         run: pnpm test:perf

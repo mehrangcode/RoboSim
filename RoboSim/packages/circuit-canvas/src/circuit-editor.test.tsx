@@ -128,4 +128,80 @@ describe('circuit editor', () => {
     fireEvent.keyDown(container.querySelector('svg[role="application"]') as Element, { key: 'Delete' });
     expect(editor().doc.components.map((c) => c.id)).toEqual(['r1']);
   });
+
+  it('selects with a band, aligns the group as one undo step, and keeps the board on delete', async () => {
+    let doc = blankProject('t', '');
+    doc = addComponent(doc, 'passive.resistor', [40 * PITCH, 4 * PITCH]).doc;
+    doc = addComponent(doc, 'passive.resistor', [52 * PITCH, 9 * PITCH]).doc;
+    doc = addComponent(doc, 'passive.resistor', [70 * PITCH, 2 * PITCH]).doc;
+    const { editor, container } = setup(doc);
+    const user = userEvent.setup();
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    // jsdom has no layout: a band far beyond the view takes in everything, a tiny one nothing.
+    fireEvent.pointerDown(svg, { button: 0, clientX: -1e5, clientY: -1e5 });
+    fireEvent.pointerMove(svg, { clientX: 1e5, clientY: 1e5 });
+    expect(container.querySelector('[data-testid="selection-band"]')).not.toBeNull();
+    fireEvent.pointerUp(svg);
+    expect(editor().selection.parts).toEqual(['board', 'r1', 'r2', 'r3']);
+    expect(screen.getByRole('button', { name: /Distribute horizontally/ })).toBeEnabled();
+
+    act(() => editor().setSelection({ parts: ['r1', 'r2', 'r3'], wire: null }));
+    await user.click(screen.getByRole('button', { name: 'Align top edges' }));
+    expect(new Set(editor().doc.components.map((c) => c.y))).toEqual(new Set([2 * PITCH]));
+    act(() => editor().undo());
+    expect(editor().doc).toEqual(doc);
+
+    fireEvent.keyDown(svg, { key: 'a', ctrlKey: true });
+    fireEvent.keyDown(svg, { key: 'Delete' });
+    expect(editor().doc.components).toEqual([]);
+    expect(container.querySelector('[data-part-body="board"]')).not.toBeNull();
+  });
+
+  it('a click on the board selects it; dragging moves it with its wires', () => {
+    const { doc } = addComponent(blankProject('t', ''), 'actuator.led', [40 * PITCH, 4 * PITCH]);
+    const { editor, pin, container } = setup(doc);
+    fireEvent.pointerDown(pin('board', 'D13'), { button: 0 });
+    fireEvent.pointerDown(pin('led1', 'a'), { button: 0 });
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    const board = container.querySelector('[data-part-body="board"] rect') as Element;
+    fireEvent.pointerDown(board, { button: 0, clientX: 0, clientY: 0 });
+    expect(editor().selection.parts).toEqual(['board']);
+    expect(screen.getByRole('heading', { name: 'Arduino Uno board' })).toBeInTheDocument();
+    fireEvent.pointerMove(svg, { clientX: 0, clientY: 400 });
+    fireEvent.pointerUp(svg);
+    expect(editor().doc.board.position?.y).toBeGreaterThan(0);
+    expect(editor().doc.wires).toHaveLength(1);
+    fireEvent.keyDown(svg, { key: 'r' });
+    expect(editor().doc.board.position?.rotation).toBe(90);
+  });
+
+  it('duplicates a selection with Ctrl+D, including the wires inside it', () => {
+    let doc = blankProject('t', '');
+    doc = addComponent(doc, 'passive.resistor', [40 * PITCH, 4 * PITCH]).doc;
+    doc = addComponent(doc, 'actuator.led', [50 * PITCH, 4 * PITCH]).doc;
+    const { editor, pin, container } = setup(doc);
+    fireEvent.pointerDown(pin('r1', 'b'), { button: 0 });
+    fireEvent.pointerDown(pin('led1', 'a'), { button: 0 });
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    act(() => editor().setSelection({ parts: ['r1', 'led1'], wire: null }));
+    fireEvent.keyDown(svg, { key: 'd', ctrlKey: true });
+    expect(editor().selection.parts).toEqual(['r2', 'led2']);
+    expect(editor().doc.wires.map((w) => `${w.from.part}-${w.to.part}`)).toEqual(['r1-led1', 'r2-led2']);
+  });
+
+  it('pans instead of selecting with the middle button, and toggles the minimap with M', () => {
+    const { container } = setup();
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    fireEvent.pointerDown(svg, { button: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(svg, { clientX: 50, clientY: 50 });
+    expect(container.querySelector('[data-testid="selection-band"]')).toBeNull();
+    fireEvent.pointerUp(svg);
+    const toggle = screen.getByRole('button', { name: 'Show or hide the overview (M)' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('img', { name: /Circuit overview/ })).toBeInTheDocument();
+    fireEvent.keyDown(svg, { key: 'm' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('img', { name: /Circuit overview/ })).toBeNull();
+    expect(localStorage.getItem('robosim.circuit.minimap')).toBe('off');
+  });
 });

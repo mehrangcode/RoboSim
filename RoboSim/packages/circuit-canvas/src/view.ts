@@ -29,7 +29,7 @@ export const WIRE_COLORS: Readonly<Record<string, string>> = {
 /** Bounding box of the board and every part (document mm). */
 export function contentBox(doc: ProjectDocument): Box {
   const boxes = [
-    boardBox(),
+    boardBox(doc),
     ...doc.components.map((c) => placedBox(c, footprintOf(c.type, pinNamesOf(c.type)))),
   ];
   const x0 = Math.min(...boxes.map((b) => b.x));

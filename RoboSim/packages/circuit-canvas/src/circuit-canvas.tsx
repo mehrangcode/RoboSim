@@ -1,7 +1,6 @@
-import { breadboardLayout, findManifest } from '@robosim/catalog/manifests';
-import { BOARD_PART, type ComponentInstance, type PinRef } from '@robosim/shared';
+import { findManifest } from '@robosim/catalog/manifests';
+import { BOARD_PART, type PinRef } from '@robosim/shared';
 import {
-  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -12,34 +11,33 @@ import {
   type DragEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BoardArt, PartArt } from './art.js';
+import { AlignToolbar } from './align-toolbar.js';
 import {
   addComponent,
   addWire,
+  alignComponents,
+  alignableCount,
   conventionalColor,
   deleteComponents,
   deleteWires,
+  distributeComponents,
+  duplicateComponents,
   flipComponents,
   moveComponents,
   moveWirePoint,
+  partBox,
+  passengersOf,
   pinNamesOf,
   rotateComponents,
 } from './document.js';
-import {
-  BOARD_FOOTPRINT,
-  PITCH,
-  footprintOf,
-  pinPosition,
-  place,
-  placedBox,
-  snap,
-  type Point,
-} from './geometry.js';
+import { PITCH, footprintOf, pinPosition, placedBox, samePin, snap, type Point } from './geometry.js';
 import { InputPopover } from './input-popover.js';
 import { interactionOf } from './interaction.js';
+import { Minimap } from './minimap.js';
 import { CircuitNets } from './nets.js';
+import { Scene } from './scene.js';
 import type { CircuitEditorState } from './use-circuit-editor.js';
-import { MAX_K, MIN_K, PART_DRAG_TYPE, WIRE_COLORS, contentBox, fitView, type View } from './view.js';
+import { MAX_K, MIN_K, PART_DRAG_TYPE, contentBox, fitView, type View } from './view.js';
 
 type Drag =
   | {
@@ -50,7 +48,9 @@ type Drag =
       readonly moved: boolean;
     }
   | { readonly kind: 'pan'; readonly start: Point; readonly view: View }
-  | { readonly kind: 'bend'; readonly wire: string; readonly index: number; readonly at: Point };
+  | { readonly kind: 'bend'; readonly wire: string; readonly index: number; readonly at: Point }
+  /** Rubber-band selection; `add` keeps the parts selected before (Shift). */
+  | { readonly kind: 'box'; readonly start: Point; readonly at: Point; readonly add: boolean };
 
 interface Drawing {
   readonly from: PinRef;
@@ -64,11 +64,8 @@ const ZOOM_BUTTONS = [
   { key: 'zoomOut', glyph: '−' },
   { key: 'zoomFit', glyph: '⤢' },
 ] as const;
-
-/** Hit size of a breadboard hole: smaller than the pitch, so the board itself can be grabbed between holes. */
-const HOLE_HIT = PITCH * 0.7;
-
-const samePin = (a: PinRef | null, b: PinRef | null) => !!a && !!b && a.part === b.part && a.pin === b.pin;
+const MINIMAP_KEY = 'robosim.circuit.minimap';
+const NONE = new Set<string>();
 
 function pinFromTarget(target: EventTarget | null): PinRef | null {
   const el = (target as Element | null)?.closest?.('[data-pin]');
@@ -80,77 +77,21 @@ function pinFromTarget(target: EventTarget | null): PinRef | null {
 const attr = (target: EventTarget | null, name: string): string | null =>
   (target as Element | null)?.closest?.(`[${name}]`)?.getAttribute(name) ?? null;
 
+function loadMinimap(): boolean {
+  try {
+    return localStorage.getItem(MINIMAP_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
 /** edit: build the circuit · run: interact with parts of the running simulation · view: look only. */
 export type CanvasMode = 'edit' | 'run' | 'view';
-
-const PartNode = memo(function PartNode({
-  c,
-  dx,
-  dy,
-  selected,
-  live,
-  cursor,
-  damagedLabel,
-}: {
-  c: ComponentInstance;
-  dx: number;
-  dy: number;
-  selected: boolean;
-  live: unknown;
-  cursor: string;
-  /** Shown over the part when the damage model broke it (icon + text, FR-SIM-10). */
-  damagedLabel: string | null;
-}) {
-  const fp = footprintOf(c.type, pinNamesOf(c.type));
-  const transform = `translate(${c.x + dx} ${c.y + dy}) rotate(${c.rotation}) scale(${c.flipped ? -PITCH : PITCH} ${PITCH})`;
-  const { x, y, w, h } = fp.box;
-  return (
-    <g data-part-body={c.id} transform={transform} className={cursor}>
-      <PartArt type={c.type} props={c.props} live={live} label={c.id} />
-      {damagedLabel && (
-        <g pointerEvents="none">
-          <rect
-            x={x - 0.2}
-            y={y - 0.2}
-            width={w + 0.4}
-            height={h + 0.4}
-            fill="#fecaca88"
-            stroke="#dc2626"
-            strokeWidth={0.15}
-            strokeDasharray="0.6 0.3"
-          />
-          <text
-            x={x + w / 2}
-            y={y - 0.8}
-            fontSize={0.9}
-            textAnchor="middle"
-            fill="#b91c1c"
-            transform={c.flipped ? `translate(${2 * (x + w / 2)} 0) scale(-1 1)` : undefined}
-          >
-            {`💥 ${damagedLabel}`}
-          </text>
-        </g>
-      )}
-      {selected && (
-        <rect
-          x={x - 0.3}
-          y={y - 0.3}
-          width={w + 0.6}
-          height={h + 0.6}
-          fill="none"
-          stroke="#0ea5e9"
-          strokeWidth={0.15}
-          strokeDasharray="0.5 0.3"
-          pointerEvents="none"
-        />
-      )}
-    </g>
-  );
-});
 
 /**
  * The breadboard-style circuit canvas (ADR-005): React SVG with one root transform for pan and zoom.
  * Parts drag on the 0.1" grid, wires run pin to pin with bend points, hovering a pin highlights its net.
+ * Dragging the background selects parts inside the band; Space + drag, the middle button or touch pans.
  */
 export function CircuitCanvas({
   editor,
@@ -178,6 +119,9 @@ export function CircuitCanvas({
   const [drag, setDrag] = useState<Drag | null>(null);
   const [drawing, setDrawing] = useState<Drawing | null>(null);
   const [hover, setHover] = useState<{ pin: PinRef; at: Point } | null>(null);
+  const [minimap, setMinimap] = useState(loadMinimap);
+  /** Space held: a left drag pans instead of selecting. */
+  const [spaceDown, setSpaceDown] = useState(false);
   /** Part whose input popover is open, and the button held down (run mode). */
   const [inspecting, setInspecting] = useState<string | null>(null);
   const [pressing, setPressing] = useState<{ id: string; input: string } | null>(null);
@@ -266,6 +210,19 @@ export function CircuitCanvas({
     () => setView(fitView(contentBox(doc), size.width, size.height)),
     [doc, size],
   );
+  const centerOn = useCallback(
+    ([x, y]: Point) => setView((v) => ({ ...v, x: size.width / 2 - x * v.k, y: size.height / 2 - y * v.k })),
+    [size],
+  );
+  const toggleMinimap = () =>
+    setMinimap((on) => {
+      try {
+        localStorage.setItem(MINIMAP_KEY, on ? 'off' : 'on');
+      } catch {
+        // Private mode or blocked storage: the toggle still works for this page.
+      }
+      return !on;
+    });
 
   // Wheel zoom around the cursor; a native listener, because React's wheel listener is passive.
   useEffect(() => {
@@ -280,25 +237,24 @@ export function CircuitCanvas({
     return () => el.removeEventListener('wheel', onWheel);
   }, [zoomBy]);
 
-  // Parts that follow a drag: the dragged ones plus parts plugged only into a dragged breadboard.
-  const draggedSet = useMemo(() => {
-    if (drag?.kind !== 'parts') return new Set<string>();
-    const set = new Set(drag.ids);
-    for (const c of doc.components) {
-      const seats = Object.values(c.seats ?? {});
-      if (seats.length > 0 && seats.every((s) => set.has(s.part))) set.add(c.id);
-    }
-    return set;
-  }, [drag, doc]);
-  const dragDelta: Point = drag?.kind === 'parts' ? [snap(drag.delta[0]), snap(drag.delta[1])] : [0, 0];
-  const shift = (part: string): Point => (draggedSet.has(part) ? dragDelta : [0, 0]);
-
-  /** Pin position including an in-progress drag of its part. */
-  const pinAt = (ref: PinRef): Point | null => {
-    const p = pinPosition(doc, ref, pinNamesOf);
-    const [dx, dy] = shift(ref.part);
-    return p && [p[0] + dx, p[1] + dy];
-  };
+  // Parts that follow a drag: the dragged ones plus a dragged breadboard's passengers.
+  const dragIds = drag?.kind === 'parts' ? drag.ids : null;
+  const dragged = useMemo(
+    () => (dragIds ? new Set([...dragIds, ...passengersOf(doc, dragIds)]) : NONE),
+    [dragIds, doc],
+  );
+  const dx = drag?.kind === 'parts' ? snap(drag.delta[0]) : 0;
+  const dy = drag?.kind === 'parts' ? snap(drag.delta[1]) : 0;
+  const interactive = useMemo(
+    () =>
+      running
+        ? new Set(
+            doc.components.filter((c) => interactionOf(findManifest(c.type)?.inputs ?? [])).map((c) => c.id),
+          )
+        : NONE,
+    [running, doc],
+  );
+  const broken = useMemo(() => new Set(damaged ?? []), [damaged]);
 
   const finishWire = (to: PinRef) => {
     if (!drawing) return;
@@ -311,10 +267,19 @@ export function CircuitCanvas({
     setDrawing(null);
   };
 
+  const startPan = (e: PointerEvent<SVGSVGElement>) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setDrag({ kind: 'pan', start: [e.clientX, e.clientY], view });
+  };
+
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.button !== 1) return;
     svg.current?.focus();
     const at = toDoc(e.clientX, e.clientY);
+    if (e.button === 1 || (spaceDown && e.button === 0)) {
+      e.preventDefault();
+      return startPan(e);
+    }
     if (!editing) {
       const part = attr(e.target, 'data-part-body');
       const c = part ? doc.components.find((v) => v.id === part) : undefined;
@@ -323,13 +288,13 @@ export function CircuitCanvas({
       // A button drawn inside a part (a keypad key, a joystick's push) is held where it is drawn.
       const drawn = attr(e.target, 'data-input');
       const button = inputs.find((i) => i.name === drawn && i.type === 'boolean');
-      if (c && button && e.button === 0) {
+      if (c && button) {
         e.currentTarget.setPointerCapture?.(e.pointerId);
         setPressing({ id: c.id, input: button.name });
         sendInput(c.id, button.name, true);
         return;
       }
-      if (c && how && how.kind !== 'keys' && e.button === 0) {
+      if (c && how && how.kind !== 'keys') {
         if (how.kind === 'momentary') {
           e.currentTarget.setPointerCapture?.(e.pointerId);
           setPressing({ id: c.id, input: how.input });
@@ -339,36 +304,35 @@ export function CircuitCanvas({
         return;
       }
       setInspecting(null);
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-      setDrag({ kind: 'pan', start: [e.clientX, e.clientY], view });
-      return;
+      return startPan(e);
     }
     const pin = pinFromTarget(e.target);
-    if (pin && e.button === 0) {
+    if (pin) {
       e.stopPropagation();
       if (drawing) finishWire(pin);
       else setDrawing({ from: pin, points: [], cursor: at });
       return;
     }
-    if (drawing && e.button === 0) {
+    if (drawing) {
       setDrawing({ ...drawing, points: [...drawing.points, [snap(at[0]), snap(at[1])]] });
       return;
     }
     const bend = attr(e.target, 'data-bend');
-    if (bend && e.button === 0) {
+    if (bend) {
       const [wire = '', index = '0'] = bend.split(':');
       e.currentTarget.setPointerCapture?.(e.pointerId);
       setDrag({ kind: 'bend', wire, index: Number(index), at });
       return;
     }
     const wire = attr(e.target, 'data-wire');
-    if (wire && e.button === 0) {
+    if (wire) {
       setSelection({ parts: [], wire });
       return;
     }
     const part = attr(e.target, 'data-part-body');
-    if (part && e.button === 0) {
-      const ids = e.shiftKey
+    if (part) {
+      const toggle = e.shiftKey || e.ctrlKey || e.metaKey;
+      const ids = toggle
         ? selection.parts.includes(part)
           ? selection.parts.filter((p) => p !== part)
           : [...selection.parts, part]
@@ -382,9 +346,11 @@ export function CircuitCanvas({
       }
       return;
     }
+    // Touch has no hover or modifier keys: a finger on the background pans.
+    if (e.pointerType === 'touch') return startPan(e);
     if (!e.shiftKey) setSelection({ parts: [], wire: null });
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    setDrag({ kind: 'pan', start: [e.clientX, e.clientY], view });
+    setDrag({ kind: 'box', start: at, at, add: e.shiftKey });
   };
 
   const onPointerMove = (e: PointerEvent<SVGSVGElement>) => {
@@ -411,6 +377,22 @@ export function CircuitCanvas({
     if (drag?.kind === 'parts' && drag.moved)
       apply((d) => moveComponents(d, drag.ids, drag.delta[0], drag.delta[1]));
     if (drag?.kind === 'bend') apply((d) => moveWirePoint(d, drag.wire, drag.index, drag.at));
+    if (drag?.kind === 'box') {
+      // Parts (and the board) entirely inside the band.
+      const x0 = Math.min(drag.start[0], drag.at[0]);
+      const x1 = Math.max(drag.start[0], drag.at[0]);
+      const y0 = Math.min(drag.start[1], drag.at[1]);
+      const y1 = Math.max(drag.start[1], drag.at[1]);
+      const inside = [BOARD_PART, ...doc.components.map((c) => c.id)].filter((id) => {
+        const b = partBox(doc, id);
+        return b && b.x >= x0 && b.y >= y0 && b.x + b.w <= x1 && b.y + b.h <= y1;
+      });
+      if (inside.length > 0 || !drag.add)
+        setSelection({
+          parts: drag.add ? [...new Set([...selection.parts, ...inside])] : inside,
+          wire: null,
+        });
+    }
     setDrag(null);
   };
 
@@ -432,9 +414,26 @@ export function CircuitCanvas({
     setSelection({ parts: [], wire: null });
   };
 
+  // `apply` runs its updater later, so the new ids come from the same pure edit on the current document.
+  const duplicate = (ids: readonly string[]) => {
+    apply((d) => duplicateComponents(d, ids).doc);
+    setSelection({ parts: duplicateComponents(doc, ids).ids, wire: null });
+  };
+
   const onKeyDown = (e: KeyboardEvent<SVGSVGElement>) => {
     const mod = e.ctrlKey || e.metaKey;
+    const key = e.key.toLowerCase();
     const ids = selection.parts;
+    if (e.key === ' ') {
+      setSpaceDown(true);
+      e.preventDefault();
+      return;
+    }
+    if (!mod && key === 'm') {
+      toggleMinimap();
+      e.preventDefault();
+      return;
+    }
     if (!editing) {
       if (e.key === 'Escape') setInspecting(null);
       return;
@@ -443,10 +442,13 @@ export function CircuitCanvas({
       setDrawing(null);
       setSelection({ parts: [], wire: null });
     } else if (e.key === 'Delete' || e.key === 'Backspace') removeSelection();
-    else if (mod && e.key.toLowerCase() === 'z') (e.shiftKey ? editor.redo : editor.undo)();
-    else if (mod && e.key.toLowerCase() === 'y') editor.redo();
-    else if (!mod && e.key.toLowerCase() === 'r' && ids.length) apply((d) => rotateComponents(d, ids));
-    else if (!mod && e.key.toLowerCase() === 'f' && ids.length) apply((d) => flipComponents(d, ids));
+    else if (mod && key === 'z') (e.shiftKey ? editor.redo : editor.undo)();
+    else if (mod && key === 'y') editor.redo();
+    else if (mod && key === 'a')
+      setSelection({ parts: [BOARD_PART, ...doc.components.map((c) => c.id)], wire: null });
+    else if (mod && key === 'd' && ids.length) duplicate(ids);
+    else if (!mod && key === 'r' && ids.length) apply((d) => rotateComponents(d, ids));
+    else if (!mod && key === 'f' && ids.length) apply((d) => flipComponents(d, ids));
     else if (e.key.startsWith('Arrow') && ids.length) {
       const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key] ?? [
         0, 0,
@@ -461,64 +463,22 @@ export function CircuitCanvas({
     if (!type || !editing) return;
     e.preventDefault();
     const at = toDoc(e.clientX, e.clientY);
-    let id = '';
-    apply((d) => {
-      const added = addComponent(d, type, at);
-      id = added.id;
-      return added.doc;
-    });
-    setSelection({ parts: [id], wire: null });
+    apply((d) => addComponent(d, type, at).doc);
+    setSelection({ parts: [addComponent(doc, type, at).id], wire: null });
   };
 
-  // Pins as hit targets: the board header, every part pin; breadboard holes are pins too.
-  const pinTargets: { ref: PinRef; at: Point; hole: boolean }[] = [];
-  for (const [pin, p] of Object.entries(BOARD_FOOTPRINT.pins))
-    pinTargets.push({
-      ref: { part: BOARD_PART, pin },
-      at: place({ x: 0, y: 0, rotation: 0, flipped: false }, p),
-      hole: false,
-    });
-  const holes: typeof pinTargets = [];
-  for (const c of doc.components) {
-    const [dx, dy] = shift(c.id);
-    const hole = breadboardLayout(c.type) !== undefined;
-    for (const [pin, p] of Object.entries(footprintOf(c.type, pinNamesOf(c.type)).pins)) {
-      const [x, y] = place(c, p);
-      (hole ? holes : pinTargets).push({ ref: { part: c.id, pin }, at: [x + dx, y + dy], hole });
-    }
-  }
-  const highlighted = hover ? nets.connectedTo(hover.pin) : [];
-  // Drawing order as on a real desk: breadboards, their holes, then the parts plugged into them,
-  // so a part on a breadboard is grabbed, not the hole underneath it.
-  const breadboards = doc.components.filter((c) => breadboardLayout(c.type));
-  const parts = doc.components.filter((c) => !breadboardLayout(c.type));
-  const selectedParts = new Set(editing ? selection.parts : []);
-  const broken = new Set(damaged ?? []);
-  const damagedText = t('editor:canvas.damaged');
-  const cursorOf = (c: ComponentInstance): string =>
-    editing
-      ? 'cursor-move'
-      : running && interactionOf(findManifest(c.type)?.inputs ?? [])
-        ? 'cursor-pointer'
-        : '';
   const inspected = inspecting ? doc.components.find((c) => c.id === inspecting) : undefined;
-  const partNode = (c: ComponentInstance) => {
-    const [dx, dy] = shift(c.id);
-    return (
-      <PartNode
-        key={c.id}
-        c={c}
-        dx={dx}
-        dy={dy}
-        selected={selectedParts.has(c.id)}
-        live={live?.[c.id]}
-        cursor={cursorOf(c)}
-        damagedLabel={broken.has(c.id) ? damagedText : null}
-      />
-    );
-  };
-
-  const wirePath = (pts: readonly Point[]) => pts.map((p, i) => `${i ? 'L' : 'M'} ${p[0]} ${p[1]}`).join(' ');
+  const alignable = editing && selection.parts.length > 1 ? alignableCount(doc, selection.parts) : 0;
+  const band =
+    drag?.kind === 'box'
+      ? {
+          x: Math.min(drag.start[0], drag.at[0]),
+          y: Math.min(drag.start[1], drag.at[1]),
+          w: Math.abs(drag.at[0] - drag.start[0]),
+          h: Math.abs(drag.at[1] - drag.start[1]),
+        }
+      : null;
+  const panning = drag?.kind === 'pan' || spaceDown;
 
   return (
     <div
@@ -531,13 +491,15 @@ export function CircuitCanvas({
         role="application"
         aria-label={t('editor:canvas.label')}
         aria-describedby="circuit-canvas-help"
-        className="block h-full w-full touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className={`block h-full w-full touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-accent ${panning ? 'cursor-grab' : ''}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerOver={onPointerOver}
         onPointerLeave={() => setHover(null)}
         onKeyDown={onKeyDown}
+        onKeyUp={(e) => e.key === ' ' && setSpaceDown(false)}
+        onBlur={() => setSpaceDown(false)}
         onDragOver={(e) => e.dataTransfer.types.includes(PART_DRAG_TYPE) && e.preventDefault()}
         onDrop={onDrop}
       >
@@ -548,122 +510,36 @@ export function CircuitCanvas({
         </defs>
         <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
           <rect x={-2000} y={-2000} width={4000} height={4000} fill="url(#circuit-grid)" />
-          <g transform={`scale(${PITCH})`}>
-            <BoardArt />
-          </g>
-          {breadboards.map(partNode)}
-          {holes.map(({ ref, at }) => {
-            const hovered = samePin(ref, hover?.pin ?? null);
-            return (
-              <rect
-                key={`${ref.part}.${ref.pin}`}
-                data-part={ref.part}
-                data-pin={ref.pin}
-                x={at[0] - HOLE_HIT / 2}
-                y={at[1] - HOLE_HIT / 2}
-                width={HOLE_HIT}
-                height={HOLE_HIT}
-                fill={hovered ? '#0ea5e955' : 'transparent'}
-                stroke={hovered ? '#0ea5e9' : 'none'}
-                strokeWidth={0.25}
-                className={editing ? 'cursor-crosshair' : ''}
-                pointerEvents={editing ? undefined : 'none'}
-              />
-            );
-          })}
-          {parts.map(partNode)}
-          {doc.wires.map((w) => {
-            const a = pinAt(w.from);
-            const b = pinAt(w.to);
-            if (!a || !b) return null;
-            const points = w.points.map((p, i) =>
-              drag?.kind === 'bend' && drag.wire === w.id && drag.index === i
-                ? ([snap(drag.at[0]), snap(drag.at[1])] as Point)
-                : p,
-            );
-            const d = wirePath([a, ...points, b]);
-            const selected = editing && selection.wire === w.id;
-            return (
-              <g key={w.id} data-wire={w.id} className="cursor-pointer">
-                <path d={d} fill="none" stroke="transparent" strokeWidth={2.4} />
-                {selected && (
-                  <path
-                    d={d}
-                    fill="none"
-                    stroke="#0ea5e9"
-                    strokeWidth={1.5}
-                    strokeLinejoin="round"
-                    opacity={0.5}
-                  />
-                )}
-                <path
-                  d={d}
-                  fill="none"
-                  stroke={WIRE_COLORS[w.color] ?? w.color}
-                  strokeWidth={0.8}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-                {selected &&
-                  points.map((p, i) => (
-                    <circle
-                      key={i}
-                      data-bend={`${w.id}:${i}`}
-                      cx={p[0]}
-                      cy={p[1]}
-                      r={0.9}
-                      fill="#fff"
-                      stroke="#0ea5e9"
-                      strokeWidth={0.3}
-                      className="cursor-grab"
-                    />
-                  ))}
-              </g>
-            );
-          })}
-          {pinTargets.map(({ ref, at }) => (
-            <circle
-              key={`${ref.part}.${ref.pin}`}
-              data-part={ref.part}
-              data-pin={ref.pin}
-              cx={at[0]}
-              cy={at[1]}
-              r={0.9}
-              fill="transparent"
-              stroke={samePin(ref, hover?.pin ?? null) ? '#0ea5e9' : 'transparent'}
-              strokeWidth={0.3}
-              className={editing ? 'cursor-crosshair' : ''}
+          <Scene
+            doc={doc}
+            nets={nets}
+            selection={selection}
+            editing={editing}
+            dragged={dragged}
+            dx={dx}
+            dy={dy}
+            bend={drag?.kind === 'bend' ? drag : null}
+            drawing={drawing}
+            hover={hover?.pin ?? null}
+            live={live}
+            interactive={interactive}
+            damaged={broken}
+            damagedText={t('editor:canvas.damaged')}
+          />
+          {band && (
+            <rect
+              data-testid="selection-band"
+              x={band.x}
+              y={band.y}
+              width={band.w}
+              height={band.h}
+              fill="#0ea5e91a"
+              stroke="#0ea5e9"
+              strokeWidth={1 / view.k}
+              strokeDasharray={`${4 / view.k} ${3 / view.k}`}
+              pointerEvents="none"
             />
-          ))}
-          {highlighted.map((ref) => {
-            const at = pinAt(ref);
-            return at ? (
-              <circle
-                key={`${ref.part}.${ref.pin}`}
-                cx={at[0]}
-                cy={at[1]}
-                r={0.75}
-                fill="none"
-                stroke="#0ea5e9"
-                strokeWidth={0.35}
-                pointerEvents="none"
-              />
-            ) : null;
-          })}
-          {drawing &&
-            (() => {
-              const from = pinAt(drawing.from);
-              return from ? (
-                <path
-                  d={wirePath([from, ...drawing.points, drawing.cursor])}
-                  fill="none"
-                  stroke="#0ea5e9"
-                  strokeWidth={0.6}
-                  strokeDasharray="1.2 0.8"
-                  pointerEvents="none"
-                />
-              ) : null;
-            })()}
+          )}
         </g>
       </svg>
       {hover && (
@@ -674,6 +550,15 @@ export function CircuitCanvas({
           style={{ left: hover.at[0] * view.k + view.x + 10, top: hover.at[1] * view.k + view.y - 28 }}
         >
           {hover.pin.part === BOARD_PART ? `Uno · ${hover.pin.pin}` : `${hover.pin.part} · ${hover.pin.pin}`}
+        </div>
+      )}
+      {alignable > 1 && (
+        <div className="absolute start-2 top-2">
+          <AlignToolbar
+            count={alignable}
+            onAlign={(how) => apply((d) => alignComponents(d, selection.parts, how))}
+            onDistribute={(axis) => apply((d) => distributeComponents(d, selection.parts, axis))}
+          />
         </div>
       )}
       <div className="absolute end-2 top-2 flex gap-1">
@@ -689,7 +574,25 @@ export function CircuitCanvas({
             {glyph}
           </button>
         ))}
+        <button
+          type="button"
+          title={t('editor:canvas.minimapToggle')}
+          aria-label={t('editor:canvas.minimapToggle')}
+          aria-pressed={minimap}
+          onClick={toggleMinimap}
+          className="grid size-7 place-items-center rounded border border-line bg-surface shadow-sm hover:bg-surface-raised aria-pressed:bg-surface-raised"
+        >
+          <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true" fill="none" stroke="currentColor">
+            <rect x={1.5} y={2.5} width={13} height={11} rx={1} />
+            <rect x={7.5} y={8} width={5} height={3.5} fill="currentColor" stroke="none" />
+          </svg>
+        </button>
       </div>
+      {minimap && (
+        <div className="absolute bottom-6 end-2">
+          <Minimap doc={doc} view={view} size={size} label={t('editor:canvas.minimap')} onCenter={centerOn} />
+        </div>
+      )}
       {inspected &&
         (() => {
           const box = placedBox(inspected, footprintOf(inspected.type, pinNamesOf(inspected.type)));

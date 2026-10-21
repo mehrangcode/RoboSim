@@ -31,6 +31,7 @@
     "shell:arena.family.",
     "shell:robot.slot.",
     "shell:robot.sides.",
-    "shell:robot.field."
+    "shell:robot.field.",
+    "editor:align."
   ]
 }

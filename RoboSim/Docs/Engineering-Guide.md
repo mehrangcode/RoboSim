@@ -106,7 +106,7 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm test` | Unit tests (Vitest) |
 | `pnpm test:int` | Integration tests against real services via Testcontainers (P1; until then DB integration tests run on PGlite inside `pnpm test`) |
 | `pnpm test:e2e` | Playwright E2E (EN + FA projects, Chrome + Firefox) |
-| `pnpm test:sim` | Everything simulation: `test:sim:node` + `test:sim:browser` + 2D frame budget |
+| `pnpm test:sim` | Everything simulation: `test:sim:node` + `test:sim:browser` + 2D and circuit-canvas frame budgets |
 | `pnpm test:sim:node` | Node only: build, peripheral conformance, golden traces, robustness (fuzzing), long run (~80 s) |
 | `pnpm test:sim:browser` | Browser correctness legs only: conformance + golden traces in headless Chromium + Firefox (Vitest browser mode, Playwright provider). Install browsers once: `pnpm --filter @robosim/grader exec playwright install --with-deps chromium firefox` |
 | `pnpm test:perf` | Slice/analysis/netlist budgets (`packages/sim-runtime/scripts/perf-budgets.ts`, against built dist); `ROBOSIM_PERF_SCALE` scales every budget for slower machines |
@@ -189,7 +189,7 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | E2E | Playwright | User journeys A–F in FA and EN; payment via `fake` and gateway sandbox (staging) | Journeys pass in both locales |
 | Visual regression | Playwright screenshots | Key screens and PDF exports in FA/EN, RTL correctness | Reviewed diffs only |
 | Accessibility | axe-core in Playwright | All non-canvas screens | No serious/critical violations |
-| Performance | `pnpm test:perf`, 2D frame budget (Vitest browser mode), benchmarks, k6 | Budgets in Technical Design §17; build and API load | Within budget |
+| Performance | `pnpm test:perf`, 2D and circuit-canvas frame budgets (Vitest browser mode), benchmarks, k6 | Budgets in Technical Design §17; build and API load | Within budget |
 | Security | Semgrep, Trivy, secret scan, sandbox escape suite, tenant isolation suite, ZAP baseline (staging) | Per [Security §10](Security-Privacy-Compliance.md#10-secure-development-lifecycle) | No high/critical open |
 | LTI | Moodle 4.x container | Launch, deep link, NRPS, AGS | Pass |
 | AI | `pnpm ai:eval` | 200+ FA/EN tasks; tutor-mode leakage | No regression > 2 points; leakage ≤ 2 % |
@@ -213,7 +213,7 @@ flowchart LR
   tag --> prod["Argo CD → production (progressive 10 % → 50 % → 100 %)"]
 ```
 
-- `sim` job (every PR/push): installs Playwright Chromium + Firefox, gates on `pnpm test:sim:node` and `pnpm test:sim:browser`; the 2D frame budget and `pnpm test:perf` run report-only (`continue-on-error`, shared runners are noisy; budgets are gated locally). Browser cache not yet set up (follow-up: pin `actions/cache` SHA).
+- `sim` job (every PR/push): installs Playwright Chromium + Firefox, gates on `pnpm test:sim:node` and `pnpm test:sim:browser`; the 2D and circuit-canvas frame budgets and `pnpm test:perf` run report-only (`continue-on-error`, shared runners are noisy; budgets are gated locally). Browser cache not yet set up (follow-up: pin `actions/cache` SHA).
 - CI runners: self-hosted runners in-region (dependencies from Verdaccio/Harbor mirrors) so CI is not blocked by upstream outages.
 - Releases: weekly train for SaaS; quarterly LTS for Private Cloud; hotfixes cherry-picked to the LTS branch.
 - Rollback: Argo CD revert to previous tag; DB migrations are backward-compatible, so rollback does not require down-migrations.
