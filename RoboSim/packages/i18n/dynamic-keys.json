@@ -32,6 +32,9 @@
     "shell:robot.slot.",
     "shell:robot.sides.",
     "shell:robot.field.",
-    "editor:align."
+    "editor:align.",
+    "shell:cloud.status.",
+    "shell:cloud.versions.source.",
+    "shell:projects.sort."
   ]
 }

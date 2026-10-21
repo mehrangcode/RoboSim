@@ -8,6 +8,8 @@ import {
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ENV, type Env } from '../../config/env.js';
+import { CallerGuard } from '../iam/index.js';
+import { ProjectsService } from '../projects/index.js';
 import { BuildGatewayService } from './build-gateway.service.js';
 import { IdempotencyStore } from './idempotency.js';
 import { FixedWindowRateLimiter } from './rate-limiter.js';
@@ -19,6 +21,8 @@ export class BuildGatewayController {
 
   constructor(
     private readonly builds: BuildGatewayService,
+    private readonly callers: CallerGuard,
+    private readonly projects: ProjectsService,
     @Inject(ENV) env: Env,
   ) {
     this.limiter = new FixedWindowRateLimiter(env.BUILD_RATE_LIMIT_PER_MIN, 60_000);
@@ -47,7 +51,23 @@ export class BuildGatewayController {
       throw new DomainError('validation_failed', {
         errors: [{ path: 'Idempotency-Key', message: 'a UUID Idempotency-Key header is required' }],
       });
-    return this.idempotency.run(client, key, body, () => this.builds.build(body));
+    return this.idempotency.run(client, key, body, async () => {
+      const result = await this.builds.build(body);
+      if (body.projectId && result.status === 'succeeded' && result.artifact)
+        await this.snapshot(req, body, result.artifact.id);
+      return result;
+    });
+  }
+
+  /** FR-PRJ-03: a successful build of a saved project becomes an automatic version. Guests have no projects. */
+  private async snapshot(req: FastifyRequest, body: BuildRequest, artifactId: string): Promise<void> {
+    let caller;
+    try {
+      caller = await this.callers.resolve(req);
+    } catch {
+      return;
+    }
+    await this.projects.snapshotBuild(caller, body.projectId ?? '', body.files, artifactId);
   }
 
   /** Firmware by content address; immutable, so cacheable forever. */

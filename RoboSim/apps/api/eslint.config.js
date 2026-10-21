@@ -16,6 +16,7 @@ export default [
       'src/**/*.controller.ts',
       'src/**/*.service.ts',
       'src/**/*.filter.ts',
+      'src/**/*.guard.ts',
       'src/**/*.relay.ts',
     ],
     rules: { '@typescript-eslint/consistent-type-imports': 'off' },

@@ -24,7 +24,18 @@ const editorRoute = createRoute({
     typeof search['demo'] === 'string' ? { demo: search['demo'] } : {},
   component: lazyRouteComponent(() => import('./editor/editor-page.js'), 'EditorPage'),
 });
-const routeTree = rootRoute.addChildren([homeRoute, editorRoute, labRoute]);
+// A cloud project in the editor (API Spec §4.4); the same lazy chunk as /editor.
+const cloudEditorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/editor/$projectId',
+  component: lazyRouteComponent(() => import('./editor/editor-page.js'), 'EditorPage'),
+});
+const projectsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/projects',
+  component: lazyRouteComponent(() => import('./projects/projects-page.js'), 'ProjectsPage'),
+});
+const routeTree = rootRoute.addChildren([homeRoute, projectsRoute, editorRoute, cloudEditorRoute, labRoute]);
 
 export function createAppRouter(history?: RouterHistory) {
   return createRouter({ routeTree, ...(history ? { history } : {}) });

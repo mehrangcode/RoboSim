@@ -155,3 +155,32 @@ describe('build runtime configuration', () => {
     expect(() => loadEnv({ APP_ENV: 'staging', DATABASE_DRIVER: 'pglite' })).toThrow(/COMPILER_RUNTIME/);
   });
 });
+
+describe('automatic versions on successful builds (FR-PRJ-03)', () => {
+  it('snapshots the saved project when its code is what was built', async () => {
+    const a = await app();
+    const created = await a.inject({
+      method: 'POST',
+      url: '/api/v1/projects',
+      payload: {
+        document: {
+          schemaVersion: 4,
+          board: { id: 'avr-uno', version: '1.0.0' },
+          components: [],
+          wires: [],
+          code: { language: 'cpp', files: [{ name: 'sketch.ino', content: BLINK }] },
+          libraries: [],
+          meta: { title: 'Blink' },
+        },
+      },
+    });
+    const projectId = created.json<{ id: string }>().id;
+    const built = buildResultSchema.parse((await post(a, { ...request(), projectId })).json());
+    expect(built.status).toBe('succeeded');
+    await post(a, { ...request('void setup() {}\nvoid loop() {}\n'), projectId }); // unsaved edit: no version
+    const versions = await a.inject({ method: 'GET', url: `/api/v1/projects/${projectId}/versions` });
+    expect(versions.json<{ items: unknown[] }>().items).toEqual([
+      expect.objectContaining({ number: 1, source: 'auto_build', artifactId: built.artifact?.id }),
+    ]);
+  });
+});

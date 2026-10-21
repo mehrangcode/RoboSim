@@ -8,7 +8,7 @@ import {
 import { ProjectDocumentError, parseProjectDocument, type ProjectDocument } from '@robosim/shared';
 import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, cn } from '@robosim/ui';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { findArena } from '@robosim/content/arenas';
 import type { Pose } from '@robosim/renderer-2d';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -33,8 +33,11 @@ import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
 import { SerialMonitor } from '../lab/serial-monitor.js';
 import { SketchPanel } from '../lab/sketch-panel.js';
-import type { CompileSketch } from '../lab/use-build.js';
+import { compileWithApi, type CompileSketch } from '../lab/use-build.js';
 import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
+import { ApiError } from '../lib/api.js';
+import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
+import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { HelpDialog } from './help-dialog.js';
 import {
   downloadJson,
@@ -48,6 +51,7 @@ import {
 import { starterProject } from './starter.js';
 import { useBuzzerAudio } from './use-buzzer-audio';
 import { useLayout, useSizeClass, type Pane } from './use-layout.js';
+import { openCloudProject, useCloudSync, type CloudOpen, type OpenResult } from './use-cloud-sync.js';
 import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
@@ -112,25 +116,77 @@ function Rail({ title, onExpand, vertical }: { title: string; onExpand: () => vo
   );
 }
 
+interface EditorProps {
+  createWorker?: (() => WorkerLike) | undefined;
+  compileSketch?: CompileSketch | undefined;
+  projects?: ProjectsClient | undefined;
+}
+
+/**
+ * `/editor` edits a project kept in this browser; `/editor/$projectId` a cloud project (API Spec §4.4),
+ * opened before the workspace mounts so the editor starts from its document.
+ */
+export function EditorPage(props: EditorProps) {
+  const { i18n } = useTranslation();
+  const { projectId } = useParams({ strict: false }) as { projectId?: string };
+  // The i18n instance is stable; reading its language per request follows language switches.
+  const [fallback] = useState(() => projectsApi(() => i18n.language));
+  const projects = props.projects ?? fallback;
+  if (!projectId) return <Workspace {...props} projects={projects} />;
+  return <CloudWorkspace key={projectId} id={projectId} {...props} projects={projects} />;
+}
+
+function CloudWorkspace({ id, ...props }: EditorProps & { id: string; projects: ProjectsClient }) {
+  const { t } = useTranslation();
+  const [result, setResult] = useState<OpenResult | null>(null);
+  const { projects } = props;
+  useEffect(() => {
+    let live = true;
+    void openCloudProject(projects, id).then((r) => live && setResult(r));
+    return () => {
+      live = false;
+    };
+  }, [projects, id]);
+  if (result?.kind === 'ready') return <Workspace {...props} cloudOpen={result.open} />;
+  return (
+    <div className="mx-auto max-w-xl py-16 text-center">
+      <h1 className="sr-only">{t('shell:editor.title')}</h1>
+      <p role={result ? 'alert' : 'status'} className={result ? 'text-danger' : 'text-ink-muted'}>
+        {!result
+          ? t('shell:cloud.opening')
+          : result.kind === 'missing'
+            ? t('shell:cloud.missing')
+            : t('shell:cloud.openFailed', { message: result.message })}
+      </p>
+      {result && (
+        <Link to="/projects" className="mt-6 inline-block text-brand-600 hover:underline">
+          {t('shell:cloud.allProjects')}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 /**
  * The editor workspace (FR-WRK-01…03): component library and properties, circuit canvas with the
  * simulation view, code, and a bottom dock with serial monitor, pin inspector, safety and challenge.
  */
-export function EditorPage({
+function Workspace({
   createWorker,
   compileSketch,
-}: {
-  createWorker?: () => WorkerLike;
-  compileSketch?: CompileSketch;
-}) {
+  projects,
+  cloudOpen,
+}: EditorProps & { projects: ProjectsClient; cloudOpen?: CloudOpen }) {
   const { t, i18n } = useTranslation();
   const fmt = useFormat();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { demo?: string };
   const sim = useSimulation(createWorker);
   const { scene, frame, serialLog, clearSerial, send } = sim;
-  const [stored] = useState(loadStored);
-  const editor = useCircuitEditor(() => stored?.project ?? starterProject(t('shell:editor.starterTitle')));
+  const [stored] = useState(() => (cloudOpen ? null : loadStored()));
+  const editor = useCircuitEditor(
+    () => cloudOpen?.start ?? stored?.project ?? starterProject(t('shell:editor.starterTitle')),
+  );
   const { doc, reset } = editor;
   const [files, setFiles] = useState<readonly SourceFile[]>(() => doc.code.files);
   const [pristine, setPristine] = useState(() => stored?.pristine ?? runKey(doc));
@@ -144,24 +200,34 @@ export function EditorPage({
   const [centre, setCentre] = useState<CentreView>('circuit');
   const [help, setHelp] = useState(false);
   const [arenaPicker, setArenaPicker] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const { layout, resize, toggle } = useLayout();
   const size = useSizeClass();
-  const run = useRun({ send, scene, compileSketch, locale: i18n.language });
   const current = withFiles(doc, files);
+  const cloud = useCloudSync(cloudOpen, projects, current);
+  // A cloud build saves first and names the project, so a successful build becomes a version (FR-PRJ-03).
+  const compile = compileSketch ?? compileWithApi;
+  const cloudCompile: CompileSketch | undefined = cloudOpen
+    ? async (request, locale) => {
+        await cloud.flush();
+        return compile({ ...request, projectId: cloudOpen.id }, locale);
+      }
+    : compileSketch;
+  const run = useRun({ send, scene, compileSketch: cloudCompile, locale: i18n.language });
   const running = frame?.running ?? false;
 
-  // Autosave on every change; an edit while running stops the run.
+  // Autosave on every change (a cloud project's draft is kept by useCloudSync); an edit while running stops the run.
   useEffect(() => {
-    saveStored({ project: current, pristine });
+    if (!cloudOpen) saveStored({ project: current, pristine });
   });
   const { watch } = run;
   useEffect(() => watch(current));
   useEffect(() => send({ type: 'speed', value: Number(speed) }), [speed, send]);
 
-  /** Replaces the project after confirming when the current one has edits of its own. */
-  const replace = (next: ProjectDocument, demoId: ScenarioId | null = null) => {
-    if (runKey(current) !== pristine && !window.confirm(t('shell:editor.confirmReplace'))) return false;
+  /** Shows `next` in the workspace. */
+  const load = (next: ProjectDocument, demoId: ScenarioId | null = null) => {
     if (run.phase !== 'edit') run.stop();
     reset(next);
     setFiles(next.code.files);
@@ -169,7 +235,29 @@ export function EditorPage({
     run.setDemo(demoId ? { id: demoId, key: runKey(next) } : null);
     run.clearBuild();
     setNotice(null);
+  };
+  /** Replaces the project after confirming when the current one has edits of its own. */
+  const replace = (next: ProjectDocument, demoId: ScenarioId | null = null) => {
+    if (runKey(current) !== pristine && !window.confirm(t('shell:editor.confirmReplace'))) return false;
+    load(next, demoId);
     return true;
+  };
+
+  /** Uploads the browser project as a new cloud project and opens it. */
+  const saveToCloud = async () => {
+    setUploading(true);
+    try {
+      const created = await projects.create({ document: current });
+      void navigate({ to: '/editor/$projectId', params: { projectId: created.id } });
+    } catch (e) {
+      setNotice(
+        t('shell:cloud.uploadFailed', {
+          message: e instanceof ApiError ? e.problem.title : (e as Error).message,
+        }),
+      );
+    } finally {
+      setUploading(false);
+    }
   };
 
   // A demo opens once the worker has loaded it: its scene carries the document.
@@ -211,10 +299,13 @@ export function EditorPage({
     }
   };
 
-  const save = () =>
-    setNotice(
-      saveStored({ project: current, pristine }) ? t('shell:editor.saved') : t('shell:editor.saveFailed'),
-    );
+  const save = () => {
+    if (cloudOpen) void cloud.save();
+    else
+      setNotice(
+        saveStored({ project: current, pristine }) ? t('shell:editor.saved') : t('shell:editor.saveFailed'),
+      );
+  };
   const runOrPause = () => void run.start(current, running);
   const step = () => run.ready && !running && send({ type: 'control', action: 'step' });
   const resetRun = () => run.ready && send({ type: 'control', action: 'reset' });
@@ -428,13 +519,22 @@ export function EditorPage({
       />
       {size !== 'narrow' && (
         <>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => replace(starterProject(t('shell:editor.starterTitle')))}
-          >
-            {t('shell:editor.new')}
-          </Button>
+          {cloudOpen ? (
+            <Link
+              to="/projects"
+              className="rounded-md border border-line bg-surface px-2 py-1 text-sm hover:bg-surface-raised"
+            >
+              {t('shell:cloud.allProjects')}
+            </Link>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => replace(starterProject(t('shell:editor.starterTitle')))}
+            >
+              {t('shell:editor.new')}
+            </Button>
+          )}
           <select
             aria-label={t('shell:editor.demo')}
             value={demoChoice}
@@ -467,9 +567,23 @@ export function EditorPage({
           <Button size="sm" variant="secondary" onClick={() => downloadJson(fileName(current), current)}>
             {t('shell:editor.export')}
           </Button>
-          <Button size="sm" variant="secondary" onClick={save}>
+          <Button size="sm" variant="secondary" onClick={save} aria-keyshortcuts="Control+S">
             {t('shell:editor.save')}
           </Button>
+          {cloudOpen ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setVersionsOpen(true)}
+              aria-haspopup="dialog"
+            >
+              {t('shell:cloud.versions.button')}
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={() => void saveToCloud()} disabled={uploading}>
+              {t('shell:cloud.saveToCloud')}
+            </Button>
+          )}
           {hasChassis(doc) && (
             <Button
               size="sm"
@@ -533,6 +647,23 @@ export function EditorPage({
       <p role="status" aria-live="polite" className="text-sm tabular-nums text-ink-muted">
         {status}
       </p>
+      {cloudOpen && (
+        <p
+          role="status"
+          aria-live="polite"
+          title={cloud.message ?? undefined}
+          className={cn(
+            'rounded-full border px-2 text-xs',
+            cloud.status === 'saved'
+              ? 'border-line text-ink-muted'
+              : cloud.status === 'error' || cloud.status === 'conflict'
+                ? 'border-danger text-danger'
+                : 'border-line text-ink',
+          )}
+        >
+          {t(`shell:cloud.status.${cloud.status}`)}
+        </p>
+      )}
       <Button
         size="sm"
         variant="secondary"
@@ -586,6 +717,22 @@ export function EditorPage({
   const helpDialog = (
     <>
       {help && <HelpDialog onClose={() => setHelp(false)} />}
+      {cloud.conflict && (
+        <ConflictDialog
+          conflict={cloud.conflict}
+          onResolve={async (keep) => {
+            const next = await cloud.resolve(keep);
+            if (next) load(next);
+          }}
+        />
+      )}
+      {versionsOpen && (
+        <VersionsDialog
+          cloud={cloud}
+          onRestored={(next) => load(next)}
+          onClose={() => setVersionsOpen(false)}
+        />
+      )}
       {arenaPicker && (
         <ArenaPicker
           current={arenaId}

@@ -23,6 +23,9 @@ const envSchema = z
     COMPILER_CACHE_DIR: z.string().optional(),
     COMPILER_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(2),
     BUILD_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(20),
+    // Until sessions land (P2), local and test runs act as a fixed development user (X-Dev-User overrides it).
+    DEV_IDENTITY: bool.optional(),
+    DEV_IDENTITY_EMAIL: z.email().default('learner@dev.local'),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_DRIVER === 'postgres' && !env.DATABASE_URL) {
@@ -40,6 +43,13 @@ const envSchema = z
           'the local build runtime is for development only; staging/production need the gVisor sandbox',
       });
     }
+    if ((env.APP_ENV === 'production' || env.APP_ENV === 'staging') && env.DEV_IDENTITY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DEV_IDENTITY'],
+        message: 'the development identity is for local and test environments only',
+      });
+    }
     if (env.APP_ENV === 'production' && env.DATABASE_DRIVER === 'pglite') {
       ctx.addIssue({
         code: 'custom',
@@ -49,7 +59,11 @@ const envSchema = z
     }
   });
 
-export type Env = z.infer<typeof envSchema> & { flagOverrides: FlagOverrides };
+export type Env = z.infer<typeof envSchema> & {
+  flagOverrides: FlagOverrides;
+  /** Whether requests act as the development identity: on by default only for `local` and `test`. */
+  devIdentity: boolean;
+};
 
 /** Validates configuration at startup and fails fast with every problem listed. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
@@ -60,7 +74,12 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
       .join('\n');
     throw new Error(`Invalid configuration:\n${problems}`);
   }
-  return { ...parsed.data, flagOverrides: parseFlagOverrides(parsed.data.FEATURE_FLAGS_OVERRIDE) };
+  return {
+    ...parsed.data,
+    flagOverrides: parseFlagOverrides(parsed.data.FEATURE_FLAGS_OVERRIDE),
+    devIdentity:
+      parsed.data.DEV_IDENTITY ?? (parsed.data.APP_ENV === 'local' || parsed.data.APP_ENV === 'test'),
+  };
 }
 
 export const ENV = Symbol('ENV');

@@ -198,3 +198,76 @@ export const featureFlags = pgTable('feature_flags', {
   updatedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
   updatedAt: updatedAt(),
 });
+
+export const projectLanguageEnum = pgEnum('project_language', ['cpp', 'blocks']);
+export const projectVisibilityEnum = pgEnum('project_visibility', ['private', 'link', 'workspace']);
+export const projectVersionSourceEnum = pgEnum('project_version_source', [
+  'manual',
+  'auto_build',
+  'restore',
+  'ai_apply',
+  'submission',
+  'import',
+]);
+
+/**
+ * Technical Design §8.4. `document` is the working copy that saves overwrite (guarded by `revision`, the ETag);
+ * `project_versions` holds immutable snapshots (checkpoints, builds, restores). Sharing columns arrive in P2.
+ */
+export const projects = pgTable(
+  'projects',
+  {
+    id: id(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'restrict' }),
+    ownerUserId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    name: text().notNull(),
+    boardId: text().notNull(),
+    language: projectLanguageEnum().notNull(),
+    visibility: projectVisibilityEnum().notNull().default('private'),
+    tags: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    schemaVersion: integer().notNull(),
+    document: jsonb().notNull(),
+    documentSha256: text().notNull(),
+    revision: integer().notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    index('projects_workspace_updated_idx').on(t.workspaceId, t.updatedAt, t.id),
+    index('projects_workspace_name_idx').on(t.workspaceId, t.name, t.id),
+    index('projects_owner_idx').on(t.ownerUserId),
+  ],
+);
+
+export const projectVersions = pgTable(
+  'project_versions',
+  {
+    id: id(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'restrict' }),
+    number: integer().notNull(),
+    label: text(),
+    source: projectVersionSourceEnum().notNull(),
+    document: jsonb().notNull(),
+    documentSha256: text().notNull(),
+    artifactId: text(),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('project_versions_project_number_key').on(t.projectId, t.number),
+    index('project_versions_workspace_idx').on(t.workspaceId),
+  ],
+);

@@ -8,6 +8,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { IamModule } from './modules/iam/index.js';
 import { OrgModule } from './modules/org/index.js';
 import { OutboxModule } from './modules/outbox/index.js';
+import { ProjectsModule } from './modules/projects/index.js';
 
 @Global()
 @Module({})
@@ -38,6 +39,7 @@ export class AppModule {
         IamModule,
         OrgModule,
         BuildGatewayModule,
+        ProjectsModule,
       ],
     };
   }

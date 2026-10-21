@@ -3,7 +3,8 @@
     "home": "Home",
     "mainLabel": "Main navigation",
     "lab": "Lab",
-    "editor": "Editor"
+    "editor": "Editor",
+    "projects": "Projects"
   },
   "home": {
     "title": "Build it virtually. Verify it. Then build it for real.",
@@ -512,5 +513,75 @@
       "deck": "Deck"
     },
     "onRobot": "On the robot"
+  },
+  "cloud": {
+    "opening": "Opening the project…",
+    "missing": "This project does not exist or was deleted.",
+    "openFailed": "Could not open the project: {message}",
+    "allProjects": "All projects",
+    "saveToCloud": "Save to my projects",
+    "uploadFailed": "Could not save to your projects: {message}",
+    "offline": "The server cannot be reached.",
+    "cancel": "Cancel",
+    "status": {
+      "saved": "Saved",
+      "unsaved": "Unsaved changes",
+      "saving": "Saving…",
+      "offline": "Offline: kept in this browser",
+      "error": "Not saved",
+      "conflict": "Conflict"
+    },
+    "conflict": {
+      "title": "This project changed elsewhere",
+      "saved": "Someone saved this project from another tab or device after you opened it. Keep your version and replace theirs, or load the saved one and drop your changes?",
+      "draft": "This browser has unsaved changes to this project, but the project was saved elsewhere since. Keep this browser's changes and replace the saved project, or keep the saved one?",
+      "useServer": "Use the saved version",
+      "keepMine": "Keep my changes"
+    },
+    "versions": {
+      "button": "Versions",
+      "title": "Versions",
+      "label": "Checkpoint name",
+      "checkpoint": "Save checkpoint",
+      "empty": "No versions yet. Save a checkpoint, or run the project: every successful build is kept.",
+      "number": "v{n}",
+      "restore": "Restore",
+      "confirmRestore": "Restore this version",
+      "source": {
+        "manual": "Checkpoint",
+        "auto_build": "Successful build",
+        "restore": "Restored",
+        "ai_apply": "AI change",
+        "submission": "Submission",
+        "import": "Import"
+      }
+    }
+  },
+  "projects": {
+    "title": "My projects",
+    "new": "New project",
+    "search": "Search projects",
+    "sortLabel": "Sort",
+    "sort": {
+      "updatedAt": "Last changed",
+      "name": "Name",
+      "createdAt": "Newest"
+    },
+    "trash": "Trash",
+    "empty": "No projects yet. Create one, or open the editor and choose \"Save to my projects\".",
+    "noMatch": "No project matches your search.",
+    "trashEmpty": "The trash is empty. Deleted projects stay here for 30 days.",
+    "loadFailed": "Could not load your projects: {message}",
+    "failed": "That did not work: {message}",
+    "updatedAt": "Changed {date}",
+    "deletedAt": "Deleted {date}",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "restore": "Restore",
+    "undo": "Undo",
+    "deleted": "\"{name}\" moved to the trash.",
+    "restored": "\"{name}\" restored.",
+    "more": "Show more"
   }
 }

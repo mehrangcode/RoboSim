@@ -10,14 +10,22 @@ import type { CompileSketch } from '../lab/use-build.js';
 import { FakeWorker } from '../testing/fake-worker.js';
 import { EditorPage } from './editor-page.js';
 
-const router = vi.hoisted(() => ({ search: {} as { demo?: string }, navigate: vi.fn() }));
+const router = vi.hoisted(() => ({
+  search: {} as { demo?: string },
+  params: {} as { projectId?: string },
+  navigate: vi.fn(),
+}));
 vi.mock('@tanstack/react-router', () => ({
   useSearch: () => router.search,
+  useParams: () => router.params,
   useNavigate: () => router.navigate,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 
 afterEach(() => {
   router.search = {};
+  router.params = {};
+  localStorage.clear();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

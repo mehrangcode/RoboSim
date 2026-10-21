@@ -38,3 +38,18 @@ export function apiPost<T>(path: string, body: unknown, locale: string, idempote
     },
   });
 }
+
+/** JSON request with any method; `headers` carries `If-Match` for optimistic concurrency (API Spec §1). */
+export function apiSend<T>(
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  path: string,
+  body: unknown,
+  locale: string,
+  headers: Record<string, string> = {},
+): Promise<T> {
+  return request<T>(path, locale, {
+    method,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...headers },
+  });
+}

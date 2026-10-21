@@ -64,3 +64,36 @@ export function downloadJson(name: string, data: unknown) {
 
 export const fileName = (doc: ProjectDocument) =>
   `${doc.meta.title.replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-|-$/g, '') || 'project'}.robosim.json`;
+
+/*
+ * Cloud projects keep a per-project copy of unsaved edits in this browser, with the server revision they
+ * started from, so a closed tab or a lost connection never loses work (FR-WRK-04 local layer).
+ */
+const cloudKey = (id: string) => `robosim.editor.cloud.v1.${id}`;
+
+export interface CloudDraft {
+  readonly document: ProjectDocument;
+  /** Server revision the edits are based on. */
+  readonly baseRevision: number;
+}
+
+export function loadCloudDraft(id: string): CloudDraft | null {
+  try {
+    const raw = localStorage.getItem(cloudKey(id));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { document?: unknown; baseRevision?: unknown };
+    if (typeof parsed.baseRevision !== 'number') return null;
+    return { document: parseProjectDocument(parsed.document), baseRevision: parsed.baseRevision };
+  } catch {
+    return null;
+  }
+}
+
+export function saveCloudDraft(id: string, draft: CloudDraft | null): void {
+  try {
+    if (draft) localStorage.setItem(cloudKey(id), JSON.stringify(draft));
+    else localStorage.removeItem(cloudKey(id));
+  } catch {
+    // storage full or disabled: the edits still live in memory until the next save
+  }
+}

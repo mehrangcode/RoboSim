@@ -25,7 +25,14 @@ export function RootLayout() {
             {t('shell:nav.home')}
           </Link>
           <Link
+            to="/projects"
+            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+          >
+            {t('shell:nav.projects')}
+          </Link>
+          <Link
             to="/editor"
+            activeOptions={{ exact: true }}
             className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
           >
             {t('shell:nav.editor')}

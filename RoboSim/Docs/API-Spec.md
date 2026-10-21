@@ -36,6 +36,7 @@ This document defines the contract style and the endpoint inventory. The **machi
 | LTI platforms | OIDC login + signed `id_token` (JWT, RS256) per LTI 1.3; service calls to the platform use OAuth2 client credentials with the tool's private key |
 | Webhook consumers | HMAC-SHA256 signature header (§8) |
 | Internal services | mTLS inside the cluster + service tokens; never exposed through ingress |
+| *Development (until sessions, P2)* | With `DEV_IDENTITY` (default on only for `APP_ENV` `local`/`test`, refused in staging/production) every request acts as `DEV_IDENTITY_EMAIL`, or the `X-Dev-User` header; the user and their personal workspace are created on first use. `X-Workspace-Id` must name one of the caller's workspaces (`403` otherwise). With it off, tenant routes answer `401 unauthenticated` |
 
 Admin endpoints live under `/api/v1/admin/*` on the admin origin only, require a platform staff role and MFA (`mfa_level ≥ 2`), and are rejected from the public origin.
 
@@ -165,6 +166,8 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 | `GET/POST /projects/:id/comments` · `PATCH/DELETE …/:commentId` | ws | Comments |
 | `POST /projects/import` (multipart `.robosim`) · `GET /projects/:id/export.robosim` | ws | Import/export |
 | `GET /projects/:id/bom` | ws | BOM (prices/stock as of now) |
+
+*Implemented (2026-10-21):* list (`q`, `tag`, `sort` = `±updatedAt|±createdAt|±name`, `limit` ≤ 200, keyset `cursor`, `deleted=true` for the trash), create (`{ name?, tags?, document }`, name defaults to `meta.title`), get, `PATCH` (name, tags), `PUT …/document`, `DELETE` (soft, 30-day trash) and `restore`, `duplicate`, versions list/create/get/restore, and an automatic `auto_build` version when `POST /builds` carries `projectId` and succeeds with exactly the saved sources (deduplicated by document hash). Documents are migrated and validated on write (`400 validation_failed` with `params.errors[{path,message}]`), ≤ 1 MiB (`413 payload_too_large`), ≤ 500 versions per project (`403 quota_exceeded`). ETag `"r<revision>"` on every project response; `PUT`, `PATCH` and version restore require `If-Match` (`412 precondition_failed`, `params.revision` = current). Not yet: `move`, diff, shares, remix, comments, `.robosim` import/export, BOM, wiring guide, plan quotas (`projects.cloud_max`, retention).
 | `GET /projects/:id/wiring-guide` | ws | Wiring guide (JSON) |
 
 ### 4.5 Builds (BLD)
