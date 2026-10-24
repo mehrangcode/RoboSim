@@ -12,7 +12,8 @@ type Category = 'all' | ComponentManifest['category'];
 /**
  * Component library (FR-CIR-10): search in Persian and English at once, filter by category, then
  * click to add at the centre of the view or drag onto the canvas. By default it lists every part
- * shipping through P2 (catalogue Tiers A–C).
+ * shipping through P2 (catalogue Tiers A–C). Pro parts carry a badge: they run anywhere, but saving them to the
+ * cloud needs `components.tier = all` (PRD §3).
  */
 export function LibraryPanel({
   editor,
@@ -78,12 +79,22 @@ export function LibraryPanel({
                 e.dataTransfer.effectAllowed = 'copy';
               }}
               onClick={() => add(m.id)}
-              aria-label={t('editor:library.add', { name: t(`components:${m.nameKey}`) })}
+              aria-label={
+                m.tier === 'pro'
+                  ? t('editor:library.addPro', { name: t(`components:${m.nameKey}`) })
+                  : t('editor:library.add', { name: t(`components:${m.nameKey}`) })
+              }
+              title={m.tier === 'pro' ? t('editor:library.proHint') : undefined}
               className={cn(
-                'w-full rounded-md border border-line bg-surface px-2 py-1.5 text-start text-sm hover:bg-surface-raised',
+                'flex w-full items-center gap-2 rounded-md border border-line bg-surface px-2 py-1.5 text-start text-sm hover:bg-surface-raised',
               )}
             >
-              {t(`components:${m.nameKey}`)}
+              <span className="me-auto">{t(`components:${m.nameKey}`)}</span>
+              {m.tier === 'pro' && (
+                <span className="rounded bg-surface-raised px-1 text-[10px] font-semibold text-ink-muted">
+                  {t('editor:library.pro')}
+                </span>
+              )}
             </button>
           </li>
         ))}

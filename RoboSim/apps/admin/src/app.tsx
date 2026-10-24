@@ -1,34 +1,38 @@
-import { AppShell, Card } from '@robosim/ui';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider, type RouterHistory } from '@tanstack/react-router';
 import type { i18n as I18nInstance } from 'i18next';
-import { I18nextProvider, useTranslation } from 'react-i18next';
-import { LanguageSwitch } from './language-switch.js';
+import { useState } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import { adminApi, type AdminClient } from './lib/admin-api.js';
+import { ApiError } from './lib/api.js';
+import { createAppRouter } from './router.js';
+import { ClientContext } from './session/session.js';
 
-function Dashboard() {
-  const { t } = useTranslation();
-  return (
-    <AppShell
-      brand={
-        <>
-          <img src="/favicon.svg" alt="" className="size-7" />
-          <span>{t('admin:title')}</span>
-        </>
-      }
-      navLabel={t('admin:nav.mainLabel')}
-      nav={<span className="font-medium">{t('admin:nav.dashboard')}</span>}
-      actions={<LanguageSwitch />}
-    >
-      <Card className="mx-auto mt-10 max-w-2xl">
-        <h1 className="text-xl font-semibold">{t('admin:dashboard.heading')}</h1>
-        <p className="mt-2 text-ink-muted">{t('admin:dashboard.body')}</p>
-      </Card>
-    </AppShell>
+export function App({
+  i18n,
+  history,
+  client,
+}: {
+  i18n: I18nInstance;
+  history?: RouterHistory;
+  client?: AdminClient;
+}) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        // Problems (4xx/5xx with a body) are answers, not glitches: only retry network failures.
+        defaultOptions: { queries: { retry: (count, e) => !(e instanceof ApiError) && count < 2 } },
+      }),
   );
-}
-
-export function App({ i18n }: { i18n: I18nInstance }) {
+  const [router] = useState(() => createAppRouter(history));
+  const [fallback] = useState(() => adminApi(() => i18n.language));
   return (
     <I18nextProvider i18n={i18n}>
-      <Dashboard />
+      <QueryClientProvider client={queryClient}>
+        <ClientContext value={client ?? fallback}>
+          <RouterProvider router={router} />
+        </ClientContext>
+      </QueryClientProvider>
     </I18nextProvider>
   );
 }

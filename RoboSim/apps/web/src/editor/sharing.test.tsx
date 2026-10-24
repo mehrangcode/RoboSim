@@ -208,6 +208,7 @@ describe('shared with me (FR-PRJ-04)', () => {
         createdAt: '2026-10-20T08:00:00.000Z',
         updatedAt: '2026-10-21T08:00:00.000Z',
         deletedAt: null,
+        locked: false,
         role: 'edit',
         ownerName: 'Ana',
       },

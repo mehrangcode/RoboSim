@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CompileSketch } from '../lab/use-build.js';
 import { initI18n } from '../lib/i18n.js';
+import { planError } from '../testing/fake-entitlements.js';
 import { FakeProjects } from '../testing/fake-projects.js';
 import { FakeWorker } from '../testing/fake-worker.js';
 import { EditorPage } from './editor-page.js';
@@ -227,5 +228,72 @@ describe('cloud projects in the editor (API Spec §4.4)', () => {
       to: '/editor/$projectId',
       params: { projectId: created?.id },
     });
+  });
+});
+
+describe('plan limits in the editor (PRD §3, FR-BIL-05)', () => {
+  it('explains a refused save with the pro parts, and does not resend the same document', async () => {
+    const projects = new FakeProjects();
+    projects.seed(docOf('Tilt'), { id: 'p1' });
+    projects.refusals.set(
+      'save',
+      planError('entitlement_required', {
+        entitlement: 'components.tier',
+        suggestedPlan: 'maker',
+        parts: ['sensor.mpu6050'],
+      }),
+    );
+    const { user } = await setup(projects, 'p1');
+    await screen.findByDisplayValue('Tilt');
+    await rename(user, 'Tilt v2');
+    await user.keyboard('{Control>}s{/Control}');
+    const dialog = await screen.findByRole('dialog', { name: 'This needs the Maker plan' });
+    expect(within(dialog).getByRole('list', { name: 'Pro parts in this project' })).toHaveTextContent(
+      'MPU-6050 accelerometer + gyroscope',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Download a copy' })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(cloudStatus()).toHaveTextContent('Not saved');
+
+    await user.keyboard('{Control>}s{/Control}');
+    expect(saves(projects)).toHaveLength(1);
+    // An edit tries again.
+    projects.refusals.delete('save');
+    await rename(user, 'Tilt v3');
+    await user.keyboard('{Control>}s{/Control}');
+    await waitFor(() => expect(cloudStatus()).toHaveTextContent('Saved'));
+  });
+
+  it('opens a project over the cloud cap read-only, with a way to the plans', async () => {
+    const projects = new FakeProjects();
+    projects.seed(docOf('Old robot'), { id: 'p1', locked: true });
+    await setup(projects, 'p1');
+    const note = await screen.findByRole('note');
+    expect(note).toHaveTextContent('Read-only: this project is over your plan');
+    expect(within(note).getByRole('link', { name: 'See plans' })).toHaveAttribute('href', '/plans');
+    expect(title()).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+  });
+
+  it('shows the paywall when the daily build quota is used up', async () => {
+    const projects = new FakeProjects();
+    projects.seed(docOf('Quota day'), { id: 'p1' });
+    const { compile, user } = await setup(projects, 'p1');
+    compile.mockRejectedValue(
+      planError('build_quota_exceeded', {
+        limit: 30,
+        resetAt: '2026-10-24T20:30:00.000Z',
+        suggestedPlan: 'maker',
+      }),
+    );
+    await screen.findByDisplayValue('Quota day');
+    await user.click(code());
+    await user.type(code(), '// changed');
+    await user.keyboard('{F5}');
+    const dialog = await screen.findByRole('dialog', { name: 'This needs the Maker plan' });
+    expect(dialog).toHaveTextContent("You've used today's 30 builds.");
+    expect(within(dialog).queryByRole('button', { name: 'Download a copy' })).toBeNull();
   });
 });

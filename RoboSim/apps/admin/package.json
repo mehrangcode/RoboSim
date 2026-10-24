@@ -15,6 +15,8 @@
     "@robosim/i18n": "workspace:*",
     "@robosim/shared": "workspace:*",
     "@robosim/ui": "workspace:*",
+    "@tanstack/react-query": "^5.104.2",
+    "@tanstack/react-router": "^1.170.42",
     "i18next": "^26.4.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

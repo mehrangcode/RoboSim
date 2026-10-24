@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { DomainError, type BuildResult, type BuildStatus } from '@robosim/shared';
 import { afterAll, describe, expect, it } from 'vitest';
 import { FsArtifactStore } from '../src/modules/build-gateway/artifact-store.js';
-import { DailyBuildQuota } from '../src/modules/build-gateway/build-quota.js';
 import {
   InProcessBuildQueue,
   type BuildJob,
@@ -150,20 +149,6 @@ describe('InProcessBuildQueue (TD §6 fair share)', () => {
     now = 6000;
     expect(q.get('a')).toBeUndefined();
     expect(q.get('b')?.status.state).toBe('running');
-  });
-});
-
-describe('DailyBuildQuota', () => {
-  it('counts builds per key per UTC day and refills at midnight UTC', () => {
-    const quota = new DailyBuildQuota(2);
-    const noon = Date.UTC(2026, 9, 21, 12);
-    expect(quota.take('u', noon).remaining).toBe(1);
-    expect(quota.take('u', noon).allowed).toBe(true);
-    const third = quota.take('u', noon);
-    expect(third).toMatchObject({ allowed: false, limit: 2, remaining: 0 });
-    expect(third.resetAt.toISOString()).toBe('2026-10-22T00:00:00.000Z');
-    expect(quota.take('other', noon).allowed).toBe(true);
-    expect(quota.take('u', Date.UTC(2026, 9, 22, 0, 0, 1)).allowed).toBe(true);
   });
 });
 

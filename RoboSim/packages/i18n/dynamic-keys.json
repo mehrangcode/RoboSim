@@ -36,6 +36,17 @@
     "editor:align.",
     "shell:cloud.status.",
     "shell:cloud.versions.source.",
-    "shell:projects.sort."
+    "shell:projects.sort.",
+    "plans:plan.",
+    "plans:row.",
+    "admin:role.",
+    "admin:planName.",
+    "admin:interval.",
+    "admin:kind.",
+    "admin:status.",
+    "admin:group.",
+    "admin:ent.",
+    "admin:settingValue.",
+    "admin:board."
   ]
 }

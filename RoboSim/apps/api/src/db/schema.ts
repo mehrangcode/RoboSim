@@ -1,8 +1,9 @@
 // P0 baseline of the data model (Technical Design §8.2, §8.9). Tenant-owned tables carry `workspace_id`
 // and are protected by row-level security policies defined in the `0001_rls` migration.
-import { uuidv7, type FlagRule } from '@robosim/shared';
+import { uuidv7, type EntitlementValues, type FlagRule } from '@robosim/shared';
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -332,6 +333,104 @@ export const authTokens = pgTable(
     uniqueIndex('auth_tokens_token_hash_key').on(t.tokenHash),
     index('auth_tokens_user_purpose_idx').on(t.userId, t.purpose),
   ],
+);
+
+// Plans and entitlements (Technical Design §8.7, §9.1). Plans and their versions are a global catalogue; a
+// workspace without a live subscription is on Free.
+export const planCodeEnum = pgEnum('plan_code', [
+  'free',
+  'maker',
+  'classroom',
+  'institution',
+  'private_cloud',
+]);
+export const planIntervalEnum = pgEnum('plan_interval', ['month', 'year', 'term']);
+export const subscriptionStatusEnum = pgEnum('subscription_status', [
+  'trialing',
+  'active',
+  'expired',
+  'canceled',
+]);
+export const subscriptionSourceEnum = pgEnum('subscription_source', [
+  'self_serve',
+  'contract',
+  'pilot',
+  'manual',
+]);
+
+export const plans = pgTable('plans', {
+  id: id(),
+  code: planCodeEnum().notNull().unique('plans_code_key'),
+  /** Listed on the public plans page (self-serve editions). */
+  public: boolean().notNull().default(false),
+  createdAt: createdAt(),
+});
+
+/** Immutable once published: a change is a new version, and subscribers keep theirs until renewal (FR-BIL-01). */
+export const planVersions = pgTable(
+  'plan_versions',
+  {
+    id: id(),
+    planId: uuid()
+      .notNull()
+      .references(() => plans.id, { onDelete: 'restrict' }),
+    version: integer().notNull(),
+    interval: planIntervalEnum().notNull(),
+    priceIrr: bigint({ mode: 'number' }),
+    seatBased: boolean().notNull().default(false),
+    minSeats: integer().notNull().default(1),
+    trialDays: integer().notNull().default(0),
+    entitlements: jsonb().$type<EntitlementValues>().notNull(),
+    effectiveFrom: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    effectiveTo: timestamp({ withTimezone: true }),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+  },
+  (t) => [uniqueIndex('plan_versions_plan_version_key').on(t.planId, t.version)],
+);
+
+/** One subscription per workspace; it no longer counts once `current_period_end` has passed. */
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: id(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    planVersionId: uuid()
+      .notNull()
+      .references(() => planVersions.id, { onDelete: 'restrict' }),
+    status: subscriptionStatusEnum().notNull(),
+    seats: integer().notNull().default(1),
+    source: subscriptionSourceEnum().notNull(),
+    trialEndsAt: timestamp({ withTimezone: true }),
+    currentPeriodStart: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    currentPeriodEnd: timestamp({ withTimezone: true }),
+    autoRenewFromWallet: boolean().notNull().default(false),
+    contractRef: text(),
+    updatedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex('subscriptions_workspace_key').on(t.workspaceId)],
+);
+
+/** Staff grants on top of the plan (FR-ADM-02): for the whole workspace, or one member when `user_id` is set. */
+export const entitlementOverrides = pgTable(
+  'entitlement_overrides',
+  {
+    id: id(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid().references(() => users.id, { onDelete: 'cascade' }),
+    key: text().notNull(),
+    value: jsonb().notNull(),
+    reason: text().notNull(),
+    grantedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    expiresAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('entitlement_overrides_workspace_idx').on(t.workspaceId)],
 );
 
 export const sharePrincipalKindEnum = pgEnum('share_principal_kind', ['user', 'workspace']);

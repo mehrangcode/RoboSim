@@ -44,6 +44,12 @@ export function RootLayout() {
           >
             {t('shell:nav.lab')}
           </Link>
+          <Link
+            to="/plans"
+            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+          >
+            {t('plans:nav')}
+          </Link>
           {import.meta.env.DEV && (
             <Link
               to="/dev/mail"

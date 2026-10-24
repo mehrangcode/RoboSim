@@ -1,11 +1,226 @@
 {
   "title": "RoboSim Admin",
   "nav": {
-    "dashboard": "Dashboard",
-    "mainLabel": "Admin navigation"
+    "mainLabel": "Admin navigation",
+    "workspaces": "Workspaces",
+    "plans": "Plans"
   },
-  "dashboard": {
-    "heading": "Back-office",
-    "body": "Operations modules (users, catalogue, content, commerce, finance) arrive in phase P2."
+  "actions": {
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "generic": "Something went wrong. Check your connection and try again."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to workspaces"
+  },
+  "session": {
+    "signOut": "Sign out",
+    "roleSeparator": ", "
+  },
+  "signIn": {
+    "title": "Back-office sign-in",
+    "body": "Sign in with your staff account.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in"
+  },
+  "noAccess": {
+    "title": "No back-office access",
+    "body": "This account has no back-office access. Sign out and sign in with a staff account, or ask a platform admin to grant you a role."
+  },
+  "role": {
+    "platform_admin": "Platform admin",
+    "content_editor": "Content editor",
+    "shop_operator": "Shop operator",
+    "finance": "Finance",
+    "support_agent": "Support agent",
+    "moderator": "Moderator"
+  },
+  "planName": {
+    "free": "Free",
+    "maker": "Maker",
+    "classroom": "Classroom",
+    "institution": "Institution",
+    "private_cloud": "Private cloud"
+  },
+  "interval": {
+    "month": "Monthly",
+    "year": "Yearly",
+    "term": "Per term"
+  },
+  "kind": {
+    "personal": "Personal",
+    "organization": "Organization",
+    "branch": "Branch"
+  },
+  "status": {
+    "trialing": "Trial",
+    "active": "Active",
+    "expired": "Expired",
+    "canceled": "Canceled"
+  },
+  "group": {
+    "features": "Features",
+    "quotas": "Quotas",
+    "settings": "Settings"
+  },
+  "ent": {
+    "export": { "csv": "CSV export", "pdf": "PDF export" },
+    "collab": { "realtime": "Real-time collaboration" },
+    "community": { "publish": "Publish to community" },
+    "ai": { "byok": "AI with own key", "platform_credits_monthly": "Platform AI credits per month" },
+    "hwb": { "upload": "Upload to hardware" },
+    "arena": { "custom": "Custom arenas" },
+    "org": {
+      "classes": "Classes",
+      "verified_grading": "Verified grading",
+      "sso": "Single sign-on",
+      "scim": "SCIM provisioning",
+      "lti": "LTI integration",
+      "analytics": "Organization analytics",
+      "audit_export": "Audit log export"
+    },
+    "projects": { "cloud_max": "Cloud projects", "version_retention_days": "Version history (days)" },
+    "build": { "daily_quota": "Builds per day", "priority": "Build priority" },
+    "boards": { "allowed": "Allowed boards" },
+    "components": { "tier": "Component library" },
+    "learning": { "guided_projects": "Guided projects", "courses": "Courses" }
+  },
+  "value": {
+    "yes": "Yes",
+    "no": "No",
+    "unlimited": "Unlimited"
+  },
+  "settingValue": {
+    "basic": "Basic",
+    "all": "All",
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "first": "First only",
+    "none": "None",
+    "public": "Public"
+  },
+  "board": {
+    "avr-uno": "Arduino Uno"
+  },
+  "editor": {
+    "unlimitedFor": "Unlimited {name}"
+  },
+  "form": {
+    "reason": "Reason",
+    "reasonHint": "Recorded in the audit log (3–500 characters).",
+    "reasonInvalid": "Give a reason of 3 to 500 characters.",
+    "dateInvalid": "Check the date."
+  },
+  "plans": {
+    "title": "Plans",
+    "intro": "Each change publishes a new plan version; earlier versions stay for their subscribers.",
+    "public": "Public",
+    "private": "Not listed",
+    "currentSummary": "Version {version} · {interval} · {price} · {subscribers} subscribers · since {from}",
+    "priceNotSet": "Price not set",
+    "priceValue": "{amount} IRR",
+    "history": "Earlier versions ({count, number})",
+    "periodRange": "{from} – {to}",
+    "col": {
+      "version": "Version",
+      "interval": "Billing",
+      "price": "Price",
+      "period": "In effect",
+      "subscribers": "Subscribers"
+    }
+  },
+  "publish": {
+    "open": "Publish new version",
+    "title": "New version of {plan}",
+    "interval": "Billing interval",
+    "price": "Price (IRR)",
+    "priceHint": "Leave empty when the price is not set yet.",
+    "review": "Review changes",
+    "invalid": "Some values are not valid. Check the highlighted fields.",
+    "confirmTitle": "Publish this version of {plan}?",
+    "changesLabel": "Changes from the current version",
+    "change": "{name}: {from} → {to}",
+    "noChanges": "Nothing differs from the current version.",
+    "freeNote": "Free applies to everyone immediately: every workspace on Free gets the new values as soon as you publish.",
+    "paidNote": "New subscribers get this version. Current subscribers keep their version until their next renewal.",
+    "confirm": "Publish",
+    "back": "Back to editing",
+    "done": "Version {version} published."
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "intro": "Search by owner email or name, or by workspace name. Up to 20 results; an empty search lists the newest.",
+    "searchLabel": "Search workspaces",
+    "searchPlaceholder": "Email, name or workspace",
+    "search": "Search",
+    "empty": "No workspaces match.",
+    "resultsFor": "Workspaces matching {q}",
+    "newest": "Newest workspaces",
+    "planStatus": "{plan} · {status}",
+    "until": "until {date}",
+    "col": {
+      "name": "Workspace",
+      "kind": "Kind",
+      "owner": "Owner",
+      "plan": "Plan"
+    }
+  },
+  "workspace": {
+    "back": "← All workspaces",
+    "summary": "{kind} workspace of {owner}",
+    "liveProjects": "{count, plural, one {{formatted} live project} other {{formatted} live projects}}",
+    "planTitle": "Plan",
+    "planLine": "{plan} (version {version}) · {status}",
+    "periodEnd": "Period ends {date}.",
+    "openEnded": "No end date.",
+    "source": "Source: {source}",
+    "effectiveTitle": "Effective entitlements",
+    "effectiveIntro": "What the owner gets now: the plan plus active overrides.",
+    "overridden": "override"
+  },
+  "changePlan": {
+    "open": "Change plan",
+    "title": "Change plan",
+    "plan": "Plan",
+    "end": "End date (optional)",
+    "endHint": "Empty keeps the plan open-ended.",
+    "freeNote": "Choosing Free ends the subscription: the workspace falls back to Free right away.",
+    "submit": "Save plan",
+    "done": "Plan updated."
+  },
+  "overrides": {
+    "title": "Overrides",
+    "rules": "Overrides only add to the plan: quotas add up (unlimited wins), features are switched on, settings take the higher value and boards are added to the allowed set.",
+    "open": "Grant override",
+    "formTitle": "Grant override",
+    "key": "Entitlement",
+    "value": "Value",
+    "valueInvalid": "Choose a valid value for this entitlement.",
+    "scope": "Applies to",
+    "wholeWorkspace": "Whole workspace",
+    "member": "Member: {name}",
+    "expires": "Expires (optional)",
+    "expiresHint": "Empty means it never expires.",
+    "submit": "Grant",
+    "granted": "Override granted.",
+    "removed": "Override removed.",
+    "empty": "No overrides.",
+    "never": "Never",
+    "remove": "Remove",
+    "removeFor": "Remove override {name}",
+    "confirmRemove": "Confirm removal",
+    "col": {
+      "key": "Entitlement",
+      "value": "Value",
+      "scope": "Applies to",
+      "reason": "Reason",
+      "expires": "Expires",
+      "granted": "Granted",
+      "actions": "Actions"
+    }
   }
 }

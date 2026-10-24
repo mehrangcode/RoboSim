@@ -66,14 +66,15 @@ Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same
 | http://localhost:5173 | Web app | P0 |
 | http://localhost:5173/editor | Editor workspace: build a circuit, write its code, run it (`?demo=<scenario>` opens a demo) | P1 |
 | http://localhost:5173/lab | Simulator Lab: engine demos per slice (arena, component bench, safety, your code), each with “Open in editor” | P1 |
-| http://localhost:5174 | Admin app | P0 |
+| http://localhost:5173/plans | Plans: Free vs Maker, current plan, Upgrade (checkout coming soon) | P1 (pulled forward) |
+| http://localhost:5174 | Admin app: plans and workspaces for staff (sign in with a staff account) | P0 |
 | http://localhost:3000/api/v1/health/ready | API readiness | P0 |
 | http://localhost:3000/api/v1/feature-flags | Evaluated feature flags | P0 |
 | http://localhost:3000/api/v1/openapi.json | API spec | P2 (with the first public endpoints) |
 | http://localhost:8025 | Mailpit | Mode B |
 | http://localhost:9001 | MinIO console | Mode B |
 
-Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the `platform_admin` staff role) exist from P0; passwords and login arrive with authentication in P2.
+Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the `platform_admin` staff role) exist from P0; passwords and login arrive with authentication in P2. Give any account a staff role with `pnpm admin:grant <email> <role>` (§3).
 
 ### 2.3 Environment variables (excerpt)
 
@@ -88,7 +89,8 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `COMPILER_RUNTIME` | `local` (dev) · `gvisor` (staging/prod) | Build sandbox. `local` runs avr-gcc in Linux namespaces on the host ([ADR-022](decisions.md#adr-022--build-service-drives-avr-gcc-directly-linux-namespace-sandbox-for-development)); refused in staging/production |
 | `COMPILER_TOOLCHAIN_DIR` / `COMPILER_CACHE_DIR` | `.local/toolchain` / `.local/compiler-cache` | Pinned core + libraries (`pnpm compiler:setup`); content-addressed builds |
 | `COMPILER_MAX_CONCURRENCY` · `BUILD_RATE_LIMIT_PER_MIN` · `BUILD_GUEST_RATE_LIMIT_PER_MIN` | `2` · `20` · `5` | Parallel builds per API process; build requests per user / per guest address per minute |
-| `BUILD_DAILY_QUOTA` · `BUILD_USER_CONCURRENCY` | `200` · `2` | Queued (non-cached) builds per user per UTC day; running builds per user. Stand-ins for the `build.*` entitlements until plans (P2) |
+| `BUILD_USER_CONCURRENCY` | `2` | Running builds per user. The daily quota and queue priority come from the plan (`build.daily_quota`, `build.priority`); `BUILD_DAILY_QUOTA` was removed on 2026-10-24 |
+| `ENTITLEMENTS_CACHE_MS` · `VERSION_RETENTION_INTERVAL_HOURS` | `60000` · `24` | In-process cache of resolved entitlements in ms (0–60 000; staff changes clear it at once); hours between version-retention purges (`0` = off; always off when `APP_ENV=test`) |
 | `ARTIFACT_STORE_DIR` | `.local/artifacts` | Firmware store (filesystem adapter of the object-storage port) |
 | `DEV_IDENTITY` · `DEV_IDENTITY_EMAIL` | `false` · `learner@dev.local` | Opt-in for tests and scripts: requests without a session act as this user (created on first use); `X-Dev-User: <email>` switches user per request. The API test helper turns it on. Refused in staging/production |
 | `AUTH_RATE_LIMIT_PER_MIN` · `PUBLIC_APP_URL` | `10` · `http://localhost:5173` | Auth requests per client address per minute; origin used in emailed links |
@@ -124,6 +126,8 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |
 | `pnpm i18n:check` | Missing/unused keys, ICU syntax, FA/EN parity |
 | `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed` | Drizzle migrations |
+| `pnpm versions:purge [--dry-run]` | Delete project versions past each owner's `projects.version_retention_days` (keeps named checkpoints and each project's latest version); the API also runs it daily |
+| `pnpm admin:grant <email> <role> [--revoke]` | Grant or revoke a staff role (`platform_admin`, `finance`, `support_agent`, …) so the account can open the admin app; audited as `system` |
 | `pnpm new:component <slug> <type-id> <category> <Class>` · `pnpm new:rule <id>` (planned) · `pnpm new:board <slug>` (planned) | Scaffolders (§8) |
 | `pnpm ai:eval` | AI evaluation harness (FR-AI-09) |
 | `pnpm arch:check` | dependency-cruiser boundary rules |

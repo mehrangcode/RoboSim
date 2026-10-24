@@ -28,6 +28,8 @@
     "db:generate": "pnpm --filter @robosim/api run db:generate",
     "db:migrate": "pnpm --filter @robosim/api run db:migrate",
     "db:seed": "pnpm --filter @robosim/api run db:seed",
+    "admin:grant": "pnpm --filter @robosim/api run admin:grant",
+    "versions:purge": "pnpm --filter @robosim/api run versions:purge",
     "verify": "node tools/require-wsl.ts && pnpm format:check && pnpm i18n:check && pnpm arch:check && turbo run lint typecheck test build && pnpm bundle:check",
     "bundle:check": "node tools/check-bundle-size.ts",
     "new:component": "node tools/new-component.ts"

@@ -7,6 +7,7 @@ import type { Database } from '../src/db/client.js';
 import { ProjectsService } from '../src/modules/projects/index.js';
 import { testEnv } from './support/app.js';
 import { createTestDatabase } from './support/database.js';
+import { subscribe } from './support/plans.js';
 
 let database: Database;
 let app: NestFastifyApplication;
@@ -14,6 +15,11 @@ let app: NestFastifyApplication;
 beforeAll(async () => {
   database = await createTestDatabase();
   app = await createApp(testEnv(), database);
+  // These suites are about the projects API itself; Free's 3-project cap has its own suite (entitlements.test.ts).
+  for (const user of ['ana@dev.local', 'lister@dev.local']) {
+    await call('GET', '/projects', undefined, as(user));
+    await subscribe(app, database, user, 'maker');
+  }
 });
 afterAll(async () => {
   await app.close();

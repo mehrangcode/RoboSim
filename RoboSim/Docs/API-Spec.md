@@ -70,7 +70,7 @@ All errors use RFC 9457 Problem Details:
 | 403 | `forbidden` | Role/ownership/policy denies the action |
 | 403 | `csrf_failed` | Missing or mismatched `X-CSRF-Token` on an unsafe request (§2) |
 | 403 | `entitlement_required` | Plan does not include the feature (`params.entitlement`, `params.suggestedPlan`) |
-| 403 | `quota_exceeded` | Count quota reached (`params.quota`, `params.limit`) |
+| 403 | `quota_exceeded` | Count quota reached (`params.quota`, `params.limit`, `params.suggestedPlan`; `params.locked: true` for a change to a project beyond `projects.cloud_max`) |
 | 403 | `policy_restricted` | Org policy or age-band restriction (`params.policy`) |
 | 403 | `consent_pending` | Minor account awaiting guardian consent |
 | 404 | `not_found` | Resource absent or not visible to caller |
@@ -83,7 +83,7 @@ All errors use RFC 9457 Problem Details:
 | 422 | `build_failed` | Compile failed (diagnostics attached) — returned in build results, not as transport error |
 | 429 | `rate_limited` | Request rate exceeded |
 | 429 | `account_locked` | Password sign-in locked after repeated failures (`Retry-After`, `params.retryAfterSeconds`) |
-| 429 | `build_quota_exceeded` | Daily build quota exceeded (`params.resetAt`) |
+| 429 | `build_quota_exceeded` | Daily build quota exceeded (`params.limit`, `params.resetAt`, `params.suggestedPlan` for signed-in callers) |
 | 429 | `ai_credits_exhausted` | Platform AI credits used up |
 | 502 | `provider_error` | Payment/AI/SMS provider failure (`params.provider`) |
 | 503 | `maintenance` | Planned maintenance (`Retry-After`) |
@@ -117,6 +117,8 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 | `GET /me/owned-parts` · `PUT /me/owned-parts` | ses | "I already own" inventory |
 
 *Implemented (2026-10-21):* `GET /auth/csrf`; email + password `register` (`{ email, password, displayName, dateOfBirth, locale }` → `201 Me` and a session; under-13 `403 policy_restricted`, 13–15 `status: pending_consent`), `login` (`200 Me`), `logout` (`204`); `email/verify` (`{ token }`, `204`, used/expired/unknown `410 gone`) and `POST /auth/email/resend` (ses, retires the earlier link); `password-reset/request` (always `202`) and `/confirm` (`{ token, password }`, `204`, signs out every session and counts the email as verified); `GET/PATCH /me` (`displayName`, `locale`); `POST /me/password` (`{ currentPassword, newPassword }`, `204`, other sessions signed out, this one rotated); `GET /me/sessions` (`{ items: [{ id, current, createdAt, lastSeenAt, expiresAt, device, ip }] }`), `DELETE /me/sessions/:id`, `DELETE /me/sessions` (all **but** the current one). Sessions: 256-bit secret in `__Host-rs_sid`, SHA-256 stored, 30 days idle (sliding), bound to the browser family, a new session on every sign-in. CSRF: double-submit (`__Host-rs_csrf` cookie = `X-CSRF-Token`) on every unsafe `/auth/*` call and on any unsafe request that carries a session cookie. Passwords: 10–128 characters, ≥ 4 distinct, no edge spaces, not a common password or built from the email name (`400 validation_failed`, `params.errors[{ path: 'password', message: 'common' | 'contains_email' }]`). Auth endpoints: 10 requests/min per client address (`AUTH_RATE_LIMIT_PER_MIN`); five failed sign-ins lock the account for 15 minutes (`429 account_locked`). Development only (`APP_ENV` `local`/`test`): `GET /dev/mail[?to=]` lists messages captured by the mail sink. Not yet: SMS OTP, MFA, SSO, guardian consent, `/me/workspaces`, data export and deletion.
+
+*Entitlements implemented (2026-10-24):* `GET /me/entitlements` (session; the caller's current workspace) → `{ plan: { code, version, status, trialEndsAt, periodEnd }, features, quotas, settings, restrictions: { ageBand, policy: null } }`. `status` is `trialing`, `active` or `expired` (a lapsed subscription; a workspace that never had one is `active` on Free); `trialEndsAt` and `periodEnd` are `null` when absent. `features` are booleans; `quotas[key]` is `{ limit, used?, resetsAt? }` with `limit: null` for unlimited, and `used` for `projects.cloud_max` (live projects) and `build.daily_quota` (today's queued builds, with `resetsAt` = the next 00:00 Asia/Tehran); `settings` holds `boards.allowed`, `components.tier`, `build.priority`, `learning.guided_projects` and `learning.courses`. Effective values are the live subscription's plan version (or Free) merged with unexpired overrides (TD §9.1), cached in the API process for `ENTITLEMENTS_CACHE_MS` (default 60 000, at most 60 000). `restrictions.policy` is always `null` until organizations (P3).
 
 ### 4.2 Organizations (ORG)
 
@@ -173,9 +175,11 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 | `GET /projects/:id/bom` | ws | BOM (prices/stock as of now) |
 | `GET /projects/:id/wiring-guide` | ws | Wiring guide (JSON) |
 
-*Implemented (2026-10-21):* list (`q`, `tag`, `sort` = `±updatedAt|±createdAt|±name`, `limit` ≤ 200, keyset `cursor`, `deleted=true` for the trash), create (`{ name?, tags?, document }`, name defaults to `meta.title`), get, `PATCH` (name, tags), `PUT …/document`, `DELETE` (soft, 30-day trash) and `restore`, `duplicate`, versions list/create/get/restore, and an automatic `auto_build` version when `POST /builds` carries `projectId` and succeeds with exactly the saved sources (deduplicated by document hash). Documents are migrated and validated on write (`400 validation_failed` with `params.errors[{path,message}]`), ≤ 1 MiB (`413 payload_too_large`), ≤ 500 versions per project (`403 quota_exceeded`). ETag `"r<revision>"` on every project response; `PUT`, `PATCH` and version restore require `If-Match` (`412 precondition_failed`, `params.revision` = current). Not yet: `move`, diff, comments, `.robosim` import/export, BOM, wiring guide, plan quotas (`projects.cloud_max`, retention).
+*Implemented (2026-10-21):* list (`q`, `tag`, `sort` = `±updatedAt|±createdAt|±name`, `limit` ≤ 200, keyset `cursor`, `deleted=true` for the trash), create (`{ name?, tags?, document }`, name defaults to `meta.title`), get, `PATCH` (name, tags), `PUT …/document`, `DELETE` (soft, 30-day trash) and `restore`, `duplicate`, versions list/create/get/restore, and an automatic `auto_build` version when `POST /builds` carries `projectId` and succeeds with exactly the saved sources (deduplicated by document hash). Documents are migrated and validated on write (`400 validation_failed` with `params.errors[{path,message}]`), ≤ 1 MiB (`413 payload_too_large`), ≤ 500 versions per project (`403 quota_exceeded`). ETag `"r<revision>"` on every project response; `PUT`, `PATCH` and version restore require `If-Match` (`412 precondition_failed`, `params.revision` = current). Not yet: `move`, diff, comments, `.robosim` import/export, BOM, wiring guide.
 
 *Sharing implemented (2026-10-21):* `GET /projects/:id/shares` → `{ link: { url, remixable } | null, people: [{ userId, email, displayName, role }] }`; `PUT /projects/:id/shares` `{ email, role: 'view' | 'edit' }` (an existing account only, `404 not_found` with `params.field = 'email'` otherwise; the recipient is emailed once); `DELETE /projects/:id/shares/:userId` (the owner, or the sharee leaving); `POST /projects/:id/share-link` `{ remixable, regenerate? }` (keeps the same link unless `regenerate`) and `DELETE …/share-link`, all owner-only (`403 forbidden` for sharees) and answering the sharing state; `GET /projects/shared` (`{ items: [ProjectSummary + role + ownerName] }`, newest first, ≤ 200). `GET /shared/:token` (pub, 60/min per address) → `{ project: { id, name, updatedAt, document, remixedFrom }, ownerName, remixable }`; `POST /shared/:token/remix` (ses) → `201 Project` in the caller's workspace (`403` when not remixable). Unknown, retired and deleted links are all `404`. Project responses now carry `access` (`owner` / `edit` / `view`), `ownerName` and `remixedFrom` (`{ projectId, name, author }` or `null`). Editors may save, rename and take or restore versions; viewers read, list versions and `duplicate` (a copy that credits the source); only the owner deletes, restores, tags and shares. Sharing changes do not bump `revision`. Not yet: the `comment` role, workspace-wide sharing, org policy limits (US-PRJ-03 AC2), and invitations for emails without an account.
+
+*Plan limits implemented (2026-10-24):* the project owner's entitlements apply to every request on a project, so sharees inherit them. `POST /projects`, `duplicate`, `POST /shared/:token/remix` and restore from the trash answer `403 quota_exceeded` (`params: { quota: 'projects.cloud_max', limit, suggestedPlan: 'maker' }`) when the workspace already has `limit` live projects. Over the cap (after a downgrade or a lower Free limit) only the `limit` most recently updated live projects stay editable: the others carry `locked: true` in the list, `GET /projects/:id` and `GET /projects/shared` (`ProjectSummary.locked`), and `PUT …/document`, `PATCH`, new checkpoints and version restores answer `403 quota_exceeded` with `params.locked: true`. Reading, duplicating, exporting and `DELETE` still work, and automatic build versions skip locked projects. With `components.tier` = `basic`, saving, creating, duplicating or restoring a document that uses a pro part (catalogue manifest `tier: pro`) answers `403 entitlement_required` with `params: { entitlement: 'components.tier', suggestedPlan: 'maker', parts: [manifest ids] }`. Versions older than the owner's `projects.version_retention_days` are purged daily (`manual` checkpoints and each project's latest version are kept; audited as `project_versions.purged`); `pnpm versions:purge [--dry-run]` runs the job by hand.
 
 ### 4.5 Builds (BLD)
 
@@ -210,7 +214,7 @@ type BuildStatus = {
 type BuildAccepted = BuildStatus & { statusUrl: string; eventsUrl: string }; // 202 body, plus Location
 ```
 
-*Implemented (2026-10-21):* everything above except signed redirects (`GET /artifacts/:id` serves the HEX directly) and real entitlements. A cache hit answers `200`; otherwise `202 BuildAccepted` with `Location`. Builds are scoped to the calling user (guests by client address); another user's build is `404`. Limits: 20 builds/min per user, 5/min per guest (`429 rate_limited`), and a daily quota of queued builds per user (`BUILD_DAILY_QUOTA`, UTC day; `429 build_quota_exceeded` with `params.limit`, `params.resetAt` and `Retry-After`; cache hits are free). The SSE stream sends the current status first on every connection (so `Last-Event-ID` resumes without replay), a heartbeat comment every 15 s, and closes after the final event. Finished builds stay readable for 1 h.
+*Implemented (2026-10-21):* everything above except signed redirects (`GET /artifacts/:id` serves the HEX directly). A cache hit answers `200`; otherwise `202 BuildAccepted` with `Location`. Builds are scoped to the calling user (guests by client address); another user's build is `404`. Limits: 20 builds/min per user, 5/min per guest (`429 rate_limited`), and a daily quota of queued builds (`build.daily_quota` of the caller's plan, per user; guests 10 per client address; the day ends at 00:00 Asia/Tehran; `429 build_quota_exceeded` with `params.limit`, `params.resetAt`, `params.suggestedPlan: 'maker'` for signed-in callers, and `Retry-After`; cache hits are free). A board outside `boards.allowed` answers `403 entitlement_required`, and `build.priority` weighs the caller in the queue (low 1, normal 2, high 4). The SSE stream sends the current status first on every connection (so `Last-Event-ID` resumes without replay), a heartbeat comment every 15 s, and closes after the final event. Finished builds stay readable for 1 h.
 
 ### 4.6 Learning (LRN) and grading
 
@@ -266,6 +270,8 @@ type BuildAccepted = BuildStatus & { statusUrl: string; eventsUrl: string }; // 
 | `POST /billing/quotes` · `GET /billing/quotes/:id` · `POST /billing/quotes/:id/accept` | ws | Organization quotes |
 | `PUT /billing/buyer-profile` | ws | Economic code, national ID, address for official invoices |
 
+*Implemented (2026-10-24):* `GET /plans` only (pub) → `{ items: [{ code, version, interval, priceIrr, entitlements }] }`, the current version of each public plan (`free`, `maker`); `priceIrr` is `null` until finance sets it. Plan versions are immutable: publishing a new one retires the current one (Free applies to everyone at once; paid subscribers keep their version until their plan is set again). Staff manage plans and subscriptions through §4.13. Not yet: everything under `/billing` (checkout, payments, coupons, wallet, invoices, quotes), add-ons, and trials (every workspace is on Free until staff set a plan).
+
 ### 4.10 Commerce (SHP)
 
 | Method & path | Auth | Purpose |
@@ -320,7 +326,7 @@ type ChatRequest = {
 
 | Group | Endpoints (CRUD unless noted) |
 |---|---|
-| Users & orgs | `/admin/users`, `/admin/users/:id/suspend`, `/admin/orgs`, `/admin/orgs/:id/subscription`, `/admin/overrides`, `/admin/impersonations` (requires user consent token) |
+| Users & orgs | `/admin/users`, `/admin/users/:id/suspend`, `/admin/orgs`, `/admin/workspaces/:id/subscription`, `/admin/workspaces/:id/overrides`, `/admin/impersonations` (requires user consent token) |
 | Catalogue | `/admin/components` (enable, tier), `/admin/components/:id/calibrations`, `/admin/libraries`, `/admin/boards` |
 | Content | `/admin/content` (draft → review → publish), `/admin/arenas`, `/admin/templates/messages` |
 | Commerce | `/admin/products`, `/admin/kits`, `/admin/stock`, `/admin/warehouses`, `/admin/shipping`, `/admin/orders` (status transitions, labels), `/admin/returns` |
@@ -328,6 +334,8 @@ type ChatRequest = {
 | Trust & safety | `/admin/moderation/queue`, `/admin/moderation/actions`, `/admin/reports` |
 | AI | `/admin/ai/providers`, `/admin/ai/credits`, `/admin/ai/usage`, `/admin/ai/evals` |
 | Platform | `/admin/feature-flags`, `/admin/audit-logs`, `/admin/kpis` |
+
+*Plans and workspaces implemented (2026-10-24):* staff use the product's sessions plus a `staff_roles` row (`pnpm admin:grant <email> <role> [--revoke]` bootstraps one; audited as `system`); `401` signed out, `403 forbidden` for a signed-in user who is not staff or lacks the route's permission (`params.need`). Permissions: read = `platform_admin`, `finance` or `support_agent`; plans and subscriptions = `platform_admin` or `finance`; overrides = all three. Endpoints: `GET /admin/me` → `{ userId, email, displayName, roles }`; `GET /admin/plans` → plans with every version; `POST /admin/plans/:code/versions` `{ interval, priceIrr | null, entitlements }` (all keys, validated); `GET /admin/workspaces?q=` (workspace name, owner name or email); `GET /admin/workspaces/:id` → summary, the owner's effective entitlements, overrides and `liveProjects`; `PUT /admin/workspaces/:id/subscription` `{ plan, periodEnd | null, reason }` (`free` deletes the subscription; any other plan uses its current version, source `manual`); `POST /admin/workspaces/:id/overrides` `{ key, value, reason, expiresAt | null, userId | null }` (value validated for the key; overrides only raise, see TD §9.1) and `DELETE …/overrides/:overrideId`, each answering the updated workspace. This replaces the planned `/admin/orgs/:id/subscription`, because personal workspaces have subscriptions too. Every change is audited as `staff` (`plan.version_published`, `subscription.changed`, `entitlement_override.granted`, `entitlement_override.revoked`) and clears the entitlements cache; subscription changes also write the outbox event `bil.subscription_changed`. Not yet: `/admin/plan-versions`, coupons, payments and the rest of the finance group, `/admin/users`, `/admin/orgs`, impersonation.
 
 ## 5. Real-time channels
 
@@ -341,9 +349,9 @@ type ChatRequest = {
 ```ts
 type Entitlements = {
   workspaceId: string;
-  plan: { code: 'free' | 'maker' | 'classroom' | 'institution' | 'private_cloud'; status: 'trialing' | 'active' | 'expired'; trialEndsAt?: string; periodEnd?: string };
+  plan: { code: 'free' | 'maker' | 'classroom' | 'institution' | 'private_cloud'; version: number; status: 'trialing' | 'active' | 'expired'; trialEndsAt: string | null; periodEnd: string | null };
   features: Record<string, boolean>;                  // 'export.pdf': true
-  quotas: Record<string, { limit: number | null; used: number; resetsAt?: string }>; // 'build.daily_quota'
+  quotas: Record<string, { limit: number | null; used?: number; resetsAt?: string }>; // 'build.daily_quota'
   restrictions: { ageBand: 'u13' | '13_15' | '16_17' | 'adult'; policy: OrgPolicySummary | null };
 };
 

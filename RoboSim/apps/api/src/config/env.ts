@@ -26,8 +26,7 @@ const envSchema = z
     COMPILER_MAX_CONCURRENCY: z.coerce.number().int().min(1).max(64).default(2),
     BUILD_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(20),
     BUILD_GUEST_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(5),
-    // Stand-ins for the `build.daily_quota` entitlement and TD §6's per-user concurrency until plans land (P2).
-    BUILD_DAILY_QUOTA: z.coerce.number().int().min(1).default(200),
+    // TD §6's running builds per user. The daily quota and priority come from entitlements (`build.*`).
     BUILD_USER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
     // Firmware store (filesystem adapter of the object-storage port); default `.local/artifacts`.
     ARTIFACT_STORE_DIR: z.string().optional(),
@@ -44,6 +43,10 @@ const envSchema = z
     // Signs share links (FR-PRJ-04); changing it retires every link. Must be set outside local and test.
     SHARE_LINK_SECRET: z.string().min(32).default(DEV_SHARE_LINK_SECRET),
     SHARED_LINK_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(60),
+    // Effective entitlements are cached per (workspace, user) this long (FR-BIL-04: at most 60 s).
+    ENTITLEMENTS_CACHE_MS: z.coerce.number().int().min(0).max(60_000).default(60_000),
+    // Daily purge of versions past the plan's `projects.version_retention_days`; 0 turns the schedule off.
+    VERSION_RETENTION_INTERVAL_HOURS: z.coerce.number().min(0).default(24),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_DRIVER === 'postgres' && !env.DATABASE_URL) {

@@ -55,9 +55,9 @@ export class BuildGatewayService {
     return out && this.publish(uuidv7(), out);
   }
 
-  submit(owner: BuildOwner, request: BuildRequest): BuildStatus {
-    // `build.priority` is 1 for everyone until plan entitlements land (P2).
-    return this.queue.submit({ buildId: uuidv7(), owner, request, priority: 1 });
+  /** `priority` is the queue weight of the caller's `build.priority`. */
+  submit(owner: BuildOwner, request: BuildRequest, priority: number): BuildStatus {
+    return this.queue.submit({ buildId: uuidv7(), owner, request, priority });
   }
 
   /** The job's latest status and event sequence, if `owner` submitted it; otherwise undefined (callers 404). */

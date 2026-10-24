@@ -10,7 +10,7 @@ export const PROJECT_LIMITS = {
   maxTags: 20,
   maxTagLength: 32,
   maxLabelLength: 120,
-  /** Sanity cap until plan-based retention (`projects.version_retention_days`) arrives with entitlements. */
+  /** Sanity cap on top of plan-based retention (`projects.version_retention_days`). */
   maxVersionsPerProject: 500,
   defaultListLimit: 50,
   maxListLimit: 200,
@@ -90,6 +90,11 @@ export const projectSummarySchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
+  /**
+   * Beyond the owner's `projects.cloud_max` (only the most recently updated ones within it stay editable): the
+   * project can be opened, run, copied locally and deleted, but not changed until the owner upgrades (PRD §3).
+   */
+  locked: z.boolean(),
 });
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 

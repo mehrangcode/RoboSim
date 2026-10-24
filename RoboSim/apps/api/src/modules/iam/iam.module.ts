@@ -10,6 +10,7 @@ import { CallerGuard } from './caller.guard.js';
 import { CsrfGuard } from './csrf.guard.js';
 import { DevMailSink, MAILER } from './mailer.js';
 import { SessionsService } from './sessions.service.js';
+import { StaffGuard } from './staff.guard.js';
 import { UsersService } from './users.service.js';
 
 @Module({
@@ -20,10 +21,11 @@ import { UsersService } from './users.service.js';
     SessionsService,
     AuthService,
     CallerGuard,
+    StaffGuard,
     { provide: APP_GUARD, useClass: CsrfGuard },
     // `MAIL_TRANSPORT` has only `dev` until the SMTP adapter lands with staging (refused there by env checks).
     { provide: MAILER, inject: [ENV], useFactory: (_env: Env) => new DevMailSink() },
   ],
-  exports: [UsersService, SessionsService, CallerGuard, OrgModule, MAILER],
+  exports: [UsersService, SessionsService, CallerGuard, StaffGuard, OrgModule, MAILER],
 })
 export class IamModule {}

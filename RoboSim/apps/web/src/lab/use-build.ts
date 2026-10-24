@@ -137,7 +137,7 @@ export type BuildState =
   | { readonly status: 'idle' }
   | { readonly status: 'building'; readonly progress?: BuildProgress }
   | { readonly status: 'done'; readonly result: BuildResult }
-  | { readonly status: 'error'; readonly message: string };
+  | { readonly status: 'error'; readonly message: string; readonly cause?: unknown };
 
 export function useBuild(compile: CompileSketch = compileWithApi) {
   const [state, setState] = useState<BuildState>({ status: 'idle' });
@@ -165,6 +165,7 @@ export function useBuild(compile: CompileSketch = compileWithApi) {
         setState({
           status: 'error',
           message: e instanceof ApiError ? e.problem.title : (e as Error).message,
+          cause: e,
         });
         return null;
       }

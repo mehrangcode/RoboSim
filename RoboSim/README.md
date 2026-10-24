@@ -43,6 +43,7 @@
 | 📁 **Projects**                     | **My projects** on the server (search, trash, duplicate) with autosave, conflict handling and versions (checkpoints + every successful build); versioned document format; JSON import/export                                                                                                                                                                                                                                                                                                                                                                                       |
 | 🔗 **Sharing**                      | Read-only links (optionally remixable, with attribution) and sharing with people as viewer or editor; **Shared with me** list                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 🔐 **Accounts**                     | Email + password sign-up and sign-in, email verification, password reset, and session management (see and sign out devices); secure cookie sessions with CSRF protection and lockout                                                                                                                                                                                                                                                                                                                                                                                               |
+| 💳 **Plans & limits**               | Free and Maker plans with server-enforced limits (cloud projects, builds per day, pro parts, version retention); a paywall that says what is blocked and why; **Plans** page and **Plan & usage** on the account; staff back office for plans and workspaces (checkout is coming soon)                                                                                                                                                                                                                                                                                             |
 
 ### 🔩 Supported hardware (simulated)
 
@@ -198,6 +199,8 @@ pnpm dev
 | `pnpm --filter @robosim/compiler compile <main.ino>`     | Compile a sketch from the command line                                                      |
 | `pnpm new:component <slug> <type-id> <category> <Class>` | Scaffold a new simulated component                                                          |
 | `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed`  | Database migrations and seed data                                                           |
+| `pnpm versions:purge [--dry-run]`                        | Delete project versions past each plan's retention                                          |
+| `pnpm admin:grant <email> <role>`                        | Give an account a staff role for the admin app (`--revoke` removes it)                      |
 
 ---
 

@@ -14,6 +14,7 @@ import { createApp } from '../src/bootstrap.js';
 import { loadEnv } from '../src/config/env.js';
 import type { Database } from '../src/db/client.js';
 import { testEnv } from './support/app.js';
+import { patchPlan, subscribe } from './support/plans.js';
 import { createTestDatabase } from './support/database.js';
 
 let database: Database;
@@ -208,19 +209,28 @@ describe('POST /builds (API Spec §4.5)', () => {
     ).toBeLessThan(300);
   });
 
-  it('counts queued builds against the daily quota; cache hits stay free', async () => {
-    const a = await app({ BUILD_DAILY_QUOTA: '1', DEV_IDENTITY_EMAIL: 'quota@dev.local' });
-    await built(a, request(fresh()));
-    const over = await post(a, request(fresh()));
-    expect(over.statusCode).toBe(429);
-    const problem = problemDetailsSchema.parse(over.json());
-    expect(problem.code).toBe('build_quota_exceeded');
-    expect(problem.params).toEqual({
-      limit: 1,
-      resetAt: expect.stringMatching(/T00:00:00\.000Z$/) as string,
-    });
-    expect(Number(over.headers['retry-after'])).toBeGreaterThan(0);
-    expect((await post(a, request(BLINK))).statusCode).toBe(200);
+  it("counts queued builds against the plan's daily quota (00:00 Tehran); cache hits stay free", async () => {
+    const a = await app({ DEV_IDENTITY_EMAIL: 'quota@dev.local' });
+    const restore = await patchPlan(a, database, 'free', { 'build.daily_quota': 1 });
+    try {
+      await built(a, request(fresh()));
+      const over = await post(a, request(fresh()));
+      expect(over.statusCode).toBe(429);
+      const problem = problemDetailsSchema.parse(over.json());
+      expect(problem.code).toBe('build_quota_exceeded');
+      expect(problem.params).toEqual({
+        limit: 1,
+        resetAt: expect.stringMatching(/T20:30:00\.000Z$/) as string,
+        suggestedPlan: 'maker',
+      });
+      expect(Number(over.headers['retry-after'])).toBeGreaterThan(0);
+      expect((await post(a, request(BLINK))).statusCode).toBe(200);
+      // A Maker subscription lifts the limit at once.
+      await subscribe(a, database, 'quota@dev.local', 'maker');
+      expect((await post(a, request(fresh()))).statusCode).toBe(202);
+    } finally {
+      await restore();
+    }
   });
 
   it("hides one user's builds from another", async () => {

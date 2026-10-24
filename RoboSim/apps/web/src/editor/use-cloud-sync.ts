@@ -7,6 +7,7 @@ import {
 } from '@robosim/shared';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ApiError } from '../lib/api.js';
+import { paywallReason, type PaywallReason } from '../plans/paywall-reason.js';
 import type { ProjectsClient } from '../lib/projects-api.js';
 import { loadCloudDraft, saveCloudDraft } from './project-store.js';
 
@@ -29,6 +30,8 @@ export interface CloudOpen {
   readonly access: ProjectAccess;
   readonly ownerName: string;
   readonly remixedFrom: RemixedFrom | null;
+  /** Beyond the owner's cloud-project cap: opens read-only like a viewer's copy (PRD §3). */
+  readonly locked: boolean;
 }
 
 export type OpenResult =
@@ -47,6 +50,7 @@ export async function openCloudProject(client: ProjectsClient, id: string): Prom
       access: project.access,
       ownerName: project.ownerName,
       remixedFrom: project.remixedFrom,
+      locked: project.locked,
     };
     // A viewer has no drafts: what they see is always the server's copy.
     if (project.access === 'view')
@@ -92,6 +96,7 @@ export async function openCloudProject(client: ProjectsClient, id: string): Prom
           access: 'owner',
           ownerName: '',
           remixedFrom: null,
+          locked: false,
         },
       };
     return { kind: 'failed', message: e instanceof ApiError ? e.problem.title : (e as Error).message };
@@ -119,6 +124,9 @@ export function useCloudSync(open: CloudOpen | undefined, client: ProjectsClient
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<'offline' | 'error' | null>(open?.offline ? 'offline' : null);
   const [message, setMessage] = useState<string | null>(null);
+  // A save the plan refused (FR-BIL-05): the paywall says why, and that exact document is not sent again, so
+  // autosave does not knock every 30 s. The next edit tries again (it may have removed the pro part).
+  const [refused, setRefused] = useState<{ reason: PaywallReason; open: boolean } | null>(null);
   const [conflict, setConflict] = useState<CloudConflict | null>(() =>
     open?.staleDraft ? { mine: open.staleDraft, showing: 'server' } : null,
   );
@@ -131,6 +139,7 @@ export function useCloudSync(open: CloudOpen | undefined, client: ProjectsClient
     latest.current = { current, json, revision, dirty, conflict };
   });
   const inFlight = useRef<Promise<boolean> | null>(null);
+  const refusedJson = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open || conflict) return;
@@ -143,6 +152,7 @@ export function useCloudSync(open: CloudOpen | undefined, client: ProjectsClient
     const { current: doc, json: sent, revision: base, dirty: isDirty, conflict: blocked } = latest.current;
     if (blocked) return false;
     if (!isDirty) return true;
+    if (refusedJson.current === sent) return false;
     const run = (async () => {
       setSaving(true);
       try {
@@ -160,6 +170,11 @@ export function useCloudSync(open: CloudOpen | undefined, client: ProjectsClient
         } else if (e instanceof ApiError) {
           setProblem('error');
           setMessage(e.problem.title);
+          const reason = paywallReason(e);
+          if (reason) {
+            refusedJson.current = sent;
+            setRefused({ reason, open: true });
+          }
         } else setProblem('offline');
         return false;
       } finally {
@@ -259,6 +274,9 @@ export function useCloudSync(open: CloudOpen | undefined, client: ProjectsClient
   return {
     status,
     message,
+    /** The paywall for the last refused save, while it is open. */
+    paywall: refused?.open ? refused.reason : null,
+    dismissPaywall: () => setRefused((r) => (r ? { ...r, open: false } : r)),
     revision,
     dirty,
     conflict,

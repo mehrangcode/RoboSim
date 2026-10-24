@@ -78,8 +78,8 @@ Every user acts inside a **workspace**: a personal workspace (one per user) or a
 Rules:
 
 - **Guests** (no account) get Free entitlements in demo mode with nothing persisted server-side (local storage only) and the guest build quota (10/day per IP+fingerprint).
-- **Trial:** new personal workspaces start a 14-day Maker trial (length configurable). Organizations start a 30-day Classroom pilot provisioned by sales or self-serve with a seat cap of 10.
-- **Lapsed** trials or subscriptions fall back to **Free**, never below it. Data is never deleted because of lapse; projects above `projects.cloud_max` become read-only (viewable, exportable as files) until the user upgrades or deletes projects.
+- **Trial:** new personal workspaces start a 14-day Maker trial (length configurable). Organizations start a 30-day Classroom pilot provisioned by sales or self-serve with a seat cap of 10. *Status (2026-10-24): no trial yet; every workspace is on Free until staff set a plan, and the trial waits for checkout.*
+- **Lapsed** trials or subscriptions fall back to **Free**, never below it. Data is never deleted because of lapse; projects above `projects.cloud_max` become read-only (viewable, exportable as files) until the user upgrades or deletes projects. *Status (2026-10-24): implemented; the most recently updated projects within the cap stay editable, and retention keeps named checkpoints.*
 - **3D view, 2D view, simulation run, safety checker, and the circuit editor are available in every edition.** They run client-side and are not gated ([ADR-006](decisions.md#adr-006--gate-only-server-enforceable-value)).
 
 ## 4. Personas and roles
@@ -286,11 +286,11 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-BIL-01 | Plans, prices (IRR), billing intervals, trial lengths, and entitlement sets are configured in admin and versioned; existing subscribers keep their price version until renewal. | Must | P2 |
+| FR-BIL-01 | Plans, prices (IRR), billing intervals, trial lengths, and entitlement sets are configured in admin and versioned; existing subscribers keep their price version until renewal. *Status: versions and entitlement sets are done in admin (2026-10-24); prices stay unset and trials wait for checkout.* | Must | P2 |
 | FR-BIL-02 | Self-serve checkout for Maker (monthly/yearly) and Classroom (seats) via the payment gateway; server-side verification; idempotent callbacks; daily reconciliation against gateway reports. | Must | P2 |
 | FR-BIL-03 | Iranian gateways do not support stored-card recurring billing: renewals are prepaid periods. The system sends renewal reminders (7, 3, 1 days before) and offers one-click renewal; optional wallet (prepaid balance) auto-renews when balance suffices. | Must | P2 |
-| FR-BIL-04 | Entitlements service: resolves effective entitlements per `(user, workspace)` from plan + add-ons + overrides; cached ≤ 60 s; every enforcement point in §3 calls it; changes take effect immediately after payment verification. | Must | P2 |
-| FR-BIL-05 | Paywall and upgrade UX: when an entitlement blocks an action, show what is blocked, why, and the cheapest plan that unblocks it; never lose user work. | Must | P2 |
+| FR-BIL-04 | Entitlements service: resolves effective entitlements per `(user, workspace)` from plan + add-ons + overrides; cached ≤ 60 s; every enforcement point in §3 calls it; changes take effect immediately after payment verification. *Status: done without add-ons or payment (pulled forward, 2026-10-24); the cache is in-process.* | Must | P2 |
+| FR-BIL-05 | Paywall and upgrade UX: when an entitlement blocks an action, show what is blocked, why, and the cheapest plan that unblocks it; never lose user work. *Status: done for quotas, pro parts and builds (2026-10-24); the upgrade button leads to a plans page until checkout.* | Must | P2 |
 | FR-BIL-06 | Coupons and promotions: percentage/amount, plan-restricted, usage limits, expiry; campaign tracking. | Must | P2 |
 | FR-BIL-07 | Organization billing: quotes, proforma invoices, bank transfer with manual confirmation by finance, purchase-order reference, seat add/remove with prorated adjustment on next invoice. | Must | P3 |
 | FR-BIL-08 | Invoices: consumer receipts (VAT-inclusive) and official invoices for business customers including economic code/national ID; submission to Moodian through an integration adapter. | Must | P3 |

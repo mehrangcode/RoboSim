@@ -43,6 +43,8 @@ import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
 import { SignInGate } from '../auth/auth-ui.js';
 import { useAuth } from '../auth/use-auth.js';
 import { ApiError } from '../lib/api.js';
+import { PaywallDialog } from '../plans/paywall.js';
+import { paywallReason, type PaywallReason } from '../plans/paywall-reason.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { HelpDialog } from './help-dialog.js';
@@ -148,14 +150,16 @@ function ShareBanner({ text, children }: { text: string; children?: ReactNode })
   );
 }
 
-/** "Make a copy" / "Remix": copies the project into the caller's workspace and opens it there. */
+/** "Make a copy" / "Remix": copies the project into the caller's workspace and opens it, or shows the paywall. */
 function CopyButton({ label, copy }: { label: string; copy: () => Promise<{ id: string }> }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paywall, setPaywall] = useState<PaywallReason | null>(null);
   return (
     <>
+      {paywall && <PaywallDialog reason={paywall} onClose={() => setPaywall(null)} />}
       {error && (
         <span role="alert" className="text-danger">
           {error}
@@ -169,13 +173,16 @@ function CopyButton({ label, copy }: { label: string; copy: () => Promise<{ id: 
           setError(null);
           copy()
             .then((p) => navigate({ to: '/editor/$projectId', params: { projectId: p.id } }))
-            .catch((e: unknown) =>
-              setError(
-                t('share:viewer.copyFailed', {
-                  message: e instanceof ApiError ? e.problem.title : (e as Error).message,
-                }),
-              ),
-            )
+            .catch((e: unknown) => {
+              const reason = paywallReason(e);
+              if (reason) setPaywall(reason);
+              else
+                setError(
+                  t('share:viewer.copyFailed', {
+                    message: e instanceof ApiError ? e.problem.title : (e as Error).message,
+                  }),
+                );
+            })
             .finally(() => setBusy(false));
         }}
       >
@@ -272,6 +279,16 @@ function CloudWorkspace({ id, ...props }: EditorProps & { id: string; projects: 
     );
     return <Workspace {...props} initial={result.open.saved} viewer={{ banner }} />;
   }
+  if (result?.kind === 'ready' && result.open.locked) {
+    const banner = (
+      <ShareBanner text={t('plans:locked.banner')}>
+        <Link to="/plans" className={buttonVariants({ size: 'sm' })}>
+          {t('plans:paywall.seePlans')}
+        </Link>
+      </ShareBanner>
+    );
+    return <Workspace {...props} initial={result.open.saved} viewer={{ banner }} />;
+  }
   if (result?.kind === 'ready') return <Workspace {...props} cloudOpen={result.open} />;
   if (result?.kind === 'unauthenticated') return <SignInGate />;
   return (
@@ -338,6 +355,8 @@ function Workspace({
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [paywall, setPaywall] = useState<PaywallReason | null>(null);
+  const [dismissedBuild, setDismissedBuild] = useState<unknown>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const { layout, resize, toggle } = useLayout();
   const size = useSizeClass();
@@ -387,15 +406,28 @@ function Workspace({
       const created = await projects.create({ document: current });
       void navigate({ to: '/editor/$projectId', params: { projectId: created.id } });
     } catch (e) {
-      setNotice(
-        t('shell:cloud.uploadFailed', {
-          message: e instanceof ApiError ? e.problem.title : (e as Error).message,
-        }),
-      );
+      const reason = paywallReason(e);
+      if (reason) setPaywall(reason);
+      else
+        setNotice(
+          t('shell:cloud.uploadFailed', {
+            message: e instanceof ApiError ? e.problem.title : (e as Error).message,
+          }),
+        );
     } finally {
       setUploading(false);
     }
   };
+
+  // Plan refusals (FR-BIL-05): uploading to the cloud, an autosave, or a build over the daily quota.
+  const buildReason = run.build.status === 'error' ? paywallReason(run.build.cause) : null;
+  const shownPaywall = paywall
+    ? { reason: paywall, close: () => setPaywall(null) }
+    : cloud.paywall
+      ? { reason: cloud.paywall, close: cloud.dismissPaywall }
+      : buildReason && dismissedBuild !== run.build
+        ? { reason: buildReason, close: () => setDismissedBuild(run.build) }
+        : null;
 
   // A demo opens once the worker has loaded it: its scene carries the document.
   useEffect(() => {
@@ -897,6 +929,19 @@ function Workspace({
   const helpDialog = (
     <>
       {help && <HelpDialog onClose={() => setHelp(false)} />}
+      {shownPaywall && (
+        <PaywallDialog
+          reason={shownPaywall.reason}
+          onClose={shownPaywall.close}
+          actions={
+            shownPaywall.reason.kind !== 'builds' && (
+              <Button size="sm" variant="secondary" onClick={() => downloadJson(fileName(current), current)}>
+                {t('plans:paywall.download')}
+              </Button>
+            )
+          }
+        />
+      )}
       {cloud.conflict && (
         <ConflictDialog
           conflict={cloud.conflict}

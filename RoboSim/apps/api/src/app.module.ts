@@ -3,6 +3,7 @@ import { ENV, type Env } from './config/env.js';
 import { DATABASE, type Database } from './db/client.js';
 import { AuditModule } from './modules/audit/index.js';
 import { BuildGatewayModule } from './modules/build-gateway/index.js';
+import { EntitlementsModule } from './modules/entitlements/index.js';
 import { FeatureFlagsModule } from './modules/feature-flags/index.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { IamModule } from './modules/iam/index.js';
@@ -38,6 +39,7 @@ export class AppModule {
         OutboxModule,
         IamModule,
         OrgModule,
+        EntitlementsModule,
         BuildGatewayModule,
         ProjectsModule,
       ],

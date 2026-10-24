@@ -1,4 +1,4 @@
-import { formatDate } from '@robosim/i18n';
+import { formatDate, formatNumber } from '@robosim/i18n';
 import {
   parseProjectDocument,
   ProjectDocumentError,
@@ -15,14 +15,24 @@ import { SignInGate } from '../auth/auth-ui.js';
 import { useAuth } from '../auth/use-auth.js';
 import { starterProject } from '../editor/starter.js';
 import { ApiError } from '../lib/api.js';
+import type { EntitlementsClient } from '../lib/entitlements-api.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
+import { PaywallDialog } from '../plans/paywall.js';
+import { paywallReason, type PaywallReason } from '../plans/paywall-reason.js';
+import { useEntitlements } from '../plans/use-entitlements.js';
 
 const SORTS: readonly ProjectSort[] = ['-updatedAt', 'name', '-createdAt'];
 
 type Tab = 'mine' | 'shared';
 
 /** Cloud projects: the workspace's own, and those other people shared with the caller (FR-PRJ-01, FR-PRJ-04). */
-export function ProjectsPage({ projects: injected }: { projects?: ProjectsClient }) {
+export function ProjectsPage({
+  projects: injected,
+  entitlements,
+}: {
+  projects?: ProjectsClient;
+  entitlements?: EntitlementsClient;
+}) {
   const { t, i18n } = useTranslation();
   // The i18n instance is stable; reading its language per request follows language switches.
   const [fallback] = useState(() => projectsApi(() => i18n.language));
@@ -39,7 +49,11 @@ export function ProjectsPage({ projects: injected }: { projects?: ProjectsClient
         }))}
         onChange={setTab}
       />
-      {tab === 'mine' ? <MyProjects client={client} /> : <SharedWithMe client={client} />}
+      {tab === 'mine' ? (
+        <MyProjects client={client} entitlements={entitlements} />
+      ) : (
+        <SharedWithMe client={client} />
+      )}
     </div>
   );
 }
@@ -95,6 +109,7 @@ function SharedWithMe({ client }: { client: ProjectsClient }) {
                   <span className="block text-xs text-ink-muted">
                     {t('share:sharedList.by', { owner: p.ownerName })} ·{' '}
                     {p.role === 'edit' ? t('share:role.edit') : t('share:role.view')} ·{' '}
+                    {p.locked && <>{t('plans:locked.badge')} · </>}
                     {t('shell:projects.updatedAt', {
                       date: formatDate(locale, new Date(p.updatedAt), {
                         dateStyle: 'medium',
@@ -115,8 +130,17 @@ function SharedWithMe({ client }: { client: ProjectsClient }) {
   );
 }
 
-/** The workspace's cloud projects (FR-PRJ-01 thin): search, sort, open, rename, duplicate, delete and trash. */
-function MyProjects({ client }: { client: ProjectsClient }) {
+/**
+ * The workspace's cloud projects (FR-PRJ-01 thin): search, sort, open, rename, duplicate, delete and trash. Over
+ * the plan's cloud-project cap the older projects are read-only, and refusals open the paywall (FR-BIL-05).
+ */
+function MyProjects({
+  client,
+  entitlements,
+}: {
+  client: ProjectsClient;
+  entitlements?: EntitlementsClient | undefined;
+}) {
   const { t, i18n } = useTranslation();
   const locale = (i18n.language === 'fa' ? 'fa' : 'en') satisfies Locale;
   const navigate = useNavigate();
@@ -127,7 +151,9 @@ function MyProjects({ client }: { client: ProjectsClient }) {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ text: string; undo?: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [paywall, setPaywall] = useState<PaywallReason | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const usage = useEntitlements(entitlements).data?.quotas['projects.cloud_max'];
 
   const list = useInfiniteQuery({
     queryKey: ['projects', { q: q.trim(), sort, trash }],
@@ -143,7 +169,10 @@ function MyProjects({ client }: { client: ProjectsClient }) {
     retry: false,
   });
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['projects'] });
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['projects'] });
+    await queryClient.invalidateQueries({ queryKey: ['entitlements'] });
+  };
   const signedOut = list.error instanceof ApiError && list.error.problem.code === 'unauthenticated';
 
   const message = (e: unknown) =>
@@ -157,7 +186,9 @@ function MyProjects({ client }: { client: ProjectsClient }) {
     try {
       await work();
     } catch (e) {
-      setNotice({ text: t('shell:projects.failed', { message: message(e) }) });
+      const reason = paywallReason(e);
+      if (reason) setPaywall(reason);
+      else setNotice({ text: t('shell:projects.failed', { message: message(e) }) });
     } finally {
       setBusy(false);
     }
@@ -206,7 +237,21 @@ function MyProjects({ client }: { client: ProjectsClient }) {
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="me-auto text-2xl font-bold tracking-tight">{t('shell:projects.title')}</h1>
+        <div className="me-auto">
+          <h1 className="text-2xl font-bold tracking-tight">{t('shell:projects.title')}</h1>
+          {usage && usage.limit !== null && (
+            <p className="text-xs text-ink-muted">
+              {t('plans:usage.projects', {
+                used: formatNumber(locale, usage.used ?? 0),
+                limit: formatNumber(locale, usage.limit),
+              })}{' '}
+              ·{' '}
+              <Link to="/plans" className="text-brand-600 hover:underline">
+                {t('plans:usage.compare')}
+              </Link>
+            </p>
+          )}
+        </div>
         <Button size="sm" onClick={() => void create()} disabled={busy}>
           {t('shell:projects.new')}
         </Button>
@@ -252,6 +297,7 @@ function MyProjects({ client }: { client: ProjectsClient }) {
         </Button>
       </div>
 
+      {paywall && <PaywallDialog reason={paywall} onClose={() => setPaywall(null)} />}
       {notice && (
         <p
           role="status"
@@ -324,6 +370,14 @@ function MyProjects({ client }: { client: ProjectsClient }) {
                     </Link>
                   )}
                   <span className="block text-xs text-ink-muted">
+                    {p.locked && (
+                      <span
+                        title={t('plans:locked.badgeHint')}
+                        className="me-1 rounded bg-surface-raised px-1.5 py-0.5 font-medium text-ink"
+                      >
+                        {t('plans:locked.badge')}
+                      </span>
+                    )}
                     {trash && p.deletedAt
                       ? t('shell:projects.deletedAt', {
                           date: formatDate(locale, new Date(p.deletedAt), { dateStyle: 'medium' }),
@@ -344,9 +398,11 @@ function MyProjects({ client }: { client: ProjectsClient }) {
                     </Button>
                   ) : (
                     <>
-                      <Button size="sm" variant="secondary" onClick={() => setRenaming(p.id)}>
-                        {t('shell:projects.rename')}
-                      </Button>
+                      {!p.locked && (
+                        <Button size="sm" variant="secondary" onClick={() => setRenaming(p.id)}>
+                          {t('shell:projects.rename')}
+                        </Button>
+                      )}
                       <Button size="sm" variant="secondary" onClick={() => void duplicate(p)}>
                         {t('shell:projects.duplicate')}
                       </Button>

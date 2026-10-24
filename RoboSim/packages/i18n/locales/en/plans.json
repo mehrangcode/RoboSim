@@ -1,0 +1,76 @@
+{
+  "nav": "Plans",
+  "plan": {
+    "free": "Free",
+    "maker": "Maker",
+    "classroom": "Classroom",
+    "institution": "Institution",
+    "private_cloud": "Private Cloud"
+  },
+  "status": {
+    "expired": "Expired"
+  },
+  "page": {
+    "title": "Plans",
+    "intro": "The simulator, the safety checker and the editor are free for everyone. Maker adds unlimited cloud projects, more builds a day and the Pro parts.",
+    "current": "Your plan",
+    "free": "Free",
+    "priceTbd": "Price to be announced",
+    "price": "{price} rials per {interval, select, month {month} year {year} other {term}}",
+    "upgrade": "Upgrade to {plan}",
+    "comingSoon": "Payments are coming soon.",
+    "schools": "Schools and institutions get Classroom and Institution plans through our team.",
+    "loadFailed": "Couldn't load the plans: {message}"
+  },
+  "row": {
+    "projects": "Cloud projects",
+    "builds": "Builds a day",
+    "retention": "Version history",
+    "parts": "Parts",
+    "guided": "Guided projects",
+    "pdf": "PDF export",
+    "collab": "Real-time collaboration",
+    "publish": "Publish to the gallery",
+    "arenas": "Custom arenas"
+  },
+  "value": {
+    "unlimited": "Unlimited",
+    "days": "{n, plural, one {# day} other {# days}}",
+    "forever": "Kept forever",
+    "partsBasic": "Basic parts",
+    "partsAll": "All parts, including Pro",
+    "guidedFirst": "The first one",
+    "guidedAll": "All",
+    "yes": "Included",
+    "no": "—"
+  },
+  "usage": {
+    "title": "Plan & usage",
+    "plan": "{plan} plan",
+    "until": "until {date}",
+    "projects": "{used} of {limit} cloud projects",
+    "projectsUnlimited": "{used} cloud projects",
+    "builds": "{used} of {limit} builds today",
+    "buildsUnlimited": "{used} builds today",
+    "resets": "Resets {date}",
+    "compare": "Compare plans"
+  },
+  "paywall": {
+    "title": "This needs the {plan} plan",
+    "cloudMax": "Your plan keeps {limit, plural, one {# project} other {# projects}} in the cloud. Delete one, keep this one in your browser and download it, or upgrade for unlimited cloud projects.",
+    "locked": "This project is over your plan's {limit, plural, one {# cloud project} other {# cloud projects}}, so it is read-only. You can open, run, download and delete it. Delete another project or upgrade to edit it again.",
+    "parts": "Your plan saves projects with basic parts to the cloud. These parts need {plan}:",
+    "partsLabel": "Pro parts in this project",
+    "partsHint": "They keep working here: run the project and download a copy. It just isn't saved to the cloud until you remove them or upgrade.",
+    "builds": "You've used today's {limit, plural, one {# build} other {# builds}}. Sketches you already compiled still run. New builds are available again {date}.",
+    "feature": "This isn't included in your plan.",
+    "seePlans": "See plans",
+    "download": "Download a copy",
+    "close": "Not now"
+  },
+  "locked": {
+    "badge": "Read-only",
+    "badgeHint": "Over your plan's cloud project limit",
+    "banner": "Read-only: this project is over your plan's cloud project limit. You can run and download it; delete another project or upgrade to edit it."
+  }
+}

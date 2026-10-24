@@ -25,6 +25,7 @@ import { withScope, withSystem } from '../../db/scope.js';
 import { AuditService } from '../audit/index.js';
 import type { Caller } from '../iam/index.js';
 import { OutboxService } from '../outbox/index.js';
+import { beyondCap, ProjectLimits, type ProjectRules } from './project-limits.service.js';
 
 type ProjectRow = typeof projects.$inferSelect;
 type VersionRow = typeof projectVersions.$inferSelect;
@@ -57,6 +58,7 @@ export class ProjectsService {
     @Inject(DATABASE) private readonly database: Database,
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
+    private readonly limits: ProjectLimits,
   ) {}
 
   async list(caller: Caller, query: ProjectListQuery): Promise<ProjectPage> {
@@ -77,19 +79,21 @@ export class ProjectsService {
       );
     }
     const order = descending ? [desc(column), desc(projects.id)] : [asc(column), asc(projects.id)];
-    const rows = await withScope(this.database.db, caller, (tx) =>
-      tx
+    const rules = await this.limits.rules(caller.workspaceId, caller.userId);
+    const { rows, editable } = await withScope(this.database.db, caller, async (tx) => ({
+      rows: await tx
         .select()
         .from(projects)
         .where(and(...where))
         .orderBy(...order)
         .limit(query.limit + 1),
-    );
+      editable: await this.editableIds(tx, rules, caller.workspaceId),
+    }));
     const items = rows.slice(0, query.limit);
     const last = items.at(-1);
     const more = rows.length > query.limit && last;
     return {
-      items: items.map(toSummary),
+      items: items.map((row) => toSummary(row, !row.deletedAt && editable !== null && !editable.has(row.id))),
       nextCursor: more
         ? encodeCursor(column === projects.name ? last.name : stamp(column, last), last.id)
         : null,
@@ -98,8 +102,11 @@ export class ProjectsService {
 
   async create(caller: Caller, input: CreateProjectInput & { tags: string[] }): Promise<Project> {
     const prepared = prepare(input.document, input.name);
+    const rules = await this.limits.rules(caller.workspaceId, caller.userId);
+    this.limits.assertParts(rules, prepared.doc);
     const now = new Date();
     const row = await withScope(this.database.db, caller, async (tx) => {
+      await this.limits.assertRoom(tx, rules, caller.workspaceId);
       const [created] = await tx
         .insert(projects)
         .values({
@@ -119,11 +126,12 @@ export class ProjectsService {
   }
 
   async get(caller: Caller, id: string): Promise<Project> {
-    const { row, access } = await withScope(this.database.db, caller, async (tx) => {
+    const { row, access, rank } = await withScope(this.database.db, caller, async (tx) => {
       const found = await this.live(tx, id);
-      return { row: found, access: await this.accessOf(tx, found, caller) };
+      return { row: found, access: await this.accessOf(tx, found, caller), rank: await this.rankOf(tx, id) };
     });
-    return this.present(row, access);
+    const { cap } = await this.limits.rules(row.workspaceId, row.ownerUserId);
+    return this.present(row, access, beyondCap(cap, rank));
   }
 
   /** Copies a document into the caller's workspace as a new project, crediting its source. */
@@ -134,8 +142,11 @@ export class ProjectsService {
     copyOf?: string,
   ): Promise<Project> {
     const prepared = prepare(source.document, source.name.slice(0, PROJECT_LIMITS.maxNameLength));
+    const rules = await this.limits.rules(caller.workspaceId, caller.userId);
+    this.limits.assertParts(rules, prepared.doc);
     const now = new Date();
     const row = await withScope(this.database.db, caller, async (tx) => {
+      await this.limits.assertRoom(tx, rules, caller.workspaceId);
       const [created] = await tx
         .insert(projects)
         .values({
@@ -167,10 +178,12 @@ export class ProjectsService {
     ifMatch: number | undefined,
     input: UpdateProjectInput,
   ): Promise<Project> {
+    const rules = await this.rulesOf(caller, id);
     const { row, access } = await withScope(this.database.db, caller, async (tx) => {
       const current = await this.live(tx, id);
       const level = await this.require(tx, current, caller, input.tags ? 'owner' : 'edit');
       checkRevision(current, ifMatch);
+      await this.limits.assertWritable(tx, rules, id);
       const renamed = input.name === undefined ? undefined : prepare(current.document, input.name);
       const written = await this.write(tx, current, {
         ...(renamed ? columnsOf(renamed) : {}),
@@ -189,12 +202,15 @@ export class ProjectsService {
     document: unknown,
   ): Promise<ProjectSummary> {
     const prepared = prepare(document);
+    const rules = await this.rulesOf(caller, id);
     return withScope(this.database.db, caller, async (tx) => {
       const current = await this.live(tx, id);
       await this.require(tx, current, caller, 'edit');
       checkRevision(current, ifMatch);
-      if (current.documentSha256 === prepared.sha256) return toSummary(current);
-      return toSummary(await this.write(tx, current, columnsOf(prepared)));
+      await this.limits.assertWritable(tx, rules, id);
+      if (current.documentSha256 === prepared.sha256) return toSummary(current, false);
+      this.limits.assertParts(rules, prepared.doc);
+      return toSummary(await this.write(tx, current, columnsOf(prepared)), false);
     });
   }
 
@@ -218,6 +234,7 @@ export class ProjectsService {
   }
 
   async restore(caller: Caller, id: string, now: Date = new Date()): Promise<Project> {
+    const rules = await this.limits.rules(caller.workspaceId, caller.userId);
     const row = await withScope(this.database.db, caller, async (tx) => {
       const current = await this.find(tx, id);
       if (
@@ -226,6 +243,7 @@ export class ProjectsService {
         now.getTime() - current.deletedAt.getTime() > PROJECT_LIMITS.trashDays * DAY_MS
       )
         throw new DomainError('not_found');
+      await this.limits.assertRoom(tx, rules, caller.workspaceId);
       const restored = await this.write(tx, current, { deletedAt: null }, now);
       await this.audit.record(tx, {
         actorId: caller.userId,
@@ -298,9 +316,11 @@ export class ProjectsService {
 
   /** Named checkpoint of the current working document. */
   async createVersion(caller: Caller, id: string, label: string): Promise<ProjectVersionSummary> {
+    const rules = await this.rulesOf(caller, id);
     return withScope(this.database.db, caller, async (tx) => {
       // Viewers cannot lock the row (FOR UPDATE applies the update policy), so check access first.
       await this.require(tx, await this.live(tx, id), caller, 'edit');
+      await this.limits.assertWritable(tx, rules, id);
       const current = await this.live(tx, id, true);
       return toVersionSummary(await this.snapshot(tx, caller, current, 'manual', { label }));
     });
@@ -313,12 +333,15 @@ export class ProjectsService {
     versionId: string,
     ifMatch: number | undefined,
   ): Promise<Project> {
+    const rules = await this.rulesOf(caller, id);
     const { row, access } = await withScope(this.database.db, caller, async (tx) => {
       const level = await this.require(tx, await this.live(tx, id), caller, 'edit');
+      await this.limits.assertWritable(tx, rules, id);
       const current = await this.live(tx, id, true);
       checkRevision(current, ifMatch);
       const version = await this.version(tx, id, versionId);
       const prepared = prepare(version.document, current.name);
+      this.limits.assertParts(rules, prepared.doc);
       const restored =
         current.documentSha256 === prepared.sha256
           ? current
@@ -350,10 +373,12 @@ export class ProjectsService {
     artifactId: string,
   ): Promise<boolean> {
     try {
+      const rules = await this.rulesOf(caller, id);
       return await withScope(this.database.db, caller, async (tx) => {
         const current = await this.find(tx, id, true);
         if (!current || current.deletedAt) return false;
         if (RANK[await this.accessOf(tx, current, caller)] < RANK.edit) return false;
+        if (await this.limits.isLocked(tx, rules, id)) return false;
         const code = (current.document as ProjectDocument).code.files;
         const same =
           code.length === files.length &&
@@ -442,8 +467,38 @@ export class ProjectsService {
     return owner?.name ?? '';
   }
 
-  private async present(row: ProjectRow, access: ProjectAccess): Promise<Project> {
-    return toProject(row, access, await this.ownerName(row));
+  private async present(row: ProjectRow, access: ProjectAccess, locked = false): Promise<Project> {
+    return toProject(row, access, await this.ownerName(row), locked);
+  }
+
+  /** The limits of the project's workspace (its owner's entitlements); `not_found` like any other read. */
+  private async rulesOf(caller: Caller, id: string): Promise<ProjectRules> {
+    const owner = await withScope(this.database.db, caller, async (tx) => {
+      const row = await this.live(tx, id);
+      return { workspaceId: row.workspaceId, userId: row.ownerUserId };
+    });
+    return this.limits.rules(owner.workspaceId, owner.userId);
+  }
+
+  /** How many live projects of the same workspace were updated more recently. */
+  private async rankOf(tx: Tx, id: string): Promise<number> {
+    const [row] = await tx
+      .select({ rank: sql<number>`app_project_rank(${projects.id})` })
+      .from(projects)
+      .where(eq(projects.id, id));
+    return row?.rank ?? 0;
+  }
+
+  /** The workspace's editable projects under its cap, or null when every project is editable. */
+  private async editableIds(tx: Tx, rules: ProjectRules, workspaceId: string): Promise<Set<string> | null> {
+    if (rules.cap === null) return null;
+    const rows = await tx
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.workspaceId, workspaceId), isNull(projects.deletedAt)))
+      .orderBy(desc(projects.updatedAt), desc(projects.id))
+      .limit(rules.cap);
+    return new Set(rows.map((r) => r.id));
   }
 
   /** Bumps `revision` (the ETag) with every change. */
@@ -584,7 +639,7 @@ function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
-function toSummary(row: ProjectRow): ProjectSummary {
+function toSummary(row: ProjectRow, locked: boolean): ProjectSummary {
   return {
     id: row.id,
     name: row.name,
@@ -595,12 +650,13 @@ function toSummary(row: ProjectRow): ProjectSummary {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt?.toISOString() ?? null,
+    locked,
   };
 }
 
-function toProject(row: ProjectRow, access: ProjectAccess, ownerName: string): Project {
+function toProject(row: ProjectRow, access: ProjectAccess, ownerName: string, locked: boolean): Project {
   return {
-    ...toSummary(row),
+    ...toSummary(row, locked),
     document: row.document as ProjectDocument,
     access,
     ownerName,

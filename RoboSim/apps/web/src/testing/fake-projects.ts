@@ -29,6 +29,8 @@ export class FakeProjects implements ProjectsClient {
   private seq = 0;
   /** Set to make the next calls fail like a dropped connection. */
   offline = false;
+  /** Calls the server refuses (e.g. a plan limit), by method, until removed. */
+  readonly refusals = new Map<string, ApiError>();
 
   seed(document: ProjectDocument, over: Partial<Project> = {}): Project {
     const n = ++this.seq;
@@ -43,6 +45,7 @@ export class FakeProjects implements ProjectsClient {
       createdAt: new Date(Date.UTC(2026, 9, 21, 9, n)).toISOString(),
       updatedAt: new Date(Date.UTC(2026, 9, 21, 9, n)).toISOString(),
       deletedAt: null,
+      locked: false,
       document,
       access: 'owner',
       ownerName: 'Sara',
@@ -62,6 +65,8 @@ export class FakeProjects implements ProjectsClient {
   private record(method: string, ...args: unknown[]) {
     this.calls.push({ method, args });
     if (this.offline) throw new TypeError('Failed to fetch');
+    const refusal = this.refusals.get(method);
+    if (refusal) throw refusal;
   }
 
   private must(id: string): Project {

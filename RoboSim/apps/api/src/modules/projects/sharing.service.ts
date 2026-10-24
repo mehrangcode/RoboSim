@@ -7,6 +7,7 @@ import {
   type Project,
   type ProjectDocument,
   type ProjectSharing,
+  type QuotaLimit,
   type ShareLinkRequest,
   type ShareRequest,
   type SharedLink,
@@ -21,6 +22,7 @@ import { projects, projectShares, users } from '../../db/schema.js';
 import { withScope, withSystem } from '../../db/scope.js';
 import { AuditService } from '../audit/index.js';
 import { hashSecret, MAILER, normalizeEmail, type Caller, type Mailer } from '../iam/index.js';
+import { beyondCap, ProjectLimits } from './project-limits.service.js';
 import { ProjectsService, remixedFromOf } from './projects.service.js';
 
 type ProjectRow = typeof projects.$inferSelect;
@@ -44,6 +46,7 @@ export class SharingService {
     @Inject(ENV) private readonly env: Env,
     @Inject(MAILER) private readonly mailer: Mailer,
     private readonly projectsService: ProjectsService,
+    private readonly limits: ProjectLimits,
     private readonly audit: AuditService,
   ) {}
 
@@ -170,7 +173,11 @@ export class SharingService {
   async sharedWithMe(caller: Caller): Promise<SharedProject[]> {
     const rows = await withScope(this.database.db, caller, (tx) =>
       tx
-        .select({ project: projects, role: projectShares.role })
+        .select({
+          project: projects,
+          role: projectShares.role,
+          rank: sql<number>`app_project_rank(${projects.id})`,
+        })
         .from(projectShares)
         .innerJoin(projects, eq(projects.id, projectShares.projectId))
         .where(
@@ -184,7 +191,11 @@ export class SharingService {
         .limit(SHARE_LIMITS.maxSharedList),
     );
     const names = await this.namesOf(rows.map((r) => r.project.ownerUserId));
-    return rows.map(({ project, role }) => ({
+    // Each owner's cap decides which of their projects are read-only (entitlements are cached).
+    const caps = new Map<string, QuotaLimit>();
+    for (const { project } of rows)
+      caps.set(project.workspaceId, (await this.limits.rules(project.workspaceId, project.ownerUserId)).cap);
+    return rows.map(({ project, role, rank }) => ({
       id: project.id,
       name: project.name,
       boardId: project.boardId,
@@ -194,6 +205,7 @@ export class SharingService {
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
       deletedAt: null,
+      locked: beyondCap(caps.get(project.workspaceId) ?? null, rank),
       role: role === 'edit' ? 'edit' : 'view',
       ownerName: names.get(project.ownerUserId) ?? '',
     }));

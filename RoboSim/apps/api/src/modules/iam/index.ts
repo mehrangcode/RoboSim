@@ -5,3 +5,4 @@ export { SessionsService } from './sessions.service.js';
 export { DevMailSink, MAILER, type Mailer, type MailMessage } from './mailer.js';
 export { normalizeEmail } from './identity-rules.js';
 export { hashSecret } from './http-identity.js';
+export { requireStaff, StaffGuard, StaffScope, type Staff } from './staff.guard.js';

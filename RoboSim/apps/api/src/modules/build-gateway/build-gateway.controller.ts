@@ -1,7 +1,10 @@
 import type { ServerResponse } from 'node:http';
 import {
+  BUILD_PRIORITY_WEIGHT,
   buildRequestSchema,
+  DEFAULT_PLAN_ENTITLEMENTS,
   DomainError,
+  GUEST_BUILD_DAILY_QUOTA,
   isTerminalBuildState,
   isUuid,
   type BuildAccepted,
@@ -25,11 +28,11 @@ import {
 } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ENV, type Env } from '../../config/env.js';
+import { EntitlementsService, QuotaService } from '../entitlements/index.js';
 import { CallerGuard } from '../iam/index.js';
 import { ProjectsService } from '../projects/index.js';
 import { BUILDS_PATH, BuildGatewayService } from './build-gateway.service.js';
 import type { BuildOwner } from './build-queue.js';
-import { DailyBuildQuota } from './build-quota.js';
 import { IdempotencyStore } from './idempotency.js';
 import { FixedWindowRateLimiter } from '../../common/rate-limiter.js';
 
@@ -47,7 +50,6 @@ export class BuildGatewayController implements OnModuleDestroy {
   private readonly logger = new Logger(BuildGatewayController.name);
   private readonly limiter: FixedWindowRateLimiter;
   private readonly guestLimiter: FixedWindowRateLimiter;
-  private readonly quota: DailyBuildQuota;
   private readonly idempotency = new IdempotencyStore<Created>();
   private readonly streams = new Set<ServerResponse>();
 
@@ -55,16 +57,18 @@ export class BuildGatewayController implements OnModuleDestroy {
     private readonly builds: BuildGatewayService,
     private readonly callers: CallerGuard,
     private readonly projects: ProjectsService,
+    private readonly entitlements: EntitlementsService,
+    private readonly quotas: QuotaService,
     @Inject(ENV) env: Env,
   ) {
     this.limiter = new FixedWindowRateLimiter(env.BUILD_RATE_LIMIT_PER_MIN, 60_000);
     this.guestLimiter = new FixedWindowRateLimiter(env.BUILD_GUEST_RATE_LIMIT_PER_MIN, 60_000);
-    this.quota = new DailyBuildQuota(env.BUILD_DAILY_QUOTA);
   }
 
   /**
    * API Spec §4.5: `200 BuildResult` when the sources are cached (a failed build is a result, not an error),
-   * otherwise `202` with the queued job and `Location: /builds/:id`. Only queued builds count against the quota.
+   * otherwise `202` with the queued job and `Location: /builds/:id`. Only queued builds count against the caller's
+   * `build.daily_quota` (guests: a fixed quota per address); `build.priority` weighs the queue (FR-BLD-04).
    */
   @Post('builds')
   @HttpCode(200)
@@ -88,22 +92,30 @@ export class BuildGatewayController implements OnModuleDestroy {
         errors: [{ path: 'Idempotency-Key', message: 'a UUID Idempotency-Key header is required' }],
       });
 
+    const rules = await this.rules(caller);
+    if (!rules['boards.allowed'].includes(body.board))
+      throw new DomainError('entitlement_required', {
+        entitlement: 'boards.allowed',
+        suggestedPlan: 'maker',
+      });
+
     const created = await this.idempotency.run(caller.userId, key, body, async (): Promise<Created> => {
       const hit = await this.builds.cached(body);
       if (hit) {
         if (hit.status === 'succeeded' && hit.artifact) await this.snapshot(caller, body, hit.artifact.id);
         return { code: 200, body: hit };
       }
-      const quota = this.quota.take(caller.userId);
+      const quota = this.quotas.consume('build.daily_quota', caller.userId, rules['build.daily_quota']);
       if (!quota.allowed) {
-        const retryAfter = Math.max(1, Math.ceil((quota.resetAt.getTime() - Date.now()) / 1000));
+        const retryAfter = Math.max(1, Math.ceil((quota.resetsAt.getTime() - Date.now()) / 1000));
         void reply.header('Retry-After', String(retryAfter));
         throw new DomainError('build_quota_exceeded', {
           limit: quota.limit,
-          resetAt: quota.resetAt.toISOString(),
+          resetAt: quota.resetsAt.toISOString(),
+          ...(caller.guest ? {} : { suggestedPlan: 'maker' }),
         });
       }
-      const status = this.builds.submit(caller, body);
+      const status = this.builds.submit(caller, body, BUILD_PRIORITY_WEIGHT[rules['build.priority']]);
       if (body.projectId && !caller.guest)
         this.builds.onFinished(status.buildId, (final) => {
           if (final.state === 'succeeded' && final.result?.artifact)
@@ -204,6 +216,13 @@ export class BuildGatewayController implements OnModuleDestroy {
       const id = `guest:${req.ip}`;
       return { userId: id, workspaceId: id, guest: true };
     }
+  }
+
+  /** The caller's build entitlements. Guests have no workspace: Free's defaults with the guest quota (PRD §3). */
+  private async rules(caller: BuildCaller) {
+    if (caller.guest)
+      return { ...DEFAULT_PLAN_ENTITLEMENTS.free, 'build.daily_quota': GUEST_BUILD_DAILY_QUOTA };
+    return (await this.entitlements.resolve(caller.workspaceId, caller.userId)).values;
   }
 
   /** FR-PRJ-03: a successful build of a saved project becomes an automatic version. Guests have no projects. */

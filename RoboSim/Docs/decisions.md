@@ -25,6 +25,9 @@
 | 018 | Pin TypeScript to 6.0.x | Accepted |
 | 019 | PGlite for Docker-free development and database tests | Accepted |
 | 020 | NestJS 12 (ESM) with Zod through Standard Schema | Accepted (refines ADR-013) |
+| 021 | planck.js with trigonometry routed through `dmath` | Accepted |
+| 022 | Build service drives avr-gcc directly; Linux-namespace sandbox for development | Accepted |
+| 023 | Entitlements resolved in-process from plan versions ⊕ overrides; grants only raise | Accepted |
 
 ---
 
@@ -195,3 +198,19 @@
   - Edge cases that arduino-cli's ctags handles differently (functions declared inside macros, templates) need a manual forward declaration.
   - Adding a library means adding a pinned entry to the lock and re-running setup. Adding a board means a `BOARDS` entry plus its core.
 
+
+## ADR-023 — Entitlements resolved in-process from plan versions ⊕ overrides; grants only raise
+
+- **Context.** FR-BIL-04 wants every enforcement point to call one entitlements service, with results cached for at most 60 s. Development has no Redis (no Docker, ADR-019), yet builds, projects and retention already needed real limits, and plan prices change while subscribers must keep what they bought (FR-BIL-01). Over-cap project locks must also work for sharees, who cannot read the owner's other projects under RLS.
+- **Decision.**
+  - Entitlements are `plan version ⊕ overrides`, resolved by `EntitlementsService` in `apps/api`. A plan version is immutable: a change publishes a new version and retires the current one. New and Free workspaces get the current version at once; a paid subscriber keeps theirs until staff set the plan again. Keys added later fall back to Free's value.
+  - Overrides are additive only: quotas add (null = unlimited wins), booleans OR, ordered settings take the higher value, boards are united. Anything that restricts (organization policy, age band) is a separate `⊓` step that arrives with organizations in P3 (TD §9.1).
+  - Results are cached in the API process for `ENTITLEMENTS_CACHE_MS` (60 s at most) and dropped in-process when staff change a plan, subscription or override. Daily quotas are in-process counters that reset at 00:00 Asia/Tehran (fixed UTC+03:30; TD §9.1 wins over the UTC wording in the API Spec). The Redis cache, the Redis Lua quota store and event-driven invalidation come with the deployment track.
+  - Over the `projects.cloud_max` cap, the most recently updated projects stay editable and the rest are read-only (`locked`). A SECURITY DEFINER function, `app_project_rank(project)`, counts the live projects in the same workspace updated more recently, so any request transaction can decide this. The owner's entitlements apply to a project, so sharees inherit them. Retention never deletes named checkpoints or a project's latest version.
+  - There is no trial yet: every workspace is on Free until staff set a plan. The PRD's 14-day Maker trial waits for checkout.
+- **Consequences.**
+  - One code path for every limit, testable on PGlite with real RLS. Staff can grant but never take away, so a mistaken override cannot lock a user out.
+  - With several API instances, a plan change reaches other instances within the cache time (≤ 60 s) and a restart refills daily quotas, until Redis arrives. Acceptable for single-process development and the first release.
+  - The rank function bypasses RLS for one count, so it returns only a number and takes a project id.
+  - Subscriptions and overrides are written by staff and system code outside RLS, so the admin routes carry the access control (`StaffGuard` plus a permission per route) and every change is audited.
+- **Alternatives.** A Redis-backed service from the start (no Redis in development); resolving entitlements at the edge from JWT claims (stale until the token expires); letting overrides lower values (an org policy is the place for that); locking projects by creation date (the user would lose the ones they are working on).

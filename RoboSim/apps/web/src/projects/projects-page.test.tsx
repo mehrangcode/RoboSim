@@ -5,6 +5,9 @@ import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initI18n } from '../lib/i18n.js';
+import { AuthProvider } from '../auth/auth-context.js';
+import { FakeAuth, SARA } from '../testing/fake-auth.js';
+import { FakeEntitlements, planError } from '../testing/fake-entitlements.js';
 import { FakeProjects } from '../testing/fake-projects.js';
 import { ProjectsPage } from './projects-page.js';
 
@@ -18,12 +21,18 @@ vi.mock('@tanstack/react-router', () => ({
 
 afterEach(() => router.navigate.mockReset());
 
-async function setup(projects: FakeProjects, lang: 'en' | 'fa' = 'en') {
+async function setup(
+  projects: FakeProjects,
+  lang: 'en' | 'fa' = 'en',
+  entitlements: FakeEntitlements = new FakeEntitlements(),
+) {
   const i18n = await initI18n(lang);
   render(
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={new QueryClient()}>
-        <ProjectsPage projects={projects} />
+        <AuthProvider client={new FakeAuth(SARA)}>
+          <ProjectsPage projects={projects} entitlements={entitlements} />
+        </AuthProvider>
       </QueryClientProvider>
     </I18nextProvider>,
   );
@@ -124,5 +133,33 @@ describe('projects page (FR-PRJ-01)', () => {
     await setup(projects, 'fa');
     expect(await screen.findByRole('heading', { name: 'پروژه‌های من' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'پروژهٔ جدید' })).toBeInTheDocument();
+  });
+});
+
+describe('plan limits on the projects page (PRD §3, FR-BIL-05)', () => {
+  it('marks projects over the cap read-only and shows the cloud project count', async () => {
+    const projects = new FakeProjects();
+    projects.seed(blankProject('Old one', ''), { id: 'a', locked: true });
+    projects.seed(blankProject('New one', ''), { id: 'b' });
+    const entitlements = new FakeEntitlements();
+    entitlements.projectsUsed = 4;
+    await setup(projects, 'en', entitlements);
+    await screen.findByRole('list', { name: 'My projects' });
+    expect(within(row('Old one')).getByText('Read-only')).toBeInTheDocument();
+    expect(within(row('Old one')).queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(within(row('New one')).queryByText('Read-only')).toBeNull();
+    expect(await screen.findByText(/4 of 3 cloud projects/)).toBeInTheDocument();
+  });
+
+  it('opens the paywall when the cap refuses a new project', async () => {
+    const projects = new FakeProjects();
+    projects.refusals.set('create', planError('quota_exceeded', { quota: 'projects.cloud_max', limit: 3 }));
+    const user = await setup(projects);
+    await user.click(await screen.findByRole('button', { name: 'New project' }));
+    const dialog = await screen.findByRole('dialog', { name: 'This needs the Maker plan' });
+    expect(dialog).toHaveTextContent('Your plan keeps 3 projects in the cloud.');
+    expect(within(dialog).getByRole('link', { name: 'See plans' })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

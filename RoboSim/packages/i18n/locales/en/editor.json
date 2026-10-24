@@ -3,6 +3,9 @@
     "title": "Components",
     "search": "Search parts (English or Persian)",
     "add": "Add {name}",
+    "addPro": "Add {name} (Pro part)",
+    "pro": "Pro",
+    "proHint": "Runs in every plan; saving it to the cloud needs the Maker plan",
     "empty": "No part matches.",
     "category": {
       "label": "Category",

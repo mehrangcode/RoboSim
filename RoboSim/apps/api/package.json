@@ -12,7 +12,9 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "pnpm build && node --env-file-if-exists=../../.env dist/db/migrate.js",
-    "db:seed": "pnpm build && node --env-file-if-exists=../../.env dist/db/seed.js"
+    "db:seed": "pnpm build && node --env-file-if-exists=../../.env dist/db/seed.js",
+    "admin:grant": "pnpm build && node --env-file-if-exists=../../.env dist/jobs/admin-grant.js",
+    "versions:purge": "pnpm build && node --env-file-if-exists=../../.env dist/jobs/purge-versions.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.9",
@@ -22,6 +24,7 @@
     "@opentelemetry/auto-instrumentations-node": "^0.81.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
     "@opentelemetry/sdk-node": "^0.223.0",
+    "@robosim/catalog": "workspace:*",
     "@robosim/compiler": "workspace:*",
     "@robosim/i18n": "workspace:*",
     "@robosim/shared": "workspace:*",
