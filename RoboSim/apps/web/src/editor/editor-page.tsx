@@ -5,12 +5,7 @@ import {
   useCircuitEditor,
   type CanvasMode,
 } from '@robosim/circuit-canvas';
-import {
-  ProjectDocumentError,
-  parseProjectDocument,
-  type ProjectDocument,
-  type SharedLink,
-} from '@robosim/shared';
+import { type ProjectDocument, type SharedLink } from '@robosim/shared';
 import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@robosim/ui';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
@@ -49,23 +44,18 @@ import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { HelpDialog } from './help-dialog.js';
 import { ShareDialog } from './share-dialog.js';
-import {
-  downloadJson,
-  fileName,
-  loadStored,
-  mainFile,
-  runKey,
-  saveStored,
-  withFiles,
-} from './project-store.js';
+import { PROJECT_FILE_ACCEPT, downloadProject, importErrorText, readProjectFile } from './project-file.js';
+import { loadStored, mainFile, runKey, saveStored, withFiles } from './project-store.js';
 import { starterProject } from './starter.js';
 import { useBuzzerAudio } from './use-buzzer-audio';
 import { useLayout, useSizeClass, type Pane } from './use-layout.js';
+import { BomPanel, type BomTab } from '../bom/bom-panel.js';
+import { bomApi, type BomClient } from '../lib/bom-api.js';
 import { openCloudProject, useCloudSync, type CloudOpen, type OpenResult } from './use-cloud-sync.js';
 import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
-type DockTab = 'serial' | 'pins' | 'safety' | 'challenge';
+type DockTab = 'serial' | 'pins' | 'safety' | 'challenge' | BomTab;
 type MobileTab = 'parts' | 'circuit' | 'robot' | 'code' | 'sim' | 'monitor';
 type CentreView = 'circuit' | 'robot';
 
@@ -130,6 +120,7 @@ interface EditorProps {
   createWorker?: (() => WorkerLike) | undefined;
   compileSketch?: CompileSketch | undefined;
   projects?: ProjectsClient | undefined;
+  bom?: BomClient | undefined;
 }
 
 /** A read-only workspace (a shared project the caller may only view): what to say and offer above it. */
@@ -318,6 +309,7 @@ function Workspace({
   createWorker,
   compileSketch,
   projects,
+  bom,
   cloudOpen,
   initial,
   viewer,
@@ -348,6 +340,8 @@ function Workspace({
   const opening = useRef<ScenarioId | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [dockTab, setDockTab] = useState<DockTab>('serial');
+  const [bomFallback] = useState(() => bomApi(() => i18n.language));
+  const bomClient = bom ?? bomFallback;
   const [mobileTab, setMobileTab] = useState<MobileTab>('circuit');
   const [centre, setCentre] = useState<CentreView>('circuit');
   const [help, setHelp] = useState(false);
@@ -455,16 +449,9 @@ function Workspace({
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const json = JSON.parse(await file.text()) as Record<string, unknown>;
-      // An exported input log carries its project too.
-      replace(parseProjectDocument('project' in json ? json['project'] : json));
+      replace(await readProjectFile(file));
     } catch (err) {
-      setNotice(
-        t('shell:editor.importError', {
-          message:
-            err instanceof ProjectDocumentError ? err.issues.slice(0, 3).join('; ') : (err as Error).message,
-        }),
-      );
+      setNotice(t('shell:editor.importError', { message: importErrorText(err, t) }));
     }
   };
 
@@ -644,7 +631,17 @@ function Workspace({
     'pins',
     'safety',
     ...(live?.challenge ? (['challenge'] as const) : []),
+    'parts',
+    'wiring',
   ];
+  // A wiring step points the circuit canvas at its wire, or at the part it plugs in.
+  const showStep = (step: { kind: 'seat' | 'wire'; id: string }) => {
+    editor.setSelection(
+      step.kind === 'wire' ? { parts: [], wire: step.id } : { parts: [step.id], wire: null },
+    );
+    setCentre('circuit');
+    setMobileTab('circuit');
+  };
   const dock = (
     <div className="flex h-full flex-col gap-2 p-2">
       <SegmentedControl
@@ -660,7 +657,9 @@ function Workspace({
         onChange={setDockTab}
       />
       <div className="min-h-0 flex-1 overflow-auto">
-        {!live || !scene ? (
+        {dockTab === 'parts' || dockTab === 'wiring' ? (
+          <BomPanel doc={current} tab={dockTab} client={bomClient} onShow={showStep} />
+        ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : dockTab === 'pins' ? (
           <PinTable bare scene={scene} frame={live} />
@@ -699,7 +698,7 @@ function Workspace({
         className="w-40 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold hover:border-line focus:border-line"
       />
       {size !== 'narrow' && readOnly && (
-        <Button size="sm" variant="secondary" onClick={() => downloadJson(fileName(current), current)}>
+        <Button size="sm" variant="secondary" onClick={() => downloadProject(current)}>
           {t('shell:editor.export')}
         </Button>
       )}
@@ -742,7 +741,7 @@ function Workspace({
           <input
             ref={fileInput}
             type="file"
-            accept="application/json,.json"
+            accept={PROJECT_FILE_ACCEPT}
             className="hidden"
             aria-label={t('shell:editor.import')}
             onChange={(e) => {
@@ -750,7 +749,7 @@ function Workspace({
               e.target.value = '';
             }}
           />
-          <Button size="sm" variant="secondary" onClick={() => downloadJson(fileName(current), current)}>
+          <Button size="sm" variant="secondary" onClick={() => downloadProject(current)}>
             {t('shell:editor.export')}
           </Button>
           <Button size="sm" variant="secondary" onClick={save} aria-keyshortcuts="Control+S">
@@ -935,7 +934,7 @@ function Workspace({
           onClose={shownPaywall.close}
           actions={
             shownPaywall.reason.kind !== 'builds' && (
-              <Button size="sm" variant="secondary" onClick={() => downloadJson(fileName(current), current)}>
+              <Button size="sm" variant="secondary" onClick={() => downloadProject(current)}>
                 {t('plans:paywall.download')}
               </Button>
             )

@@ -309,6 +309,11 @@
     "saveFailed": "Could not save: browser storage is full or disabled.",
     "confirmReplace": "Replace the current project? Its changes will be lost unless you export it first.",
     "importError": "Could not import this file: {message}",
+    "fileError": {
+      "unreadable": "this is not a RoboSim project file",
+      "newer": "it was made by a newer version of RoboSim",
+      "missing_project": "the file has no project in it"
+    },
     "dismiss": "Dismiss",
     "building": "Compiling…",
     "stop": "Stop",
@@ -340,6 +345,8 @@
       "pins": "Pins",
       "safety": "Safety",
       "challenge": "Challenge",
+      "parts": "Parts list",
+      "wiring": "Wiring",
       "notRunning": "Run the project to see live values here.",
       "noSerial": "This sketch does not use Serial."
     },

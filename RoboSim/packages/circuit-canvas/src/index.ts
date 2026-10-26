@@ -16,3 +16,6 @@ export {
   type CircuitEditorState,
   type Selection,
 } from './use-circuit-editor.js';
+export * from './bom.js';
+export * from './wiring.js';
+export { CircuitPicture, focusBox, type PictureFocus } from './circuit-picture.js';

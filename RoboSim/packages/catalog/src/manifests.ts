@@ -120,6 +120,25 @@ export function findManifest(id: string): ComponentManifest | undefined {
   return byId.get(id);
 }
 
+/**
+ * Props that make a different physical part to buy (a 220 Ω vs a 10 kΩ resistor); every other prop is a
+ * setting of the same part. The BOM and the price list key variants by these (FR-BOM-01).
+ */
+const VARIANT_PROPS: Readonly<Record<string, readonly string[]>> = {
+  'passive.resistor': ['ohms'],
+  'passive.potentiometer': ['ohms'],
+  'passive.capacitor-ceramic': ['capacitanceNf'],
+  'passive.capacitor-electrolytic': ['capacitanceUf', 'ratedVoltage'],
+  'actuator.led': ['color'],
+  'actuator.led-rgb': ['common'],
+  'actuator.ws2812-strip': ['count'],
+  'display.seven-segment': ['common', 'color'],
+};
+
+export function variantPropsOf(id: string): readonly string[] {
+  return VARIANT_PROPS[id] ?? [];
+}
+
 /** Hole layout of a breadboard type, undefined for every other part. */
 export function breadboardLayout(id: string): BreadboardLayout | undefined {
   return BREADBOARD_LAYOUTS[id];

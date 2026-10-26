@@ -47,6 +47,14 @@
     "admin:group.",
     "admin:ent.",
     "admin:settingValue.",
-    "admin:board."
+    "admin:board.",
+    "admin:prices.stock.",
+    "admin:prices.jumper.",
+    "bom:stock.",
+    "bom:board.",
+    "bom:jumper.",
+    "bom:jumperShort.",
+    "bom:subsystem.",
+    "shell:editor.fileError."
   ]
 }

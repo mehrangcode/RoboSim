@@ -457,3 +457,34 @@ export const projectShares = pgTable(
     index('project_shares_principal_idx').on(t.principalKind, t.principalId),
   ],
 );
+
+export const stockStatusEnum = pgEnum('stock_status', ['in_stock', 'low', 'out_of_stock', 'unknown']);
+
+/**
+ * Price list behind the BOM (FR-BOM-02), keyed by part key (`passive.resistor?ohms=220`, `board:avr-uno`).
+ * A global catalogue the app reads; staff write it. The shop catalogue (FR-SHP-01) will take it over.
+ */
+export const catalogPrices = pgTable('catalog_prices', {
+  partKey: text().primaryKey(),
+  priceIrr: bigint({ mode: 'number' }),
+  stock: stockStatusEnum().notNull().default('unknown'),
+  updatedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: updatedAt(),
+});
+
+/** Parts a user already owns (FR-BOM-03), excluded from BOM purchase totals. */
+export const userInventory = pgTable(
+  'user_inventory',
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    partKey: text().notNull(),
+    quantity: integer().notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.partKey] }),
+    check('user_inventory_quantity_positive', sql`${t.quantity} > 0`),
+  ],
+);

@@ -1,3 +1,10 @@
 @import '@robosim/ui/styles.css';
 @source './';
 @source '../../../packages/circuit-canvas/src';
+
+/* Printing the parts list or wiring guide (FR-BOM-04): only the print sheet goes on paper. */
+@media print {
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+}

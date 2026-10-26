@@ -222,3 +222,49 @@ describe('Security §4.4 permissions in the UI', () => {
     expect(screen.getByRole('button', { name: 'Grant override' })).toBeInTheDocument();
   });
 });
+
+describe('FR-BOM-02 parts prices', () => {
+  it('lists parts, sets a price and a variant price, and removes one', async () => {
+    const client = new FakeAdmin();
+    await renderApp('/prices', client);
+    expect(await screen.findByRole('heading', { name: 'Parts prices', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Prices' })).toBeInTheDocument();
+    const l298n = (await screen.findByText('L298N motor driver')).closest('tr');
+    if (!l298n) throw new Error('no L298N row');
+    expect(within(l298n).getByText('1,850,000 IRR')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit price of Arduino Uno' }));
+    await userEvent.type(screen.getByLabelText('Unit price (IRR)'), '12.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a whole number of rials');
+    await userEvent.clear(screen.getByLabelText('Unit price (IRR)'));
+    await userEvent.type(screen.getByLabelText('Unit price (IRR)'), '9500000');
+    await userEvent.selectOptions(screen.getByLabelText('Stock'), 'low');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('9,500,000 IRR')).toBeInTheDocument();
+    expect(client.callsTo('setPrice').at(-1)).toEqual([
+      'board:avr-uno',
+      { priceIrr: 9_500_000, stock: 'low' },
+    ]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add variant price' }));
+    await userEvent.type(screen.getByLabelText('ohms'), '220');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await userEvent.type(screen.getByLabelText('Unit price (IRR)'), '5000');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('ohms=220')).toBeInTheDocument();
+    expect(client.callsTo('setPrice').at(-1)).toEqual([
+      'passive.resistor?ohms=220',
+      { priceIrr: 5_000, stock: 'in_stock' },
+    ]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove price of L298N motor driver' }));
+    expect(client.callsTo('removePrice')).toEqual([['driver.l298n']]);
+  });
+
+  it('hides the prices link from staff without the permission', async () => {
+    await renderApp('/plans', new FakeAdmin(SUPPORT));
+    expect(await screen.findByRole('link', { name: 'Plans' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Prices' })).not.toBeInTheDocument();
+  });
+});

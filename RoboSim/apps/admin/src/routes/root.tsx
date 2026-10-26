@@ -1,3 +1,4 @@
+import { staffCan } from '@robosim/shared';
 import { AppShell, Button } from '@robosim/ui';
 import { Link, Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +35,11 @@ export function RootLayout() {
             <Link to="/plans" className={navLink}>
               {t('admin:nav.plans')}
             </Link>
+            {staffCan(staff.roles, 'prices') && (
+              <Link to="/prices" className={navLink}>
+                {t('admin:nav.prices')}
+              </Link>
+            )}
           </>
         )
       }

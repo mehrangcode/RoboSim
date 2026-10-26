@@ -35,7 +35,18 @@ const workspaceRoute = createRoute({
   path: '/workspaces/$id',
   component: lazyRouteComponent(() => import('./workspaces/workspace-detail-page.js'), 'WorkspaceDetailPage'),
 });
-const routeTree = rootRoute.addChildren([indexRoute, plansRoute, workspacesRoute, workspaceRoute]);
+const pricesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/prices',
+  component: lazyRouteComponent(() => import('./prices/prices-page.js'), 'PricesPage'),
+});
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  plansRoute,
+  pricesRoute,
+  workspacesRoute,
+  workspaceRoute,
+]);
 
 export function createAppRouter(history?: RouterHistory) {
   return createRouter({ routeTree, ...(history ? { history } : {}) });

@@ -67,7 +67,8 @@ Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same
 | http://localhost:5173/editor | Editor workspace: build a circuit, write its code, run it (`?demo=<scenario>` opens a demo) | P1 |
 | http://localhost:5173/lab | Simulator Lab: engine demos per slice (arena, component bench, safety, your code), each with “Open in editor” | P1 |
 | http://localhost:5173/plans | Plans: Free vs Maker, current plan, Upgrade (checkout coming soon) | P1 (pulled forward) |
-| http://localhost:5174 | Admin app: plans and workspaces for staff (sign in with a staff account) | P0 |
+| http://localhost:5173/editor (bottom dock) | **Parts list** and **Wiring** tabs: BOM with prices and owned parts, step-by-step wiring guide, CSV/XLSX/SVG/PNG/`.robosim` exports, print | P1 (pulled forward) |
+| http://localhost:5174 | Admin app: plans, workspaces and the part price list (`/prices`) for staff (sign in with a staff account) | P0 |
 | http://localhost:3000/api/v1/health/ready | API readiness | P0 |
 | http://localhost:3000/api/v1/feature-flags | Evaluated feature flags | P0 |
 | http://localhost:3000/api/v1/openapi.json | API spec | P2 (with the first public endpoints) |

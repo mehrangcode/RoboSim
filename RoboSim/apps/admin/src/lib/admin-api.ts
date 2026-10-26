@@ -1,10 +1,14 @@
 import {
+  adminPriceListSchema,
   adminPlanListSchema,
+  catalogPriceSchema,
   adminPlanSchema,
   adminWorkspaceListSchema,
   adminWorkspaceSchema,
   staffMeSchema,
   type AdminPlan,
+  type AdminPriceList,
+  type CatalogPrice,
   type AdminWorkspace,
   type AdminWorkspaceSummary,
   type CreateOverrideInput,
@@ -13,6 +17,7 @@ import {
   type PlanCode,
   type SetSubscriptionInput,
   type StaffMe,
+  type UpsertCatalogPriceInput,
 } from '@robosim/shared';
 import { apiGet, apiSend } from './api.js';
 
@@ -29,6 +34,9 @@ export interface AdminClient {
   setSubscription(id: string, input: SetSubscriptionInput): Promise<AdminWorkspace>;
   grantOverride(id: string, input: CreateOverrideInput): Promise<AdminWorkspace>;
   removeOverride(id: string, overrideId: string): Promise<AdminWorkspace>;
+  prices(): Promise<AdminPriceList>;
+  setPrice(partKey: string, input: UpsertCatalogPriceInput): Promise<CatalogPrice>;
+  removePrice(partKey: string): Promise<void>;
 }
 
 /** `locale` is a getter, so one client follows language switches (problem titles come back localized). */
@@ -62,5 +70,10 @@ export function adminApi(locale: () => string): AdminClient {
           locale(),
         ),
       ),
+    prices: async () => adminPriceListSchema.parse(await get('/admin/catalog/prices')),
+    setPrice: async (key, input) =>
+      catalogPriceSchema.parse(await apiSend('PUT', `/admin/catalog/prices/${id(key)}`, input, locale())),
+    removePrice: async (key) =>
+      void (await apiSend('DELETE', `/admin/catalog/prices/${id(key)}`, undefined, locale())),
   };
 }

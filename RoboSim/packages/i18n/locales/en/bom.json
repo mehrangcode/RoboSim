@@ -1,0 +1,77 @@
+{
+  "tab": {
+    "parts": "Parts list",
+    "wiring": "Wiring guide"
+  },
+  "caption": "Parts to build this circuit",
+  "col": {
+    "part": "Part",
+    "quantity": "Qty",
+    "owned": "I own",
+    "toBuy": "To buy",
+    "unitPrice": "Unit price",
+    "lineTotal": "Line total",
+    "stock": "Stock",
+    "notes": "Notes"
+  },
+  "ownedOf": "How many {part} you already own",
+  "stock": {
+    "in_stock": "In stock",
+    "low": "Low stock",
+    "out_of_stock": "Out of stock",
+    "unknown": "—"
+  },
+  "money": "{amount} rials",
+  "total": "Total to buy",
+  "unpriced": "{count, plural, one {# part has no price yet, so the total leaves it out.} other {# parts have no price yet, so the total leaves them out.}}",
+  "asOf": "Prices as of {date}",
+  "pricesFailed": "Prices could not be loaded.",
+  "saveFailed": "Your owned parts could not be saved. They will be saved with your next change.",
+  "pro": "Pro",
+  "sheetName": "Parts list",
+  "board": {
+    "avr-uno": "Arduino Uno R3"
+  },
+  "jumper": {
+    "mm": "Jumper wires, male–male (pack of 10)",
+    "mf": "Jumper wires, male–female (pack of 10)",
+    "ff": "Jumper wires, female–female (pack of 10)"
+  },
+  "jumperShort": {
+    "mm": "male–male jumper",
+    "mf": "male–female jumper",
+    "ff": "female–female jumper"
+  },
+  "jumperNote": "{count, plural, one {# wire in the circuit, with spares} other {# wires in the circuit, with spares}}",
+  "variant": {
+    "count": "{count, plural, one {# LED} other {# LEDs}}"
+  },
+  "export": {
+    "csv": "CSV",
+    "xlsx": "Excel (XLSX)",
+    "svg": "Circuit as SVG",
+    "png": "Circuit as PNG",
+    "pngFailed": "The PNG could not be made in this browser; try SVG."
+  },
+  "print": "Print",
+  "subsystem": {
+    "power": "Power",
+    "motors": "Motors and actuators",
+    "sensors": "Sensors",
+    "displays": "Displays and communication",
+    "other": "Other parts"
+  },
+  "wiring": {
+    "pin": "{part} {pin}",
+    "hole": "hole {hole} on the {breadboard}",
+    "holeVia": "{hole} (to {legs})",
+    "seat": "Plug the {part} into the {breadboard}: {holes}",
+    "wire": "Connect {from} to {to}",
+    "detail": "{color} wire, {jumper}",
+    "detailLead": "{color} wire: use the part’s own lead",
+    "stepNumber": "Step {n}:",
+    "show": "Show on canvas",
+    "diagram": "Diagram: {step}",
+    "empty": "Nothing to wire yet. Add parts and wires to the circuit."
+  }
+}

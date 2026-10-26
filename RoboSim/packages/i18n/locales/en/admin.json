@@ -3,7 +3,8 @@
   "nav": {
     "mainLabel": "Admin navigation",
     "workspaces": "Workspaces",
-    "plans": "Plans"
+    "plans": "Plans",
+    "prices": "Prices"
   },
   "actions": {
     "cancel": "Cancel"
@@ -222,5 +223,40 @@
       "granted": "Granted",
       "actions": "Actions"
     }
+  },
+  "prices": {
+    "title": "Parts prices",
+    "intro": "Unit prices and stock behind the parts list (BOM) in the editor. A price for a part applies to all its variants unless a variant has its own price.",
+    "asOf": "Prices as of {date}",
+    "filter": "Filter parts",
+    "col": {
+      "part": "Part",
+      "price": "Price",
+      "stock": "Stock",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "stock": {
+      "in_stock": "In stock",
+      "low": "Low stock",
+      "out_of_stock": "Out of stock",
+      "unknown": "Unknown"
+    },
+    "jumper": {
+      "mm": "Jumper wires, male–male (pack of 10)",
+      "mf": "Jumper wires, male–female (pack of 10)",
+      "ff": "Jumper wires, female–female (pack of 10)"
+    },
+    "edit": "Edit",
+    "editOf": "Edit price of {part}",
+    "set": "Set price",
+    "remove": "Remove",
+    "removeOf": "Remove price of {part}",
+    "addVariant": "Add variant price",
+    "next": "Next",
+    "save": "Save",
+    "priceLabel": "Unit price (IRR)",
+    "priceHint": "Whole rials; leave empty to list the part without a price.",
+    "priceInvalid": "Enter a whole number of rials, or leave it empty."
   }
 }

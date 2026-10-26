@@ -52,19 +52,6 @@ export function withFiles(doc: ProjectDocument, files: readonly SourceFile[]): P
   return same ? doc : { ...doc, code: { ...doc.code, files: files.map((f) => ({ ...f })) } };
 }
 
-/** Saves a JSON file through a temporary link. */
-export function downloadJson(name: string, data: unknown) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-export const fileName = (doc: ProjectDocument) =>
-  `${doc.meta.title.replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-|-$/g, '') || 'project'}.robosim.json`;
-
 /*
  * Cloud projects keep a per-project copy of unsaved edits in this browser, with the server revision they
  * started from, so a closed tab or a lost connection never loses work (FR-WRK-04 local layer).

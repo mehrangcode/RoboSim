@@ -1,6 +1,7 @@
 export * from './admin-api.js';
 export * from './arduino-api.js';
 export * from './auth-api.js';
+export * from './bom-api.js';
 export * from './build-schema.js';
 export * from './entitlements.js';
 export * from './errors.js';

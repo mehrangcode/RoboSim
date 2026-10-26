@@ -2,7 +2,7 @@ import { resources } from '@robosim/i18n';
 import { validateManifest } from '@robosim/sim-core';
 import { describe, expect, it } from 'vitest';
 import { CATALOG, catalogFor, findDefinition } from './index.js';
-import { CATALOG_MANIFESTS, findManifest, internalConnectionsOf } from './manifests.js';
+import { CATALOG_MANIFESTS, findManifest, internalConnectionsOf, variantPropsOf } from './manifests.js';
 
 function lookup(tree: unknown, key: string): unknown {
   return key
@@ -124,5 +124,12 @@ describe('component catalog', () => {
         .sort();
     expect(ids('basic')).toEqual([...prdP1Basic].sort());
     expect(ids('pro')).toEqual([...prdP1Pro].sort());
+  });
+
+  it('keys BOM variants only by props the part has', () => {
+    for (const m of CATALOG_MANIFESTS)
+      for (const prop of variantPropsOf(m.id)) expect(m.props[prop], `${m.id}.${prop}`).toBeDefined();
+    expect(variantPropsOf('passive.resistor')).toEqual(['ohms']);
+    expect(variantPropsOf('driver.l298n')).toEqual([]);
   });
 });

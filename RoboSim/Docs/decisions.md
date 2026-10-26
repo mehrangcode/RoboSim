@@ -28,6 +28,7 @@
 | 021 | planck.js with trigonometry routed through `dmath` | Accepted |
 | 022 | Build service drives avr-gcc directly; Linux-namespace sandbox for development | Accepted |
 | 023 | Entitlements resolved in-process from plan versions ⊕ overrides; grants only raise | Accepted |
+| 024 | Parts list computed in the browser from the document; interim staff price list keyed by part key | Accepted |
 
 ---
 
@@ -214,3 +215,18 @@
   - The rank function bypasses RLS for one count, so it returns only a number and takes a project id.
   - Subscriptions and overrides are written by staff and system code outside RLS, so the admin routes carry the access control (`StaffGuard` plus a permission per route) and every change is audited.
 - **Alternatives.** A Redis-backed service from the start (no Redis in development); resolving entitlements at the edge from JWT claims (stale until the token expires); letting overrides lower values (an org policy is the place for that); locking projects by creation date (the user would lose the ones they are working on).
+
+## ADR-024 — Parts list computed in the browser from the document; interim staff price list keyed by part key
+
+- **Context.** FR-BOM-01…05 and FR-PRJ-06 were planned as server endpoints (`GET /projects/:id/bom`, `POST /exports`) fed by the shop catalogue. The shop (FR-SHP) does not exist yet, but guests and offline users already build circuits and need a parts list, a wiring guide and a file they can keep. The PDF exports need the server export service ([ADR-008](decisions.md#adr-008--server-side-pdf-rendering-with-headless-chromium)), which is not built either.
+- **Decision.**
+  - The BOM, the wiring guide and the free exports (`.robosim`, CSV, XLSX, circuit SVG and PNG) are computed in the browser from the project document, in pure engine-free code in `packages/circuit-canvas`. They work offline and for guests and need no entitlement; only the future PDFs need `export.pdf`.
+  - Prices and stock come from an interim, staff-edited price list, `catalog_prices`, keyed by part key: the catalogue type, `type?prop=value&…` for a variant (the props that make a different physical part are `variantPropsOf(id)` in the catalogue package), `board:<id>` and `consumable.jumper-*`. The shop adopts the same keys, so its catalogue replaces the table without touching the BOM. The BOM shows the latest change as "price as of".
+  - Owned parts live in `user_inventory` (owner-only RLS) for signed-in users and in `robosim.inventory.v1` in the browser for guests; sign-in merges the guest marks into the account (the larger count wins).
+  - `.robosim` is a zip with `manifest.json` (`format`, `formatVersion: 1`, `schemaVersion`, `exportedAt`) and `project.json`, with room for assets. Import migrates and validates and refuses a newer `formatVersion`; the older `.robosim.json` is still accepted.
+- **Consequences.**
+  - No server round trip and no new service for the common case, and the same document always gives the same BOM. The cost is that the BOM logic ships in the web bundle and a server-side BOM (for PDFs, the shop's cart from a BOM, or the API) needs the same package run on the server.
+  - Staff maintain prices by hand until the shop exists; a part with no price shows as unpriced, never as free. Stock is a staff-set status, not real inventory.
+  - Jumper types (male or female ends) are inferred from connector kinds, not drawn, so a quantity can be off for unusual parts; packs of 10 with 20 % spare absorb most of it.
+  - Part keys are a public contract between the price list, the inventory and the shop: renaming a catalogue type or variant prop orphans its price rows.
+- **Alternatives.** Server-computed BOM and exports from the start (needs the shop and the export service, and fails for guests offline); a spreadsheet library for XLSX (a large dependency for one sheet); prices inside the component manifests (they would change with releases, not with staff edits).

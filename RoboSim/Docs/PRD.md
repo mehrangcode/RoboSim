@@ -236,11 +236,11 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-BOM-01 | Generate a BOM from the project: component, variant, quantity, unit price (IRR), line total, stock status, linked product, notes; breadboards/wires/consumables included with sensible quantities. | Must | P2 |
-| FR-BOM-02 | Prices and stock come from the shop catalogue (FR-SHP); the BOM shows the "price as of" timestamp. | Must | P2 |
-| FR-BOM-03 | Users mark parts "I already own" (remembered per user as an inventory list); owned parts are excluded from purchase totals. | Must | P2 |
-| FR-BOM-04 | Wiring guide: ordered, step-by-step connection list generated from the netlist ("Uno D5 → L298N IN1, yellow wire"), grouped by subsystem (power, motors, sensors), with a diagram per step; printable. | Must | P2 |
-| FR-BOM-05 | Exports: BOM as CSV and XLSX; BOM, wiring guide, and project report as PDF rendered server-side with correct Persian shaping and RTL; circuit as SVG/PNG; project as `.robosim` file (FR-PRJ-06). PDF export requires `export.pdf`. | Must | P2 |
+| FR-BOM-01 | Generate a BOM from the project: component, variant, quantity, unit price (IRR), line total, stock status, linked product, notes; breadboards/wires/consumables included with sensible quantities. *Status: done in the browser (2026-10-25); no linked product yet, and jumpers are inferred from connector kinds.* | Must | P2 |
+| FR-BOM-02 | Prices and stock come from the shop catalogue (FR-SHP); the BOM shows the "price as of" timestamp. *Status: thin (2026-10-25): prices and stock come from an admin-editable price list until the shop exists; "price as of" is the latest change.* | Must | P2 |
+| FR-BOM-03 | Users mark parts "I already own" (remembered per user as an inventory list); owned parts are excluded from purchase totals. *Status: done (2026-10-25); signed-in users keep the list on the server, guests in the browser and it merges on sign-in.* | Must | P2 |
+| FR-BOM-04 | Wiring guide: ordered, step-by-step connection list generated from the netlist ("Uno D5 → L298N IN1, yellow wire"), grouped by subsystem (power, motors, sensors), with a diagram per step; printable. *Status: done (2026-10-25).* | Must | P2 |
+| FR-BOM-05 | Exports: BOM as CSV and XLSX; BOM, wiring guide, and project report as PDF rendered server-side with correct Persian shaping and RTL; circuit as SVG/PNG; project as `.robosim` file (FR-PRJ-06). PDF export requires `export.pdf`. *Status: partial (2026-10-25): CSV, XLSX, circuit SVG/PNG and `.robosim` are done in the browser and free on every plan; the PDFs wait for the server export service.* | Must | P2 |
 | FR-BOM-06 | "Buy this kit": create a cart from the BOM minus owned parts in one action (FR-SHP-03). | Must | P2 |
 
 ### 6.9 Projects, versions, sharing, and collaboration (PRJ)
@@ -252,7 +252,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-PRJ-03 | Versions: named checkpoints and automatic snapshots on each successful build; diff view (circuit changes and code diff); restore any version. Retention per `projects.version_retention_days`. | Must | P2 |
 | FR-PRJ-04 | Sharing: private (default), link-view (read-only, remixable or not), workspace members, specific users with view/comment/edit roles. Org policy can restrict sharing outside the org. | Must | P2 |
 | FR-PRJ-05 | Comments on projects anchored to components, code lines, or versions; mentions notify collaborators. Disabled for minors outside their organization. | Should | P4 |
-| FR-PRJ-06 | Import/export `.robosim` (zip: `project.json` + assets) with schema version; import validates and migrates. | Must | P2 |
+| FR-PRJ-06 | Import/export `.robosim` (zip: `project.json` + assets) with schema version; import validates and migrates. *Status: done client-side (2026-10-25), assets not yet.* | Must | P2 |
 | FR-PRJ-07 | Templates: org admins and teachers can publish project templates to their org. | Must | P3 |
 | FR-PRJ-08 | Real-time collaboration: multiple editors on the same project with presence (cursors, selections), conflict-free merges for circuit and code (CRDT), and one shared simulation controlled by the session host; offline edits merge on reconnect. Requires `collab.realtime`. | Must | P4 |
 

@@ -242,7 +242,12 @@ export interface SceneProps {
   interactive: ReadonlySet<string>;
   damaged: ReadonlySet<string>;
   damagedText: string;
+  /** Wiring-guide view: these parts and wires stay in full colour, the rest is faded. */
+  focus?: { readonly parts: ReadonlySet<string>; readonly wires: ReadonlySet<string> } | null;
 }
+
+/** Opacity of everything outside a `focus`. */
+const FADED = 0.18;
 
 export const Scene = memo(function Scene({
   doc,
@@ -259,7 +264,9 @@ export const Scene = memo(function Scene({
   interactive,
   damaged,
   damagedText,
+  focus = null,
 }: SceneProps) {
+  const fade = (on: boolean) => (focus && !on ? FADED : undefined);
   const byId = new Map(doc.components.map((c) => [c.id, c]));
   const board = boardPlacement(doc);
   const shiftOf = (part: string): Point => (dragged.has(part) ? [dx, dy] : [0, 0]);
@@ -283,16 +290,17 @@ export const Scene = memo(function Scene({
   const partNode = (c: ComponentInstance) => {
     const [sx, sy] = shiftOf(c.id);
     return (
-      <PartNode
-        key={c.id}
-        c={c}
-        dx={sx}
-        dy={sy}
-        selected={selected.has(c.id)}
-        live={live?.[c.id]}
-        cursor={cursorOf(c.id)}
-        damagedLabel={damaged.has(c.id) ? damagedText : null}
-      />
+      <g key={c.id} opacity={fade(focus?.parts.has(c.id) ?? true)}>
+        <PartNode
+          c={c}
+          dx={sx}
+          dy={sy}
+          selected={selected.has(c.id)}
+          live={live?.[c.id]}
+          cursor={cursorOf(c.id)}
+          damagedLabel={damaged.has(c.id) ? damagedText : null}
+        />
+      </g>
     );
   };
   const pinsOf = (c: ComponentInstance, holes: boolean) => {
@@ -316,13 +324,15 @@ export const Scene = memo(function Scene({
 
   return (
     <>
-      <BoardNode
-        x={board.x + bx}
-        y={board.y + by}
-        rotation={board.rotation}
-        selected={selected.has(BOARD_PART)}
-        cursor={cursorOf(BOARD_PART)}
-      />
+      <g opacity={fade(focus?.parts.has(BOARD_PART) ?? true)}>
+        <BoardNode
+          x={board.x + bx}
+          y={board.y + by}
+          rotation={board.rotation}
+          selected={selected.has(BOARD_PART)}
+          cursor={cursorOf(BOARD_PART)}
+        />
+      </g>
       {breadboards.map(partNode)}
       {breadboards.map((c) => pinsOf(c, true))}
       {parts.map(partNode)}
@@ -336,15 +346,17 @@ export const Scene = memo(function Scene({
             : p,
         );
         const isSelected = editing && selection.wire === w.id;
+        const focused = focus?.wires.has(w.id) ?? false;
         return (
-          <WireNode
-            key={w.id}
-            id={w.id}
-            d={wirePath([a, ...points, b])}
-            color={w.color}
-            selected={isSelected}
-            bends={isSelected ? points : null}
-          />
+          <g key={w.id} opacity={fade(focused)}>
+            <WireNode
+              id={w.id}
+              d={wirePath([a, ...points, b])}
+              color={w.color}
+              selected={isSelected || focused}
+              bends={isSelected ? points : null}
+            />
+          </g>
         );
       })}
       <PinTargets

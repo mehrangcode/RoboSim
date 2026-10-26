@@ -1,11 +1,5 @@
 import { formatDate, formatNumber } from '@robosim/i18n';
-import {
-  parseProjectDocument,
-  ProjectDocumentError,
-  type Locale,
-  type ProjectSort,
-  type ProjectSummary,
-} from '@robosim/shared';
+import { type Locale, type ProjectSort, type ProjectSummary } from '@robosim/shared';
 import { Button, SegmentedControl, cn } from '@robosim/ui';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -13,6 +7,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SignInGate } from '../auth/auth-ui.js';
 import { useAuth } from '../auth/use-auth.js';
+import { PROJECT_FILE_ACCEPT, importErrorText, readProjectFile } from '../editor/project-file.js';
 import { starterProject } from '../editor/starter.js';
 import { ApiError } from '../lib/api.js';
 import type { EntitlementsClient } from '../lib/entitlements-api.js';
@@ -175,12 +170,7 @@ function MyProjects({
   };
   const signedOut = list.error instanceof ApiError && list.error.problem.code === 'unauthenticated';
 
-  const message = (e: unknown) =>
-    e instanceof ApiError
-      ? e.problem.title
-      : e instanceof ProjectDocumentError
-        ? e.issues.slice(0, 3).join('; ')
-        : (e as Error).message;
+  const message = (e: unknown) => (e instanceof ApiError ? e.problem.title : importErrorText(e, t));
   const act = async (work: () => Promise<void>) => {
     setBusy(true);
     try {
@@ -203,9 +193,7 @@ function MyProjects({
   const importFile = (file: File | undefined) =>
     file &&
     act(async () => {
-      const json = JSON.parse(await file.text()) as Record<string, unknown>;
-      const document = parseProjectDocument('project' in json ? json['project'] : json);
-      const created = await client.create({ document });
+      const created = await client.create({ document: await readProjectFile(file) });
       await open(created.id);
     });
   const rename = (p: ProjectSummary, name: string) =>
@@ -261,7 +249,7 @@ function MyProjects({
         <input
           ref={fileInput}
           type="file"
-          accept="application/json,.json"
+          accept={PROJECT_FILE_ACCEPT}
           className="hidden"
           aria-label={t('shell:editor.import')}
           onChange={(e) => {

@@ -3,6 +3,7 @@ import {
   createOverrideSchema,
   mergeEntitlements,
   type AdminPlan,
+  type AdminPriceList,
   type AdminWorkspace,
   type EntitlementGrant,
   type ErrorCode,
@@ -95,6 +96,35 @@ export class FakeAdmin implements AdminClient {
   meError: ApiError | null = null;
   planList = plans();
   ws = workspace();
+  priceList: AdminPriceList = {
+    parts: [
+      { key: 'board:avr-uno', kind: 'board', category: null, nameKey: null, variantProps: [] },
+      {
+        key: 'driver.l298n',
+        kind: 'part',
+        category: 'driver',
+        nameKey: 'driver.l298n.name',
+        variantProps: [],
+      },
+      {
+        key: 'passive.resistor',
+        kind: 'part',
+        category: 'passive',
+        nameKey: 'passive.resistor.name',
+        variantProps: ['ohms'],
+      },
+      { key: 'consumable.jumper-mf', kind: 'jumper', category: null, nameKey: null, variantProps: [] },
+    ],
+    items: [
+      {
+        partKey: 'driver.l298n',
+        priceIrr: 1_850_000,
+        stock: 'in_stock',
+        updatedAt: '2026-10-20T08:00:00.000Z',
+      },
+    ],
+    asOf: '2026-10-20T08:00:00.000Z',
+  };
   private nextOverride = 1;
 
   constructor(staff: StaffMe | null = ADMIN, meError?: ApiError) {
@@ -226,4 +256,23 @@ export class FakeAdmin implements AdminClient {
     this.ws = { ...this.ws, effective: mergeEntitlements(base, grants) };
     return this.ws;
   }
+
+  prices = async () => this.priceList;
+
+  setPrice: AdminClient['setPrice'] = async (partKey, input) => {
+    this.record('setPrice', partKey, input);
+    const row = { partKey, ...input, updatedAt: '2026-10-25T10:00:00.000Z' };
+    const items = this.priceList.items.filter((p) => p.partKey !== partKey);
+    this.priceList = {
+      ...this.priceList,
+      items: [...items, row].sort((a, b) => a.partKey.localeCompare(b.partKey)),
+      asOf: row.updatedAt,
+    };
+    return row;
+  };
+
+  removePrice: AdminClient['removePrice'] = async (partKey) => {
+    this.record('removePrice', partKey);
+    this.priceList = { ...this.priceList, items: this.priceList.items.filter((p) => p.partKey !== partKey) };
+  };
 }
