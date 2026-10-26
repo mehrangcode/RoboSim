@@ -121,7 +121,7 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm test:perf` | Slice/analysis/netlist budgets (`packages/sim-runtime/scripts/perf-budgets.ts`, against built dist); `ROBOSIM_PERF_SCALE` scales every budget for slower machines |
 | `pnpm golden:update` | Record missing golden traces, or re-record after an `engineVersion` bump (refuses otherwise) |
 | `pnpm compiler:setup` | Fetch the pinned Arduino core and libraries (`apps/compiler/toolchain.lock.json`) into `.local/toolchain`; checks avr-gcc |
-| `pnpm firmware:gen` | Recompile the Lab demo sketches (`packages/sim-runtime/src/firmware/sketches.ts`) into `generated.ts` |
+| `pnpm firmware:gen` | Recompile the firmware sets in `apps/compiler/scripts/firmware-sets.ts` into their `generated.ts`: the Lab demos (`packages/sim-runtime/src/firmware/sketches.ts`), the Uno conformance sketches and the guided-project solutions (`packages/content/src/guided/sketches.ts`) |
 | `pnpm --filter @robosim/compiler compile <main.ino> [files…]` | Compile a sketch from the command line (diagnostics with explanation keys, `--out firmware.hex`) |
 | `pnpm bench` | Performance benchmarks (§17 of Technical Design) |
 | `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |

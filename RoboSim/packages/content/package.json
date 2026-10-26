@@ -11,6 +11,14 @@
     "./arenas": {
       "types": "./dist/arenas/index.d.ts",
       "default": "./dist/arenas/index.js"
+    },
+    "./guided": {
+      "types": "./dist/guided/index.d.ts",
+      "default": "./dist/guided/index.js"
+    },
+    "./guided/firmware": {
+      "types": "./dist/guided/firmware.d.ts",
+      "default": "./dist/guided/firmware.js"
     }
   },
   "files": [
@@ -23,10 +31,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@robosim/sim-core": "workspace:*"
+    "@robosim/sim-core": "workspace:*",
+    "@robosim/shared": "workspace:*",
+    "@robosim/component-chassis-2wd": "workspace:*"
   },
   "devDependencies": {
-    "@robosim/component-chassis-2wd": "workspace:*",
     "@robosim/config": "workspace:*",
     "eslint": "^10.12.0",
     "typescript": "6.0.3",

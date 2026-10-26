@@ -6,6 +6,7 @@ export * from './build-schema.js';
 export * from './entitlements.js';
 export * from './errors.js';
 export * from './feature-flags.js';
+export * from './guided.js';
 export * from './ids.js';
 export * from './locale.js';
 export * from './project-api.js';

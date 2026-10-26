@@ -2,30 +2,34 @@ import { useCallback, useState, useSyncExternalStore } from 'react';
 
 /** Pane sizes (px) and collapsed panes of the workspace, saved in this browser (FR-WRK-01). */
 export interface Layout {
+  /** The guided-project steps, shown only for guided projects (FR-LRN-01). */
+  readonly guide: number;
   readonly left: number;
   readonly code: number;
   readonly sim: number;
   readonly dock: number;
   readonly collapsed: Readonly<Record<Pane, boolean>>;
 }
-export type Pane = 'left' | 'code' | 'sim' | 'dock';
+export type Pane = 'guide' | 'left' | 'code' | 'sim' | 'dock';
 
 const KEY = 'robosim.editor.layout.v1';
 export const DEFAULT_LAYOUT: Layout = {
+  guide: 320,
   left: 240,
   code: 420,
   sim: 300,
   dock: 220,
-  collapsed: { left: false, code: false, sim: false, dock: false },
+  collapsed: { guide: false, left: false, code: false, sim: false, dock: false },
 };
 
 function load(): Layout {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<Layout> | null;
     if (!saved) return DEFAULT_LAYOUT;
-    const n = (k: 'left' | 'code' | 'sim' | 'dock') =>
+    const n = (k: Exclude<keyof Layout, 'collapsed'>) =>
       typeof saved[k] === 'number' && Number.isFinite(saved[k]) ? saved[k] : DEFAULT_LAYOUT[k];
     return {
+      guide: n('guide'),
       left: n('left'),
       code: n('code'),
       sim: n('sim'),

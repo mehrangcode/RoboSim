@@ -57,6 +57,11 @@ const authPage = <const Path extends string>(path: Path, name: AuthPageName) =>
     component: lazyRouteComponent(() => import('./auth/auth-pages.js'), name),
   });
 // Public: plans and what they include (FR-BIL-05); paywalls link here.
+const learnRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/learn',
+  component: lazyRouteComponent(() => import('./learn/learn-page.js'), 'LearnPage'),
+});
 const plansRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/plans',
@@ -84,6 +89,7 @@ const routeTree = rootRoute.addChildren([
   authPage('/forgot-password', 'ForgotPasswordPage'),
   authPage('/reset-password', 'ResetPasswordPage'),
   authPage('/verify-email', 'VerifyEmailPage'),
+  learnRoute,
   plansRoute,
   accountRoute,
   devMailRoute,

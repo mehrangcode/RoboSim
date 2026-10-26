@@ -693,7 +693,7 @@ PostgreSQL 16. Conventions: UUIDv7 PKs (`id`), `created_at`/`updated_at` `timest
 | `submissions` | id, workspace_id, assignment_id, user_id, group_id, attempt, project_version_id, submitted_at, is_late, verified_run_id, auto_score, rubric_scores (jsonb), total_score, feedback, status (`submitted`,`grading`,`graded`,`released`,`returned`), released_at — unique (assignment_id, user_id, attempt) |
 | `verified_runs` | id, workspace_id, purpose (`grading`,`competition`,`manual`), project_version_id, artifact_id, arena_version_id, start_pose (jsonb), seed, input_log_key, engine_version, status, result (jsonb: conditions, metrics), score, trace_key, replay_key, requested_by, created_at, finished_at |
 | `enrollments`, `lesson_progress` | user_id, workspace_id, course_id / lesson_id, status, score, started_at, completed_at |
-| `guided_progress` | user_id, workspace_id, content_version_id, project_id, completed_steps (int[]), completed_at |
+| `guided_progress` | user_id, workspace_id, content_version_id, project_id, completed_steps (text[] of step ids), completed_at — *implemented 2026-10-26 (migration `0007_guided`, owner-only RLS); `content_version_id` is `<slug>@<version>` of built-in content until `content_versions` exists ([ADR-025](decisions.md#adr-025--guided-projects-as-built-in-content-with-declarative-checks-evaluated-in-the-browser))* |
 | `certificates` | id, user_id, course_id, issued_at, verification_code (unique), pdf_key |
 | `guardian_contacts` | id, workspace_id, student_user_id, name, channel, contact, opt_in_at |
 | `lti_platforms` | id, workspace_id, issuer, client_id, auth_login_url, auth_token_url, jwks_url, tool_key_id |

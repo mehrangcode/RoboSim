@@ -19,3 +19,4 @@ export {
 export * from './bom.js';
 export * from './wiring.js';
 export { CircuitPicture, focusBox, type PictureFocus } from './circuit-picture.js';
+export * from './guided.js';

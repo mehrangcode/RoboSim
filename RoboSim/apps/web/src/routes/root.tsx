@@ -26,6 +26,12 @@ export function RootLayout() {
             {t('shell:nav.home')}
           </Link>
           <Link
+            to="/learn"
+            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
+          >
+            {t('shell:nav.learn')}
+          </Link>
+          <Link
             to="/projects"
             className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
           >

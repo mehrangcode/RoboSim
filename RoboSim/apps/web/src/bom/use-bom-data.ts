@@ -62,7 +62,14 @@ export function useBomData(client: BomClient): BomData {
   const me = use(AuthContext)?.me ?? null;
   const [prices, setPrices] = useState<CatalogPriceList | null>(null);
   const [pricesFailed, setPricesFailed] = useState(false);
+  const userId = me?.id ?? null;
   const [owned, setOwnedState] = useState<Owned>(() => (me ? {} : loadGuestOwned()));
+  // Signing in or out swaps whose marks are shown; the account's arrive from the effect below.
+  const [shownFor, setShownFor] = useState(userId);
+  if (shownFor !== userId) {
+    setShownFor(userId);
+    setOwnedState(userId ? {} : loadGuestOwned());
+  }
   const [saveFailed, setSaveFailed] = useState(false);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -77,12 +84,8 @@ export function useBomData(client: BomClient): BomData {
     };
   }, [client]);
 
-  const userId = me?.id ?? null;
   useEffect(() => {
-    if (!userId) {
-      setOwnedState(loadGuestOwned());
-      return;
-    }
+    if (!userId) return;
     let live = true;
     void (async () => {
       try {
@@ -113,14 +116,11 @@ export function useBomData(client: BomClient): BomData {
     [client],
   );
 
-  const ownedRef = useRef(owned);
-  ownedRef.current = owned;
   const setOwned = useCallback(
     (key: string, quantity: number) => {
-      const next: Record<string, number> = { ...ownedRef.current };
-      if (quantity > 0) next[key] = Math.floor(quantity);
-      else delete next[key];
-      ownedRef.current = next;
+      const next: Owned = Object.fromEntries(
+        Object.entries({ ...owned, [key]: Math.floor(quantity) }).filter(([, n]) => n > 0),
+      );
       setOwnedState(next);
       if (!userId) return saveGuestOwned(next);
       if (pending.current) clearTimeout(pending.current);
@@ -134,7 +134,7 @@ export function useBomData(client: BomClient): BomData {
         );
       }, 600);
     },
-    [client, userId],
+    [client, userId, owned],
   );
 
   return { prices, pricesFailed, owned, setOwned, saveFailed };

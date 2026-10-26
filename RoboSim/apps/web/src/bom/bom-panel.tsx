@@ -8,6 +8,7 @@ import { useBomText } from './bom-text.js';
 import { PartsList, usePricedBom } from './parts-list.js';
 import { useBomData, type BomData } from './use-bom-data.js';
 import { WiringGuide, WiringSteps, useWiringGuide } from './wiring-guide.js';
+/** Tick box drawn next to each line on the printed sheet. */ const PRINT_BOX = '☐ ';
 
 export type BomTab = 'parts' | 'wiring';
 
@@ -75,7 +76,7 @@ function PrintSheet({ doc, data }: { doc: ProjectDocument; data: BomData }) {
           {bom.lines.map((l) => (
             <tr key={l.key}>
               <td>
-                <span aria-hidden>☐ </span>
+                <span aria-hidden>{PRINT_BOX}</span>
                 {lineName(l)}
               </td>
               <td className="text-end">{fmt(l.toBuy)}</td>

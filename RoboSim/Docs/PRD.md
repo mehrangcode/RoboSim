@@ -260,7 +260,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-LRN-01 | Guided projects: step-by-step instructions (rich text, images, short videos) with per-step validators (e.g. "L298N IN1 connected to a PWM pin"), hints, starter project, arena, and success condition. At GA: Line-follower, Obstacle avoider, Traffic light, Servo radar, Light-seeking robot, Sumo bot. | Must | P2 (2), P3 (6) |
+| FR-LRN-01 | Guided projects: step-by-step instructions (rich text, images, short videos) with per-step validators (e.g. "L298N IN1 connected to a PWM pin"), hints, starter project, arena, and success condition. At GA: Line-follower, Obstacle avoider, Traffic light, Servo radar, Light-seeking robot, Sumo bot. *Status: P2 set done (2026-10-26): Line-follower (Free) and Obstacle avoider (Maker), built-in content with declarative checks evaluated live in the browser, FA/EN text and SVG images; videos, the CMS (FR-ADM-04) and kits (FR-SHP-06) not yet.* | Must | P2 (2), P3 (6) |
 | FR-LRN-02 | Courses: ordered modules of lessons (article, guided project, quiz, sim-task); progress tracking; completion certificate (PDF, verifiable link). | Must | P3 |
 | FR-LRN-03 | Classes: teachers create classes, invite by join code, link, email, or roster CSV; archive classes at term end. Students belong to classes within the org workspace. | Must | P3 |
 | FR-LRN-04 | Assignments: from template or project; settings for starter project, locked components/board, arena, success conditions with weights, rubric criteria, due date, late policy, attempts limit, individual or group. | Must | P3 |

@@ -50,6 +50,13 @@
       "when": 1792928234241,
       "tag": "0006_bom",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792996045769,
+      "tag": "0007_guided",
+      "breakpoints": true
     }
   ]
 }

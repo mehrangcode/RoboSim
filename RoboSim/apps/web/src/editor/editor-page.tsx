@@ -41,6 +41,8 @@ import { ApiError } from '../lib/api.js';
 import { PaywallDialog } from '../plans/paywall.js';
 import { paywallReason, type PaywallReason } from '../plans/paywall-reason.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
+import { GuidePanel } from '../learn/guide-panel.js';
+import { learningApi, type LearningClient } from '../lib/learning-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { HelpDialog } from './help-dialog.js';
 import { ShareDialog } from './share-dialog.js';
@@ -56,7 +58,7 @@ import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
 type DockTab = 'serial' | 'pins' | 'safety' | 'challenge' | BomTab;
-type MobileTab = 'parts' | 'circuit' | 'robot' | 'code' | 'sim' | 'monitor';
+type MobileTab = 'guide' | 'parts' | 'circuit' | 'robot' | 'code' | 'sim' | 'monitor';
 type CentreView = 'circuit' | 'robot';
 
 /** A pane with a title bar and a collapse button. */
@@ -121,6 +123,7 @@ interface EditorProps {
   compileSketch?: CompileSketch | undefined;
   projects?: ProjectsClient | undefined;
   bom?: BomClient | undefined;
+  learning?: LearningClient | undefined;
 }
 
 /** A read-only workspace (a shared project the caller may only view): what to say and offer above it. */
@@ -310,6 +313,7 @@ function Workspace({
   compileSketch,
   projects,
   bom,
+  learning,
   cloudOpen,
   initial,
   viewer,
@@ -342,6 +346,8 @@ function Workspace({
   const [dockTab, setDockTab] = useState<DockTab>('serial');
   const [bomFallback] = useState(() => bomApi(() => i18n.language));
   const bomClient = bom ?? bomFallback;
+  const [learningFallback] = useState(() => learningApi(() => i18n.language));
+  const learningClient = learning ?? learningFallback;
   const [mobileTab, setMobileTab] = useState<MobileTab>('circuit');
   const [centre, setCentre] = useState<CentreView>('circuit');
   const [help, setHelp] = useState(false);
@@ -354,7 +360,7 @@ function Workspace({
   const fileInput = useRef<HTMLInputElement>(null);
   const { layout, resize, toggle } = useLayout();
   const size = useSizeClass();
-  const current = withFiles(doc, files);
+  const current = useMemo(() => withFiles(doc, files), [doc, files]);
   const cloud = useCloudSync(cloudOpen, projects, current);
   // A cloud build saves first and names the project, so a successful build becomes a version (FR-PRJ-03).
   const compile = compileSketch ?? compileWithApi;
@@ -528,6 +534,7 @@ function Workspace({
           : t('shell:editor.status.editing');
 
   const titles: Record<Pane | 'canvas' | 'robot', string> = {
+    guide: t('guided:guide.title'),
     left: t('shell:editor.pane.parts'),
     canvas: t('shell:editor.pane.circuit'),
     robot: t('shell:editor.pane.robot'),
@@ -642,6 +649,26 @@ function Workspace({
     setCentre('circuit');
     setMobileTab('circuit');
   };
+  // Guided project (FR-LRN-01): the steps beside the workspace, checked against the project as it changes.
+  const guidePane = doc.guided ? (
+    <GuidePanel
+      guided={doc.guided}
+      doc={current}
+      client={learningClient}
+      runSucceeded={live?.challenge?.status === 'success'}
+      projectId={cloudOpen?.id ?? null}
+      onShow={(parts) => {
+        editor.setSelection({ parts: [...parts], wire: null });
+        setCentre('circuit');
+        setMobileTab('circuit');
+      }}
+      onOpenParts={() => {
+        setDockTab('parts');
+        if (layout.collapsed.dock) toggle('dock');
+        setMobileTab('monitor');
+      }}
+    />
+  ) : null;
   const dock = (
     <div className="flex h-full flex-col gap-2 p-2">
       <SegmentedControl
@@ -978,10 +1005,19 @@ function Workspace({
 
   if (size !== 'wide') {
     const robotTab: MobileTab[] = robotProject ? ['robot'] : [];
+    const guideTab: MobileTab[] = guidePane ? ['guide'] : [];
     const tabs: MobileTab[] =
       size === 'narrow'
-        ? ['circuit', ...robotTab, 'sim', 'monitor']
-        : [...(readOnly ? [] : (['parts'] as const)), 'circuit', ...robotTab, 'code', 'sim', 'monitor'];
+        ? [...guideTab, 'circuit', ...robotTab, 'sim', 'monitor']
+        : [
+            ...guideTab,
+            ...(readOnly ? [] : (['parts'] as const)),
+            'circuit',
+            ...robotTab,
+            'code',
+            'sim',
+            'monitor',
+          ];
     const tab = tabs.includes(mobileTab) ? mobileTab : 'circuit';
     return (
       <div className={frameClass}>
@@ -1014,17 +1050,19 @@ function Workspace({
           />
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
-          {tab === 'circuit'
-            ? canvas
-            : tab === 'robot'
-              ? robotPane
-              : tab === 'parts'
-                ? leftPane
-                : tab === 'code'
-                  ? codePane
-                  : tab === 'sim'
-                    ? simPane
-                    : dock}
+          {tab === 'guide'
+            ? guidePane
+            : tab === 'circuit'
+              ? canvas
+              : tab === 'robot'
+                ? robotPane
+                : tab === 'parts'
+                  ? leftPane
+                  : tab === 'code'
+                    ? codePane
+                    : tab === 'sim'
+                      ? simPane
+                      : dock}
         </div>
         {helpDialog}
       </div>
@@ -1038,6 +1076,27 @@ function Workspace({
       {toolbar}
       {alerts}
       <div className="flex min-h-0 flex-1">
+        {guidePane &&
+          (collapsed.guide ? (
+            <Rail title={titles.guide} vertical onExpand={() => toggle('guide')} />
+          ) : (
+            <>
+              <PaneFrame title={titles.guide} onCollapse={() => toggle('guide')} className="shrink-0">
+                <div style={{ width: layout.guide }} className="h-full">
+                  {guidePane}
+                </div>
+              </PaneFrame>
+              <ResizeHandle
+                orientation="vertical"
+                side="start"
+                label={t('shell:editor.pane.resize', { pane: titles.guide })}
+                value={layout.guide}
+                min={240}
+                max={560}
+                onChange={(v) => resize({ guide: v })}
+              />
+            </>
+          ))}
         {readOnly ? null : collapsed.left ? (
           <Rail title={titles.left} vertical onExpand={() => toggle('left')} />
         ) : (

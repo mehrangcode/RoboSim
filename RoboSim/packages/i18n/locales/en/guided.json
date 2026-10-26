@@ -1,0 +1,63 @@
+{
+  "learn": {
+    "title": "Guided projects",
+    "intro": "Build a working robot step by step. Each step checks your circuit and code as you go and tells you what to fix.",
+    "minutes": "about {n} min",
+    "steps": "{n, plural, one {# step} other {# steps}}",
+    "free": "Free",
+    "maker": "Maker",
+    "start": "Start",
+    "continue": "Continue",
+    "completed": "Completed",
+    "progress": "{done} of {total} steps done",
+    "locked": "Included with the Maker plan.",
+    "seePlans": "See plans",
+    "loading": "Loading projects…",
+    "loadFailed": "Could not load the guided projects. Check your connection and try again.",
+    "starting": "Starting…",
+    "startFailed": "Could not start the project: {message}",
+    "replaceTitle": "Replace the project in this browser?",
+    "replaceBody": "Starting a guided project replaces the project you have open in this browser. Download it first if you want to keep it, or sign in to keep projects in your account.",
+    "replace": "Replace and start",
+    "cancel": "Cancel"
+  },
+  "guide": {
+    "title": "Guide",
+    "label": "Guided project steps",
+    "stepOf": "Step {n} of {total}",
+    "steps": "Steps",
+    "next": "Next",
+    "showMe": "Show me",
+    "solution": "Reveal solution",
+    "hideSolution": "Hide solution",
+    "attention": "This step was done, but something has changed since. Put it right to carry on.",
+    "loading": "Loading the guide…",
+    "loadFailed": "Could not load the guide for this project.",
+    "locked": "This guided project is part of the Maker plan. Your project stays here, but the steps are hidden.",
+    "saveFailed": "Your progress could not be saved. It will be saved with your next step.",
+    "status": {
+      "done": "done",
+      "active": "current step",
+      "attention": "needs attention",
+      "locked": "not yet",
+      "upcomingDone": "done before"
+    },
+    "complete": {
+      "title": "You built it!",
+      "body": "Every step is done and your robot met the challenge. Your progress is saved.",
+      "parts": "Parts list for the real robot",
+      "more": "More guided projects"
+    }
+  },
+  "reason": {
+    "missingPart": "{count, plural, one {Add the {part} from the parts library.} other {Add # × {part} from the parts library (you have {have}).}}",
+    "notOnRobot": "Put the {part} on the robot: open the Robot view and drag it onto the chassis.",
+    "propMismatch": "Set “{prop}” of the {part} to {value} in the Properties panel.",
+    "notConnected": "Connect {pin} of the {part} to {otherPin} of the {otherPart}.",
+    "notOnBoard": "Wire {pin} of the {part} to the Arduino.",
+    "wrongPinKind": "{kind, select, pwm {{pin} of the {part} is on {boardPin}, which cannot do PWM: only the pins marked ~ can switch fast enough to set a speed. Use one of {options}.} digital {{pin} of the {part} is on {boardPin}. Use a digital pin: {options}.} analog {{pin} of the {part} is on {boardPin}. Use an analog pin: {options}.} ground {{pin} of the {part} must go to a GND pin of the Arduino, not {boardPin}.} other {{pin} of the {part} must go to the Arduino’s 5V pin, not {boardPin}.}}",
+    "codeMissing": "Your sketch never calls {use}() on {boardPin}, where {pin} of the {part} is wired. Check the pin numbers at the top of the sketch.",
+    "codeUnavailable": "Checking your sketch…",
+    "notRun": "Press Run and let the robot finish the challenge."
+  }
+}

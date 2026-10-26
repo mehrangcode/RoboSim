@@ -2,7 +2,7 @@ import { blankProject } from '@robosim/circuit-canvas';
 import { ProjectDocumentError } from '@robosim/shared';
 import { unzipSync, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import { ProjectFileError, encodeProjectFile, fileBase, readProjectFile, utf8 } from './project-file.js';
+import { type ProjectFileError, encodeProjectFile, fileBase, readProjectFile, utf8 } from './project-file.js';
 
 const doc = { ...blankProject('Line follower', ''), meta: { title: 'ربات Line follower' } };
 const blob = (data: Uint8Array | string) =>

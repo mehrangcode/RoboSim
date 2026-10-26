@@ -17,7 +17,7 @@ and `.robosim` zip import/export. All free on every plan. No shop/cart (FR-BOM-0
       (steps with mini SVG per step, click → highlight wire on canvas); print route; guest inventory in
       localStorage merged on sign-in; circuit SVG/PNG export; `.robosim` zip export/import (fflate), legacy
       `.robosim.json` import kept. FA/EN, RTL.
-- [ ] 6. Tests (shared unit, API HTTP, web, admin) and `pnpm verify` green.
+- [x] 6. Tests (shared unit, API HTTP, web, admin) and `pnpm verify` green.
 - [x] 7. Docs: PRD/TD/API-Spec/Release-Plan/decisions, CLAUDE.md/README sync.
 
 ## Acceptance

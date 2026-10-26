@@ -1,6 +1,9 @@
 # Context — BOM, wiring guide, exports, .robosim
 
-Status: 2026-10-25 — steps 1–5 and 7 done (uncommitted). Step 6 open: last full `pnpm verify` run was killed
+Status: 2026-10-26 — `pnpm verify` green (turbo --concurrency=2) after fixing 5 web lint errors
+(use-bom-data set-state-in-effect / ref-in-render / dynamic delete, bom-panel literal, type import).
+Web suite flaked once under parallel load, passes alone 133/133. Browser check of the BOM tabs (FA/EN, print, PNG)
+still not done (2026-10-26 guided-projects browser pass covered /learn and the Guide only). Previously: Step 6 open: last full `pnpm verify` run was killed
 (system low on memory). Prior run: format + i18n gates fixed; only failure was the existing admin test
 "FR-ADM-06 workspaces…" (findByRole timeout under parallel load); admin suite passes alone 12/12 twice.
 Browser check (FA/EN, print, PNG export) not done.

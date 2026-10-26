@@ -7,8 +7,10 @@ import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initI18n } from '../lib/i18n.js';
 import type { BuildProgress, CompileSketch } from '../lab/use-build.js';
+import { FakeLearning, fakeGuided } from '../testing/fake-learning.js';
 import { FakeWorker } from '../testing/fake-worker.js';
 import { EditorPage } from './editor-page.js';
+import { runKey, saveStored } from './project-store.js';
 
 const router = vi.hoisted(() => ({
   search: {} as { demo?: string },
@@ -331,6 +333,30 @@ describe('editor workspace', () => {
     await user.click(screen.getByRole('button', { name: /^Open floor/ }));
     expect(screen.getByRole('img', { name: 'Arena: Open floor' })).toBeInTheDocument();
     expect(screen.getByLabelText('x (cm)')).toHaveValue(150);
+  });
+
+  it('shows the guide beside a guided project (FR-LRN-01)', async () => {
+    const starter = fakeGuided().starter as ProjectDocument;
+    saveStored({ project: starter, pristine: runKey(starter) });
+    const i18n = await initI18n('en');
+    render(
+      <I18nextProvider i18n={i18n}>
+        <EditorPage createWorker={() => new FakeWorker()} learning={new FakeLearning()} />
+      </I18nextProvider>,
+    );
+    const guide = await screen.findByRole('region', { name: 'Guide' });
+    expect(await within(guide).findByRole('heading', { name: 'Meet your robot' })).toBeInTheDocument();
+    await userEvent.click(within(guide).getByRole('button', { name: 'Next' }));
+    expect(
+      await within(guide).findByText('Add the L298N motor driver from the parts library.'),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Hide Guide' }));
+    expect(screen.queryByRole('region', { name: 'Guide' })).not.toBeInTheDocument();
+  });
+
+  it('shows no guide for an ordinary project', async () => {
+    await setup();
+    expect(screen.queryByRole('region', { name: 'Guide' })).not.toBeInTheDocument();
   });
 
   it('asks before replacing a modified project', async () => {

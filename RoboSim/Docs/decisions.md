@@ -230,3 +230,18 @@
   - Jumper types (male or female ends) are inferred from connector kinds, not drawn, so a quantity can be off for unusual parts; packs of 10 with 20 % spare absorb most of it.
   - Part keys are a public contract between the price list, the inventory and the shop: renaming a catalogue type or variant prop orphans its price rows.
 - **Alternatives.** Server-computed BOM and exports from the start (needs the shop and the export service, and fails for guests offline); a spreadsheet library for XLSX (a large dependency for one sheet); prices inside the component manifests (they would change with releases, not with staff edits).
+
+## ADR-025 — Guided projects as built-in content with declarative checks evaluated in the browser
+
+- **Context.** FR-LRN-01 needs step-by-step projects whose steps check the learner's circuit and code live ("L298N IN1 connected to a PWM pin"), in FA and EN, gated by plan (`learning.guided_projects`: Free gets the first project). The content CMS (FR-ADM-04) and the `content_items` tables do not exist yet, and the checks must react on every edit, offline-capable for the build steps.
+- **Decision.**
+  - Guided projects are typed content in `packages/content/src/guided` (FA/EN text in a Markdown subset, inline SVG images, a starter document with `guided: { slug, version }`, a reference build and solution sketch). Progress is keyed by `slug@version`. The API serves them and applies the plan: a locked project returns only its summary. The guided content is a separate entry point (`@robosim/content/guided`) and a dependency-cruiser rule stops browser packages from importing it, so paid text never ships in the bundle.
+  - Step checks are declarative data (`part`, `prop`, `connected`, `boardPin`, `code`, `run`) defined in `packages/shared`, so the CMS can author them later. The browser evaluates them against the document (nets from `CircuitNets`), the sketch's pin facts (the FR-COD-06 analyser, loaded lazily) and the live run, in `packages/circuit-canvas/src/guided.ts`. Each failure has a reason with a generic FA/EN hint that a step may override.
+  - Steps run in order: the first step that does not pass is current; a completed step that breaks again is flagged for attention. Steps once completed are recorded (server `guided_progress` with owner-only RLS when signed in, `robosim.guided.v1` in the browser for guests, merged on sign-in), and the run step stays done once a run succeeded.
+  - Every guided project has a test that its reference build passes all steps and that its compiled solution meets the challenge headless (`GUIDED_HEX`, a third firmware set).
+- **Consequences.**
+  - Progress is trusted from the client: it is a learner's own record, not a grade. Anything that counts (assignments, competitions) keeps using server-side verified runs (FR-LRN-05).
+  - New or changed content ships with a release until the CMS exists; the content tables can import these modules unchanged, because the shape is already the API contract.
+  - Changing a project's steps needs a version bump, or old progress would point at steps that no longer exist.
+- **Alternatives.** TypeScript validator functions per step (flexible, but content could never live outside the code); server-side checking on every edit (latency, and no help for guests offline); building the CMS first (delays the first guided project by a slice).
+

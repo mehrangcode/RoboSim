@@ -1,6 +1,7 @@
 // Sketch sets compiled into committed Intel HEX by `pnpm firmware:gen`; the firmware drift test checks each.
 // Plain data modules, imported from source so this app does not depend on the engine build.
 import { CONFORMANCE_SKETCHES } from '../../../packages/boards/avr-uno/test/conformance/sketches.ts';
+import { GUIDED_SKETCHES } from '../../../packages/content/src/guided/sketches.ts';
 import { FIRMWARE_SKETCHES } from '../../../packages/sim-runtime/src/firmware/sketches.ts';
 
 export interface FirmwareSet {
@@ -27,5 +28,12 @@ export const FIRMWARE_SETS: readonly FirmwareSet[] = [
     target: 'packages/boards/avr-uno/test/conformance/generated.ts',
     idType: 'ConformanceSketchId',
     exportName: 'CONFORMANCE_HEX',
+  },
+  {
+    name: 'guided-project solutions',
+    sketches: GUIDED_SKETCHES,
+    target: 'packages/content/src/guided/generated.ts',
+    idType: 'GuidedSketchId',
+    exportName: 'GUIDED_HEX',
   },
 ];

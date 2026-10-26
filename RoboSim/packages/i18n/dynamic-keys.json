@@ -55,6 +55,8 @@
     "bom:jumper.",
     "bom:jumperShort.",
     "bom:subsystem.",
-    "shell:editor.fileError."
+    "shell:editor.fileError.",
+    "guided:reason.",
+    "guided:guide.status."
   ]
 }

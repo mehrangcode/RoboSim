@@ -488,3 +488,30 @@ export const userInventory = pgTable(
     check('user_inventory_quantity_positive', sql`${t.quantity} > 0`),
   ],
 );
+
+/**
+ * Guided-project progress (FR-LRN-01, TD §8.5): steps a user has completed at least once, per content
+ * version (`slug@version`), and when they finished. Step ids rather than indexes, so they survive edits.
+ */
+export const guidedProgress = pgTable(
+  'guided_progress',
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    contentVersionId: text().notNull(),
+    /** The workspace the learner was in when they last recorded progress. */
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** The project they are building it in, when it is saved on the server. */
+    projectId: uuid(),
+    completedSteps: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    completedAt: timestamp({ withTimezone: true }),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.contentVersionId] })],
+);

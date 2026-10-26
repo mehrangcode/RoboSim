@@ -284,6 +284,9 @@ importers:
       '@robosim/compiler':
         specifier: workspace:*
         version: link:../compiler
+      '@robosim/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@robosim/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -2026,13 +2029,16 @@ importers:
 
   packages/content:
     dependencies:
+      '@robosim/component-chassis-2wd':
+        specifier: workspace:*
+        version: link:../components/chassis-2wd
+      '@robosim/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@robosim/sim-core':
         specifier: workspace:*
         version: link:../sim-core
     devDependencies:
-      '@robosim/component-chassis-2wd':
-        specifier: workspace:*
-        version: link:../components/chassis-2wd
       '@robosim/config':
         specifier: workspace:*
         version: link:../config
@@ -2200,6 +2206,9 @@ importers:
         specifier: workspace:*
         version: link:../sim-core
     devDependencies:
+      '@robosim/circuit-canvas':
+        specifier: workspace:*
+        version: link:../circuit-canvas
       '@robosim/config':
         specifier: workspace:*
         version: link:../config

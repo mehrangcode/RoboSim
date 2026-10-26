@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { guidedRefSchema } from './guided.js';
 
 /**
  * Project document (Technical Design §8.10): what the editors save, the build service compiles, and
@@ -134,6 +135,8 @@ export const projectDocumentSchema = z
       })
       .optional(),
     successConditions: successConditionsSchema.optional(),
+    /** The guided project this one was started from (FR-LRN-01); additive, so no version bump. */
+    guided: guidedRefSchema.optional(),
     meta: z.strictObject({ title: z.string().min(1).max(200), description: z.string().max(5000).optional() }),
   })
   .superRefine((doc, ctx) => {

@@ -45,6 +45,13 @@ module.exports = {
       to: { path: ['^apps/(api|compiler|grader|exporter|realtime)/', '^packages/ai-providers/'] },
     },
     {
+      name: 'browser-never-bundles-guided-content',
+      comment: 'Guided projects are gated by plan (ADR-006): browsers get them from the API only.',
+      severity: 'error',
+      from: { path: '^(apps/(web|admin)|packages/(ui|sim-core|sim-runtime|renderer-[^/]+|circuit-canvas))/' },
+      to: { path: '^packages/content/(src|dist)/guided/' },
+    },
+    {
       name: 'api-modules-use-public-entrypoints',
       comment: "Modules talk through each other's index.ts only (Technical Design §7.1).",
       severity: 'error',

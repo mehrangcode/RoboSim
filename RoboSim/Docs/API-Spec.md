@@ -151,6 +151,7 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 | `GET /guided-projects` · `GET /guided-projects/:slug` | pub | Guided projects (gated content returns teaser + `entitlement_required` for full body) |
 | `GET /courses` · `GET /courses/:slug` · `POST /courses/:slug/enroll` | pub/ses | Courses |
 | `PUT /progress/guided/:contentVersionId` · `PUT /progress/lessons/:lessonId` | ws | Progress |
+| `GET /progress/guided` | ws | The caller's guided-project progress |
 | `GET /certificates/:code` | pub | Verify certificate |
 | `GET /catalog/prices` | pub | Interim price list: `{ items: [{ partKey, priceIrr, stock, updatedAt }], asOf }` until the shop catalogue (§4.10) replaces it |
 
@@ -237,6 +238,9 @@ type BuildAccepted = BuildStatus & { statusUrl: string; eventsUrl: string }; // 
 | `GET /classes/:id/gradebook` · `GET /classes/:id/gradebook.xlsx` | ws | Gradebook |
 | `GET /classes/:id/live` | ws | SSE live dashboard |
 | `POST /verified-runs` · `GET /verified-runs/:id` · `GET /verified-runs/:id/replay` | ws | Manual verified run (**Ent** `org.verified_grading`); result; replay data |
+
+
+*Guided projects implemented (2026-10-26):* content is built in (`@robosim/content/guided`), not yet in `content_items`. `GET /guided-projects` (pub; a session or guest) → `[GuidedSummary]` = `{ slug, version, contentVersionId: "<slug>@<version>", title, summary (FA/EN), minutes, free, stepCount, arenaId, cover (inline SVG), locked }`. `GET /guided-projects/:slug` → the full `GuidedProject` (`… steps: [{ id, title, body (Markdown subset, FA/EN), checks, hints, solution? }], starter (ProjectDocument with guided: { slug, version }), assets }`) or, when `learning.guided_projects` does not open it (Free and guests: `first` = only `free` projects), the summary with `locked: true` and no body (`200`, not `403`). `GET /progress/guided` (ws) → `[{ contentVersionId, projectId, completedSteps, completedAt, updatedAt }]`. `PUT /progress/guided/:contentVersionId` (ws) `{ completedSteps, completed?, projectId? }`: steps are added to those recorded (never removed), `completed: true` needs every step and sets `completedAt` once; unknown content `404`, unknown step `400 validation_failed`, content outside the plan `403 entitlement_required`. Progress is the learner's record, not a grade, so the browser's checks are trusted for it (graded results stay with verified runs, FR-LRN-05). Projects are created with `POST /projects` from the starter document.
 
 ### 4.7 LTI 1.3
 
