@@ -21,6 +21,15 @@
   --color-line: var(--rs-line);
   --color-ok: oklch(0.58 0.14 150);
   --color-danger: oklch(0.56 0.2 27);
+  /* Categorical chart series (plotter, logic analyzer), fixed order; validated against both surfaces. */
+  --color-series-1: var(--rs-series-1);
+  --color-series-2: var(--rs-series-2);
+  --color-series-3: var(--rs-series-3);
+  --color-series-4: var(--rs-series-4);
+  --color-series-5: var(--rs-series-5);
+  --color-series-6: var(--rs-series-6);
+  --color-series-7: var(--rs-series-7);
+  --color-series-8: var(--rs-series-8);
 }
 
 :root {
@@ -29,6 +38,14 @@
   --rs-ink: oklch(0.22 0.02 250);
   --rs-ink-muted: oklch(0.48 0.02 250);
   --rs-line: oklch(0.9 0.01 250);
+  --rs-series-1: #2a78d6;
+  --rs-series-2: #eb6834;
+  --rs-series-3: #1baf7a;
+  --rs-series-4: #eda100;
+  --rs-series-5: #e87ba4;
+  --rs-series-6: #008300;
+  --rs-series-7: #6250d6;
+  --rs-series-8: #e34948;
   color-scheme: light;
 }
 
@@ -39,6 +56,14 @@
     --rs-ink: oklch(0.95 0.005 250);
     --rs-ink-muted: oklch(0.72 0.015 250);
     --rs-line: oklch(0.32 0.015 250);
+    --rs-series-1: #3987e5;
+    --rs-series-2: #d95926;
+    --rs-series-3: #199e70;
+    --rs-series-4: #c98500;
+    --rs-series-5: #d55181;
+    --rs-series-6: #008300;
+    --rs-series-7: #9085e9;
+    --rs-series-8: #e66767;
     color-scheme: dark;
   }
 }

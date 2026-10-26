@@ -57,6 +57,7 @@
     "bom:subsystem.",
     "shell:editor.fileError.",
     "guided:reason.",
-    "guided:guide.status."
+    "guided:guide.status.",
+    "shell:lab.analyzer.unit."
   ]
 }

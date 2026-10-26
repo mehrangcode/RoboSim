@@ -86,6 +86,8 @@ export interface DecodedSerial {
   readonly sketchBaud: number | null;
   /** True when that rate differs from the monitor's, so the output is garbled. */
   readonly mismatch: boolean;
+  /** The last line has no line ending yet (more of it may still arrive). */
+  readonly partial: boolean;
 }
 
 /**
@@ -136,7 +138,12 @@ export function decodeSerial(chunks: readonly SerialChunk[], monitorBaud: number
     }
   }
   if (open) lines.push(open);
-  return { lines, sketchBaud, mismatch: sketchBaud !== null && sketchBaud !== monitorBaud };
+  return {
+    lines,
+    sketchBaud,
+    mismatch: sketchBaud !== null && sketchBaud !== monitorBaud,
+    partial: open !== null,
+  };
 }
 
 /**

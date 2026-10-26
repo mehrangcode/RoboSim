@@ -1,5 +1,6 @@
 import { Pacer } from '@robosim/sim-core';
 import type { ProjectDocument } from '@robosim/shared';
+import type { Level } from '@robosim/sim-core';
 import { ENGINE_VERSION } from './engine-version.js';
 import { InputLogger, type LiveInput } from './input-log.js';
 import type {
@@ -10,9 +11,11 @@ import type {
   HotFrame,
   InputLogEntry,
   MainToWorker,
+  ProbeStart,
   ScenarioId,
   WorkerToMain,
 } from './protocol.js';
+import { MAX_PROBE_PINS, PinRecorder } from './probe.js';
 import { buildRun, findingView, resolveSource, type Scenario } from './scenarios.js';
 import { SharedSnapshotWriter, packSnapshot } from './snapshot-channel.js';
 import { SnapshotEncoder } from './snapshot-codec.js';
@@ -45,6 +48,8 @@ interface Run {
   sentFindings: number;
   sentFaults: string;
   sentDamage: string;
+  /** Logic-analyzer capture of this run, with the start message not yet posted. */
+  probe: { id: number; recorder: PinRecorder; start: ProbeStart | null; until: number; done: boolean } | null;
 }
 
 /**
@@ -60,6 +65,9 @@ export class SimHost {
   private lastFrameWall = -Infinity;
   private lastFrameSim = 0;
   private readonly shared: boolean;
+  /** Pins the logic analyzer records; kept across resets and loads. */
+  private probePins: readonly string[] | null = null;
+  private captures = 0;
 
   constructor(
     private readonly post: (msg: WorkerToMain, transfer?: ArrayBuffer[]) => void,
@@ -95,6 +103,11 @@ export class SimHost {
           break;
         case 'serial':
           this.input({ kind: 'serial', text: msg.text });
+          break;
+        case 'probe':
+          this.probePins = msg.pins?.length ? msg.pins.slice(0, MAX_PROBE_PINS) : null;
+          if (this.run) this.startProbe(this.run);
+          this.publish(true);
           break;
         case 'exportLog':
           if (this.run)
@@ -147,6 +160,7 @@ export class SimHost {
   }
 
   private load(source: RunSource, seed: number, replay: readonly InputLogEntry[]): void {
+    this.run?.probe?.recorder.stop();
     this.run = null;
     this.running = false;
     const scenario = buildRun(source, seed);
@@ -170,6 +184,7 @@ export class SimHost {
       sentFindings: 0,
       sentFaults: '[]',
       sentDamage: JSON.stringify(NO_DAMAGE),
+      probe: null,
     };
     const uart = scenario.scene.serial ? scenario.circuit.sim.mcu?.uart(0) : undefined;
     uart?.onData((bytes) => {
@@ -188,7 +203,26 @@ export class SimHost {
       engineVersion: ENGINE_VERSION,
       replaying: replay.length,
     });
+    this.startProbe(run);
     this.publish(true);
+  }
+
+  /** Replaces the run's capture with one of {@link probePins} from the current cycle (or none). */
+  private startProbe(run: Run): void {
+    run.probe?.recorder.stop();
+    run.probe = null;
+    const mcu = run.scenario.circuit.sim.mcu;
+    const pins = this.probePins?.filter((p) => ALL_MCU_PINS.includes(p));
+    if (!mcu || !pins?.length) return;
+    const views = pinViews(run.scenario, pins);
+    const levels = pins.map((p): Level => (views[p]?.level === 1 ? 1 : 0));
+    run.probe = {
+      id: ++this.captures,
+      recorder: new PinRecorder(mcu, pins, levels),
+      start: { pins, cycle: mcu.cycle, clockHz: mcu.clockHz, levels },
+      until: -1,
+      done: false,
+    };
   }
 
   private control(action: 'run' | 'pause' | 'reset' | 'step'): void {
@@ -227,6 +261,26 @@ export class SimHost {
     this.lastFrameSim = snap.simTime;
 
     // Events first: the UI merges them into the frame built from the snapshot that follows.
+    const probe = run.probe;
+    const until = sim.mcu?.cycle ?? 0;
+    if (probe && !probe.done && (probe.start || until !== probe.until || probe.recorder.isFull)) {
+      const data = probe.recorder.drain();
+      const full = probe.recorder.isFull;
+      probe.done = full;
+      probe.until = until;
+      this.post(
+        {
+          type: 'edges',
+          capture: probe.id,
+          ...(probe.start ? { start: probe.start } : {}),
+          data,
+          until,
+          ...(full ? { full: true as const } : {}),
+        },
+        [data.buffer as ArrayBuffer],
+      );
+      probe.start = null;
+    }
     if (run.serialOut.length) {
       const chunks = run.serialOut.map((c) => ({
         slice: c.slice,

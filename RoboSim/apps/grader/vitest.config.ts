@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config';
 // full-cap runs: vitest.long.config.ts.
 export default defineConfig({
   test: {
+    maxWorkers: '50%',
     include: ['test/**/*.test.ts'],
     exclude: ['test/**/*.browser.test.ts', 'test/**/*.long.test.ts'],
     testTimeout: 60_000,

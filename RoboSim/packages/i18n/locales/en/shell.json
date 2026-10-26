@@ -250,7 +250,10 @@
       "autoscroll": "Autoscroll",
       "clear": "Clear",
       "mismatch": "Your code sends at {sketch} baud but the monitor is set to {monitor}, so the text looks garbled — just like on a real board.",
-      "useBaud": "Switch to {baud}"
+      "useBaud": "Switch to {baud}",
+      "view": "View",
+      "text": "Monitor",
+      "plot": "Plotter"
     },
     "verify": {
       "title": "Verified run",
@@ -293,7 +296,58 @@
       },
       "queued": "Queued, #{position, number} in line…"
     },
-    "openInEditor": "Open in editor →"
+    "openInEditor": "Open in editor →",
+    "plot": {
+      "window": "Points",
+      "pause": "Pause",
+      "resume": "Resume",
+      "legend": "Series",
+      "toggle": "Show or hide {name}",
+      "value": "Value {n}",
+      "dropped": "Only the first {max} series are plotted; left out: {names}.",
+      "empty": "Print numbers to plot them, one line per sample — for example 12,34 or left:12 right:34.",
+      "chart": "Plot of {count} series over the last {points} samples"
+    },
+    "analyzer": {
+      "pins": "Pins to record (up to {max})",
+      "record": "Record",
+      "stop": "Stop",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit",
+      "follow": "Follow live",
+      "clear": "Clear",
+      "status": "{length} recorded · {edges} edges",
+      "full": "Recording stopped: the capture is full. Zoom in on what you need, or clear it and record a shorter stretch.",
+      "waiting": "Recording… run the simulation to capture edges.",
+      "empty": "Pick pins and press Record. Every edge is stamped with the CPU clock (62.5 ns), so you can measure pulses to well under a microsecond.",
+      "chart": "Timing diagram of {pins} from {from} to {to}",
+      "hint": "Click the diagram to place cursor A (Shift+click: B). Arrow keys jump A to the previous or next edge; Shift+arrows move B. Scroll to zoom, drag to pan.",
+      "cursorA": "A at {time}",
+      "cursorB": "B at {time}",
+      "delta": "B − A = {time}",
+      "measurements": "Measurements at cursor A",
+      "col": {
+        "pin": "Pin",
+        "level": "Level",
+        "width": "Pulse width",
+        "period": "Period",
+        "frequency": "Frequency",
+        "duty": "Duty"
+      },
+      "high": "HIGH",
+      "low": "LOW",
+      "percent": "{value} %",
+      "unit": {
+        "ns": "{value} ns",
+        "us": "{value} µs",
+        "ms": "{value} ms",
+        "s": "{value} s",
+        "Hz": "{value} Hz",
+        "kHz": "{value} kHz",
+        "MHz": "{value} MHz"
+      }
+    }
   },
   "editor": {
     "title": "Editor",
@@ -344,6 +398,7 @@
     "dock": {
       "serial": "Serial monitor",
       "pins": "Pins",
+      "analyzer": "Logic analyzer",
       "safety": "Safety",
       "challenge": "Challenge",
       "parts": "Parts list",

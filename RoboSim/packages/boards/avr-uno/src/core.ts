@@ -114,6 +114,8 @@ export class AvrUnoCore implements McuCore {
   private readonly edgeListeners = new Set<(pin: PinId, level: Level, cycle: number) => void>();
   private readonly uartListeners = new Set<(bytes: Uint8Array) => void>();
   private readonly lastEdgeLevel = new Map<PinId, Level>();
+  private readonly inputListeners = new Set<(pin: PinId, level: Level, cycle: number) => void>();
+  private readonly lastInputLevel = new Map<PinId, Level>();
   private readonly modeListeners = new Set<
     (pin: PinId, mode: PinMode, cycle: number, level: Level) => void
   >();
@@ -179,6 +181,11 @@ export class AvrUnoCore implements McuCore {
     return () => this.edgeListeners.delete(cb);
   }
 
+  onPinInput(cb: (pin: PinId, level: Level, cycle: number) => void): Unsubscribe {
+    this.inputListeners.add(cb);
+    return () => this.inputListeners.delete(cb);
+  }
+
   onPinModeChange(cb: (pin: PinId, mode: PinMode, cycle: number, level: Level) => void): Unsubscribe {
     this.modeListeners.add(cb);
     return () => this.modeListeners.delete(cb);
@@ -221,6 +228,7 @@ export class AvrUnoCore implements McuCore {
     this.rxQueue = [];
     this.rxHead = 0;
     this.lastEdgeLevel.clear();
+    this.lastInputLevel.clear();
     this.lastMode.clear();
     this.machine = this.build();
   }
@@ -382,6 +390,10 @@ export class AvrUnoCore implements McuCore {
       const { pin, drive } = next;
       this.machine.ports[pin.port].setPin(pin.bit, drive.level === 1);
       if (pin.adc !== undefined) this.machine.adc.channelValues[pin.adc] = drive.volts;
+      if (this.lastInputLevel.get(pin.id) !== drive.level) {
+        this.lastInputLevel.set(pin.id, drive.level);
+        for (const cb of this.inputListeners) cb(pin.id, drive.level, next.atCycle);
+      }
     }
     if (this.queueHead > 1024) {
       this.queue = this.queue.slice(this.queueHead);

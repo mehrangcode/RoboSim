@@ -1,14 +1,16 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadEnv } from 'vite';
+import { parseEnv } from 'node:util';
 import { defineConfig } from 'vitest/config';
 
 // Served from its own origin (admin.<host>) in deployed environments (FR-ADM-01).
-/** API port from the repo-root `.env` (the API reads the same file), so moving the API never breaks the proxy. */
+/** API port from the repo-root `.env` (the API reads the same file), so moving the API never breaks the proxy. Parsed directly, not via Vite's `loadEnv`: that leaks the file's `NODE_ENV=development` into the build and ships React dev builds. */
+const rootEnv = resolve(import.meta.dirname, '../../.env');
 const apiPort =
   process.env.API_PORT ??
-  loadEnv('development', resolve(import.meta.dirname, '../..'), 'API_').API_PORT ??
+  (existsSync(rootEnv) ? parseEnv(readFileSync(rootEnv, 'utf8')).API_PORT : undefined) ??
   '3000';
 
 /** WSL checkouts on a Windows drive (/mnt/c, /mnt/d) get no inotify events: poll so edits reload. */
@@ -24,5 +26,5 @@ export default defineConfig({
   },
   preview: { port: 4174 },
   build: { sourcemap: true, target: 'es2023' },
-  test: { environment: 'jsdom', setupFiles: ['./src/test-setup.ts'] },
+  test: { maxWorkers: '50%', environment: 'jsdom', setupFiles: ['./src/test-setup.ts'] },
 });

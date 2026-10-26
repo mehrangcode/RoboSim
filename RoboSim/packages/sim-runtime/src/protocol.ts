@@ -169,7 +169,12 @@ export type MainToWorker =
   /** Bytes for the MCU's UART RX (Serial Monitor), UTF-8 encoded. */
   | { readonly type: 'serial'; readonly text: string }
   /** Asks for the input log of the current run (answered with `inputLog`). */
-  | { readonly type: 'exportLog' };
+  | { readonly type: 'exportLog' }
+  /**
+   * Logic analyzer (FR-SIM-08): records these MCU pins from now on, also after a reset, until
+   * `pins: null`. Answered with `edges` messages; view only, so it is not part of the input log.
+   */
+  | { readonly type: 'probe'; readonly pins: readonly string[] | null };
 
 export interface PartInfo {
   readonly id: string;
@@ -266,6 +271,14 @@ export interface SceneInfo {
   readonly code: readonly SourceFile[];
   /** The loaded document itself, so an editor can open a demo (or the running project). */
   readonly project: ProjectDocument;
+}
+
+/** How a logic-analyzer capture began: its pins and their levels at `cycle`. */
+export interface ProbeStart {
+  readonly pins: readonly string[];
+  readonly cycle: number;
+  readonly clockHz: number;
+  readonly levels: readonly (0 | 1)[];
 }
 
 /** Bytes the firmware transmitted during one slice at one baud rate (0 = transmitter off). */
@@ -373,4 +386,16 @@ export type WorkerToMain =
   | { readonly type: 'faults'; readonly faults: readonly Fault[] }
   | { readonly type: 'damaged'; readonly damaged: Damage }
   | { readonly type: 'inputLog'; readonly log: InputLog }
+  /**
+   * Logic-analyzer edges since the last message as `[pinIndex, level, cycle]` triples, recorded
+   * up to `until` (CPU cycle). `start` opens a new capture; `full` means it stopped recording.
+   */
+  | {
+      readonly type: 'edges';
+      readonly capture: number;
+      readonly start?: ProbeStart;
+      readonly data: Float64Array;
+      readonly until: number;
+      readonly full?: true;
+    }
   | { readonly type: 'error'; readonly message: string };

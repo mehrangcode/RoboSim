@@ -48,6 +48,26 @@ describe('AvrUnoCore', () => {
     expect(new Set(gaps)).toEqual(new Set([3]));
   });
 
+  it('reports driven input level changes at the cycle they take effect (logic analyzer)', () => {
+    const c = core('halt: rjmp halt');
+    const seen: [string, number, number][] = [];
+    const off = c.onPinInput((pin, level, cycle) => seen.push([pin, level, cycle]));
+    c.scheduleInput('D2', { level: 1, volts: 5 }, 10);
+    c.scheduleInput('D2', { level: 1, volts: 4.9 }, 20); // same level: not a change
+    c.scheduleInput('D2', { level: 0, volts: 0 }, 30);
+    c.scheduleInput('A0', { level: 1, volts: 3 }, 30);
+    c.run(50);
+    expect(seen).toEqual([
+      ['D2', 1, 10],
+      ['D2', 0, 30],
+      ['A0', 1, 30],
+    ]);
+    off();
+    c.scheduleInput('D2', { level: 1, volts: 5 }, 60);
+    c.run(80);
+    expect(seen).toHaveLength(3);
+  });
+
   it('applies scheduled inputs at their exact cycle (button echo with pull-up)', () => {
     const c = core(`
       ldi r16, 0x20

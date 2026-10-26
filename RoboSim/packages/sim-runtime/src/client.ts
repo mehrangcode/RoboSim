@@ -8,6 +8,7 @@ import type {
   SceneInfo,
   WorkerToMain,
 } from './protocol.js';
+import { PinCapture } from './capture.js';
 import { SharedSnapshotReader, unpackSnapshot, type SnapshotData } from './snapshot-channel.js';
 import { SnapshotDecoder } from './snapshot-codec.js';
 import { SerialLog } from './serial.js';
@@ -35,6 +36,8 @@ export class SimClient {
   replaying = 0;
   /** Called with the input log the worker sent in answer to `exportLog`. */
   onInputLog: ((log: InputLog) => void) | null = null;
+  /** Latest logic-analyzer capture (kept across resets until a new one starts). */
+  capture: PinCapture | null = null;
 
   private utf8 = new TextDecoder();
   private decoder = new SnapshotDecoder();
@@ -87,6 +90,11 @@ export class SimClient {
       case 'inputLog':
         this.onInputLog?.(msg.log);
         return false;
+      case 'edges':
+        if (msg.start) this.capture = new PinCapture(msg.capture, msg.start);
+        if (this.capture?.id !== msg.capture || this.capture.stopped) return false;
+        this.capture.append(msg.data, msg.until, msg.full === true);
+        return true;
       case 'error':
         this.error = msg.message;
         return true;
@@ -97,6 +105,15 @@ export class SimClient {
   poll(): boolean {
     const data = this.reader?.read();
     return data ? this.decode(data) : false;
+  }
+
+  /** Freezes the current capture; edges still in flight for it are dropped. */
+  stopCapture(): void {
+    if (this.capture) this.capture.stopped = true;
+  }
+
+  clearCapture(): void {
+    this.capture = null;
   }
 
   private decode(data: SnapshotData): boolean {
@@ -115,6 +132,8 @@ export class SimClient {
 export { BENCH_SCENARIOS, MAX_SIM_SECONDS, SAFETY_SCENARIOS, SCENARIOS } from './protocol.js';
 // Encoding side, for stand-in workers in UI tests.
 export { SnapshotEncoder } from './snapshot-codec.js';
+export { PinCapture, type PinTrace } from './capture.js';
+export { MAX_PROBE_PINS } from './probe.js';
 export { SERIAL_BAUD_RATES, SerialLog, decodeSerial, resample, standardBaud } from './serial.js';
 export type { DecodedSerial, SerialLine } from './serial.js';
 export { packSnapshot } from './snapshot-channel.js';

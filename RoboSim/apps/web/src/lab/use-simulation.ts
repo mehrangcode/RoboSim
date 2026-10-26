@@ -28,6 +28,8 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
   const worker = useRef<WorkerLike | null>(null);
   const [client, setClient] = useState(() => new SimClient());
   const [stalled, setStalled] = useState(false);
+  /** Pins the logic analyzer is recording (null = not recording). */
+  const [probing, setProbing] = useState<readonly string[] | null>(null);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
   /** Replaces the worker (and its state) with a fresh one; the caller loads a run again. */
   const restart = useCallback(() => {
     setStalled(false);
+    setProbing(null);
     setClient(new SimClient());
   }, []);
 
@@ -98,6 +101,21 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     rerender();
   }, [client]);
 
+  /** Logic analyzer: record these pins from now on (also across resets), or stop with null. */
+  const probe = useCallback(
+    (pins: readonly string[] | null) => {
+      if (pins === null) client.stopCapture();
+      send({ type: 'probe', pins });
+      setProbing(pins?.length ? pins : null);
+    },
+    [client, send],
+  );
+
+  const clearCapture = useCallback(() => {
+    client.clearCapture();
+    rerender();
+  }, [client]);
+
   return {
     scene: client.scene,
     frame: client.frame,
@@ -107,6 +125,10 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     serial: client.serial,
     serialLog: client.serialLog,
     clearSerial,
+    capture: client.capture,
+    probing,
+    probe,
+    clearCapture,
     replaying: client.replaying,
     send,
     exportLog,

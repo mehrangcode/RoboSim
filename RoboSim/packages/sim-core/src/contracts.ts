@@ -90,6 +90,11 @@ export interface McuCore {
    * circuit there, so an input reads its real level at once instead of at the end of the slice.
    */
   onPinModeChange?(cb: (pin: PinId, mode: PinMode, cycle: number, level: Level) => void): Unsubscribe;
+  /**
+   * Level changes of driven inputs, at the cycle the scheduled input took effect. Observation only
+   * (the logic analyzer, FR-SIM-08): listeners must not feed back into the run.
+   */
+  onPinInput?(cb: (pin: PinId, level: Level, cycle: number) => void): Unsubscribe;
   uart(index: number): UartPort;
   /** Pins the I²C and SPI peripherals use (Tier C). */
   readonly busPins?: BusPins;

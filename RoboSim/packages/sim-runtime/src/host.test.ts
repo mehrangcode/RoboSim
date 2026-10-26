@@ -9,6 +9,11 @@ import { SimHost } from './host.js';
 import { decodeSerial, standardBaud } from './serial.js';
 
 /** Host + client wired back to back, as worker and UI are; `shared` picks the snapshot transport. */
+function defined<T>(value: T | null | undefined): T {
+  if (value == null) throw new Error('expected a value');
+  return value;
+}
+
 function harness(shared = false) {
   let wall = 0;
   const messages: WorkerToMain[] = [];
@@ -416,5 +421,69 @@ describe('SimHost user code on a demo circuit (slice 10)', () => {
     expect(h.last()?.pins['D6']?.duty).toBeCloseTo(0.75, 1);
     h.host.handle({ type: 'exportLog' });
     expect(log).toMatchObject({ scenario: null, firmware, project: { code: { files } } });
+  });
+});
+
+describe('logic analyzer probe (FR-SIM-08)', () => {
+  it('records PWM edges cycle-exactly; pulse widths match the timer to 1 µs (US-SIM-02 AC2)', () => {
+    const h = harness();
+    // The dimmer drives D6 with analogWrite from the knob; D9 is unused.
+    h.host.handle({ type: 'load', scenario: 'dimmer' });
+    h.host.handle({ type: 'input', componentId: 'pot', name: 'position', value: 0.3 });
+    h.host.handle({ type: 'probe', pins: ['D6', 'D9'] });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(200);
+    const capture = defined(h.client.capture);
+    expect(capture.traces.map((t) => t.pin)).toEqual(['D6', 'D9']);
+    expect(capture.seconds(capture.until)).toBeGreaterThan(0.1);
+    const [d6, d9] = [defined(capture.traces[0]), defined(capture.traces[1])];
+    expect(d9.cycles).toEqual([]); // a flat line
+    const pwm = defined(h.last()?.pins['D6']);
+    expect(pwm.duty).toBeGreaterThan(0);
+    expect(pwm.duty).toBeLessThan(1);
+    const highs: number[] = [];
+    d6.levels.forEach((level, i) => {
+      const next = d6.cycles[i + 1];
+      if (level === 1 && next !== undefined) highs.push(next - defined(d6.cycles[i]));
+    });
+    expect(highs.length).toBeGreaterThan(90); // ~977 Hz over > 0.1 s
+    // Cycle-stamped edges: every period is 16 384 cycles (Timer0, prescaler 64) and every width a
+    // whole number of 64-cycle timer ticks, give or take the instruction the timer updated after
+    // (±2 cycles = 125 ns), far finer than the 1 µs (16 cycles) AC2 asks for.
+    const rises = d6.cycles.filter((_, i) => d6.levels[i] === 1);
+    for (const period of rises.slice(1).map((c, i) => c - defined(rises[i])))
+      expect(Math.abs(period - 16_384)).toBeLessThanOrEqual(2);
+    for (const w of highs) expect(Math.abs(w - Math.round(w / 64) * 64)).toBeLessThanOrEqual(2);
+    // Within one ADC step (analogRead noise moves the duty by one tick) of what the pin reports.
+    const expected = (defined(pwm.duty) / defined(pwm.freqHz)) * capture.clockHz;
+    for (const w of highs.slice(-10)) expect(Math.abs(w - expected)).toBeLessThanOrEqual(64 + 2);
+  });
+
+  it('records driven inputs, survives a reset as a new capture and stops on request', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'button' });
+    h.host.handle({ type: 'probe', pins: ['D2', 'D13'] });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(50);
+    h.host.handle({ type: 'input', componentId: 'btn', name: 'pressed', value: true });
+    h.advance(50);
+    const first = defined(h.client.capture);
+    // D2 floats low until setup() enables its pull-up, then the button pulls it down.
+    expect(first.traces[0]).toMatchObject({ pin: 'D2', initial: 0, levels: [1, 0] });
+    expect(first.traces[1]).toMatchObject({ pin: 'D13', levels: [1] });
+    // The LED follows the button within a few instructions of the input edge.
+    const lag = defined(first.traces[1]?.cycles[0]) - defined(first.traces[0]?.cycles[1]);
+    expect(lag).toBeGreaterThan(0);
+    expect(lag).toBeLessThan(200); // digitalRead + digitalWrite: ~5.5 µs
+
+    h.host.handle({ type: 'control', action: 'reset' });
+    expect(h.client.capture?.id).toBe(first.id + 1);
+    expect(h.client.capture?.edgeCount).toBe(0);
+
+    h.host.handle({ type: 'probe', pins: null });
+    const count = h.messages.length;
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(50);
+    expect(h.messages.slice(count).some((m) => m.type === 'edges')).toBe(false);
   });
 });

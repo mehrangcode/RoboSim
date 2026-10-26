@@ -4,9 +4,11 @@ import {
   type MainToWorker,
   type SerialLog,
 } from '@robosim/sim-runtime/client';
-import { Button, Card } from '@robosim/ui';
+import { Button, Card, SegmentedControl } from '@robosim/ui';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatSliceTime } from './format.js';
+import { SerialPlotter } from './serial-plotter.js';
 
 const LINE_ENDINGS = { none: '', nl: '\n', cr: '\r', both: '\r\n' } as const;
 type LineEnding = keyof typeof LINE_ENDINGS;
@@ -15,11 +17,13 @@ interface MonitorSettings {
   readonly baud: number;
   readonly lineEnding: LineEnding;
   readonly timestamps: boolean;
+  /** Text monitor or plotter (FR-SIM-07). */
+  readonly view: 'text' | 'plot';
 }
 
 const SETTINGS_KEY = 'robosim.serial.v1';
 // Arduino IDE 2 defaults.
-const DEFAULTS: MonitorSettings = { baud: 9600, lineEnding: 'nl', timestamps: false };
+const DEFAULTS: MonitorSettings = { baud: 9600, lineEnding: 'nl', timestamps: false, view: 'text' };
 
 function loadSettings(): MonitorSettings {
   try {
@@ -28,25 +32,17 @@ function loadSettings(): MonitorSettings {
       baud: SERIAL_BAUD_RATES.includes(raw?.baud as never) ? (raw?.baud ?? DEFAULTS.baud) : DEFAULTS.baud,
       lineEnding: raw?.lineEnding && raw.lineEnding in LINE_ENDINGS ? raw.lineEnding : DEFAULTS.lineEnding,
       timestamps: raw?.timestamps === true,
+      view: raw?.view === 'plot' ? 'plot' : 'text',
     };
   } catch {
     return DEFAULTS;
   }
 }
 
-/** Simulated time of a line as `mm:ss.mmm` (hours prepended once a run passes an hour). */
-function formatSliceTime(slice: number): string {
-  const ms = slice % 1000;
-  const s = Math.floor(slice / 1000) % 60;
-  const m = Math.floor(slice / 60_000) % 60;
-  const h = Math.floor(slice / 3_600_000);
-  const pad = (n: number, w = 2) => String(n).padStart(w, '0');
-  return `${h ? `${h}:` : ''}${pad(m)}:${pad(s)}.${pad(ms, 3)}`;
-}
-
 /**
  * Arduino IDE-style Serial Monitor (FR-SIM-07): the monitor decodes the raw UART bytes at its own
  * baud, so a rate that differs from `Serial.begin` shows garbage, as on real hardware, plus a hint.
+ * The plotter view draws the same decoded lines as series.
  */
 export function SerialMonitor({
   log,
@@ -105,6 +101,15 @@ export function SerialMonitor({
         {!bare && (
           <h2 className="me-auto text-sm font-semibold text-ink-muted">{t('shell:lab.serial.title')}</h2>
         )}
+        <SegmentedControl
+          label={t('shell:lab.serial.view')}
+          value={settings.view}
+          options={[
+            { value: 'text', label: t('shell:lab.serial.text') },
+            { value: 'plot', label: t('shell:lab.serial.plot') },
+          ]}
+          onChange={(view) => update({ view })}
+        />
         <label className="flex items-center gap-1">
           {t('shell:lab.serial.baud')}
           <select
@@ -134,18 +139,22 @@ export function SerialMonitor({
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-1">
-          <input
-            type="checkbox"
-            checked={settings.timestamps}
-            onChange={(e) => update({ timestamps: e.target.checked })}
-          />
-          {t('shell:lab.serial.timestamps')}
-        </label>
-        <label className="flex items-center gap-1">
-          <input type="checkbox" checked={autoscroll} onChange={(e) => setAutoscroll(e.target.checked)} />
-          {t('shell:lab.serial.autoscroll')}
-        </label>
+        {settings.view === 'text' && (
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={settings.timestamps}
+              onChange={(e) => update({ timestamps: e.target.checked })}
+            />
+            {t('shell:lab.serial.timestamps')}
+          </label>
+        )}
+        {settings.view === 'text' && (
+          <label className="flex items-center gap-1">
+            <input type="checkbox" checked={autoscroll} onChange={(e) => setAutoscroll(e.target.checked)} />
+            {t('shell:lab.serial.autoscroll')}
+          </label>
+        )}
         {onClear && (
           <Button size="sm" variant="ghost" onClick={onClear} disabled={!decoded.lines.length}>
             {t('shell:lab.serial.clear')}
@@ -172,16 +181,20 @@ export function SerialMonitor({
           </Button>
         </p>
       )}
-      <pre
-        ref={out}
-        dir={text ? 'ltr' : undefined}
-        aria-label={t('shell:lab.serial.output')}
-        aria-live="off"
-        // No ligatures: `->` must not render as `→`.
-        className="h-40 overflow-y-auto whitespace-pre-wrap break-all rounded-md border border-line p-2 font-mono text-xs [font-variant-ligatures:none]"
-      >
-        {text || t('shell:lab.serial.empty')}
-      </pre>
+      {settings.view === 'plot' ? (
+        <SerialPlotter lines={decoded.lines} partial={decoded.partial} />
+      ) : (
+        <pre
+          ref={out}
+          dir={text ? 'ltr' : undefined}
+          aria-label={t('shell:lab.serial.output')}
+          aria-live="off"
+          // No ligatures: `->` must not render as `→`.
+          className="h-40 overflow-y-auto whitespace-pre-wrap break-all rounded-md border border-line p-2 font-mono text-xs [font-variant-ligatures:none]"
+        >
+          {text || t('shell:lab.serial.empty')}
+        </pre>
+      )}
       <form onSubmit={submit} className="mt-2 flex gap-2">
         <input
           // Serial text is LTR; the empty field keeps the page direction so the placeholder reads right.

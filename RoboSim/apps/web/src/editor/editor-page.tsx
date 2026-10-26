@@ -29,6 +29,7 @@ import { RobotView } from '../robot/robot-view.js';
 import { StartPoseFields } from '../arena/start-pose-fields.js';
 import { ChallengePanel } from '../lab/challenge-panel.js';
 import { FindingsPanel } from '../lab/findings-panel.js';
+import { LogicAnalyzer } from '../lab/logic-analyzer.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
 import { SerialMonitor } from '../lab/serial-monitor.js';
@@ -57,7 +58,7 @@ import { openCloudProject, useCloudSync, type CloudOpen, type OpenResult } from 
 import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
-type DockTab = 'serial' | 'pins' | 'safety' | 'challenge' | BomTab;
+type DockTab = 'serial' | 'pins' | 'analyzer' | 'safety' | 'challenge' | BomTab;
 type MobileTab = 'guide' | 'parts' | 'circuit' | 'robot' | 'code' | 'sim' | 'monitor';
 type CentreView = 'circuit' | 'robot';
 
@@ -636,6 +637,7 @@ function Workspace({
   const dockTabs: DockTab[] = [
     'serial',
     'pins',
+    'analyzer',
     'safety',
     ...(live?.challenge ? (['challenge'] as const) : []),
     'parts',
@@ -690,6 +692,14 @@ function Workspace({
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : dockTab === 'pins' ? (
           <PinTable bare scene={scene} frame={live} />
+        ) : dockTab === 'analyzer' ? (
+          <LogicAnalyzer
+            pins={scene.pins}
+            capture={sim.capture}
+            probing={sim.probing}
+            probe={sim.probe}
+            onClear={sim.clearCapture}
+          />
         ) : dockTab === 'safety' ? (
           <FindingsPanel
             findings={findings}
