@@ -58,6 +58,8 @@
     "shell:editor.fileError.",
     "guided:reason.",
     "guided:guide.status.",
-    "shell:lab.analyzer.unit."
+    "shell:lab.analyzer.unit.",
+    "apidocs:",
+    "shell:tour.stops."
   ]
 }

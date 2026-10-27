@@ -2,6 +2,9 @@ import {
   CircuitCanvas,
   LibraryPanel,
   PropertyPanel,
+  copyParts,
+  cutParts,
+  pasteParts,
   useCircuitEditor,
   type CanvasMode,
 } from '@robosim/circuit-canvas';
@@ -34,6 +37,7 @@ import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
 import { SerialMonitor } from '../lab/serial-monitor.js';
 import { SketchPanel } from '../lab/sketch-panel.js';
+import type { EditorCommand } from '../code-editor/types.js';
 import { compileWithApi, type CompileSketch } from '../lab/use-build.js';
 import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
 import { SignInGate } from '../auth/auth-ui.js';
@@ -45,7 +49,10 @@ import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 import { GuidePanel } from '../learn/guide-panel.js';
 import { learningApi, type LearningClient } from '../lib/learning-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
+import { CommandPalette, type PaletteCommand } from './command-palette.js';
 import { HelpDialog } from './help-dialog.js';
+import { OnboardingTour } from './onboarding-tour.js';
+import { useTourState, type TourStop } from './tour-state.js';
 import { ShareDialog } from './share-dialog.js';
 import { PROJECT_FILE_ACCEPT, downloadProject, importErrorText, readProjectFile } from './project-file.js';
 import { loadStored, mainFile, runKey, saveStored, withFiles } from './project-store.js';
@@ -69,16 +76,23 @@ function PaneFrame({
   actions,
   children,
   className,
+  tour,
 }: {
   title: string;
   onCollapse?: () => void;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Onboarding tour stop pointing at this pane. */
+  tour?: TourStop;
 }) {
   const { t } = useTranslation();
   return (
-    <section aria-label={title} className={cn('flex min-h-0 min-w-0 flex-col bg-surface', className)}>
+    <section
+      aria-label={title}
+      data-tour={tour}
+      className={cn('flex min-h-0 min-w-0 flex-col bg-surface', className)}
+    >
       <header className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-2 text-xs font-semibold text-ink-muted">
         <h2 className="truncate">{title}</h2>
         <div className="ms-auto flex items-center gap-1">
@@ -352,6 +366,19 @@ function Workspace({
   const [mobileTab, setMobileTab] = useState<MobileTab>('circuit');
   const [centre, setCentre] = useState<CentreView>('circuit');
   const [help, setHelp] = useState(false);
+  /** The open palette's commands, built when it opens (it is modal, so they cannot go stale). */
+  const [palette, setPalette] = useState<readonly PaletteCommand[] | null>(null);
+  // Onboarding tour (FR-WRK-06): opens by itself on the first visit, again from Help or the palette.
+  const tourState = useTourState();
+  /** Opened or closed by hand; until then the first visit decides. */
+  const [tourChoice, setTourOpen] = useState<boolean | null>(null);
+  const tourOpen = tourChoice ?? (tourState.autoOpen && !readOnly);
+  const finishTour = () => {
+    setTourOpen(false);
+    tourState.complete();
+  };
+  const [codeCommand, setCodeCommand] = useState<EditorCommand | null>(null);
+  const codeTool = (kind: EditorCommand['kind']) => setCodeCommand((c) => ({ kind, seq: (c?.seq ?? 0) + 1 }));
   const [arenaPicker, setArenaPicker] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -476,6 +503,8 @@ function Workspace({
 
   // Keyboard shortcuts (FR-WRK-02).
   const keys = useRef({ runOrPause, stop: () => {}, step, resetRun, save });
+  /** Toggles the command palette; refreshed after each render, once its commands are defined. */
+  const openPalette = useRef(() => {});
   useEffect(() => {
     keys.current = { runOrPause, stop: () => run.phase !== 'edit' && run.stop(), step, resetRun, save };
   });
@@ -491,8 +520,19 @@ function Workspace({
       else return;
       e.preventDefault();
     };
+    // Ctrl/Cmd+K in the capture phase: Monaco would otherwise take it as a chord prefix.
+    const onPalette = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'k' || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openPalette.current();
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onPalette, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keydown', onPalette, true);
+    };
   }, []);
 
   const live = run.ready ? frame : null;
@@ -555,6 +595,17 @@ function Workspace({
       }
       onFilesChange={readOnly ? undefined : setFiles}
       readOnly={readOnly}
+      command={codeCommand}
+      // The project pins the version it was written against (US-COD AC1, FR-COD-07).
+      onLibraryAdd={(lib) =>
+        editor.apply((d) => ({
+          ...d,
+          libraries: [
+            ...d.libraries.filter((l) => l.name !== lib.name),
+            { name: lib.name, version: lib.version },
+          ],
+        }))
+      }
       state={run.build}
       modified={current !== doc}
       findings={scene?.staticFindings}
@@ -716,6 +767,98 @@ function Workspace({
     </div>
   );
 
+  // Command palette (FR-WRK-05): the toolbar's actions under the same conditions, plus code, circuit
+  // and panel commands and every part.
+  const paletteCommands = (): PaletteCommand[] => {
+    const editing = !readOnly;
+    const circuit = canvasMode === 'edit';
+    const parts = editor.selection.parts.length > 0;
+    const openDock = (tab: DockTab) => {
+      setDockTab(tab);
+      if (layout.collapsed.dock) toggle('dock');
+      setMobileTab('monitor');
+    };
+    const cmd = (
+      id: string,
+      label: string,
+      run: () => void,
+      opts: { shortcut?: string; disabled?: boolean; keywords?: string[] } = {},
+    ): PaletteCommand => ({ id, group: 'actions', label, run, ...opts });
+    const actions: (PaletteCommand | false)[] = [
+      cmd(
+        'run',
+        run.ready && running ? t('shell:lab.controls.pause') : t('shell:lab.controls.run'),
+        runOrPause,
+        {
+          shortcut: 'F5',
+          disabled: run.phase === 'building',
+        },
+      ),
+      cmd('step', t('shell:lab.controls.step'), step, { shortcut: 'F10', disabled: !run.ready || running }),
+      cmd('stop', t('shell:editor.stop'), () => run.stop(), {
+        shortcut: 'Shift+F5',
+        disabled: run.phase !== 'live',
+      }),
+      cmd('reset', t('shell:lab.controls.reset'), resetRun, { shortcut: 'F6', disabled: !run.ready }),
+      cmd('sound', t('shell:editor.sound'), sound.toggle),
+      editing && cmd('save', t('shell:editor.save'), save, { shortcut: 'Ctrl+S' }),
+      editing &&
+        !cloudOpen &&
+        cmd('new', t('shell:editor.new'), () => replace(starterProject(t('shell:editor.starterTitle')))),
+      editing && cmd('import', t('shell:editor.import'), () => fileInput.current?.click()),
+      cmd('export', t('shell:editor.export'), () => downloadProject(current)),
+      editing &&
+        !!cloudOpen &&
+        cmd('versions', t('shell:cloud.versions.button'), () => setVersionsOpen(true)),
+      editing && cloudOpen?.access === 'owner' && cmd('share', t('share:button'), () => setShareOpen(true)),
+      editing &&
+        !cloudOpen &&
+        cmd('cloud', t('shell:cloud.saveToCloud'), () => void saveToCloud(), { disabled: uploading }),
+      editing &&
+        hasChassis(doc) &&
+        cmd('arena', t('shell:arena.picker.choose'), () => setArenaPicker(true), { disabled: !circuit }),
+      ...(editing
+        ? SCENARIOS.map((v) =>
+            cmd(`demo:${v}`, t('shell:palette.openDemo', { name: t(`shell:lab.scenario.${v}`) }), () =>
+              openDemo(v),
+            ),
+          )
+        : []),
+      editing && cmd('format', t('shell:code.format'), () => codeTool('format'), { shortcut: 'Shift+Alt+F' }),
+      editing && cmd('libraries', t('shell:code.libraries.open'), () => codeTool('libraries')),
+      circuit &&
+        cmd('undo', t('editor:actions.undo'), editor.undo, { shortcut: 'Ctrl+Z', disabled: !editor.canUndo }),
+      circuit &&
+        cmd('redo', t('editor:actions.redo'), editor.redo, { shortcut: 'Ctrl+Y', disabled: !editor.canRedo }),
+      circuit &&
+        cmd('copy', t('shell:palette.copy'), () => void copyParts(editor), {
+          shortcut: 'Ctrl+C',
+          disabled: !parts,
+        }),
+      circuit &&
+        cmd('cut', t('shell:palette.cut'), () => void cutParts(editor), {
+          shortcut: 'Ctrl+X',
+          disabled: !parts,
+        }),
+      circuit &&
+        cmd('paste', t('shell:palette.paste'), () => void pasteParts(editor), { shortcut: 'Ctrl+V' }),
+      ...dockTabs.map((v) =>
+        cmd(`dock:${v}`, t('shell:palette.showPanel', { name: t(`shell:editor.dock.${v}`) }), () =>
+          openDock(v),
+        ),
+      ),
+      cmd('help', t('shell:editor.shortcuts.title'), () => setHelp(true), { shortcut: 'F1' }),
+      cmd('tour', t('shell:tour.start'), () => setTourOpen(true)),
+    ];
+    return actions.filter((c): c is PaletteCommand => c !== false);
+  };
+  useEffect(() => {
+    openPalette.current = () => {
+      const commands = paletteCommands();
+      setPalette((open) => (open ? null : commands));
+    };
+  });
+
   const toolbar = (
     <div
       role="toolbar"
@@ -836,6 +979,7 @@ function Workspace({
       <span aria-hidden className="mx-1 h-5 w-px bg-line" />
       <Button
         size="sm"
+        data-tour="run"
         onClick={runOrPause}
         disabled={run.phase === 'building'}
         aria-busy={run.phase === 'building'}
@@ -904,6 +1048,7 @@ function Workspace({
         size="sm"
         variant="secondary"
         className="ms-auto"
+        data-tour="help"
         onClick={() => setHelp(true)}
         aria-keyshortcuts="F1"
       >
@@ -964,7 +1109,23 @@ function Workspace({
   const frameClass = '-m-6 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden';
   const helpDialog = (
     <>
-      {help && <HelpDialog onClose={() => setHelp(false)} />}
+      {help && (
+        <HelpDialog
+          onClose={() => setHelp(false)}
+          onTour={() => {
+            setHelp(false);
+            setTourOpen(true);
+          }}
+        />
+      )}
+      {tourOpen && <OnboardingTour onDone={finishTour} />}
+      {palette && (
+        <CommandPalette
+          actions={palette}
+          editor={canvasMode === 'edit' ? editor : undefined}
+          onClose={() => setPalette(null)}
+        />
+      )}
       {shownPaywall && (
         <PaywallDialog
           reason={shownPaywall.reason}
@@ -1111,7 +1272,12 @@ function Workspace({
           <Rail title={titles.left} vertical onExpand={() => toggle('left')} />
         ) : (
           <>
-            <PaneFrame title={titles.left} onCollapse={() => toggle('left')} className="shrink-0">
+            <PaneFrame
+              title={titles.left}
+              onCollapse={() => toggle('left')}
+              className="shrink-0"
+              tour="parts"
+            >
               <div style={{ width: layout.left }} className="h-full">
                 {leftPane}
               </div>
@@ -1130,6 +1296,7 @@ function Workspace({
         <div className="flex min-w-0 flex-1 flex-col">
           <PaneFrame
             title={showRobot ? titles.robot : titles.canvas}
+            tour="circuit"
             className="flex-1"
             actions={
               <>
@@ -1191,7 +1358,7 @@ function Workspace({
               onChange={(v) => resize({ code: v })}
             />
             <div style={{ width: layout.code }} className="flex shrink-0 flex-col">
-              <PaneFrame title={titles.code} onCollapse={() => toggle('code')} className="h-full">
+              <PaneFrame title={titles.code} onCollapse={() => toggle('code')} className="h-full" tour="code">
                 {codePane}
               </PaneFrame>
             </div>
@@ -1212,7 +1379,12 @@ function Workspace({
             onChange={(v) => resize({ dock: v })}
           />
           <div style={{ height: layout.dock }} className="flex shrink-0 flex-col">
-            <PaneFrame title={titles.dock} onCollapse={() => toggle('dock')} className="h-full">
+            <PaneFrame
+              title={titles.dock}
+              onCollapse={() => toggle('dock')}
+              className="h-full"
+              tour="monitor"
+            >
               {dock}
             </PaneFrame>
           </div>

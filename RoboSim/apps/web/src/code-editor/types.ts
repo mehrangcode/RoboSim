@@ -24,3 +24,9 @@ export interface EditorImplProps {
   /** Shown but not editable (a project shared with the caller read-only). */
   readonly readOnly?: boolean | undefined;
 }
+
+/** Ask the code editor to run one of its tools (from the command palette); `seq` makes repeats count. */
+export interface EditorCommand {
+  readonly kind: 'format' | 'libraries';
+  readonly seq: number;
+}

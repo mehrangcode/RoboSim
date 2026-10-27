@@ -68,6 +68,8 @@ export const updateMeRequestSchema = z
   .object({
     displayName: z.string().trim().min(1).max(AUTH_LIMITS.maxDisplayNameLength),
     locale: localeSchema,
+    /** The editor's onboarding tour was finished or skipped (FR-WRK-06); the server stamps the time. */
+    editorTourCompleted: z.literal(true),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'nothing to update' });
@@ -86,6 +88,8 @@ export const meSchema = z.object({
   status: userStatusSchema,
   personalWorkspaceId: z.uuid(),
   createdAt: z.iso.datetime(),
+  /** When the editor tour was finished or skipped; null until then (it opens on the first visit). */
+  editorTourCompletedAt: z.iso.datetime().nullable(),
 });
 export type Me = z.infer<typeof meSchema>;
 

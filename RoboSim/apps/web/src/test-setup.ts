@@ -8,3 +8,7 @@ vi.mock('./code-editor/monaco-loader.js', () => ({ loadMonacoEditor: () => new P
 const { initCodeAnalysis } = await import('@robosim/code-analysis');
 const { nodeCodeAnalysisWasm } = await import('@robosim/code-analysis/node');
 await initCodeAnalysis(nodeCodeAnalysisWasm());
+
+// The onboarding tour opens on a first visit (FR-WRK-06); tests that cover it remove this flag.
+const { beforeEach } = await import('vitest');
+beforeEach(() => localStorage.setItem('robosim.editor.tourDone', 'test'));

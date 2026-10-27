@@ -8,3 +8,11 @@
     display: none !important;
   }
 }
+
+/* API docs in hovers and the suggest widget (FR-COD-02): each paragraph takes its direction from its
+   own text, so Persian docs read right-to-left while signatures and code stay left-to-right. */
+.monaco-hover .rendered-markdown :is(p, li),
+.suggest-details .docs .rendered-markdown :is(p, li) {
+  unicode-bidi: plaintext;
+  text-align: start;
+}

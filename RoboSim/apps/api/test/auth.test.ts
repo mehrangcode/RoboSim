@@ -164,6 +164,19 @@ describe('sign-up and email verification (FR-IAM-01)', () => {
     expect(reuse.statusCode).toBe(410);
   });
 
+  it('remembers per account that the editor tour was done (FR-WRK-06), keeping the first time', async () => {
+    const browser = new Browser();
+    const { me } = await register(browser);
+    expect(me.editorTourCompletedAt).toBeNull();
+    const done = await browser.call('PATCH', '/me', { editorTourCompleted: true });
+    expect(done.statusCode).toBe(200);
+    const at = done.json<Me>().editorTourCompletedAt;
+    expect(at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    const again = await browser.call('PATCH', '/me', { editorTourCompleted: true, displayName: 'Sara K' });
+    expect(again.json<Me>()).toMatchObject({ editorTourCompletedAt: at, displayName: 'Sara K' });
+    expect((await browser.call('PATCH', '/me', { editorTourCompleted: false })).statusCode).toBe(400);
+  });
+
   it('stores only an argon2id hash of the password', async () => {
     const { me } = await register(new Browser());
     const [row] = await withSystem(database.db, (tx) => tx.select().from(users).where(eq(users.id, me.id)));

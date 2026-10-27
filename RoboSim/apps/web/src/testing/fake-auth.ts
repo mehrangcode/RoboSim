@@ -15,6 +15,7 @@ export const SARA: Me = {
   status: 'active',
   personalWorkspaceId: '01920000-0000-7000-8000-000000000002',
   createdAt: '2026-10-21T08:00:00.000Z',
+  editorTourCompletedAt: '2026-10-21T08:05:00.000Z',
 };
 
 /** In-memory auth API: one known account (`sara@example.com` / `green lamp 42`); every call is recorded. */
@@ -94,6 +95,9 @@ export class FakeAuth implements AuthClient {
       ...this.user,
       ...(input.displayName ? { displayName: input.displayName } : {}),
       ...(input.locale ? { locale: input.locale } : {}),
+      ...(input.editorTourCompleted
+        ? { editorTourCompletedAt: this.user.editorTourCompletedAt ?? '2026-10-27T08:00:00.000Z' }
+        : {}),
     };
     return this.user;
   };

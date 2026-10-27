@@ -8,6 +8,10 @@ const SHORTCUTS = [
   ['F10', 'step'],
   ['F6', 'reset'],
   ['Ctrl+S', 'save'],
+  ['Ctrl+K', 'palette'],
+  ['Shift+Alt+F', 'format'],
+  ['Ctrl+C', 'copy'],
+  ['Ctrl+V', 'paste'],
   ['Ctrl+Z', 'undo'],
   ['Ctrl+Y', 'redo'],
   ['R', 'rotate'],
@@ -17,8 +21,8 @@ const SHORTCUTS = [
   ['F1', 'help'],
 ] as const;
 
-/** Keyboard shortcuts of the workspace (FR-WRK-02). */
-export function HelpDialog({ onClose }: { onClose: () => void }) {
+/** Keyboard shortcuts of the workspace (FR-WRK-02), and the way back into the tour (FR-WRK-06). */
+export function HelpDialog({ onClose, onTour }: { onClose: () => void; onTour?: () => void }) {
   const { t } = useTranslation();
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => close.current?.focus(), []);
@@ -50,7 +54,12 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
             </div>
           ))}
         </dl>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
+          {onTour && (
+            <Button size="sm" variant="secondary" onClick={onTour}>
+              {t('shell:tour.start')}
+            </Button>
+          )}
           <Button ref={close} size="sm" onClick={onClose}>
             {t('shell:editor.shortcuts.close')}
           </Button>

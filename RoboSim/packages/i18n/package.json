@@ -12,6 +12,10 @@
     "./browser": {
       "types": "./dist/browser.d.ts",
       "default": "./dist/browser.js"
+    },
+    "./apidocs": {
+      "types": "./dist/apidocs.d.ts",
+      "default": "./dist/apidocs.js"
     }
   },
   "files": [

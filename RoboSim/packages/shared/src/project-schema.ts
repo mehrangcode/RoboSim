@@ -51,6 +51,15 @@ export const wireSchema = z.strictObject({
 });
 export type Wire = z.infer<typeof wireSchema>;
 
+/** Parts and their wires on the clipboard, between projects and tabs (FR-CIR-09). */
+export const CIRCUIT_CLIP_FORMAT = 'robosim/circuit-clip';
+export const circuitClipSchema = z.strictObject({
+  format: z.literal(CIRCUIT_CLIP_FORMAT),
+  schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
+  components: z.array(componentInstanceSchema).min(1).max(200),
+  wires: z.array(wireSchema).max(1000),
+});
+
 const goal = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('reachZone'), zone: z.string().min(1) }),
   z.strictObject({ type: z.literal('laps'), count: z.number().int().positive() }),

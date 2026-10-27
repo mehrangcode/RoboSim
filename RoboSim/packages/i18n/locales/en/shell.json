@@ -421,7 +421,11 @@
       "delete": "Delete the selection",
       "cancel": "Cancel a wire, close a popup",
       "help": "Show these shortcuts",
-      "close": "Close"
+      "close": "Close",
+      "palette": "Command palette",
+      "format": "Format code",
+      "copy": "Copy parts",
+      "paste": "Paste parts"
     },
     "centreView": "Centre pane view",
     "sound": "Sound",
@@ -444,7 +448,28 @@
       "duplicate": "A file with this name already exists.",
       "tooMany": "A sketch can have at most {max} files."
     },
-    "fileNamePlaceholder": "motor.h"
+    "fileNamePlaceholder": "motor.h",
+    "docs": {
+      "params": "Parameters",
+      "returns": "Returns:",
+      "example": "Example",
+      "library": "{name} {version}"
+    },
+    "format": "Format",
+    "formatFailed": "The code could not be formatted. Check it for unclosed brackets or quotes, or try again when online.",
+    "libraries": {
+      "open": "Libraries",
+      "title": "Libraries",
+      "hint": "Libraries the simulator can compile. Add puts the #include lines at the top of the open file.",
+      "search": "Search libraries",
+      "add": "Add",
+      "addNamed": "Add {name}",
+      "added": "Added",
+      "builtin": "Arduino core",
+      "pinned": "Pinned version",
+      "none": "No library matches.",
+      "close": "Close"
+    }
   },
   "arena": {
     "view": {
@@ -649,5 +674,58 @@
     "deleted": "\"{name}\" moved to the trash.",
     "restored": "\"{name}\" restored.",
     "more": "Show more"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Type a command or a part name…",
+    "none": "Nothing matches.",
+    "groups": {
+      "actions": "Action",
+      "parts": "Part"
+    },
+    "addPart": "Add part: {name}",
+    "openDemo": "Open demo: {name}",
+    "showPanel": "Show panel: {name}",
+    "copy": "Copy parts",
+    "cut": "Cut parts",
+    "paste": "Paste parts"
+  },
+  "tour": {
+    "start": "Take the tour",
+    "skip": "Skip tour",
+    "back": "Back",
+    "next": "Next",
+    "done": "Start building",
+    "progress": "Step {step} of {total}",
+    "stops": {
+      "welcome": {
+        "title": "Welcome to the RoboSim editor",
+        "body": "Build a circuit, write the sketch and run it — all in the browser. This short tour shows where everything is."
+      },
+      "parts": {
+        "title": "Parts library",
+        "body": "Search in Persian or English, then click a part to add it to the circuit, or drag it onto the canvas."
+      },
+      "circuit": {
+        "title": "Circuit",
+        "body": "Drag parts to move them and draw wires from pin to pin. R rotates, F flips, Ctrl+C and Ctrl+V copy parts — even into another project."
+      },
+      "code": {
+        "title": "Code",
+        "body": "Write the Arduino sketch here. Hover a function for its help, use Libraries to add an #include, and Format to tidy the code."
+      },
+      "run": {
+        "title": "Run",
+        "body": "Run compiles the sketch and starts the simulation. Step, Stop and Reset are next to it; F5 runs from anywhere."
+      },
+      "monitor": {
+        "title": "Monitor",
+        "body": "Serial output and the plotter, pin states, the logic analyzer and safety warnings appear here while the simulation runs."
+      },
+      "help": {
+        "title": "Help is always here",
+        "body": "Help lists every shortcut and restarts this tour. Press Ctrl+K for the command palette: every action and part by name."
+      }
+    }
   }
 }

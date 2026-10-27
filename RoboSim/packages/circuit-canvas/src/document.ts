@@ -365,35 +365,50 @@ export function deleteComponents(doc: ProjectDocument, ids: readonly string[]): 
   });
 }
 
+/** Parts and the wires between them, cut loose from a document (copy/paste, FR-CIR-09). */
+export interface CircuitClip {
+  readonly components: readonly ComponentInstance[];
+  readonly wires: readonly Wire[];
+}
+
 /**
- * Copies parts (and a breadboard's passengers) two grid steps down-right, or below the original when the copy
- * has a breadboard, with the wires that run between copied parts. Wires to anything outside the copy stay with the originals. The board is not copied.
+ * The selected parts (with a breadboard's passengers) and the wires that run between them, at their
+ * positions; seats are dropped (recomputed where they land). The board is never part of a clip.
  */
-export function duplicateComponents(
-  doc: ProjectDocument,
-  ids: readonly string[],
-): { doc: ProjectDocument; ids: string[] } {
+export function copySelection(doc: ProjectDocument, ids: readonly string[]): CircuitClip | null {
   const own = new Set(ids.filter((id) => id !== BOARD_PART));
   for (const id of passengersOf(doc, own)) own.add(id);
+  if (own.size === 0) return null;
+  const components = doc.components
+    .filter((c) => own.has(c.id))
+    .map(({ seats: _seats, mount: _mount, ...rest }) => rest);
+  const wires = doc.wires.filter((w) => own.has(w.from.part) && own.has(w.to.part));
+  return { components, wires };
+}
+
+/** Bounding box of a clip's parts. */
+export const clipBox = (doc: ProjectDocument, clip: CircuitClip): Box =>
+  unionBox(clip.components.map((c) => partBox({ ...doc, components: [...clip.components] }, c.id) as Box));
+
+/** Inserts a clip shifted by `offset` (snapped to the grid), with fresh ids. */
+export function pasteClip(
+  doc: ProjectDocument,
+  clip: CircuitClip,
+  offset: Point,
+): { doc: ProjectDocument; ids: string[] } {
+  const [ox, oy] = offset;
   const taken = new Set(doc.components.map((c) => c.id));
   const renamed = new Map<string, string>();
   const copies: ComponentInstance[] = [];
-  // A copied breadboard goes below the original: overlapping holes would seat the copies in the old one.
-  const boards = [...own].filter((id) =>
-    breadboardLayout(doc.components.find((c) => c.id === id)?.type ?? ''),
-  );
-  const box = boards.length > 0 ? unionBox([...own].map((id) => partBox(doc, id) as Box)) : null;
-  const [ox, oy]: Point = box ? [0, snap(box.h) + 2 * PITCH] : [2 * PITCH, 2 * PITCH];
-  for (const c of doc.components.filter((v) => own.has(v.id))) {
+  for (const c of clip.components) {
     const id = nextId(taken, PREFIX[c.type] ?? 'part');
     taken.add(id);
     renamed.set(c.id, id);
-    const { seats: _seats, mount: _mount, ...rest } = c;
-    copies.push({ ...rest, id, x: snap(c.x + ox), y: snap(c.y + oy) });
+    copies.push({ ...c, id, x: snap(c.x + ox), y: snap(c.y + oy) });
   }
   const wireIds = new Set(doc.wires.map((w) => w.id));
   const wires: Wire[] = [];
-  for (const w of doc.wires) {
+  for (const w of clip.wires) {
     const from = renamed.get(w.from.part);
     const to = renamed.get(w.to.part);
     if (!from || !to) continue;
@@ -411,6 +426,41 @@ export function duplicateComponents(
     doc: reseat({ ...doc, components: [...doc.components, ...copies], wires: [...doc.wires, ...wires] }),
     ids: copies.map((c) => c.id),
   };
+}
+
+/**
+ * Where a pasted clip goes: centred on `at`, then stepped two grid pitches down-right while it would
+ * land exactly on parts of the same type (pasting twice, or into the project it came from).
+ */
+export function pasteOffset(doc: ProjectDocument, clip: CircuitClip, at: Point): Point {
+  const box = clipBox(doc, clip);
+  let ox = snap(at[0] - (box.x + box.w / 2));
+  let oy = snap(at[1] - (box.y + box.h / 2));
+  const clash = () =>
+    clip.components.some((c) =>
+      doc.components.some((d) => d.type === c.type && d.x === snap(c.x + ox) && d.y === snap(c.y + oy)),
+    );
+  for (let n = 0; n < 50 && clash(); n++) {
+    ox += 2 * PITCH;
+    oy += 2 * PITCH;
+  }
+  return [ox, oy];
+}
+
+/**
+ * Copies parts (and a breadboard's passengers) two grid steps down-right, or below the original when the copy
+ * has a breadboard, with the wires that run between copied parts. Wires to anything outside the copy stay with the originals. The board is not copied.
+ */
+export function duplicateComponents(
+  doc: ProjectDocument,
+  ids: readonly string[],
+): { doc: ProjectDocument; ids: string[] } {
+  const clip = copySelection(doc, ids);
+  if (!clip) return { doc, ids: [] };
+  // A copied breadboard goes below the original: overlapping holes would seat the copies in the old one.
+  const boards = clip.components.some((c) => breadboardLayout(c.type));
+  const offset: Point = boards ? [0, snap(clipBox(doc, clip).h) + 2 * PITCH] : [2 * PITCH, 2 * PITCH];
+  return pasteClip(doc, clip, offset);
 }
 
 export function setProp(

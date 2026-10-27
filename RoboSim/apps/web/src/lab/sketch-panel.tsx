@@ -1,10 +1,10 @@
-import type { BuildDiagnostic } from '@robosim/shared';
+import type { ArduinoLibrary, BuildDiagnostic } from '@robosim/shared';
 import type { FindingView } from '@robosim/sim-runtime/client';
 import { Button, Card, cn } from '@robosim/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodeEditor } from '../code-editor/code-editor.js';
-import type { RevealRequest, SketchFile } from '../code-editor/types.js';
+import type { EditorCommand, RevealRequest, SketchFile } from '../code-editor/types.js';
 import { useFormat } from './format.js';
 import type { BuildState } from './use-build.js';
 
@@ -27,6 +27,8 @@ export function SketchPanel({
   title,
   findings = [],
   readOnly = false,
+  command = null,
+  onLibraryAdd,
 }: {
   files: readonly SketchFile[];
   onChange: (name: string, content: string) => void;
@@ -43,6 +45,9 @@ export function SketchPanel({
   /** Safety findings of the loaded run; code-aware ones (FR-SAF-03) are marked on their sketch lines. */
   findings?: readonly FindingView[] | undefined;
   readOnly?: boolean;
+  /** A code tool to run (format, library manager), e.g. from the command palette. */
+  command?: EditorCommand | null;
+  onLibraryAdd?: ((lib: ArduinoLibrary) => void) | undefined;
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
@@ -110,6 +115,8 @@ export function SketchPanel({
         reveal={reveal}
         label={t('shell:lab.sketch.editor')}
         readOnly={readOnly}
+        command={command}
+        onLibraryAdd={onLibraryAdd}
         className={fill ? 'min-h-0 flex-1' : 'h-72'}
       />
 

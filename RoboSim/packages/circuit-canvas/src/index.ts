@@ -5,6 +5,15 @@ export { resistorBands } from './colors.js';
 export { PART_DRAG_TYPE, WIRE_COLORS, contentBox } from './view.js';
 export { CircuitEditor } from './circuit-editor.js';
 export * from './document.js';
+export {
+  copyParts,
+  cutParts,
+  parseClip,
+  pasteParts,
+  readClip,
+  serializeClip,
+  writeClip,
+} from './clipboard.js';
 export { PITCH, footprintOf, pinPosition, withSeats, type Footprint, type Point } from './geometry.js';
 export { LibraryPanel } from './library-panel.js';
 export { CircuitNets } from './nets.js';

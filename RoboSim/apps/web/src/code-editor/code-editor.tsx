@@ -1,10 +1,17 @@
-import { BUILD_FILE_NAME, BUILD_LIMITS, type BuildDiagnostic } from '@robosim/shared';
+import {
+  BUILD_FILE_NAME,
+  BUILD_LIMITS,
+  addIncludes,
+  type ArduinoLibrary,
+  type BuildDiagnostic,
+} from '@robosim/shared';
 import { Button, cn } from '@robosim/ui';
-import { Suspense, lazy, useState, type FormEvent } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatSketch } from './format.js';
 import { loadMonacoEditor } from './monaco-loader.js';
 import { PlainEditor } from './plain-editor.js';
-import type { RevealRequest, SketchFile } from './types.js';
+import type { EditorCommand, RevealRequest, SketchFile } from './types.js';
 
 /** Extensions a learner can add next to the `.ino` (one sketch file, as in the Arduino IDE). */
 const NEW_FILE = /\.(h|hpp|c|cpp)$/;
@@ -42,9 +49,12 @@ const LazyMonaco = lazy(() =>
   ),
 );
 
+const LazyLibraryDialog = lazy(() => import('./library-dialog.js'));
+
 /**
  * Sketch code editor (FR-COD-01): a tab per file, Monaco (lazy) with a plain fallback, always LTR.
  * With `onFilesChange` the learner can add, rename and delete `.h`/`.cpp` files; the `.ino` stays.
+ * Unless read-only it also offers the library manager (FR-COD-07) and the formatter (FR-COD-05).
  */
 export function CodeEditor({
   files,
@@ -57,6 +67,8 @@ export function CodeEditor({
   label,
   className,
   readOnly = false,
+  command = null,
+  onLibraryAdd,
 }: {
   files: readonly SketchFile[];
   active: string;
@@ -68,12 +80,37 @@ export function CodeEditor({
   label: string;
   className?: string;
   readOnly?: boolean;
+  command?: EditorCommand | null;
+  /** A library was added from the library manager (the project records its pinned version). */
+  onLibraryAdd?: ((lib: ArduinoLibrary) => void) | undefined;
 }) {
   const { t } = useTranslation();
   const [form, setForm] = useState<{ kind: 'new' | 'rename'; name: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const tabs = ordered(files);
   const error = form?.name ? checkName(form.name, files, form.kind === 'rename' ? active : undefined) : null;
+  const [libraries, setLibraries] = useState(false);
+  const [formatting, setFormatting] = useState<'idle' | 'busy' | 'failed'>('idle');
+  const source = files.find((f) => f.name === active)?.content ?? '';
+
+  const format = async () => {
+    if (readOnly || formatting === 'busy') return;
+    setFormatting('busy');
+    try {
+      const formatted = await formatSketch(source, active);
+      if (formatted !== source) onChange(active, formatted);
+      setFormatting('idle');
+    } catch {
+      setFormatting('failed');
+    }
+  };
+  const runRef = useRef({ format, libraries: () => setLibraries(true) });
+  useLayoutEffect(() => {
+    runRef.current = { format, libraries: () => setLibraries(true) };
+  });
+  useEffect(() => {
+    if (command && !readOnly) void runRef.current[command.kind]();
+  }, [command, readOnly]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -134,8 +171,26 @@ export function CodeEditor({
             );
           })}
         </div>
-        {onFilesChange && !form && !confirmDelete && (
+        {!readOnly && !form && !confirmDelete && (
           <div dir="auto" className="ms-auto flex gap-1">
+            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setLibraries(true)}>
+              {t('shell:code.libraries.open')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2"
+              onClick={() => void format()}
+              disabled={formatting === 'busy'}
+              aria-busy={formatting === 'busy'}
+              aria-keyshortcuts="Shift+Alt+F"
+            >
+              {t('shell:code.format')}
+            </Button>
+          </div>
+        )}
+        {onFilesChange && !form && !confirmDelete && (
+          <div dir="auto" className="flex gap-1">
             <Button
               size="sm"
               variant="ghost"
@@ -208,11 +263,28 @@ export function CodeEditor({
           </Button>
         </div>
       )}
+      {formatting === 'failed' && (
+        <p dir="auto" role="alert" className="border-b border-line px-2 py-1.5 text-xs text-danger">
+          {t('shell:code.formatFailed')}
+        </p>
+      )}
       <div className="min-h-0 flex-1">
         <Suspense fallback={<PlainEditor {...editorProps} />}>
           <LazyMonaco {...editorProps} />
         </Suspense>
       </div>
+      {libraries && (
+        <Suspense fallback={null}>
+          <LazyLibraryDialog
+            source={source}
+            onAdd={(lib) => {
+              onChange(active, addIncludes(source, lib));
+              onLibraryAdd?.(lib);
+            }}
+            onClose={() => setLibraries(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -1,0 +1,3534 @@
+{
+  "library": {
+    "Adafruit_BMP280": "Reads the BMP280 sensor: air temperature, air pressure and the altitude worked out from them.",
+    "Adafruit_BusIO": "Helper classes that Adafruit drivers use to talk to chips over I2C and SPI and to read and write their registers.",
+    "Adafruit_GFX": "Core graphics library: lines, shapes, bitmaps and text for many displays, including OLEDs.",
+    "Adafruit_MPU6050": "Reads the MPU6050 motion sensor over I2C: 3-axis acceleration, 3-axis rotation speed and temperature.",
+    "Adafruit_NeoPixel": "Controls addressable RGB LED strips and rings (WS2812, NeoPixel) from one data pin.",
+    "Adafruit_Sensor": "Common sensor interface shared by Adafruit drivers, so every sensor reports readings the same way.",
+    "Adafruit_SSD1306": "Drives small monochrome SSD1306 OLED screens (128x64 or 128x32) over I2C or SPI.",
+    "DallasTemperature": "Reads DS18B20 and other Dallas/Maxim 1-Wire thermometers in °C or °F, using the OneWire library.",
+    "DHT": "Reads temperature and humidity from DHT11, DHT22 and similar sensors on one digital pin.",
+    "EEPROM": "Stores bytes that survive power-off in the 1024-byte EEPROM of the Uno.",
+    "Keypad": "Reads matrix keypads such as 4x4 and 4x3 membrane keypads.",
+    "LiquidCrystal_I2C": "Drives 16x2 and 20x4 character LCDs through an I2C backpack, using only the SDA and SCL pins.",
+    "NewPing": "Measures distance with ultrasonic sensors like the HC-SR04, in centimetres or inches.",
+    "OneWire": "Talks to 1-Wire devices such as the DS18B20 thermometer, many of which can share one data pin.",
+    "Servo": "Drives hobby servo motors from any digital pin (up to 12 on the Uno).",
+    "SoftwareSerial": "Adds extra serial ports on other digital pins, for modules like Bluetooth or GPS.",
+    "SPI": "Fast serial link to devices like SD cards and displays, using pins 11 (MOSI), 12 (MISO) and 13 (SCK) on the Uno.",
+    "Stepper": "Drives unipolar and bipolar stepper motors through a driver board, one step at a time.",
+    "VL53L0X": "Pololu driver for the VL53L0X laser distance sensor, measuring up to about 2 m in millimetres over I2C.",
+    "Wire": "Talks to I2C devices such as displays and sensors over two wires: SDA (A4) and SCL (A5) on the Uno."
+  },
+  "core": {
+    "setup": {
+      "summary": "Runs once when the board powers up or resets. Put pin modes and Serial.begin() here."
+    },
+    "loop": {
+      "summary": "Runs again and again after setup() finishes, for as long as the board is powered."
+    },
+    "serialEvent": {
+      "summary": "If you define it, it is called between loop() runs whenever new serial data has arrived."
+    },
+    "pinMode": {
+      "summary": "Sets a pin to work as an input or an output. Call it in setup() before using the pin.",
+      "params": {
+        "pin": "Pin number (0 to 13, or A0 to A5 on the Uno).",
+        "mode": "INPUT, OUTPUT or INPUT_PULLUP."
+      }
+    },
+    "digitalWrite": {
+      "summary": "Sets an output pin HIGH (5 V) or LOW (0 V). On an INPUT pin, HIGH turns on the internal pull-up.",
+      "params": {
+        "pin": "Pin number to write to.",
+        "value": "HIGH or LOW."
+      }
+    },
+    "digitalRead": {
+      "summary": "Reads whether a digital pin is HIGH or LOW.",
+      "params": {
+        "pin": "Pin number to read."
+      },
+      "returns": "HIGH (1) or LOW (0)."
+    },
+    "analogRead": {
+      "summary": "Measures the voltage on an analog pin. 0 V gives 0 and 5 V gives 1023; one reading takes about 100 µs.",
+      "params": {
+        "pin": "Analog pin, A0 to A5."
+      },
+      "returns": "A number from 0 to 1023."
+    },
+    "analogWrite": {
+      "summary": "Outputs a PWM signal to dim an LED or set a motor speed. Works on pins 3, 5, 6, 9, 10 and 11 of the Uno.",
+      "params": {
+        "pin": "A PWM pin (marked with ~ on the board).",
+        "value": "Duty cycle from 0 (always off) to 255 (always on)."
+      }
+    },
+    "analogReference": {
+      "summary": "Chooses the voltage that analogRead() treats as its top value (1023).",
+      "params": {
+        "mode": "DEFAULT (5 V), INTERNAL (1.1 V) or EXTERNAL (voltage on the AREF pin)."
+      }
+    },
+    "delay": {
+      "summary": "Pauses the sketch. Nothing else in loop() runs while it waits.",
+      "params": {
+        "ms": "Time to wait in milliseconds (1000 = one second)."
+      }
+    },
+    "delayMicroseconds": {
+      "summary": "Pauses for a very short time. Accurate from about 3 µs up to 16383 µs.",
+      "params": {
+        "us": "Time to wait in microseconds."
+      }
+    },
+    "millis": {
+      "summary": "Time since the board started. Use it to time things without blocking like delay() does.",
+      "returns": "Milliseconds since start; rolls over to 0 after about 50 days."
+    },
+    "micros": {
+      "summary": "Time since the board started, in finer steps than millis().",
+      "returns": "Microseconds since start, in steps of 4 µs; rolls over after about 70 minutes."
+    },
+    "yield": {
+      "summary": "Gives background tasks a chance to run. Called automatically while delay() waits; rarely needed in sketches."
+    },
+    "pulseIn": {
+      "summary": "Waits for a pulse on a pin and measures how long it lasts, for example the echo of an ultrasonic sensor.",
+      "params": {
+        "pin": "Pin the pulse arrives on.",
+        "state": "HIGH to time a high pulse, LOW to time a low pulse.",
+        "timeout": "Longest time to wait in microseconds (default 1000000, one second)."
+      },
+      "returns": "Pulse length in microseconds, or 0 if no pulse came before the timeout."
+    },
+    "pulseInLong": {
+      "summary": "Like pulseIn(), but better for long pulses. Interrupts must be on.",
+      "params": {
+        "pin": "Pin the pulse arrives on.",
+        "state": "HIGH to time a high pulse, LOW to time a low pulse.",
+        "timeout": "Longest time to wait in microseconds (default 1000000, one second)."
+      },
+      "returns": "Pulse length in microseconds, or 0 if no pulse came before the timeout."
+    },
+    "shiftOut": {
+      "summary": "Sends a byte one bit at a time, for example to a 74HC595 shift register.",
+      "params": {
+        "dataPin": "Pin that outputs each bit.",
+        "clockPin": "Pin that is pulsed once per bit.",
+        "bitOrder": "MSBFIRST or LSBFIRST.",
+        "value": "The byte to send, 0 to 255."
+      }
+    },
+    "shiftIn": {
+      "summary": "Reads a byte one bit at a time, for example from a 74HC165 shift register.",
+      "params": {
+        "dataPin": "Pin that receives each bit.",
+        "clockPin": "Pin that is pulsed once per bit.",
+        "bitOrder": "MSBFIRST or LSBFIRST."
+      },
+      "returns": "The byte read, 0 to 255."
+    },
+    "tone": {
+      "summary": "Plays a square-wave tone on a buzzer or speaker. Only one tone plays at a time.",
+      "params": {
+        "pin": "Pin the buzzer is connected to.",
+        "frequency": "Pitch in hertz (31 Hz or more).",
+        "duration": "How long to play in milliseconds; 0 (default) plays until noTone()."
+      }
+    },
+    "noTone": {
+      "summary": "Stops the tone started with tone().",
+      "params": {
+        "pin": "Pin the tone is playing on."
+      }
+    },
+    "attachInterrupt": {
+      "summary": "Runs a function immediately when a pin changes, even in the middle of loop(). Keep the function short.",
+      "params": {
+        "interrupt": "Interrupt number; use digitalPinToInterrupt(pin). On the Uno only pins 2 and 3 work.",
+        "isr": "Function to run. It takes no arguments and returns nothing.",
+        "mode": "When to trigger: LOW, CHANGE, RISING or FALLING."
+      }
+    },
+    "detachInterrupt": {
+      "summary": "Turns off an interrupt set with attachInterrupt().",
+      "params": {
+        "interrupt": "Interrupt number; use digitalPinToInterrupt(pin)."
+      }
+    },
+    "digitalPinToInterrupt": {
+      "summary": "Converts a pin number into the interrupt number attachInterrupt() needs.",
+      "params": {
+        "pin": "Pin number (2 or 3 on the Uno)."
+      },
+      "returns": "Interrupt number, or -1 if the pin has no interrupt."
+    },
+    "interrupts": {
+      "summary": "Turns interrupts back on after noInterrupts()."
+    },
+    "noInterrupts": {
+      "summary": "Turns interrupts off so a piece of code is not disturbed. millis() and Serial stop working until interrupts() is called."
+    },
+    "map": {
+      "summary": "Rescales a number from one range to another, for example a sensor reading 0 to 1023 into an angle 0 to 180. Uses whole numbers only.",
+      "params": {
+        "value": "The number to convert.",
+        "fromLow": "Lowest value of the input range.",
+        "fromHigh": "Highest value of the input range.",
+        "toLow": "Lowest value of the output range.",
+        "toHigh": "Highest value of the output range."
+      },
+      "returns": "The rescaled value. It is not limited to the output range; use constrain() for that."
+    },
+    "constrain": {
+      "summary": "Keeps a number inside a range. Works with any number type.",
+      "params": {
+        "x": "The number to limit.",
+        "low": "Smallest allowed value.",
+        "high": "Largest allowed value."
+      },
+      "returns": "low if x is below low, high if x is above high, otherwise x."
+    },
+    "min": {
+      "summary": "Picks the smaller of two numbers.",
+      "params": {
+        "a": "First number.",
+        "b": "Second number."
+      },
+      "returns": "The smaller number."
+    },
+    "max": {
+      "summary": "Picks the larger of two numbers.",
+      "params": {
+        "a": "First number.",
+        "b": "Second number."
+      },
+      "returns": "The larger number."
+    },
+    "abs": {
+      "summary": "Removes the minus sign of a number.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "x if it is positive or zero, otherwise -x."
+    },
+    "sq": {
+      "summary": "Multiplies a number by itself.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "x times x."
+    },
+    "round": {
+      "summary": "Rounds a number to the nearest whole number; halves round away from zero.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "The nearest whole number as a long."
+    },
+    "sqrt": {
+      "summary": "Calculates the square root.",
+      "params": {
+        "x": "A number of 0 or more."
+      },
+      "returns": "The square root of x."
+    },
+    "pow": {
+      "summary": "Raises a number to a power.",
+      "params": {
+        "base": "The number to raise.",
+        "exponent": "The power, may be a fraction."
+      },
+      "returns": "base to the power of exponent."
+    },
+    "exp": {
+      "summary": "Calculates e (about 2.718) to the power of x.",
+      "params": {
+        "x": "The exponent."
+      },
+      "returns": "e to the power of x."
+    },
+    "log": {
+      "summary": "Calculates the natural logarithm (base e).",
+      "params": {
+        "x": "A number greater than 0."
+      },
+      "returns": "The natural logarithm of x."
+    },
+    "log10": {
+      "summary": "Calculates the logarithm in base 10.",
+      "params": {
+        "x": "A number greater than 0."
+      },
+      "returns": "The base-10 logarithm of x."
+    },
+    "floor": {
+      "summary": "Rounds a number down.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "The largest whole number not greater than x."
+    },
+    "ceil": {
+      "summary": "Rounds a number up.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "The smallest whole number not less than x."
+    },
+    "fabs": {
+      "summary": "Absolute value of a decimal number.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "x without its minus sign."
+    },
+    "sin": {
+      "summary": "Calculates the sine of an angle.",
+      "params": {
+        "rad": "Angle in radians; use radians() to convert from degrees."
+      },
+      "returns": "A value from -1 to 1."
+    },
+    "cos": {
+      "summary": "Calculates the cosine of an angle.",
+      "params": {
+        "rad": "Angle in radians; use radians() to convert from degrees."
+      },
+      "returns": "A value from -1 to 1."
+    },
+    "tan": {
+      "summary": "Calculates the tangent of an angle.",
+      "params": {
+        "rad": "Angle in radians; use radians() to convert from degrees."
+      },
+      "returns": "The tangent of the angle."
+    },
+    "asin": {
+      "summary": "Inverse sine: finds the angle whose sine is x.",
+      "params": {
+        "x": "A value from -1 to 1."
+      },
+      "returns": "Angle in radians, from -PI/2 to PI/2."
+    },
+    "acos": {
+      "summary": "Inverse cosine: finds the angle whose cosine is x.",
+      "params": {
+        "x": "A value from -1 to 1."
+      },
+      "returns": "Angle in radians, from 0 to PI."
+    },
+    "atan": {
+      "summary": "Inverse tangent: finds the angle whose tangent is x.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "Angle in radians, from -PI/2 to PI/2."
+    },
+    "atan2": {
+      "summary": "Finds the angle of the point (x, y) from the x axis, handling all four quadrants. Useful for headings and tilt.",
+      "params": {
+        "y": "Vertical part.",
+        "x": "Horizontal part."
+      },
+      "returns": "Angle in radians, from -PI to PI."
+    },
+    "radians": {
+      "summary": "Converts degrees to radians.",
+      "params": {
+        "deg": "Angle in degrees."
+      },
+      "returns": "Angle in radians."
+    },
+    "degrees": {
+      "summary": "Converts radians to degrees.",
+      "params": {
+        "rad": "Angle in radians."
+      },
+      "returns": "Angle in degrees."
+    },
+    "random": {
+      "summary": "Picks a pseudo-random whole number. Call randomSeed() first for a different sequence each run.",
+      "params": {
+        "min": "Lowest possible value (included, default 0).",
+        "max": "Upper limit (not included)."
+      },
+      "returns": "A number from min up to max - 1."
+    },
+    "randomSeed": {
+      "summary": "Starts the random number sequence at a new point. analogRead() of an unconnected pin is a common seed.",
+      "params": {
+        "seed": "Any number; the same seed gives the same sequence."
+      }
+    },
+    "bitRead": {
+      "summary": "Reads a single bit of a number.",
+      "params": {
+        "x": "The number to read from.",
+        "n": "Bit position, 0 is the rightmost (least significant) bit."
+      },
+      "returns": "0 or 1."
+    },
+    "bitWrite": {
+      "summary": "Sets a single bit of a variable to 0 or 1.",
+      "params": {
+        "x": "The variable to change.",
+        "n": "Bit position, 0 is the rightmost bit.",
+        "b": "New bit value, 0 or 1."
+      }
+    },
+    "bitSet": {
+      "summary": "Sets a single bit of a variable to 1.",
+      "params": {
+        "x": "The variable to change.",
+        "n": "Bit position, 0 is the rightmost bit."
+      }
+    },
+    "bitClear": {
+      "summary": "Clears a single bit of a variable to 0.",
+      "params": {
+        "x": "The variable to change.",
+        "n": "Bit position, 0 is the rightmost bit."
+      }
+    },
+    "bitToggle": {
+      "summary": "Flips a single bit of a variable: 0 becomes 1 and 1 becomes 0.",
+      "params": {
+        "x": "The variable to change.",
+        "n": "Bit position, 0 is the rightmost bit."
+      }
+    },
+    "bit": {
+      "summary": "Makes a number with only one bit set, for use as a mask.",
+      "params": {
+        "n": "Bit position, 0 to 31."
+      },
+      "returns": "2 to the power of n (bit(0) is 1, bit(3) is 8)."
+    },
+    "highByte": {
+      "summary": "Gets the upper 8 bits of a 16-bit number.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "The high byte, 0 to 255."
+    },
+    "lowByte": {
+      "summary": "Gets the lower 8 bits of a number.",
+      "params": {
+        "x": "Any number."
+      },
+      "returns": "The low byte, 0 to 255."
+    },
+    "makeWord": {
+      "summary": "Joins two bytes into one 16-bit number. word(high, low) does the same.",
+      "params": {
+        "high": "Upper byte.",
+        "low": "Lower byte.",
+        "w": "A 16-bit value, returned unchanged."
+      },
+      "returns": "high times 256 plus low, 0 to 65535."
+    },
+    "isAlpha": {
+      "summary": "Checks whether a character is a letter.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for A to Z and a to z."
+    },
+    "isAlphaNumeric": {
+      "summary": "Checks whether a character is a letter or a digit.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for letters and 0 to 9."
+    },
+    "isAscii": {
+      "summary": "Checks whether a character is a standard ASCII character.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for codes 0 to 127."
+    },
+    "isControl": {
+      "summary": "Checks whether a character is a control character such as newline or tab.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for control characters."
+    },
+    "isDigit": {
+      "summary": "Checks whether a character is a digit.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for 0 to 9."
+    },
+    "isGraph": {
+      "summary": "Checks whether a character is visible when printed (not a space).",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for printable characters except space."
+    },
+    "isHexadecimalDigit": {
+      "summary": "Checks whether a character is a hexadecimal digit.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for 0 to 9, A to F and a to f."
+    },
+    "isLowerCase": {
+      "summary": "Checks whether a character is a lowercase letter.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for a to z."
+    },
+    "isUpperCase": {
+      "summary": "Checks whether a character is an uppercase letter.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for A to Z."
+    },
+    "isPrintable": {
+      "summary": "Checks whether a character can be printed, including space.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for printable characters."
+    },
+    "isPunct": {
+      "summary": "Checks whether a character is punctuation, such as a comma, dot or bracket.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for punctuation."
+    },
+    "isSpace": {
+      "summary": "Checks whether a character is white space: space, tab, newline, carriage return, vertical tab or form feed.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for white-space characters."
+    },
+    "isWhitespace": {
+      "summary": "Checks whether a character is a space or a tab.",
+      "params": {
+        "c": "The character to test."
+      },
+      "returns": "true for space and tab."
+    },
+    "toAscii": {
+      "summary": "Keeps only the lower 7 bits of a character so it becomes standard ASCII.",
+      "params": {
+        "c": "The character to convert."
+      },
+      "returns": "A character code from 0 to 127."
+    },
+    "toLowerCase": {
+      "summary": "Converts a letter to lowercase.",
+      "params": {
+        "c": "The character to convert."
+      },
+      "returns": "The lowercase letter, or c unchanged if it is not an uppercase letter."
+    },
+    "toUpperCase": {
+      "summary": "Converts a letter to uppercase.",
+      "params": {
+        "c": "The character to convert."
+      },
+      "returns": "The uppercase letter, or c unchanged if it is not a lowercase letter."
+    },
+    "F": {
+      "summary": "Keeps a fixed text in flash memory instead of RAM. The Uno has only 2 KB of RAM, so wrap long print texts in F().",
+      "params": {
+        "text": "A text in double quotes."
+      },
+      "returns": "The text stored in flash, ready for print() and println()."
+    },
+    "pinLevel": {
+      "summary": "Pin levels: HIGH is 1 (5 V on the Uno) and LOW is 0 (0 V)."
+    },
+    "pinModes": {
+      "summary": "Pin modes for pinMode(): INPUT reads a signal, OUTPUT drives a signal, INPUT_PULLUP reads with the internal pull-up resistor so an open button reads HIGH."
+    },
+    "LED_BUILTIN": {
+      "summary": "The pin of the small LED on the board (13 on the Uno)."
+    },
+    "analogPin": {
+      "summary": "Analog input pins A0 to A5. They also work as digital pins 14 to 19 on the Uno."
+    },
+    "interruptMode": {
+      "summary": "When attachInterrupt() fires: CHANGE on any change, RISING from LOW to HIGH, FALLING from HIGH to LOW (LOW fires while the pin stays low)."
+    },
+    "bitOrder": {
+      "summary": "Bit order for shiftOut() and shiftIn(): MSBFIRST sends the highest bit first, LSBFIRST the lowest bit first."
+    },
+    "analogReferenceMode": {
+      "summary": "Reference voltages for analogReference(): DEFAULT is 5 V, INTERNAL is 1.1 V, EXTERNAL uses the voltage on the AREF pin (0 to 5 V)."
+    },
+    "numberBase": {
+      "summary": "Number bases for print() and String(): DEC (base 10), HEX (base 16), OCT (base 8), BIN (base 2)."
+    },
+    "mathConstant": {
+      "summary": "Math constants: PI (3.14159), HALF_PI, TWO_PI, DEG_TO_RAD and RAD_TO_DEG for angle conversion, and EULER (e, 2.71828)."
+    },
+    "serialConfig": {
+      "summary": "Serial frame formats for Serial.begin(baud, config): data bits (5 to 8), parity (N none, E even, O odd) and stop bits (1 or 2). The default is SERIAL_8N1."
+    },
+    "boolean": {
+      "summary": "Another name for bool: a value that is true or false."
+    },
+    "byte": {
+      "summary": "An unsigned 8-bit number from 0 to 255."
+    },
+    "word": {
+      "summary": "An unsigned 16-bit number from 0 to 65535. word(high, low) also builds one from two bytes."
+    },
+    "size_t": {
+      "summary": "An unsigned number used for sizes and counts, 0 to 65535 on the Uno."
+    },
+    "int8_t": {
+      "summary": "A signed 8-bit number from -128 to 127."
+    },
+    "uint8_t": {
+      "summary": "An unsigned 8-bit number from 0 to 255 (same as byte)."
+    },
+    "int16_t": {
+      "summary": "A signed 16-bit number from -32768 to 32767 (same as int on the Uno)."
+    },
+    "uint16_t": {
+      "summary": "An unsigned 16-bit number from 0 to 65535."
+    },
+    "int32_t": {
+      "summary": "A signed 32-bit number from about -2.1 billion to 2.1 billion (same as long on the Uno)."
+    },
+    "uint32_t": {
+      "summary": "An unsigned 32-bit number from 0 to about 4.29 billion (same as unsigned long on the Uno)."
+    },
+    "int64_t": {
+      "summary": "A signed 64-bit number for very large values. Slow on the Uno and print() cannot show it directly."
+    },
+    "uint64_t": {
+      "summary": "An unsigned 64-bit number for very large values. Slow on the Uno and print() cannot show it directly."
+    }
+  },
+  "Adafruit_BMP280": {
+    "Adafruit_BMP280": {
+      "summary": "Creates a BMP280 sensor object on I2C (no arguments) or SPI. Call begin() in setup() before reading it.",
+      "params": {
+        "theWire": "I2C bus to use (default &Wire).",
+        "cspin": "Chip-select pin when using SPI.",
+        "theSPI": "Hardware SPI bus to use (default &SPI).",
+        "mosipin": "Data-out pin for software SPI.",
+        "misopin": "Data-in pin for software SPI.",
+        "sckpin": "Clock pin for software SPI."
+      }
+    },
+    "begin": {
+      "summary": "Starts the sensor and checks its chip ID.",
+      "params": {
+        "addr": "I2C address: 0x77 (default) or 0x76 (used by many breakout boards).",
+        "chipid": "Expected chip ID (default 0x58)."
+      },
+      "returns": "true if the sensor was found."
+    },
+    "readTemperature": {
+      "summary": "Reads the air temperature.",
+      "returns": "Temperature in °C."
+    },
+    "readPressure": {
+      "summary": "Reads the air pressure. Divide by 100 to get hPa.",
+      "returns": "Pressure in pascals (Pa), about 101325 at sea level."
+    },
+    "readAltitude": {
+      "summary": "Works out the height above sea level from the measured pressure.",
+      "params": {
+        "seaLevelhPa": "Current sea-level pressure in hPa (default 1013.25); use your local weather value for better accuracy."
+      },
+      "returns": "Altitude in metres."
+    },
+    "seaLevelForAltitude": {
+      "summary": "Works out the sea-level pressure from a known altitude and a pressure reading.",
+      "params": {
+        "altitude": "Your known altitude in metres.",
+        "atmospheric": "Measured pressure in hPa."
+      },
+      "returns": "Sea-level pressure in hPa."
+    },
+    "waterBoilingPoint": {
+      "summary": "Works out the temperature at which water boils at a given pressure.",
+      "params": {
+        "pressure": "Air pressure in hPa."
+      },
+      "returns": "Boiling point in °C."
+    },
+    "takeForcedMeasurement": {
+      "summary": "In MODE_FORCED, takes one measurement and waits for it to finish.",
+      "returns": "true if the measurement completed."
+    },
+    "setSampling": {
+      "summary": "Sets the measuring mode, oversampling, filter and pause between readings.",
+      "params": {
+        "mode": "MODE_NORMAL (default, measures continuously), MODE_FORCED (one reading on request) or MODE_SLEEP.",
+        "tempSampling": "Temperature oversampling, SAMPLING_NONE to SAMPLING_X16 (default X16).",
+        "pressSampling": "Pressure oversampling, SAMPLING_NONE to SAMPLING_X16 (default X16).",
+        "filter": "Noise filter, FILTER_OFF (default) to FILTER_X16.",
+        "duration": "Pause between readings in normal mode, STANDBY_MS_1 (default) to STANDBY_MS_4000."
+      }
+    },
+    "getStatus": {
+      "summary": "Reads the status register, showing whether a measurement is in progress.",
+      "returns": "Status byte."
+    },
+    "sensorID": {
+      "summary": "Reads the chip ID.",
+      "returns": "Chip ID, 0x58 for a BMP280."
+    },
+    "reset": {
+      "summary": "Resets the chip to its power-on settings."
+    },
+    "getTemperatureSensor": {
+      "summary": "Gives the temperature part as a separate Adafruit_Sensor.",
+      "returns": "Pointer to an Adafruit_Sensor; its events hold temperature in °C."
+    },
+    "getPressureSensor": {
+      "summary": "Gives the pressure part as a separate Adafruit_Sensor.",
+      "returns": "Pointer to an Adafruit_Sensor; its events hold pressure in hPa."
+    },
+    "address": {
+      "summary": "I2C addresses of the BMP280: 0x77 (BMP280_ADDRESS) and 0x76 (BMP280_ADDRESS_ALT, when the SDO pin is low)."
+    },
+    "BMP280_CHIPID": {
+      "summary": "Chip ID of a BMP280, 0x58."
+    },
+    "sampling": {
+      "summary": "Oversampling: how many readings are averaged into one, from none (sensor off) to 16. More samples give less noise but take longer. Write as Adafruit_BMP280::SAMPLING_X16."
+    },
+    "mode": {
+      "summary": "Power modes: sleep (no readings), forced (one reading, then sleep) or normal (continuous). Write as Adafruit_BMP280::MODE_NORMAL."
+    },
+    "filter": {
+      "summary": "Noise filter strength: off, 2, 4, 8 or 16. Stronger filtering smooths out quick changes. Write as Adafruit_BMP280::FILTER_X16."
+    },
+    "standby": {
+      "summary": "Pause between readings in normal mode: 1, 63, 125, 250, 500, 1000, 2000 or 4000 ms. Write as Adafruit_BMP280::STANDBY_MS_500."
+    }
+  },
+  "Adafruit_BusIO_Register": {
+    "Adafruit_BusIO_Register": {
+      "summary": "One register (a numbered memory cell) inside an I2C or SPI chip, 1 to 4 bytes wide.",
+      "params": {
+        "i2cdevice": "Address of the Adafruit_I2CDevice the register belongs to.",
+        "spidevice": "Address of the Adafruit_SPIDevice the register belongs to.",
+        "reg_addr": "Register number inside the chip.",
+        "type": "How the register number is sent over SPI, one of the Adafruit_BusIO_SPIRegType values.",
+        "width": "Register size in bytes, 1 to 4 (default 1).",
+        "byteorder": "LSBFIRST (default) or MSBFIRST for multi-byte registers.",
+        "address_width": "Size of the register number in bytes (default 1)."
+      }
+    },
+    "read": {
+      "summary": "Reads the register. Without arguments it returns the value; the other forms store it in a variable or buffer.",
+      "params": {
+        "buffer": "Array that receives the raw bytes.",
+        "len": "Number of bytes to read.",
+        "value": "Address of a uint8_t or uint16_t that receives the value."
+      },
+      "returns": "The register value, or true on success for the forms with arguments."
+    },
+    "readCached": {
+      "summary": "Returns the value from the last read or write without talking to the chip.",
+      "returns": "Last known register value."
+    },
+    "write": {
+      "summary": "Writes a value or raw bytes to the register.",
+      "params": {
+        "value": "Value to write.",
+        "numbytes": "Bytes to write; 0 (default) means the register width.",
+        "buffer": "Raw bytes to write.",
+        "len": "Number of bytes in buffer."
+      },
+      "returns": "true if the write succeeded."
+    },
+    "width": {
+      "summary": "Gets the register size.",
+      "returns": "Width in bytes."
+    },
+    "setWidth": {
+      "summary": "Changes the register size.",
+      "params": {
+        "width": "Width in bytes, 1 to 4."
+      }
+    },
+    "setAddress": {
+      "summary": "Points the object at a different register.",
+      "params": {
+        "address": "New register number."
+      }
+    },
+    "setAddressWidth": {
+      "summary": "Changes how many bytes the register number takes.",
+      "params": {
+        "address_width": "Size of the register number in bytes."
+      }
+    },
+    "print": {
+      "summary": "Prints the register value in hexadecimal, for debugging.",
+      "params": {
+        "s": "Where to print (default &Serial)."
+      }
+    },
+    "println": {
+      "summary": "Like print(), then starts a new line.",
+      "params": {
+        "s": "Where to print (default &Serial)."
+      }
+    },
+    "spiRegType": {
+      "summary": "How a register number is sent over SPI, for example ADDRBIT8_HIGH_TOREAD sets the top bit of the address when reading."
+    }
+  },
+  "Adafruit_BusIO_RegisterBits": {
+    "Adafruit_BusIO_RegisterBits": {
+      "summary": "A group of bits inside a register, so you can change a setting without touching the other bits.",
+      "params": {
+        "reg": "Address of the Adafruit_BusIO_Register that holds the bits.",
+        "bits": "How many bits the field has.",
+        "shift": "Position of the lowest bit, 0 for the rightmost bit."
+      }
+    },
+    "write": {
+      "summary": "Writes a value into the bit field, keeping the other bits of the register.",
+      "params": {
+        "value": "New value; must fit in the number of bits."
+      },
+      "returns": "true if the write succeeded."
+    },
+    "read": {
+      "summary": "Reads the bit field.",
+      "returns": "Value of the bits, shifted down to start at bit 0."
+    }
+  },
+  "Adafruit_GFX": {
+    "Adafruit_GFX": {
+      "summary": "Base class for graphics displays. You normally create a display object (such as Adafruit_SSD1306) instead of this.",
+      "params": {
+        "w": "Width in pixels.",
+        "h": "Height in pixels."
+      }
+    },
+    "drawPixel": {
+      "summary": "Sets one pixel to a colour.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawLine": {
+      "summary": "Draws a straight line between two points.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "x1": "X position of the second point in pixels.",
+        "y1": "Y position of the second point in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawFastHLine": {
+      "summary": "Draws a horizontal line quickly.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "w": "Width in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawFastVLine": {
+      "summary": "Draws a vertical line quickly.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawRect": {
+      "summary": "Draws the outline of a rectangle; x and y are its top-left corner.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "fillRect": {
+      "summary": "Draws a filled rectangle; x and y are its top-left corner.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "fillScreen": {
+      "summary": "Fills the whole screen with one colour.",
+      "params": {
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawCircle": {
+      "summary": "Draws the outline of a circle around a centre point.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "r": "Radius in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "fillCircle": {
+      "summary": "Draws a filled circle around a centre point.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "r": "Radius in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawCircleHelper": {
+      "summary": "Draws chosen quarters of a circle outline, as used for rounded corners.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "r": "Radius in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "cornername": "Bit mask choosing which quarters to draw: 1 top-left, 2 top-right, 4 bottom-right, 8 bottom-left."
+      }
+    },
+    "fillCircleHelper": {
+      "summary": "Fills chosen halves of a circle, stretched by an extra length; used for rounded rectangles.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "r": "Radius in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "cornername": "Which halves to fill: 1 right, 2 left.",
+        "delta": "Extra length in pixels between the two half circles."
+      }
+    },
+    "drawEllipse": {
+      "summary": "Draws the outline of an ellipse around a centre point.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "rw": "Horizontal radius in pixels.",
+        "rh": "Vertical radius in pixels."
+      }
+    },
+    "fillEllipse": {
+      "summary": "Draws a filled ellipse around a centre point.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "rw": "Horizontal radius in pixels.",
+        "rh": "Vertical radius in pixels."
+      }
+    },
+    "drawTriangle": {
+      "summary": "Draws the outline of a triangle through three corner points.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "x1": "X position of the second point in pixels.",
+        "y1": "Y position of the second point in pixels.",
+        "x2": "X position of the third point in pixels.",
+        "y2": "Y position of the third point in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "fillTriangle": {
+      "summary": "Draws a filled triangle through three corner points.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "x1": "X position of the second point in pixels.",
+        "y1": "Y position of the second point in pixels.",
+        "x2": "X position of the third point in pixels.",
+        "y2": "Y position of the third point in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawRoundRect": {
+      "summary": "Draws the outline of a rectangle with rounded corners.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "radius": "Corner radius in pixels."
+      }
+    },
+    "fillRoundRect": {
+      "summary": "Draws a filled rectangle with rounded corners.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "radius": "Corner radius in pixels."
+      }
+    },
+    "drawRotatedRect": {
+      "summary": "Draws the outline of a rectangle turned around its centre.",
+      "params": {
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "cenX": "X position of the rectangle centre in pixels.",
+        "cenY": "Y position of the rectangle centre in pixels.",
+        "angleDeg": "Rotation angle in degrees."
+      }
+    },
+    "fillRotatedRect": {
+      "summary": "Draws a filled rectangle turned around its centre.",
+      "params": {
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "cenX": "X position of the rectangle centre in pixels.",
+        "cenY": "Y position of the rectangle centre in pixels.",
+        "angleDeg": "Rotation angle in degrees."
+      }
+    },
+    "rotatePoint": {
+      "summary": "Rotates a point around the origin (0, 0), changing the given variables.",
+      "params": {
+        "x0": "X variable to rotate; receives the new X.",
+        "y0": "Y variable to rotate; receives the new Y.",
+        "angleDeg": "Rotation angle in degrees."
+      }
+    },
+    "drawBitmap": {
+      "summary": "Draws a 1-bit image: set bits use the colour, clear bits are skipped or drawn in bg.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "bitmap": "Array of image bytes, usually stored in PROGMEM.",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "bg": "Background colour drawn behind the set pixels."
+      }
+    },
+    "drawXBitmap": {
+      "summary": "Draws a 1-bit image saved in XBM format (for example exported from GIMP).",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "bitmap": "Array of image bytes, usually stored in PROGMEM.",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "drawGrayscaleBitmap": {
+      "summary": "Draws an 8-bit grayscale image, one byte per pixel, for colour displays.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "bitmap": "Array of image bytes, usually stored in PROGMEM.",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "mask": "1-bit mask array; only pixels whose mask bit is 1 are drawn."
+      }
+    },
+    "drawRGBBitmap": {
+      "summary": "Draws a 16-bit colour image (RGB565), one value per pixel, for colour displays.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "bitmap": "Array of image bytes, usually stored in PROGMEM.",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "mask": "1-bit mask array; only pixels whose mask bit is 1 are drawn."
+      }
+    },
+    "drawChar": {
+      "summary": "Draws one character at a position without moving the text cursor.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "bg": "Background colour drawn behind the set pixels.",
+        "c": "Character to draw.",
+        "size": "Scale factor; 1 is 6x8 pixels per character.",
+        "sizeX": "Horizontal scale factor.",
+        "sizeY": "Vertical scale factor."
+      }
+    },
+    "setCursor": {
+      "summary": "Moves the text cursor; the next print() starts here.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0)."
+      }
+    },
+    "setTextColor": {
+      "summary": "Sets the text colour. With only one colour the background stays transparent.",
+      "params": {
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE.",
+        "bg": "Background colour drawn behind the set pixels."
+      }
+    },
+    "setTextSize": {
+      "summary": "Makes text bigger by a whole-number factor; size 1 is 6x8 pixels per character.",
+      "params": {
+        "size": "Scale factor, 1 or more.",
+        "sizeX": "Horizontal scale factor.",
+        "sizeY": "Vertical scale factor."
+      }
+    },
+    "setTextWrap": {
+      "summary": "Chooses whether long text continues on the next line or is cut off at the right edge.",
+      "params": {
+        "wrap": "true to wrap (default), false to clip."
+      }
+    },
+    "setFont": {
+      "summary": "Chooses a font from the Fonts folder, or the built-in 6x8 font when called with no argument.",
+      "params": {
+        "font": "Address of a GFXfont, for example &FreeSans9pt7b."
+      }
+    },
+    "cp437": {
+      "summary": "Switches the built-in font to the correct Code Page 437 character numbers.",
+      "params": {
+        "enable": "true for correct CP437 codes, false for the old layout."
+      }
+    },
+    "getTextBounds": {
+      "summary": "Measures the box a piece of text would cover if printed at x, y, without drawing it.",
+      "params": {
+        "str": "Text to measure.",
+        "x": "Cursor X position to measure from.",
+        "y": "Cursor Y position to measure from.",
+        "x1": "Receives the left edge of the box.",
+        "y1": "Receives the top edge of the box.",
+        "w": "Receives the box width in pixels.",
+        "h": "Receives the box height in pixels."
+      }
+    },
+    "getCursorX": {
+      "summary": "Reads the X position of the text cursor.",
+      "returns": "X position in pixels."
+    },
+    "getCursorY": {
+      "summary": "Reads the Y position of the text cursor.",
+      "returns": "Y position in pixels."
+    },
+    "setRotation": {
+      "summary": "Rotates everything drawn afterwards in steps of 90 degrees.",
+      "params": {
+        "rotation": "0 normal, 1 = 90°, 2 = 180°, 3 = 270° clockwise."
+      }
+    },
+    "getRotation": {
+      "summary": "Reads the current rotation.",
+      "returns": "0 to 3, in steps of 90 degrees."
+    },
+    "width": {
+      "summary": "Reads the screen width, taking rotation into account.",
+      "returns": "Width in pixels."
+    },
+    "height": {
+      "summary": "Reads the screen height, taking rotation into account.",
+      "returns": "Height in pixels."
+    },
+    "invertDisplay": {
+      "summary": "Swaps light and dark pixels on the whole screen, without changing what is drawn.",
+      "params": {
+        "invert": "true to invert, false for normal."
+      }
+    },
+    "startWrite": {
+      "summary": "Begins a batch of write... calls; advanced, for faster drawing."
+    },
+    "writePixel": {
+      "summary": "Sets one pixel inside a startWrite() / endWrite() batch.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "writeFillRect": {
+      "summary": "Draws a filled rectangle inside a startWrite() / endWrite() batch.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "w": "Width in pixels.",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "writeFastHLine": {
+      "summary": "Draws a horizontal line inside a startWrite() / endWrite() batch.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "w": "Width in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "writeFastVLine": {
+      "summary": "Draws a vertical line inside a startWrite() / endWrite() batch.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0).",
+        "h": "Height in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "writeLine": {
+      "summary": "Draws a line inside a startWrite() / endWrite() batch.",
+      "params": {
+        "x0": "X position of the first point (or centre) in pixels.",
+        "y0": "Y position of the first point (or centre) in pixels.",
+        "x1": "X position of the second point in pixels.",
+        "y1": "Y position of the second point in pixels.",
+        "color": "Colour to draw with; on an SSD1306 use SSD1306_WHITE, SSD1306_BLACK or SSD1306_INVERSE."
+      }
+    },
+    "endWrite": {
+      "summary": "Ends a batch started with startWrite()."
+    }
+  },
+  "Adafruit_I2CDevice": {
+    "Adafruit_I2CDevice": {
+      "summary": "Describes a chip on the I2C bus. Call begin() before reading or writing.",
+      "params": {
+        "addr": "7-bit I2C address of the chip, for example 0x68.",
+        "theWire": "I2C bus to use (default &Wire)."
+      }
+    },
+    "begin": {
+      "summary": "Starts the I2C bus and, by default, checks that the chip answers.",
+      "params": {
+        "addr_detect": "true (default) to check that the chip responds at its address."
+      },
+      "returns": "true if the chip was found (or detection was skipped)."
+    },
+    "end": {
+      "summary": "Stops using the device and releases the bus."
+    },
+    "detected": {
+      "summary": "Checks whether the chip answers at its address.",
+      "returns": "true if the chip responded."
+    },
+    "address": {
+      "summary": "Gets the I2C address of the device.",
+      "returns": "The 7-bit address."
+    },
+    "read": {
+      "summary": "Reads bytes from the chip into a buffer.",
+      "params": {
+        "buffer": "Array that receives the bytes.",
+        "len": "Number of bytes to read.",
+        "stop": "true (default) to release the bus when done."
+      },
+      "returns": "true if all bytes were read."
+    },
+    "write": {
+      "summary": "Writes bytes to the chip, optionally sending a prefix (such as a register number) first.",
+      "params": {
+        "buffer": "Bytes to send.",
+        "len": "Number of bytes in buffer.",
+        "stop": "true (default) to release the bus when done.",
+        "prefix_buffer": "Optional bytes sent before buffer.",
+        "prefix_len": "Number of prefix bytes (default 0)."
+      },
+      "returns": "true if the chip acknowledged the data."
+    },
+    "write_then_read": {
+      "summary": "Writes some bytes, then reads a reply. Typical use: send a register number, then read its value.",
+      "params": {
+        "write_buffer": "Bytes to send first.",
+        "write_len": "Number of bytes to send.",
+        "read_buffer": "Array that receives the reply.",
+        "read_len": "Number of bytes to read.",
+        "stop": "true to release the bus between the write and the read (default false)."
+      },
+      "returns": "true if both parts succeeded."
+    },
+    "setSpeed": {
+      "summary": "Changes the I2C clock speed.",
+      "params": {
+        "desiredclk": "Clock in Hz, for example 100000 or 400000."
+      },
+      "returns": "true if the speed could be set."
+    },
+    "maxBufferSize": {
+      "summary": "Largest number of bytes that can be sent or read in one go.",
+      "returns": "Buffer size in bytes (32 on the Uno)."
+    }
+  },
+  "Adafruit_MPU6050": {
+    "Adafruit_MPU6050": {
+      "summary": "Creates an MPU6050 sensor object. Call begin() in setup() before reading it."
+    },
+    "begin": {
+      "summary": "Starts the I2C bus and checks that the MPU6050 answers.",
+      "params": {
+        "i2c_addr": "I2C address: 0x68 (default, AD0 pin low) or 0x69 (AD0 pin high).",
+        "wire": "I2C bus to use (default &Wire).",
+        "sensorID": "Your own ID number for the sensor (default 0)."
+      },
+      "returns": "true if the sensor was found."
+    },
+    "getEvent": {
+      "summary": "Reads acceleration, rotation and temperature all at once.",
+      "params": {
+        "accel": "Event that receives acceleration in m/s², in accel.acceleration.x, .y and .z.",
+        "gyro": "Event that receives rotation speed in rad/s, in gyro.gyro.x, .y and .z.",
+        "temp": "Event that receives the chip temperature in °C, in temp.temperature."
+      },
+      "returns": "true if the reading succeeded."
+    },
+    "setAccelerometerRange": {
+      "summary": "Sets the largest acceleration the sensor can measure. A smaller range gives finer readings.",
+      "params": {
+        "range": "MPU6050_RANGE_2_G (default), _4_G, _8_G or _16_G."
+      }
+    },
+    "getAccelerometerRange": {
+      "summary": "Gets the current accelerometer range.",
+      "returns": "One of the MPU6050_RANGE_…_G values."
+    },
+    "setGyroRange": {
+      "summary": "Sets the fastest rotation the sensor can measure.",
+      "params": {
+        "range": "MPU6050_RANGE_250_DEG (default), _500_DEG, _1000_DEG or _2000_DEG, in degrees per second."
+      }
+    },
+    "getGyroRange": {
+      "summary": "Gets the current gyroscope range.",
+      "returns": "One of the MPU6050_RANGE_…_DEG values."
+    },
+    "setFilterBandwidth": {
+      "summary": "Sets the built-in low-pass filter. A lower bandwidth gives smoother but slower readings.",
+      "params": {
+        "bandwidth": "MPU6050_BAND_260_HZ (filter almost off) down to MPU6050_BAND_5_HZ."
+      }
+    },
+    "getFilterBandwidth": {
+      "summary": "Gets the current low-pass filter setting.",
+      "returns": "One of the MPU6050_BAND_… values."
+    },
+    "setHighPassFilter": {
+      "summary": "Sets the high-pass filter used by motion detection, which ignores slow changes such as gravity.",
+      "params": {
+        "bandwidth": "MPU6050_HIGHPASS_DISABLE, _5_HZ, _2_5_HZ, _1_25_HZ, _0_63_HZ or _HOLD."
+      }
+    },
+    "getHighPassFilter": {
+      "summary": "Gets the current high-pass filter setting.",
+      "returns": "One of the MPU6050_HIGHPASS_… values."
+    },
+    "setMotionInterrupt": {
+      "summary": "Turns motion detection on or off. When motion is detected, the INT pin is signalled.",
+      "params": {
+        "active": "true to enable motion detection."
+      }
+    },
+    "setMotionDetectionThreshold": {
+      "summary": "Sets how strong a movement must be to count as motion.",
+      "params": {
+        "thr": "Threshold from 0 to 255, about 2 mg per step."
+      }
+    },
+    "setMotionDetectionDuration": {
+      "summary": "Sets how long a movement must last to count as motion.",
+      "params": {
+        "dur": "Duration from 0 to 255 milliseconds."
+      }
+    },
+    "getMotionInterruptStatus": {
+      "summary": "Checks whether motion was detected since the last check.",
+      "returns": "true if motion was detected."
+    },
+    "setInterruptPinPolarity": {
+      "summary": "Chooses whether the INT pin goes HIGH or LOW when an interrupt happens.",
+      "params": {
+        "active_low": "true for LOW when active, false (default) for HIGH."
+      }
+    },
+    "setInterruptPinLatch": {
+      "summary": "Chooses whether the INT pin stays active until read, or only gives a short pulse.",
+      "params": {
+        "held": "true to hold the pin until the status is read, false for a 50 µs pulse."
+      }
+    },
+    "setFsyncSampleOutput": {
+      "summary": "Chooses which reading records the state of the FSYNC pin (advanced).",
+      "params": {
+        "fsync_output": "One of the MPU6050_FSYNC_OUT_… values; MPU6050_FSYNC_OUT_DISABLED turns it off."
+      }
+    },
+    "getFsyncSampleOutput": {
+      "summary": "Gets the FSYNC setting.",
+      "returns": "One of the MPU6050_FSYNC_OUT_… values."
+    },
+    "setI2CBypass": {
+      "summary": "Connects the auxiliary I2C pins (XDA, XCL) directly to the main bus, to reach a sensor wired to them.",
+      "params": {
+        "bypass": "true to enable bypass."
+      }
+    },
+    "setClock": {
+      "summary": "Chooses the clock source of the chip (advanced).",
+      "params": {
+        "clock": "One of the MPU6050_INTR_8MHz or MPU6050_PLL_… values."
+      }
+    },
+    "getClock": {
+      "summary": "Gets the clock source.",
+      "returns": "One of the clock select values."
+    },
+    "setSampleRateDivisor": {
+      "summary": "Slows down how often new readings are produced. Sample rate = 1 kHz (or 8 kHz with the filter off) divided by divisor + 1.",
+      "params": {
+        "divisor": "Divider from 0 to 255."
+      }
+    },
+    "getSampleRateDivisor": {
+      "summary": "Gets the sample rate divider.",
+      "returns": "Divider from 0 to 255."
+    },
+    "enableSleep": {
+      "summary": "Puts the sensor to sleep to save power, or wakes it up.",
+      "params": {
+        "enable": "true to sleep, false to wake."
+      },
+      "returns": "true if the setting was written."
+    },
+    "enableCycle": {
+      "summary": "Low-power mode where the sensor wakes up now and then to take one accelerometer reading.",
+      "params": {
+        "enable": "true to turn cycle mode on."
+      },
+      "returns": "true if the setting was written."
+    },
+    "setCycleRate": {
+      "summary": "Sets how often the sensor wakes up in cycle mode.",
+      "params": {
+        "rate": "MPU6050_CYCLE_1_25_HZ, _5_HZ, _20_HZ or _40_HZ."
+      }
+    },
+    "getCycleRate": {
+      "summary": "Gets the cycle mode wake-up rate.",
+      "returns": "One of the MPU6050_CYCLE_… values."
+    },
+    "setGyroStandby": {
+      "summary": "Switches off single gyroscope axes to save power.",
+      "params": {
+        "xAxisStandby": "true to switch off the X axis.",
+        "yAxisStandby": "true to switch off the Y axis.",
+        "zAxisStandby": "true to switch off the Z axis."
+      },
+      "returns": "true if the setting was written."
+    },
+    "setAccelerometerStandby": {
+      "summary": "Switches off single accelerometer axes to save power.",
+      "params": {
+        "xAxisStandby": "true to switch off the X axis.",
+        "yAxisStandby": "true to switch off the Y axis.",
+        "zAxisStandby": "true to switch off the Z axis."
+      },
+      "returns": "true if the setting was written."
+    },
+    "setTemperatureStandby": {
+      "summary": "Switches the temperature sensor off or on.",
+      "params": {
+        "enable": "true to switch it off."
+      },
+      "returns": "true if the setting was written."
+    },
+    "reset": {
+      "summary": "Resets the chip to its power-on settings."
+    },
+    "getTemperatureSensor": {
+      "summary": "Gives the temperature part as a separate Adafruit_Sensor.",
+      "returns": "Pointer to an Adafruit_Sensor; use its getEvent()."
+    },
+    "getAccelerometerSensor": {
+      "summary": "Gives the accelerometer as a separate Adafruit_Sensor.",
+      "returns": "Pointer to an Adafruit_Sensor; use its getEvent()."
+    },
+    "getGyroSensor": {
+      "summary": "Gives the gyroscope as a separate Adafruit_Sensor.",
+      "returns": "Pointer to an Adafruit_Sensor; use its getEvent()."
+    },
+    "MPU6050_I2CADDR_DEFAULT": {
+      "summary": "Default I2C address of the MPU6050, 0x68 (AD0 pin low)."
+    },
+    "accelRange": {
+      "summary": "Accelerometer ranges: ±2, ±4, ±8 or ±16 g. ±2 g is the default and the most precise."
+    },
+    "gyroRange": {
+      "summary": "Gyroscope ranges: ±250, ±500, ±1000 or ±2000 degrees per second. ±250 is the default."
+    },
+    "bandwidth": {
+      "summary": "Low-pass filter bandwidths: 260, 184, 94, 44, 21, 10 or 5 Hz. Lower means smoother but slower to react."
+    },
+    "highpass": {
+      "summary": "High-pass filter settings for motion detection: off, 5, 2.5, 1.25 or 0.63 Hz, or hold."
+    },
+    "cycleRate": {
+      "summary": "Wake-up rates for low-power cycle mode: 1.25, 5, 20 or 40 Hz."
+    },
+    "fsyncOut": {
+      "summary": "Which reading records the FSYNC pin state: disabled, temperature, a gyro axis or an accelerometer axis."
+    },
+    "clockSelect": {
+      "summary": "Clock sources: the internal 8 MHz oscillator, a gyro axis PLL (more stable), an external clock, or stop."
+    }
+  },
+  "Adafruit_NeoPixel": {
+    "Adafruit_NeoPixel": {
+      "summary": "Creates an LED strip object. Call begin() in setup() before using it.",
+      "params": {
+        "n": "Number of LEDs on the strip.",
+        "pin": "Digital pin connected to the strip data input (default 6).",
+        "type": "Colour order plus speed, for example NEO_GRB + NEO_KHZ800 (most WS2812 strips)."
+      }
+    },
+    "begin": {
+      "summary": "Prepares the data pin. Call once in setup().",
+      "returns": "true if the strip memory was set up."
+    },
+    "show": {
+      "summary": "Sends the stored colours to the LEDs. Changes appear only after calling this."
+    },
+    "setPixelColor": {
+      "summary": "Stores a colour for one LED; call show() to light it.",
+      "params": {
+        "n": "Index of the LED, starting at 0 for the first one.",
+        "color": "Packed colour from Color() or ColorHSV().",
+        "r": "Red brightness, 0 to 255.",
+        "g": "Green brightness, 0 to 255.",
+        "b": "Blue brightness, 0 to 255.",
+        "w": "White brightness, 0 to 255 (RGBW strips only)."
+      }
+    },
+    "getPixelColor": {
+      "summary": "Reads the colour stored for one LED.",
+      "params": {
+        "n": "Index of the LED, starting at 0 for the first one."
+      },
+      "returns": "Packed colour, or 0 if n is out of range."
+    },
+    "fill": {
+      "summary": "Sets many LEDs to one colour; with no count it fills to the end of the strip.",
+      "params": {
+        "color": "Packed colour (default 0, off).",
+        "first": "Index of the first LED to fill (default 0).",
+        "count": "How many LEDs to fill; 0 means up to the end."
+      }
+    },
+    "clear": {
+      "summary": "Sets every LED to off in memory; call show() to apply."
+    },
+    "setBrightness": {
+      "summary": "Scales the brightness of the whole strip. Best called once in setup().",
+      "params": {
+        "brightness": "0 (off) to 255 (full)."
+      }
+    },
+    "getBrightness": {
+      "summary": "Reads the brightness set with setBrightness().",
+      "returns": "Brightness, 0 to 255."
+    },
+    "numPixels": {
+      "summary": "Reads how many LEDs the strip has.",
+      "returns": "Number of LEDs."
+    },
+    "setPin": {
+      "summary": "Changes the data pin after the object was created.",
+      "params": {
+        "pin": "New digital pin for the strip data."
+      }
+    },
+    "getPin": {
+      "summary": "Reads the data pin in use.",
+      "returns": "Pin number, or -1 if none is set."
+    },
+    "updateLength": {
+      "summary": "Changes the number of LEDs; clears all colours.",
+      "params": {
+        "n": "New number of LEDs."
+      }
+    },
+    "updateType": {
+      "summary": "Changes the colour order and speed of the strip.",
+      "params": {
+        "type": "New type, for example NEO_GRB + NEO_KHZ800."
+      }
+    },
+    "canShow": {
+      "summary": "Checks whether enough time (about 300 µs) has passed since the last show().",
+      "returns": "true if show() can send now without waiting."
+    },
+    "getPixels": {
+      "summary": "Gives direct access to the raw colour bytes (advanced).",
+      "returns": "Pointer to 3 or 4 bytes per LED, in the strip colour order."
+    },
+    "rainbow": {
+      "summary": "Fills the strip with a rainbow of colours; call show() to display it.",
+      "params": {
+        "firstHue": "Hue of the first LED, 0 to 65535 (default 0, red).",
+        "reps": "How many full rainbows fit along the strip (default 1).",
+        "saturation": "Colour saturation, 0 to 255 (default 255).",
+        "brightness": "Brightness, 0 to 255 (default 255).",
+        "gammify": "true to apply gamma correction for more natural colours (default)."
+      }
+    },
+    "Color": {
+      "summary": "Packs red, green, blue (and white) values into one colour number.",
+      "params": {
+        "r": "Red, 0 to 255.",
+        "g": "Green, 0 to 255.",
+        "b": "Blue, 0 to 255.",
+        "w": "White, 0 to 255 (RGBW strips)."
+      },
+      "returns": "Packed 32-bit colour."
+    },
+    "ColorHSV": {
+      "summary": "Makes a colour from hue, saturation and value, handy for rainbows and fades.",
+      "params": {
+        "hue": "Hue from 0 to 65535 around the colour wheel: 0 red, about 21845 green, about 43690 blue.",
+        "sat": "Saturation, 0 (white) to 255 (pure colour, default).",
+        "val": "Brightness, 0 (off) to 255 (full, default)."
+      },
+      "returns": "Packed 32-bit colour."
+    },
+    "gamma32": {
+      "summary": "Applies gamma correction to a packed colour so it looks more natural to the eye.",
+      "params": {
+        "color": "Packed colour to correct."
+      },
+      "returns": "Corrected packed colour."
+    },
+    "gamma8": {
+      "summary": "Applies gamma correction to one brightness value.",
+      "params": {
+        "x": "Brightness, 0 to 255."
+      },
+      "returns": "Corrected brightness, 0 to 255."
+    },
+    "sine8": {
+      "summary": "Fast 8-bit sine wave, useful for smooth pulsing effects.",
+      "params": {
+        "x": "Angle, 0 to 255 for one full turn."
+      },
+      "returns": "Sine value, 0 to 255 (128 at the middle)."
+    },
+    "colorOrder": {
+      "summary": "Order in which the LEDs expect colour bytes. Most WS2812 strips use NEO_GRB; W variants are for RGBW strips."
+    },
+    "speed": {
+      "summary": "Data speed: NEO_KHZ800 for WS2812 and most strips, NEO_KHZ400 for old WS2811 LEDs. Add it to the colour order."
+    }
+  },
+  "Adafruit_Sensor": {
+    "Adafruit_Sensor": {
+      "summary": "Base class of all Adafruit unified sensors. You do not create one yourself; drivers such as Adafruit_MPU6050 hand you an Adafruit_Sensor pointer."
+    },
+    "getEvent": {
+      "summary": "Takes a new reading and stores it in an event structure.",
+      "params": {
+        "event": "Address of a sensors_event_t that receives the reading, for example &e."
+      },
+      "returns": "true if a reading was taken."
+    },
+    "getSensor": {
+      "summary": "Fills a sensor_t with details about the sensor, such as its name, range and resolution.",
+      "params": {
+        "sensor": "Address of a sensor_t to fill, for example &s."
+      }
+    },
+    "enableAutoRange": {
+      "summary": "Lets the sensor change its range by itself for more precise readings, if it supports that.",
+      "params": {
+        "enabled": "true to turn auto-ranging on, false to turn it off."
+      }
+    },
+    "printSensorDetails": {
+      "summary": "Prints the sensor name, type, range and resolution to Serial."
+    },
+    "sensors_event_t": {
+      "summary": "One sensor reading. Read the field that matches the sensor: event.temperature in °C, event.pressure in hPa, event.relative_humidity in %, event.acceleration.x / .y / .z in m/s², event.gyro.x / .y / .z in rad/s, event.magnetic in µT, event.distance in cm, event.light in lux. event.timestamp is in milliseconds."
+    },
+    "sensors_vec_t": {
+      "summary": "A 3-axis value inside an event. Use x, y and z (or v[0] to v[2]); orientation sensors use roll, pitch and heading in degrees instead."
+    },
+    "sensor_t": {
+      "summary": "Information about a sensor: name, version, sensor_id, type, min_value and max_value (its range in SI units), resolution, and min_delay in microseconds between readings."
+    },
+    "gravity": {
+      "summary": "Gravity in m/s²: on Earth 9.80665 (also SENSORS_GRAVITY_STANDARD), on the Moon 1.6 and on the Sun 275. Divide an acceleration by SENSORS_GRAVITY_EARTH to get g."
+    },
+    "magfield": {
+      "summary": "Strongest and weakest magnetic field at the surface of the Earth, 60 and 30 µT."
+    },
+    "SENSORS_PRESSURE_SEALEVELHPA": {
+      "summary": "Average air pressure at sea level, 1013.25 hPa. Handy as the reference for altitude calculations."
+    },
+    "conversion": {
+      "summary": "Unit multipliers: degrees/s to rad/s (0.01745), rad/s to degrees/s (57.296) and gauss to µT (100). Example: g.gyro.z * SENSORS_RADS_TO_DPS gives degrees per second."
+    },
+    "sensorType": {
+      "summary": "Kind of sensor, found in sensor_t.type and sensors_event_t.type, for example SENSOR_TYPE_ACCELEROMETER or SENSOR_TYPE_AMBIENT_TEMPERATURE."
+    }
+  },
+  "Adafruit_SPIDevice": {
+    "Adafruit_SPIDevice": {
+      "summary": "Describes a chip on the SPI bus, using hardware SPI or any pins you choose (software SPI). Call begin() before use.",
+      "params": {
+        "cspin": "Chip-select pin of the device.",
+        "freq": "SPI clock in Hz (default 1000000).",
+        "dataOrder": "Bit order: SPI_BITORDER_MSBFIRST (default) or SPI_BITORDER_LSBFIRST.",
+        "dataMode": "SPI mode, SPI_MODE0 to SPI_MODE3 (default SPI_MODE0).",
+        "theSPI": "Hardware SPI bus to use (default &SPI).",
+        "sck": "Clock pin for software SPI.",
+        "miso": "Data-in pin for software SPI.",
+        "mosi": "Data-out pin for software SPI."
+      }
+    },
+    "begin": {
+      "summary": "Sets up the pins and the SPI bus.",
+      "returns": "true when ready."
+    },
+    "read": {
+      "summary": "Reads bytes from the chip into a buffer.",
+      "params": {
+        "buffer": "Array that receives the bytes.",
+        "len": "Number of bytes to read.",
+        "sendvalue": "Byte sent out while reading (default 0xFF)."
+      },
+      "returns": "true when done."
+    },
+    "write": {
+      "summary": "Writes bytes to the chip, optionally sending a prefix first.",
+      "params": {
+        "buffer": "Bytes to send.",
+        "len": "Number of bytes in buffer.",
+        "prefix_buffer": "Optional bytes sent before buffer.",
+        "prefix_len": "Number of prefix bytes (default 0)."
+      },
+      "returns": "true when done."
+    },
+    "write_then_read": {
+      "summary": "Writes some bytes, then reads a reply, all while chip-select stays active.",
+      "params": {
+        "write_buffer": "Bytes to send first.",
+        "write_len": "Number of bytes to send.",
+        "read_buffer": "Array that receives the reply.",
+        "read_len": "Number of bytes to read.",
+        "sendvalue": "Byte sent out while reading (default 0xFF)."
+      },
+      "returns": "true when done."
+    },
+    "write_and_read": {
+      "summary": "Sends the bytes in a buffer and replaces each with the byte received at the same time.",
+      "params": {
+        "buffer": "Bytes to send; overwritten with the bytes received.",
+        "len": "Number of bytes."
+      },
+      "returns": "true when done."
+    },
+    "transfer": {
+      "summary": "Exchanges one byte, or a whole buffer, with the chip. Call between beginTransaction() and endTransaction().",
+      "params": {
+        "send": "Byte to send.",
+        "buffer": "Bytes to send; overwritten with the bytes received.",
+        "len": "Number of bytes in buffer."
+      },
+      "returns": "The byte received (single-byte form)."
+    },
+    "beginTransaction": {
+      "summary": "Claims the SPI bus with this device's speed and mode settings."
+    },
+    "endTransaction": {
+      "summary": "Releases the SPI bus."
+    },
+    "beginTransactionWithAssertingCS": {
+      "summary": "Claims the SPI bus and pulls chip-select LOW to select the device."
+    },
+    "endTransactionWithDeassertingCS": {
+      "summary": "Sets chip-select HIGH again and releases the SPI bus."
+    },
+    "bitOrder": {
+      "summary": "SPI bit order: most significant bit first (the usual choice) or least significant bit first."
+    }
+  },
+  "Adafruit_SSD1306": {
+    "Adafruit_SSD1306": {
+      "summary": "Creates an OLED display object. The first form is for I2C (the usual 4-pin module); the others are for SPI modules.",
+      "params": {
+        "w": "Screen width in pixels, usually 128.",
+        "h": "Screen height in pixels, 64 or 32.",
+        "wire": "I2C bus to use, normally &Wire.",
+        "rstPin": "Reset pin, or -1 if the module has none (shares the Arduino reset).",
+        "clkDuring": "I2C speed in Hz while talking to the display (default 400000).",
+        "clkAfter": "I2C speed in Hz restored afterwards (default 100000).",
+        "mosiPin": "Data (MOSI / D1) pin for software SPI.",
+        "sclkPin": "Clock (SCK / D0) pin for software SPI.",
+        "dcPin": "Data/command (DC) pin.",
+        "csPin": "Chip-select (CS) pin.",
+        "spi": "Hardware SPI bus, normally &SPI.",
+        "bitrate": "SPI speed in Hz (default 8000000)."
+      }
+    },
+    "begin": {
+      "summary": "Starts the display and reserves its screen buffer (1 KB for 128x64). Call it once in setup().",
+      "params": {
+        "vcc": "Power source: SSD1306_SWITCHCAPVCC for most modules, or SSD1306_EXTERNALVCC.",
+        "address": "I2C address, usually 0x3C (sometimes 0x3D); 0 picks one from the screen height.",
+        "reset": "true to pulse the reset pin first (default).",
+        "periphBegin": "true to also start the Wire or SPI bus (default)."
+      },
+      "returns": "true if it worked, false if the display was not found or memory ran out."
+    },
+    "display": {
+      "summary": "Sends the drawing buffer to the screen. Nothing you draw appears until you call this."
+    },
+    "clearDisplay": {
+      "summary": "Clears the drawing buffer to black. Call display() to show the empty screen."
+    },
+    "dim": {
+      "summary": "Lowers or restores the screen brightness.",
+      "params": {
+        "dim": "true for dim, false for normal brightness."
+      }
+    },
+    "startscrollright": {
+      "summary": "Starts scrolling rows of the screen to the right, done by the display itself.",
+      "params": {
+        "start": "First page (row of 8 pixels) to scroll, 0 to 7 on a 64-pixel screen.",
+        "stop": "Last page to scroll, 0 to 7."
+      }
+    },
+    "startscrollleft": {
+      "summary": "Starts scrolling rows of the screen to the left.",
+      "params": {
+        "start": "First page (row of 8 pixels) to scroll, 0 to 7 on a 64-pixel screen.",
+        "stop": "Last page to scroll, 0 to 7."
+      }
+    },
+    "startscrolldiagright": {
+      "summary": "Starts scrolling diagonally up and to the right.",
+      "params": {
+        "start": "First page (row of 8 pixels) to scroll, 0 to 7 on a 64-pixel screen.",
+        "stop": "Last page to scroll, 0 to 7."
+      }
+    },
+    "startscrolldiagleft": {
+      "summary": "Starts scrolling diagonally up and to the left.",
+      "params": {
+        "start": "First page (row of 8 pixels) to scroll, 0 to 7 on a 64-pixel screen.",
+        "stop": "Last page to scroll, 0 to 7."
+      }
+    },
+    "stopscroll": {
+      "summary": "Stops any scrolling. Call display() afterwards to redraw the buffer."
+    },
+    "ssd1306_command": {
+      "summary": "Sends one raw command byte to the controller chip (advanced).",
+      "params": {
+        "command": "Command byte from the SSD1306 datasheet, such as SSD1306_SETCONTRAST."
+      }
+    },
+    "getPixel": {
+      "summary": "Reads one pixel from the drawing buffer.",
+      "params": {
+        "x": "X position in pixels, counted from the left edge (0).",
+        "y": "Y position in pixels, counted from the top edge (0)."
+      },
+      "returns": "true if the pixel is on (white)."
+    },
+    "getBuffer": {
+      "summary": "Gives direct access to the drawing buffer (advanced).",
+      "returns": "Pointer to the buffer bytes, 8 vertical pixels per byte."
+    },
+    "vcc": {
+      "summary": "Display power source for begin(): SWITCHCAPVCC makes the panel voltage from 3.3 V (most modules); EXTERNALVCC uses an outside supply."
+    },
+    "color": {
+      "summary": "Pixel colours: WHITE turns pixels on, BLACK turns them off, INVERSE flips them."
+    },
+    "legacyColor": {
+      "summary": "Older short names for SSD1306_WHITE, SSD1306_BLACK and SSD1306_INVERSE."
+    },
+    "command": {
+      "summary": "Raw controller commands for ssd1306_command(), such as turning the panel on or off or setting contrast."
+    }
+  },
+  "DallasTemperature": {
+    "DallasTemperature": {
+      "summary": "Creates a thermometer manager on a OneWire bus. Call begin() in setup().",
+      "params": {
+        "oneWire": "Address of the OneWire bus the sensors are on, for example &oneWire.",
+        "pullupPin": "Pin that switches an external pull-up resistor, if you use one."
+      }
+    },
+    "begin": {
+      "summary": "Searches the bus and counts the connected sensors."
+    },
+    "setOneWire": {
+      "summary": "Sets the OneWire bus, for an object created without one.",
+      "params": {
+        "oneWire": "Address of the OneWire bus."
+      }
+    },
+    "setPullupPin": {
+      "summary": "Sets the pin that switches an external pull-up during conversions.",
+      "params": {
+        "pullupPin": "Digital pin number."
+      }
+    },
+    "getDeviceCount": {
+      "summary": "Number of 1-Wire devices found by begin().",
+      "returns": "Device count."
+    },
+    "getDS18Count": {
+      "summary": "Number of DS18-family thermometers found by begin().",
+      "returns": "Thermometer count."
+    },
+    "verifyDeviceCount": {
+      "summary": "Searches the bus again and updates the device count if it changed.",
+      "returns": "true if the count is unchanged."
+    },
+    "validAddress": {
+      "summary": "Checks the CRC of an address.",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "true if the address is valid."
+    },
+    "validFamily": {
+      "summary": "Checks whether an address belongs to a supported thermometer model.",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "true if the model is supported."
+    },
+    "getAddress": {
+      "summary": "Gets the address of the sensor at a given position on the bus.",
+      "params": {
+        "deviceAddress": "DeviceAddress that receives the 8-byte address.",
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "true if a sensor was found at that position."
+    },
+    "isConnected": {
+      "summary": "Checks whether a sensor is still answering.",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "scratchPad": "Optional 9-byte array that receives the sensor memory."
+      },
+      "returns": "true if the sensor answered."
+    },
+    "readScratchPad": {
+      "summary": "Reads the 9-byte working memory (scratchpad) of a sensor (advanced).",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "scratchPad": "9-byte array that receives the data."
+      },
+      "returns": "true if the read succeeded."
+    },
+    "writeScratchPad": {
+      "summary": "Writes alarm limits and settings to the scratchpad of a sensor (advanced).",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "scratchPad": "Bytes to write."
+      }
+    },
+    "readPowerSupply": {
+      "summary": "Checks whether a sensor runs on parasite power (only 2 wires).",
+      "params": {
+        "deviceAddress": "8-byte device address, or nothing to ask all sensors."
+      },
+      "returns": "true if parasite power is used."
+    },
+    "isParasitePowerMode": {
+      "summary": "Checks whether any sensor on the bus uses parasite power.",
+      "returns": "true if parasite power is used."
+    },
+    "getResolution": {
+      "summary": "Gets the resolution in bits, for all sensors or for one.",
+      "params": {
+        "deviceAddress": "8-byte device address of one sensor."
+      },
+      "returns": "Resolution, 9 to 12 bits."
+    },
+    "setResolution": {
+      "summary": "Sets the resolution: 9 bits (0.5 °C, about 94 ms) up to 12 bits (0.0625 °C, about 750 ms).",
+      "params": {
+        "newResolution": "Resolution, 9 to 12 bits.",
+        "deviceAddress": "8-byte device address, to set only one sensor.",
+        "skipGlobalBitResolutionCalculation": "true to leave the shared setting unchanged (default false)."
+      },
+      "returns": "true on success (form with an address)."
+    },
+    "setWaitForConversion": {
+      "summary": "Chooses whether requestTemperatures() waits until the reading is ready.",
+      "params": {
+        "flag": "true (default) to wait, false to return at once so the sketch can do other work."
+      }
+    },
+    "getWaitForConversion": {
+      "summary": "Checks whether requestTemperatures() waits for the reading.",
+      "returns": "true if it waits."
+    },
+    "setCheckForConversion": {
+      "summary": "Chooses whether to ask the sensor if it is done, instead of waiting a fixed time.",
+      "params": {
+        "flag": "true (default) to check the sensor."
+      }
+    },
+    "getCheckForConversion": {
+      "summary": "Gets the check-for-conversion setting.",
+      "returns": "true if enabled."
+    },
+    "isConversionComplete": {
+      "summary": "Checks whether the requested temperature readings are ready.",
+      "returns": "true if ready."
+    },
+    "millisToWaitForConversion": {
+      "summary": "How long a reading takes at a resolution.",
+      "params": {
+        "bitResolution": "Resolution, 9 to 12 bits; without it, the current resolution is used."
+      },
+      "returns": "Time in milliseconds (94 to 750)."
+    },
+    "blockTillConversionComplete": {
+      "summary": "Waits until a requested reading is ready.",
+      "params": {
+        "bitResolution": "Resolution in bits, which sets the longest wait.",
+        "start": "millis() value when the request was sent.",
+        "req": "Result returned by requestTemperatures()."
+      }
+    },
+    "requestTemperatures": {
+      "summary": "Tells all sensors to measure the temperature. Read the results afterwards with getTempCByIndex() or getTempC().",
+      "returns": "A result that is true if the request was sent."
+    },
+    "requestTemperaturesByAddress": {
+      "summary": "Tells one sensor to measure the temperature.",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "A result that is true if the request was sent."
+    },
+    "requestTemperaturesByIndex": {
+      "summary": "Tells the sensor at a position on the bus to measure the temperature.",
+      "params": {
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "A result that is true if the request was sent."
+    },
+    "getTempCByIndex": {
+      "summary": "Reads the temperature of the sensor at a position on the bus. Call requestTemperatures() first.",
+      "params": {
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "Temperature in °C, or DEVICE_DISCONNECTED_C (-127) if there is no sensor."
+    },
+    "getTempFByIndex": {
+      "summary": "Like getTempCByIndex(), but in Fahrenheit.",
+      "params": {
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "Temperature in °F, or DEVICE_DISCONNECTED_F (-196.6) if there is no sensor."
+    },
+    "getTempC": {
+      "summary": "Reads the temperature of one sensor by its address. Call requestTemperatures() first.",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "retryCount": "Extra attempts if the read fails (default 0)."
+      },
+      "returns": "Temperature in °C, or DEVICE_DISCONNECTED_C (-127) on failure."
+    },
+    "getTempF": {
+      "summary": "Like getTempC(), but in Fahrenheit.",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "Temperature in °F, or DEVICE_DISCONNECTED_F (-196.6) on failure."
+    },
+    "getTemp": {
+      "summary": "Reads the raw temperature value of one sensor; convert it with rawToCelsius().",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "retryCount": "Extra attempts if the read fails (default 0)."
+      },
+      "returns": "Raw value in 1/128 °C, or DEVICE_DISCONNECTED_RAW on failure."
+    },
+    "saveScratchPad": {
+      "summary": "Stores the alarm limits and resolution in the sensor EEPROM so they survive power-off.",
+      "params": {
+        "deviceAddress": "8-byte device address, or nothing for all sensors."
+      },
+      "returns": "true on success."
+    },
+    "saveScratchPadByIndex": {
+      "summary": "Like saveScratchPad(), for the sensor at a position on the bus.",
+      "params": {
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "true on success."
+    },
+    "recallScratchPad": {
+      "summary": "Loads the saved settings from the sensor EEPROM back into its working memory.",
+      "params": {
+        "deviceAddress": "8-byte device address, or nothing for all sensors."
+      },
+      "returns": "true on success."
+    },
+    "recallScratchPadByIndex": {
+      "summary": "Like recallScratchPad(), for the sensor at a position on the bus.",
+      "params": {
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "true on success."
+    },
+    "setAutoSaveScratchPad": {
+      "summary": "Chooses whether setting changes are saved to the sensor EEPROM automatically.",
+      "params": {
+        "flag": "true to save automatically."
+      }
+    },
+    "getAutoSaveScratchPad": {
+      "summary": "Gets the auto-save setting.",
+      "returns": "true if auto-save is on."
+    },
+    "setHighAlarmTemp": {
+      "summary": "Sets the upper alarm limit of a sensor.",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "celsius": "Limit in whole °C, -55 to 125."
+      }
+    },
+    "setLowAlarmTemp": {
+      "summary": "Sets the lower alarm limit of a sensor.",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "celsius": "Limit in whole °C, -55 to 125."
+      }
+    },
+    "getHighAlarmTemp": {
+      "summary": "Gets the upper alarm limit of a sensor.",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "Limit in °C."
+    },
+    "getLowAlarmTemp": {
+      "summary": "Gets the lower alarm limit of a sensor.",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "Limit in °C."
+    },
+    "resetAlarmSearch": {
+      "summary": "Restarts alarmSearch() from the first device."
+    },
+    "alarmSearch": {
+      "summary": "Finds the next sensor whose last reading was outside its alarm limits.",
+      "params": {
+        "newAddr": "8-byte array that receives the address found."
+      },
+      "returns": "true if a sensor in alarm was found."
+    },
+    "hasAlarm": {
+      "summary": "Checks whether any sensor, or one sensor, is in alarm.",
+      "params": {
+        "deviceAddress": "8-byte device address of one sensor."
+      },
+      "returns": "true if in alarm."
+    },
+    "processAlarms": {
+      "summary": "Calls the alarm handler for each sensor that is in alarm."
+    },
+    "setAlarmHandler": {
+      "summary": "Sets the function called by processAlarms() for each sensor in alarm.",
+      "params": {
+        "handler": "Function of the form void name(const uint8_t *deviceAddress)."
+      }
+    },
+    "hasAlarmHandler": {
+      "summary": "Checks whether an alarm handler is set.",
+      "returns": "true if set."
+    },
+    "setUserData": {
+      "summary": "Stores your own 16-bit number in the alarm bytes of a sensor (when alarms are not used).",
+      "params": {
+        "deviceAddress": "8-byte device address.",
+        "data": "Number to store."
+      }
+    },
+    "setUserDataByIndex": {
+      "summary": "Like setUserData(), for the sensor at a position on the bus.",
+      "params": {
+        "index": "Sensor number, starting at 0.",
+        "data": "Number to store."
+      }
+    },
+    "getUserData": {
+      "summary": "Reads the number stored with setUserData().",
+      "params": {
+        "deviceAddress": "8-byte device address."
+      },
+      "returns": "The stored number."
+    },
+    "getUserDataByIndex": {
+      "summary": "Like getUserData(), for the sensor at a position on the bus.",
+      "params": {
+        "index": "Sensor number, starting at 0."
+      },
+      "returns": "The stored number."
+    },
+    "toFahrenheit": {
+      "summary": "Converts Celsius to Fahrenheit.",
+      "params": {
+        "celsius": "Temperature in °C."
+      },
+      "returns": "Temperature in °F."
+    },
+    "toCelsius": {
+      "summary": "Converts Fahrenheit to Celsius.",
+      "params": {
+        "fahrenheit": "Temperature in °F."
+      },
+      "returns": "Temperature in °C."
+    },
+    "rawToCelsius": {
+      "summary": "Converts a raw value from getTemp() to Celsius.",
+      "params": {
+        "raw": "Raw value in 1/128 °C."
+      },
+      "returns": "Temperature in °C."
+    },
+    "rawToFahrenheit": {
+      "summary": "Converts a raw value from getTemp() to Fahrenheit.",
+      "params": {
+        "raw": "Raw value in 1/128 °C."
+      },
+      "returns": "Temperature in °F."
+    },
+    "celsiusToRaw": {
+      "summary": "Converts Celsius to the raw format.",
+      "params": {
+        "celsius": "Temperature in °C."
+      },
+      "returns": "Raw value in 1/128 °C."
+    },
+    "DeviceAddress": {
+      "summary": "An 8-byte array holding the unique address of one sensor. The first byte is the family code, the last is a CRC."
+    },
+    "disconnected": {
+      "summary": "Values returned when a sensor does not answer: -127 °C, -196.6 °F, or -7040 raw. Compare a reading with DEVICE_DISCONNECTED_C to detect a missing sensor."
+    },
+    "faultC": {
+      "summary": "Error readings in °C: open circuit (-254), data shorted to GND (-253) or to VDD (-252), power-on reset value (-251), not enough power (-250)."
+    },
+    "model": {
+      "summary": "Family codes of supported sensors (first address byte): DS18S20 0x10, DS18B20 0x28, DS1822 0x22, DS1825 0x3B, DS28EA00 0x42."
+    }
+  },
+  "DHT": {
+    "DHT": {
+      "summary": "Creates a DHT sensor object. Call begin() in setup() before reading it.",
+      "params": {
+        "pin": "Digital pin the sensor data wire is connected to.",
+        "type": "Sensor model: DHT11, DHT12, DHT21, DHT22 or AM2301.",
+        "count": "Unused, kept for older sketches (default 6)."
+      }
+    },
+    "begin": {
+      "summary": "Prepares the data pin. Wait at least 2 seconds (1 s for DHT11) between readings.",
+      "params": {
+        "usec": "How long to pull the line up before reading, in microseconds (default 55)."
+      }
+    },
+    "readTemperature": {
+      "summary": "Reads the temperature. Returns NAN if the reading failed, so check it with isnan().",
+      "params": {
+        "S": "false (default) for °C, true for °F.",
+        "force": "true to read the sensor now even if the last reading is less than 2 seconds old."
+      },
+      "returns": "Temperature in °C or °F, or NAN on failure."
+    },
+    "readHumidity": {
+      "summary": "Reads the relative humidity. Returns NAN if the reading failed.",
+      "params": {
+        "force": "true to read the sensor now even if the last reading is less than 2 seconds old."
+      },
+      "returns": "Relative humidity in percent (0 to 100), or NAN on failure."
+    },
+    "read": {
+      "summary": "Reads raw data from the sensor. readTemperature() and readHumidity() call this for you.",
+      "params": {
+        "force": "true to read now even if the last reading is less than 2 seconds old."
+      },
+      "returns": "true if the data was read correctly."
+    },
+    "convertCtoF": {
+      "summary": "Converts Celsius to Fahrenheit.",
+      "params": {
+        "c": "Temperature in °C."
+      },
+      "returns": "Temperature in °F."
+    },
+    "convertFtoC": {
+      "summary": "Converts Fahrenheit to Celsius.",
+      "params": {
+        "f": "Temperature in °F."
+      },
+      "returns": "Temperature in °C."
+    },
+    "computeHeatIndex": {
+      "summary": "Works out the heat index, how hot it feels when humidity is taken into account. Given only isFahrenheit, it reads the sensor itself.",
+      "params": {
+        "temperature": "Air temperature, in °F or °C as set by isFahrenheit.",
+        "percentHumidity": "Relative humidity in percent.",
+        "isFahrenheit": "true (default) if temperature is in °F and the result should be too, false for °C."
+      },
+      "returns": "Heat index in °F or °C."
+    },
+    "sensorType": {
+      "summary": "Sensor models for the constructor: DHT11 (blue, 0 to 50 °C), DHT12, DHT21 or AM2301 (same value), and DHT22 (white, more precise, -40 to 80 °C)."
+    }
+  },
+  "EEPROMClass": {
+    "EEPROMClass": {
+      "summary": "The EEPROM memory class. You do not create it yourself: use the ready-made EEPROM object."
+    },
+    "instance": {
+      "summary": "The built-in EEPROM memory (1024 bytes on the Uno, addresses 0 to 1023). EEPROM[address] also reads and writes one byte."
+    },
+    "read": {
+      "summary": "Reads one byte from EEPROM.",
+      "params": {
+        "address": "Byte address, from 0 to 1023 on the Uno."
+      },
+      "returns": "The stored byte (0 to 255); 255 if never written."
+    },
+    "write": {
+      "summary": "Writes one byte to EEPROM. Each cell wears out after about 100000 writes, so prefer update().",
+      "params": {
+        "address": "Byte address, from 0 to 1023 on the Uno.",
+        "value": "Byte to store (0 to 255)."
+      }
+    },
+    "update": {
+      "summary": "Writes one byte only if it differs from what is stored, which saves EEPROM wear.",
+      "params": {
+        "address": "Byte address, from 0 to 1023 on the Uno.",
+        "value": "Byte to store (0 to 255)."
+      }
+    },
+    "get": {
+      "summary": "Reads any variable or struct (int, float, ...) starting at an address.",
+      "params": {
+        "address": "Address of the first byte.",
+        "data": "Variable to fill; its size decides how many bytes are read."
+      },
+      "returns": "A reference to data."
+    },
+    "put": {
+      "summary": "Stores any variable or struct starting at an address. Only changed bytes are written.",
+      "params": {
+        "address": "Address of the first byte.",
+        "data": "Variable to store; it uses sizeof(data) bytes."
+      },
+      "returns": "A reference to data."
+    },
+    "length": {
+      "summary": "Gets the size of the EEPROM.",
+      "returns": "Number of bytes (1024 on the Uno)."
+    }
+  },
+  "HardwareSerial": {
+    "instance": {
+      "summary": "The serial port connected to USB and to pins 0 (RX) and 1 (TX). Use it to talk to the Serial Monitor."
+    },
+    "begin": {
+      "summary": "Opens the serial port. Call it in setup() and choose the same speed in the Serial Monitor.",
+      "params": {
+        "baud": "Speed in bits per second, for example 9600 or 115200.",
+        "config": "Frame format such as SERIAL_8N1 (default)."
+      }
+    },
+    "end": {
+      "summary": "Closes the serial port so pins 0 and 1 can be used as normal pins."
+    },
+    "availableForWrite": {
+      "summary": "Checks how many bytes can be written without waiting.",
+      "returns": "Free space in the send buffer in bytes (up to 63 on the Uno)."
+    },
+    "flush": {
+      "summary": "Waits until all outgoing data has been sent."
+    }
+  },
+  "Keypad": {
+    "Keypad": {
+      "summary": "Creates a keypad from a key map and the pins of its rows and columns.",
+      "params": {
+        "userKeymap": "Key layout, made with makeKeymap(keys).",
+        "rowPins": "Array of pins connected to the rows.",
+        "colPins": "Array of pins connected to the columns.",
+        "numRows": "Number of rows.",
+        "numCols": "Number of columns."
+      }
+    },
+    "makeKeymap": {
+      "summary": "Turns a 2D array of characters into a key map for the Keypad constructor.",
+      "params": {
+        "keys": "2D char array with one character per key, row by row."
+      },
+      "returns": "The key map to pass to Keypad."
+    },
+    "getKey": {
+      "summary": "Checks the keypad once without waiting. Call it often, for example in every loop().",
+      "returns": "The character of a newly pressed key, or NO_KEY if none."
+    },
+    "getKeys": {
+      "summary": "Scans for several keys pressed together (up to 10). The results are in the key list of the keypad.",
+      "returns": "true if any key changed state."
+    },
+    "getState": {
+      "summary": "Gets the state of the last key that changed.",
+      "returns": "IDLE, PRESSED, HOLD or RELEASED."
+    },
+    "begin": {
+      "summary": "Switches to a different key map, for example for a second layer of keys.",
+      "params": {
+        "userKeymap": "New key layout, made with makeKeymap(keys)."
+      }
+    },
+    "isPressed": {
+      "summary": "Checks whether a key is currently pressed. Use after getKeys().",
+      "params": {
+        "keyChar": "Character of the key to check."
+      },
+      "returns": "true if that key is pressed."
+    },
+    "setDebounceTime": {
+      "summary": "Sets how long a key must be stable before it counts, to ignore contact bounce (default 10 ms).",
+      "params": {
+        "ms": "Debounce time in milliseconds."
+      }
+    },
+    "setHoldTime": {
+      "summary": "Sets how long a key must be held before its state becomes HOLD (default 500 ms).",
+      "params": {
+        "ms": "Hold time in milliseconds."
+      }
+    },
+    "addEventListener": {
+      "summary": "Sets a function to run whenever a key changes state. Inside it, getState() tells what happened.",
+      "params": {
+        "listener": "Function taking the key character, for example void keypadEvent(KeypadEvent key)."
+      }
+    },
+    "findInList": {
+      "summary": "Looks for a key in the list of active keys filled by getKeys().",
+      "params": {
+        "keyChar": "Character of the key to find.",
+        "keyCode": "Code of the key to find (row times columns plus column)."
+      },
+      "returns": "Position in the list (0 to 9), or -1 if not found."
+    },
+    "waitForKey": {
+      "summary": "Waits until a key is pressed. Nothing else in the sketch runs while it waits.",
+      "returns": "The character of the pressed key."
+    },
+    "keyStateChanged": {
+      "summary": "Checks whether the state of the current key just changed.",
+      "returns": "true if it changed."
+    },
+    "numKeys": {
+      "summary": "Counts the keys in the active list after getKeys().",
+      "returns": "Number of keys (0 to 10)."
+    },
+    "KeyState": {
+      "summary": "Type of a key state: IDLE, PRESSED, HOLD or RELEASED."
+    },
+    "KeypadEvent": {
+      "summary": "Type of the key character passed to an event listener (a char)."
+    },
+    "states": {
+      "summary": "Key states: IDLE (not pressed), PRESSED (just pressed), HOLD (held past the hold time), RELEASED (just let go)."
+    },
+    "NO_KEY": {
+      "summary": "The empty character returned by getKey() when no key was pressed."
+    }
+  },
+  "LiquidCrystal_I2C": {
+    "LiquidCrystal_I2C": {
+      "summary": "Creates an LCD object for a display with an I2C backpack. Call init() in setup().",
+      "params": {
+        "address": "I2C address of the backpack, usually 0x27 or 0x3F.",
+        "cols": "Number of characters per row, for example 16 or 20.",
+        "rows": "Number of rows, for example 2 or 4."
+      }
+    },
+    "init": {
+      "summary": "Starts I2C and sets up the LCD. Call once in setup()."
+    },
+    "begin": {
+      "summary": "Sets up the LCD with a size; init() already does this for you.",
+      "params": {
+        "cols": "Number of characters per row.",
+        "rows": "Number of rows.",
+        "charsize": "Character size: LCD_5x8DOTS (default) or LCD_5x10DOTS."
+      }
+    },
+    "clear": {
+      "summary": "Erases the screen and moves the cursor to the top-left corner."
+    },
+    "home": {
+      "summary": "Moves the cursor to the top-left corner without erasing."
+    },
+    "setCursor": {
+      "summary": "Moves the cursor; the next print() starts here.",
+      "params": {
+        "col": "Column, starting at 0 on the left.",
+        "row": "Row, starting at 0 at the top."
+      }
+    },
+    "backlight": {
+      "summary": "Turns the backlight on."
+    },
+    "noBacklight": {
+      "summary": "Turns the backlight off."
+    },
+    "setBacklight": {
+      "summary": "Turns the backlight on or off from a value.",
+      "params": {
+        "value": "0 for off, any other value for on."
+      }
+    },
+    "display": {
+      "summary": "Shows the text again after noDisplay()."
+    },
+    "noDisplay": {
+      "summary": "Hides the text without erasing it."
+    },
+    "cursor": {
+      "summary": "Shows an underline cursor."
+    },
+    "noCursor": {
+      "summary": "Hides the underline cursor."
+    },
+    "blink": {
+      "summary": "Shows a blinking block cursor."
+    },
+    "noBlink": {
+      "summary": "Stops the blinking block cursor."
+    },
+    "scrollDisplayLeft": {
+      "summary": "Shifts all text one position to the left."
+    },
+    "scrollDisplayRight": {
+      "summary": "Shifts all text one position to the right."
+    },
+    "leftToRight": {
+      "summary": "New text is written from left to right (default)."
+    },
+    "rightToLeft": {
+      "summary": "New text is written from right to left."
+    },
+    "autoscroll": {
+      "summary": "Shifts the existing text for each new character, so the cursor stays still."
+    },
+    "noAutoscroll": {
+      "summary": "Turns autoscroll off (default)."
+    },
+    "createChar": {
+      "summary": "Defines a custom 5x8 character; show it with write(location).",
+      "params": {
+        "location": "Custom character slot, 0 to 7.",
+        "charmap": "8 bytes, one per row from top; the low 5 bits are the pixels."
+      }
+    },
+    "command": {
+      "summary": "Sends a raw command byte to the LCD controller (advanced).",
+      "params": {
+        "value": "HD44780 command byte."
+      }
+    },
+    "printstr": {
+      "summary": "Prints a text string; same as print().",
+      "params": {
+        "text": "Text to print."
+      }
+    },
+    "cursor_on": {
+      "summary": "Same as cursor()."
+    },
+    "cursor_off": {
+      "summary": "Same as noCursor()."
+    },
+    "blink_on": {
+      "summary": "Same as blink()."
+    },
+    "blink_off": {
+      "summary": "Same as noBlink()."
+    },
+    "load_custom_character": {
+      "summary": "Same as createChar().",
+      "params": {
+        "location": "Custom character slot, 0 to 7.",
+        "charmap": "8 bytes, one per row from top; the low 5 bits are the pixels."
+      }
+    },
+    "charsize": {
+      "summary": "Character size for begin(): 5x8 dots (normal) or 5x10 dots (some one-row LCDs)."
+    }
+  },
+  "NewPing": {
+    "NewPing": {
+      "summary": "Creates a sensor on a trigger pin and an echo pin. Use the same pin twice for 3-pin sensors.",
+      "params": {
+        "trigger_pin": "Pin connected to the sensor TRIG.",
+        "echo_pin": "Pin connected to the sensor ECHO.",
+        "max_cm_distance": "Farthest distance to wait for, in centimetres (default 500)."
+      }
+    },
+    "ping": {
+      "summary": "Sends one ping and measures how long the echo takes.",
+      "params": {
+        "max_cm_distance": "Optional new maximum distance in centimetres; 0 keeps the one from the constructor."
+      },
+      "returns": "Echo time in microseconds, or 0 if nothing is in range."
+    },
+    "ping_cm": {
+      "summary": "Sends one ping and gives the distance in centimetres.",
+      "params": {
+        "max_cm_distance": "Optional new maximum distance in centimetres; 0 keeps the one from the constructor."
+      },
+      "returns": "Distance in whole centimetres, or 0 if nothing is in range."
+    },
+    "ping_in": {
+      "summary": "Sends one ping and gives the distance in inches.",
+      "params": {
+        "max_cm_distance": "Optional new maximum distance in centimetres; 0 keeps the one from the constructor."
+      },
+      "returns": "Distance in whole inches, or 0 if nothing is in range."
+    },
+    "ping_median": {
+      "summary": "Sends several pings and keeps the middle result, which filters out bad readings. Takes about 30 ms per ping.",
+      "params": {
+        "it": "Number of pings (default 5).",
+        "max_cm_distance": "Optional new maximum distance in centimetres; 0 keeps the one from the constructor."
+      },
+      "returns": "Median echo time in microseconds; convert it with convert_cm() or convert_in()."
+    },
+    "convert_cm": {
+      "summary": "Turns an echo time into centimetres.",
+      "params": {
+        "echoTime": "Echo time in microseconds, from ping() or ping_median()."
+      },
+      "returns": "Distance in whole centimetres."
+    },
+    "convert_in": {
+      "summary": "Turns an echo time into inches.",
+      "params": {
+        "echoTime": "Echo time in microseconds, from ping() or ping_median()."
+      },
+      "returns": "Distance in whole inches."
+    },
+    "ping_timer": {
+      "summary": "Starts a ping in the background using Timer2, so loop() keeps running. Your function is called every 24 µs until the echo arrives.",
+      "params": {
+        "userFunc": "Function with no parameters that calls check_timer().",
+        "max_cm_distance": "Optional new maximum distance in centimetres; 0 keeps the one from the constructor."
+      }
+    },
+    "check_timer": {
+      "summary": "Call inside your ping_timer() function to see if the echo has arrived. The echo time is then in ping_result (µs).",
+      "returns": "true once the echo has been received."
+    },
+    "timer_us": {
+      "summary": "Runs a function repeatedly every few microseconds using Timer2. This can break tone() and PWM on pins 3 and 11.",
+      "params": {
+        "frequency": "Interval in microseconds.",
+        "userFunc": "Function with no parameters to call."
+      }
+    },
+    "timer_ms": {
+      "summary": "Runs a function repeatedly every few milliseconds using Timer2. This can break tone() and PWM on pins 3 and 11.",
+      "params": {
+        "frequency": "Interval in milliseconds.",
+        "userFunc": "Function with no parameters to call."
+      }
+    },
+    "timer_stop": {
+      "summary": "Stops the Timer2 interval started by timer_us(), timer_ms() or ping_timer()."
+    },
+    "MAX_SENSOR_DISTANCE": {
+      "summary": "Default and largest maximum distance: 500 cm."
+    },
+    "NO_ECHO": {
+      "summary": "Value 0, returned when no echo comes back within the maximum distance."
+    },
+    "roundTrip": {
+      "summary": "Microseconds the sound needs to travel 1 unit and back: 57 µs per cm, 146 µs per inch."
+    }
+  },
+  "OneWire": {
+    "OneWire": {
+      "summary": "Creates a 1-Wire bus on a pin. The data line needs a 4.7 kΩ pull-up resistor to 5 V.",
+      "params": {
+        "pin": "Digital pin the 1-Wire data line is connected to."
+      }
+    },
+    "begin": {
+      "summary": "Sets or changes the pin of the bus, for an object created without one.",
+      "params": {
+        "pin": "Digital pin the 1-Wire data line is connected to."
+      }
+    },
+    "reset": {
+      "summary": "Sends a reset pulse. Every command starts with a reset.",
+      "returns": "1 if at least one device answered, 0 if none."
+    },
+    "select": {
+      "summary": "Selects one device by its 8-byte ROM address; the next commands go to it only.",
+      "params": {
+        "rom": "8-byte device address, for example found with search()."
+      }
+    },
+    "skip": {
+      "summary": "Addresses all devices at once (Skip ROM), handy when only one device is connected."
+    },
+    "write": {
+      "summary": "Sends one byte on the bus.",
+      "params": {
+        "v": "Byte to send, for example a command such as 0x44.",
+        "power": "1 to keep the line powered afterwards, for parasite-powered devices (default 0)."
+      }
+    },
+    "write_bytes": {
+      "summary": "Sends several bytes on the bus.",
+      "params": {
+        "buf": "Bytes to send.",
+        "count": "Number of bytes.",
+        "power": "true to keep the line powered afterwards (default false)."
+      }
+    },
+    "read": {
+      "summary": "Reads one byte from the bus.",
+      "returns": "The byte read (0 to 255)."
+    },
+    "read_bytes": {
+      "summary": "Reads several bytes from the bus.",
+      "params": {
+        "buf": "Array that receives the bytes.",
+        "count": "Number of bytes to read."
+      }
+    },
+    "write_bit": {
+      "summary": "Sends a single bit.",
+      "params": {
+        "v": "Bit to send, 0 or 1."
+      }
+    },
+    "read_bit": {
+      "summary": "Reads a single bit.",
+      "returns": "0 or 1."
+    },
+    "depower": {
+      "summary": "Stops powering the line after a write with power set."
+    },
+    "search": {
+      "summary": "Finds the next device on the bus. Call it in a loop to list all devices.",
+      "params": {
+        "newAddr": "8-byte array that receives the address found.",
+        "search_mode": "true (default) for a normal search, false to find only devices with an alarm."
+      },
+      "returns": "true if a device was found, false when there are no more."
+    },
+    "reset_search": {
+      "summary": "Restarts search() from the first device."
+    },
+    "target_search": {
+      "summary": "Makes the next search() look only for one family of devices.",
+      "params": {
+        "family_code": "Family code, the first address byte, for example 0x28 for the DS18B20."
+      }
+    },
+    "crc8": {
+      "summary": "Calculates the 8-bit CRC checksum used to check addresses and data. Call it as OneWire::crc8().",
+      "params": {
+        "addr": "Bytes to check.",
+        "len": "Number of bytes, for example 7 for an address."
+      },
+      "returns": "The CRC; compare it with the byte that follows the data."
+    },
+    "crc16": {
+      "summary": "Calculates the 16-bit CRC used by some devices.",
+      "params": {
+        "input": "Bytes to check.",
+        "len": "Number of bytes.",
+        "crc": "Starting CRC value (default 0)."
+      },
+      "returns": "The 16-bit CRC."
+    },
+    "check_crc16": {
+      "summary": "Checks data against the inverted 16-bit CRC a device sent.",
+      "params": {
+        "input": "Bytes to check.",
+        "len": "Number of bytes.",
+        "inverted_crc": "The 2 CRC bytes received from the device.",
+        "crc": "Starting CRC value (default 0)."
+      },
+      "returns": "true if the CRC matches."
+    }
+  },
+  "Print": {
+    "print": {
+      "summary": "Sends text or a number as readable characters, without starting a new line.",
+      "params": {
+        "value": "Text, a character or a number to print.",
+        "base": "For whole numbers: DEC (default), HEX, OCT or BIN.",
+        "digits": "For decimal numbers: digits after the point (default 2)."
+      },
+      "returns": "Number of characters sent."
+    },
+    "println": {
+      "summary": "Like print(), then moves to a new line. With no argument it only ends the line.",
+      "params": {
+        "value": "Text, a character or a number to print.",
+        "base": "For whole numbers: DEC (default), HEX, OCT or BIN.",
+        "digits": "For decimal numbers: digits after the point (default 2)."
+      },
+      "returns": "Number of characters sent, including the line ending."
+    },
+    "write": {
+      "summary": "Sends raw bytes as they are, without turning numbers into text.",
+      "params": {
+        "value": "One byte to send, 0 to 255.",
+        "str": "Text whose characters are sent.",
+        "buffer": "Array of bytes to send.",
+        "size": "How many bytes of the array to send."
+      },
+      "returns": "Number of bytes sent."
+    },
+    "getWriteError": {
+      "summary": "Checks whether an earlier write failed.",
+      "returns": "0 if there was no error."
+    },
+    "clearWriteError": {
+      "summary": "Resets the write error so getWriteError() returns 0 again."
+    }
+  },
+  "Servo": {
+    "Servo": {
+      "summary": "Creates a servo object. Call attach() in setup() before using it."
+    },
+    "attach": {
+      "summary": "Connects the servo to a pin and starts sending pulses.",
+      "params": {
+        "pin": "Digital pin the servo signal wire is connected to.",
+        "min": "Pulse width in microseconds for 0 degrees (default 544).",
+        "max": "Pulse width in microseconds for 180 degrees (default 2400)."
+      },
+      "returns": "The channel number used, or 255 if no channel is free."
+    },
+    "detach": {
+      "summary": "Stops the pulses and frees the pin."
+    },
+    "write": {
+      "summary": "Turns the servo to an angle. Values of 200 or more are taken as a pulse width in microseconds.",
+      "params": {
+        "value": "Angle from 0 to 180 degrees."
+      }
+    },
+    "writeMicroseconds": {
+      "summary": "Sets the pulse width directly, for finer control than whole degrees.",
+      "params": {
+        "value": "Pulse width in microseconds, usually 1000 to 2000."
+      }
+    },
+    "read": {
+      "summary": "Reads the last angle written.",
+      "returns": "Angle from 0 to 180 degrees."
+    },
+    "readMicroseconds": {
+      "summary": "Reads the current pulse width.",
+      "returns": "Pulse width in microseconds."
+    },
+    "attached": {
+      "summary": "Checks whether the servo is attached to a pin.",
+      "returns": "true if attached."
+    },
+    "pulseWidth": {
+      "summary": "Shortest, longest and default pulse widths in microseconds (544, 2400, 1500)."
+    },
+    "MAX_SERVOS": {
+      "summary": "How many servos can be attached at once (12 on the Uno)."
+    }
+  },
+  "SoftwareSerial": {
+    "SoftwareSerial": {
+      "summary": "Creates a serial port on two digital pins. On the Uno, RX can be any pin with pin-change interrupts (all digital pins).",
+      "params": {
+        "receivePin": "Pin that receives data (connect to the module TX).",
+        "transmitPin": "Pin that sends data (connect to the module RX).",
+        "inverse_logic": "true for inverted signals; leave false (default) for normal modules."
+      }
+    },
+    "begin": {
+      "summary": "Starts the port at a baud rate. Speeds up to 57600 work reliably.",
+      "params": {
+        "speed": "Baud rate, for example 9600; must match the module."
+      }
+    },
+    "end": {
+      "summary": "Stops the port and frees its pins."
+    },
+    "listen": {
+      "summary": "Makes this port the one that receives. Only one SoftwareSerial port can receive at a time.",
+      "returns": "true if another port was listening before."
+    },
+    "isListening": {
+      "summary": "Checks whether this port is the one currently receiving.",
+      "returns": "true if it is listening."
+    },
+    "stopListening": {
+      "summary": "Stops this port from receiving.",
+      "returns": "true if it was listening."
+    },
+    "overflow": {
+      "summary": "Checks whether incoming data was lost because the 64-byte buffer was full. Reading it clears the flag.",
+      "returns": "true if data was lost."
+    }
+  },
+  "SPIClass": {
+    "SPIClass": {
+      "summary": "The SPI bus class. You do not create it yourself: use the ready-made SPI object."
+    },
+    "instance": {
+      "summary": "The SPI bus. Call SPI.begin() in setup() first."
+    },
+    "begin": {
+      "summary": "Starts the SPI bus and sets up pins 11, 12 and 13 (and pin 10 as an output)."
+    },
+    "end": {
+      "summary": "Stops the SPI bus. The pins keep their current mode."
+    },
+    "beginTransaction": {
+      "summary": "Claims the bus with the settings your device needs. Pull the chip select pin LOW after this.",
+      "params": {
+        "settings": "An SPISettings with clock, bit order and data mode."
+      }
+    },
+    "endTransaction": {
+      "summary": "Releases the bus so other devices or interrupts can use it."
+    },
+    "transfer": {
+      "summary": "Sends data and receives data at the same time. With a buffer, each byte is replaced by the byte received.",
+      "params": {
+        "data": "Byte to send (0 to 255).",
+        "buf": "Array of bytes to send; it is overwritten with the bytes received.",
+        "count": "Number of bytes in the array."
+      },
+      "returns": "The byte received (single-byte form)."
+    },
+    "transfer16": {
+      "summary": "Sends and receives a 16-bit value (two bytes) at once.",
+      "params": {
+        "data": "16-bit value to send (0 to 65535)."
+      },
+      "returns": "The 16-bit value received."
+    },
+    "usingInterrupt": {
+      "summary": "Tells SPI that an interrupt handler also uses the bus, so that interrupt is paused during transactions.",
+      "params": {
+        "interruptNumber": "Interrupt number, for example digitalPinToInterrupt(2)."
+      }
+    },
+    "notUsingInterrupt": {
+      "summary": "Undoes usingInterrupt() for that interrupt.",
+      "params": {
+        "interruptNumber": "Interrupt number given to usingInterrupt()."
+      }
+    },
+    "setBitOrder": {
+      "summary": "Old way to set the bit order. Prefer SPISettings with beginTransaction().",
+      "params": {
+        "bitOrder": "MSBFIRST or LSBFIRST."
+      }
+    },
+    "setDataMode": {
+      "summary": "Old way to set the data mode. Prefer SPISettings with beginTransaction().",
+      "params": {
+        "dataMode": "SPI_MODE0, SPI_MODE1, SPI_MODE2 or SPI_MODE3."
+      }
+    },
+    "setClockDivider": {
+      "summary": "Old way to set the speed as a fraction of the 16 MHz clock. Prefer SPISettings with beginTransaction().",
+      "params": {
+        "clockDiv": "One of SPI_CLOCK_DIV2 to SPI_CLOCK_DIV128 (default SPI_CLOCK_DIV4, 4 MHz)."
+      }
+    },
+    "attachInterrupt": {
+      "summary": "Turns on the SPI interrupt (for advanced peripheral-mode use)."
+    },
+    "detachInterrupt": {
+      "summary": "Turns off the SPI interrupt."
+    },
+    "dataMode": {
+      "summary": "SPI data modes 0 to 3: which clock level is idle and on which edge data is read. Check the device datasheet; most use SPI_MODE0."
+    },
+    "clockDivider": {
+      "summary": "Divides the 16 MHz clock by 2, 4, 8, 16, 32, 64 or 128 to set the SPI speed (8 MHz down to 125 kHz)."
+    }
+  },
+  "SPISettings": {
+    "SPISettings": {
+      "summary": "Bundles the speed, bit order and data mode a device needs. Pass it to SPI.beginTransaction(). Without arguments: 4 MHz, MSBFIRST, SPI_MODE0.",
+      "params": {
+        "clock": "Highest clock speed the device supports, in hertz (for example 1000000 for 1 MHz).",
+        "bitOrder": "MSBFIRST or LSBFIRST.",
+        "dataMode": "SPI_MODE0, SPI_MODE1, SPI_MODE2 or SPI_MODE3."
+      }
+    }
+  },
+  "Stepper": {
+    "Stepper": {
+      "summary": "Creates a stepper motor on 2, 4 or 5 control pins.",
+      "params": {
+        "stepsPerRevolution": "Steps for one full turn, for example 200 for many motors or 2048 for the 28BYJ-48.",
+        "pin1": "First control pin.",
+        "pin2": "Second control pin.",
+        "pin3": "Third control pin (4- and 5-wire motors).",
+        "pin4": "Fourth control pin (4- and 5-wire motors).",
+        "pin5": "Fifth control pin (5-phase motors only)."
+      }
+    },
+    "setSpeed": {
+      "summary": "Sets how fast step() turns the motor. It does not start the motor by itself.",
+      "params": {
+        "rpm": "Speed in revolutions per minute."
+      }
+    },
+    "step": {
+      "summary": "Turns the motor a number of steps. The sketch waits until the motor has finished.",
+      "params": {
+        "steps": "Steps to move; positive for one direction, negative for the other."
+      }
+    },
+    "version": {
+      "summary": "Gets the library version.",
+      "returns": "Version number."
+    }
+  },
+  "Stream": {
+    "available": {
+      "summary": "Checks how many received bytes are waiting to be read.",
+      "returns": "Number of bytes ready (0 if none). The Uno serial buffer holds 64 bytes."
+    },
+    "read": {
+      "summary": "Takes the next received byte out of the buffer.",
+      "returns": "The byte (0 to 255), or -1 if nothing is waiting."
+    },
+    "peek": {
+      "summary": "Looks at the next received byte without removing it.",
+      "returns": "The byte (0 to 255), or -1 if nothing is waiting."
+    },
+    "setTimeout": {
+      "summary": "Sets how long the waiting functions (parseInt(), readString(), find() …) wait for data.",
+      "params": {
+        "timeout": "Time in milliseconds (default 1000)."
+      }
+    },
+    "getTimeout": {
+      "summary": "Reads the current timeout.",
+      "returns": "Timeout in milliseconds."
+    },
+    "find": {
+      "summary": "Reads incoming data until a given text is found or the timeout runs out.",
+      "params": {
+        "target": "Text (or a single character) to look for.",
+        "length": "How many characters of target to match."
+      },
+      "returns": "true if found, false on timeout."
+    },
+    "findUntil": {
+      "summary": "Like find(), but also stops when a terminator text is found.",
+      "params": {
+        "target": "Text to look for.",
+        "terminator": "Text that ends the search.",
+        "targetLen": "Length of target.",
+        "termLen": "Length of terminator."
+      },
+      "returns": "true if target was found, false if the terminator or the timeout came first."
+    },
+    "parseInt": {
+      "summary": "Reads the next whole number from incoming text, for example 42 from 42 then Enter. Waits up to the timeout.",
+      "params": {
+        "lookahead": "What to skip before the number: SKIP_ALL (default), SKIP_NONE or SKIP_WHITESPACE.",
+        "ignore": "A character to ignore inside the number, such as a comma in 1,000."
+      },
+      "returns": "The number read, or 0 if none came before the timeout."
+    },
+    "parseFloat": {
+      "summary": "Reads the next decimal number from incoming text, for example 3.14. Waits up to the timeout.",
+      "params": {
+        "lookahead": "What to skip before the number: SKIP_ALL (default), SKIP_NONE or SKIP_WHITESPACE.",
+        "ignore": "A character to ignore inside the number."
+      },
+      "returns": "The number read, or 0 if none came before the timeout."
+    },
+    "readBytes": {
+      "summary": "Reads bytes into an array until it has enough or the timeout runs out.",
+      "params": {
+        "buffer": "Array to store the bytes in.",
+        "length": "How many bytes to read at most."
+      },
+      "returns": "Number of bytes actually read (0 if none)."
+    },
+    "readBytesUntil": {
+      "summary": "Like readBytes(), but also stops at a terminator character, which is not stored.",
+      "params": {
+        "terminator": "Character that ends reading, for example a newline.",
+        "buffer": "Array to store the bytes in.",
+        "length": "How many bytes to read at most."
+      },
+      "returns": "Number of bytes stored in buffer."
+    },
+    "readString": {
+      "summary": "Reads all incoming characters into a String until nothing new arrives for the timeout.",
+      "returns": "The text read."
+    },
+    "readStringUntil": {
+      "summary": "Reads incoming characters into a String until a terminator character or the timeout.",
+      "params": {
+        "terminator": "Character that ends reading, usually a newline. It is removed from the input but not added to the result."
+      },
+      "returns": "The text read, without the terminator."
+    },
+    "lookahead": {
+      "summary": "How parseInt() and parseFloat() treat characters before the number: SKIP_ALL skips anything that is not part of a number, SKIP_NONE skips nothing, SKIP_WHITESPACE skips only spaces, tabs and line endings."
+    }
+  },
+  "String": {
+    "String": {
+      "summary": "Creates a text object that can grow and be joined with +. Uses RAM, so avoid very long Strings on the Uno.",
+      "params": {
+        "value": "Starting content: text, a character or a number (default empty).",
+        "base": "For whole numbers: number base such as DEC (default) or HEX.",
+        "decimalPlaces": "For decimal numbers: digits after the point (default 2)."
+      }
+    },
+    "length": {
+      "summary": "Counts the characters in the String.",
+      "returns": "Number of characters."
+    },
+    "charAt": {
+      "summary": "Gets one character of the String. Same as s[index].",
+      "params": {
+        "index": "Position, 0 for the first character."
+      },
+      "returns": "The character, or 0 if index is past the end."
+    },
+    "setCharAt": {
+      "summary": "Replaces one character of the String. Does nothing if index is past the end.",
+      "params": {
+        "index": "Position, 0 for the first character.",
+        "c": "New character."
+      }
+    },
+    "concat": {
+      "summary": "Adds text or a number to the end of the String. Same as +=.",
+      "params": {
+        "value": "Text, a character or a number to add."
+      },
+      "returns": "true on success, false if memory ran out."
+    },
+    "compareTo": {
+      "summary": "Compares two Strings in alphabetical (character code) order.",
+      "params": {
+        "other": "String to compare with."
+      },
+      "returns": "A negative number if this comes first, 0 if equal, positive if other comes first."
+    },
+    "equals": {
+      "summary": "Checks whether two texts are exactly the same. Same as ==.",
+      "params": {
+        "other": "Text to compare with."
+      },
+      "returns": "true if equal, upper and lower case matter."
+    },
+    "equalsIgnoreCase": {
+      "summary": "Checks whether two texts are the same, ignoring upper and lower case.",
+      "params": {
+        "other": "Text to compare with."
+      },
+      "returns": "true if equal ignoring case."
+    },
+    "startsWith": {
+      "summary": "Checks whether the String begins with a given text.",
+      "params": {
+        "prefix": "Text to look for.",
+        "offset": "Position to check from (default 0)."
+      },
+      "returns": "true if it starts with prefix."
+    },
+    "endsWith": {
+      "summary": "Checks whether the String ends with a given text.",
+      "params": {
+        "suffix": "Text to look for."
+      },
+      "returns": "true if it ends with suffix."
+    },
+    "indexOf": {
+      "summary": "Finds the first place a character or text appears.",
+      "params": {
+        "value": "Character or text to look for.",
+        "fromIndex": "Position to start searching from (default 0)."
+      },
+      "returns": "Position of the first match, or -1 if not found."
+    },
+    "lastIndexOf": {
+      "summary": "Finds the last place a character or text appears, searching backwards.",
+      "params": {
+        "value": "Character or text to look for.",
+        "fromIndex": "Position to search backwards from (default the end)."
+      },
+      "returns": "Position of the last match, or -1 if not found."
+    },
+    "substring": {
+      "summary": "Copies part of the String.",
+      "params": {
+        "from": "Position of the first character to copy.",
+        "to": "Position to stop before (default the end)."
+      },
+      "returns": "The part as a new String."
+    },
+    "replace": {
+      "summary": "Replaces every occurrence of a character or text with another, changing the String itself.",
+      "params": {
+        "find": "Character or text to replace.",
+        "replacement": "Character or text to put in its place."
+      }
+    },
+    "remove": {
+      "summary": "Deletes characters from the String.",
+      "params": {
+        "index": "Position of the first character to delete.",
+        "count": "How many to delete (default all to the end)."
+      }
+    },
+    "toLowerCase": {
+      "summary": "Changes all letters of the String to lowercase."
+    },
+    "toUpperCase": {
+      "summary": "Changes all letters of the String to uppercase."
+    },
+    "trim": {
+      "summary": "Removes spaces, tabs and line endings from both ends of the String, for example after readStringUntil()."
+    },
+    "toInt": {
+      "summary": "Converts text such as 123 into a whole number.",
+      "returns": "The number, or 0 if the text does not start with a number."
+    },
+    "toFloat": {
+      "summary": "Converts text such as 3.14 into a decimal number.",
+      "returns": "The number, or 0 if the text does not start with a number."
+    },
+    "toDouble": {
+      "summary": "Converts text into a decimal number (same precision as float on the Uno).",
+      "returns": "The number, or 0 if the text does not start with a number."
+    },
+    "c_str": {
+      "summary": "Gives the text as a plain C character array, for functions that need const char *.",
+      "returns": "Pointer to the characters; valid until the String changes."
+    },
+    "reserve": {
+      "summary": "Sets aside memory in advance so the String can grow without fragmenting RAM.",
+      "params": {
+        "size": "Number of characters to make room for."
+      },
+      "returns": "true if the memory was available."
+    },
+    "getBytes": {
+      "summary": "Copies the characters into a byte array, ending with a 0 byte.",
+      "params": {
+        "buf": "Array to copy into.",
+        "bufsize": "Size of the array, including room for the ending 0.",
+        "index": "Position in the String to start copying from (default 0)."
+      }
+    },
+    "toCharArray": {
+      "summary": "Copies the characters into a char array, ending with a 0 character.",
+      "params": {
+        "buf": "Array to copy into.",
+        "bufsize": "Size of the array, including room for the ending 0.",
+        "index": "Position in the String to start copying from (default 0)."
+      }
+    }
+  },
+  "TwoWire": {
+    "TwoWire": {
+      "summary": "The I2C bus class. You do not create it yourself: use the ready-made Wire object."
+    },
+    "instance": {
+      "summary": "The I2C bus on pins A4 (SDA) and A5 (SCL). Call Wire.begin() in setup() first."
+    },
+    "begin": {
+      "summary": "Starts the I2C bus. Without an address the board is the controller; with an address it joins as a peripheral.",
+      "params": {
+        "address": "7-bit address (8 to 119) to answer to when acting as a peripheral."
+      }
+    },
+    "end": {
+      "summary": "Stops the I2C bus and frees pins A4 and A5."
+    },
+    "setClock": {
+      "summary": "Changes the I2C clock speed. The default is 100000 Hz.",
+      "params": {
+        "clock": "Clock speed in hertz, usually 100000 (standard) or 400000 (fast mode)."
+      }
+    },
+    "setWireTimeout": {
+      "summary": "Sets a time limit so a stuck I2C bus cannot freeze your sketch forever.",
+      "params": {
+        "timeout": "Time limit in microseconds (default 25000); 0 turns the timeout off.",
+        "reset_with_timeout": "If true, the bus is reset automatically when the time limit is hit."
+      }
+    },
+    "getWireTimeoutFlag": {
+      "summary": "Checks whether a timeout happened since the flag was last cleared.",
+      "returns": "true if a timeout happened."
+    },
+    "clearWireTimeoutFlag": {
+      "summary": "Clears the timeout flag."
+    },
+    "beginTransmission": {
+      "summary": "Starts a message to a peripheral. Queue bytes with write(), then send them with endTransmission().",
+      "params": {
+        "address": "7-bit address of the device, for example 0x3C or 0x68."
+      }
+    },
+    "endTransmission": {
+      "summary": "Sends the bytes queued since beginTransmission() and ends the message.",
+      "params": {
+        "sendStop": "true (default) releases the bus; false keeps it for a following request."
+      },
+      "returns": "0 on success, 1 data too long, 2 address not acknowledged, 3 data not acknowledged, 4 other error, 5 timeout."
+    },
+    "requestFrom": {
+      "summary": "Asks a peripheral for bytes. Read them afterwards with available() and read().",
+      "params": {
+        "address": "7-bit address of the device.",
+        "quantity": "Number of bytes to request (up to 32).",
+        "sendStop": "true (default) releases the bus after the request.",
+        "iaddress": "Internal register address to read from inside the device.",
+        "isize": "Size of the register address in bytes (0 to 4)."
+      },
+      "returns": "Number of bytes received."
+    },
+    "onReceive": {
+      "summary": "Sets a function to run when this board, as a peripheral, receives data from the controller.",
+      "params": {
+        "handler": "Function taking the number of bytes received, for example void receiveEvent(int numBytes)."
+      }
+    },
+    "onRequest": {
+      "summary": "Sets a function to run when the controller asks this peripheral for data. Answer with write() inside it.",
+      "params": {
+        "handler": "Function with no parameters, for example void requestEvent()."
+      }
+    },
+    "BUFFER_LENGTH": {
+      "summary": "Size of the I2C buffer: at most 32 bytes per transmission or request."
+    }
+  },
+  "VL53L0X": {
+    "VL53L0X": {
+      "summary": "Creates a VL53L0X sensor object. Call Wire.begin() and then init() in setup()."
+    },
+    "init": {
+      "summary": "Sets up the sensor with default settings.",
+      "params": {
+        "io_2v8": "true (default) for 2.8 V I/O, which most breakout boards use."
+      },
+      "returns": "true if the sensor was found and set up."
+    },
+    "setTimeout": {
+      "summary": "Sets how long a reading may take before giving up, so the sketch never hangs.",
+      "params": {
+        "timeout": "Timeout in milliseconds; 0 means wait forever."
+      }
+    },
+    "getTimeout": {
+      "summary": "Gets the timeout.",
+      "returns": "Timeout in milliseconds."
+    },
+    "timeoutOccurred": {
+      "summary": "Checks whether a reading timed out since the last call.",
+      "returns": "true if a timeout happened."
+    },
+    "startContinuous": {
+      "summary": "Starts measuring over and over, so readRangeContinuousMillimeters() can be called.",
+      "params": {
+        "period_ms": "Time between measurements in milliseconds; 0 (default) measures as fast as possible."
+      }
+    },
+    "stopContinuous": {
+      "summary": "Stops continuous measuring."
+    },
+    "readRangeContinuousMillimeters": {
+      "summary": "Gets the latest distance in continuous mode, waiting for it if needed.",
+      "returns": "Distance in millimetres; about 8190 or more means nothing in range, 65535 means timeout."
+    },
+    "readRangeSingleMillimeters": {
+      "summary": "Takes one distance measurement and waits for the result.",
+      "returns": "Distance in millimetres; about 8190 or more means nothing in range, 65535 means timeout."
+    },
+    "setAddress": {
+      "summary": "Gives the sensor a new I2C address, so several sensors can share one bus. The address resets at power-off.",
+      "params": {
+        "new_addr": "New 7-bit address (default is 0x29)."
+      }
+    },
+    "getAddress": {
+      "summary": "Gets the I2C address in use.",
+      "returns": "7-bit address."
+    },
+    "setBus": {
+      "summary": "Chooses which I2C bus the sensor is on.",
+      "params": {
+        "bus": "I2C bus, for example &Wire."
+      }
+    },
+    "getBus": {
+      "summary": "Gets the I2C bus the sensor uses.",
+      "returns": "Pointer to the TwoWire bus."
+    },
+    "setSignalRateLimit": {
+      "summary": "Sets the weakest return signal accepted. Lower values reach farther but give less accurate readings.",
+      "params": {
+        "limit_Mcps": "Limit in mega counts per second, default 0.25; try 0.1 for long range."
+      },
+      "returns": "true if the value was valid."
+    },
+    "getSignalRateLimit": {
+      "summary": "Gets the signal rate limit.",
+      "returns": "Limit in mega counts per second."
+    },
+    "setMeasurementTimingBudget": {
+      "summary": "Sets how long one measurement may take. Longer budgets give more accurate readings.",
+      "params": {
+        "budget_us": "Time in microseconds, at least 20000; default about 33000, 200000 for high accuracy."
+      },
+      "returns": "true if the value was valid."
+    },
+    "getMeasurementTimingBudget": {
+      "summary": "Gets the measurement timing budget.",
+      "returns": "Time in microseconds."
+    },
+    "setVcselPulsePeriod": {
+      "summary": "Sets the laser pulse period. Longer periods help reach farther (advanced).",
+      "params": {
+        "type": "VL53L0X::VcselPeriodPreRange or VL53L0X::VcselPeriodFinalRange.",
+        "period_pclks": "Period in clocks: 12 to 18 for pre-range, 8 to 14 for final range (even numbers only)."
+      },
+      "returns": "true if the value was valid."
+    },
+    "getVcselPulsePeriod": {
+      "summary": "Gets the laser pulse period.",
+      "params": {
+        "type": "VL53L0X::VcselPeriodPreRange or VL53L0X::VcselPeriodFinalRange."
+      },
+      "returns": "Period in clocks."
+    },
+    "writeReg": {
+      "summary": "Writes one byte to a sensor register (low level).",
+      "params": {
+        "reg": "Register number.",
+        "value": "Byte to write."
+      }
+    },
+    "writeReg16Bit": {
+      "summary": "Writes a 16-bit value to a sensor register (low level).",
+      "params": {
+        "reg": "Register number.",
+        "value": "16-bit value to write."
+      }
+    },
+    "writeReg32Bit": {
+      "summary": "Writes a 32-bit value to a sensor register (low level).",
+      "params": {
+        "reg": "Register number.",
+        "value": "32-bit value to write."
+      }
+    },
+    "readReg": {
+      "summary": "Reads one byte from a sensor register (low level).",
+      "params": {
+        "reg": "Register number."
+      },
+      "returns": "The byte read."
+    },
+    "readReg16Bit": {
+      "summary": "Reads a 16-bit value from a sensor register (low level).",
+      "params": {
+        "reg": "Register number."
+      },
+      "returns": "The 16-bit value read."
+    },
+    "readReg32Bit": {
+      "summary": "Reads a 32-bit value from a sensor register (low level).",
+      "params": {
+        "reg": "Register number."
+      },
+      "returns": "The 32-bit value read."
+    },
+    "writeMulti": {
+      "summary": "Writes several bytes starting at a register (low level).",
+      "params": {
+        "reg": "First register number.",
+        "src": "Bytes to write.",
+        "count": "Number of bytes."
+      }
+    },
+    "readMulti": {
+      "summary": "Reads several bytes starting at a register (low level).",
+      "params": {
+        "reg": "First register number.",
+        "dst": "Array that receives the bytes.",
+        "count": "Number of bytes."
+      }
+    },
+    "vcselPeriodType": {
+      "summary": "Which laser pulse period to set: the pre-range or the final-range phase of a measurement. Write as VL53L0X::VcselPeriodPreRange."
+    }
+  }
+}

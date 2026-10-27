@@ -73,6 +73,8 @@ export const users = pgTable(
     failedLoginCount: integer().notNull().default(0),
     lockedUntil: timestamp({ withTimezone: true }),
     personalWorkspaceId: uuid().references((): AnyPgColumn => workspaces.id, { onDelete: 'restrict' }),
+    // Editor onboarding tour finished or skipped (FR-WRK-06): it opens once per account.
+    editorTourCompletedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: timestamp({ withTimezone: true }),

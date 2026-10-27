@@ -1,3 +1,4 @@
+import { copyParts, cutParts, pasteParts } from './clipboard.js';
 import { findManifest } from '@robosim/catalog/manifests';
 import { BOARD_PART, type PinRef } from '@robosim/shared';
 import {
@@ -447,6 +448,9 @@ export function CircuitCanvas({
     else if (mod && key === 'a')
       setSelection({ parts: [BOARD_PART, ...doc.components.map((c) => c.id)], wire: null });
     else if (mod && key === 'd' && ids.length) duplicate(ids);
+    else if (mod && key === 'c' && ids.length) void copyParts(editor);
+    else if (mod && key === 'x' && ids.length) void cutParts(editor);
+    else if (mod && key === 'v') void pasteParts(editor);
     else if (!mod && key === 'r' && ids.length) apply((d) => rotateComponents(d, ids));
     else if (!mod && key === 'f' && ids.length) apply((d) => flipComponents(d, ids));
     else if (e.key.startsWith('Arrow') && ids.length) {

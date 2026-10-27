@@ -9,7 +9,7 @@ import {
   type UpdateMeRequest,
 } from '@robosim/shared';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import { ENV, type Env } from '../../config/env.js';
 import { DATABASE, type Database, type Tx } from '../../db/client.js';
 import { authTokens, users } from '../../db/schema.js';
@@ -241,8 +241,12 @@ export class AuthService {
   }
 
   async updateMe(caller: Caller, patch: UpdateMeRequest): Promise<Me> {
+    const { editorTourCompleted, ...profile } = patch;
+    const set = editorTourCompleted
+      ? { ...profile, editorTourCompletedAt: sql`coalesce(${users.editorTourCompletedAt}, now())` }
+      : profile;
     const [user] = await withScope(this.database.db, caller, (tx) =>
-      tx.update(users).set(patch).where(eq(users.id, caller.userId)).returning(),
+      tx.update(users).set(set).where(eq(users.id, caller.userId)).returning(),
     );
     if (!user) throw new DomainError('unauthenticated');
     return toMe(user);
@@ -365,5 +369,6 @@ export function toMe(user: UserRow): Me {
     status: user.status,
     personalWorkspaceId: user.personalWorkspaceId,
     createdAt: user.createdAt.toISOString(),
+    editorTourCompletedAt: user.editorTourCompletedAt?.toISOString() ?? null,
   };
 }

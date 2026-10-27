@@ -1,6 +1,8 @@
 import type { BuildDiagnostic } from '@robosim/shared';
+import { addApiDocs } from '@robosim/i18n/apidocs';
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
-import { ARDUINO_LANGUAGE, THEMES, monaco } from './monaco.js';
+import { useTranslation } from 'react-i18next';
+import { ARDUINO_LANGUAGE, THEMES, monaco, setDocsTranslator } from './monaco.js';
 import type { EditorImplProps } from './types.js';
 
 const SEVERITY: Record<BuildDiagnostic['severity'], monaco.MarkerSeverity> = {
@@ -34,6 +36,12 @@ export function MonacoEditor({
     onChangeRef.current = onChange;
   });
   const scope = useId().replace(/[^a-z0-9]/gi, '');
+  const { t, i18n } = useTranslation();
+  // Hover and completion docs in the UI language (FR-COD-02); the bundle ships with this chunk.
+  useLayoutEffect(() => {
+    addApiDocs(i18n);
+    setDocsTranslator(t);
+  }, [i18n, t]);
 
   useEffect(() => {
     editor.current?.updateOptions({ readOnly });

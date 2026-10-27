@@ -143,8 +143,8 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-WRK-02 | Top toolbar: Run, Pause, Step (1 ms), Stop, Reset, speed (0.25×–4×), real-time factor indicator, 2D/3D toggle, Save, Versions, Share, Export, Help, language switch. All actions have keyboard shortcuts. | Must | P1 |
 | FR-WRK-03 | Panes collapse into tabs below 1024 px width; below 768 px the workspace is view-and-run only with a banner explaining that editing needs a larger screen. | Must | P1 |
 | FR-WRK-04 | Autosave: local (IndexedDB) every 10 s and on every structural change; cloud save every 30 s when signed in and online; conflict-free when collaboration is on (FR-PRJ-08). | Must | P2 |
-| FR-WRK-05 | Command palette (Ctrl/Cmd+K) for all actions and component search. | Should | P2 |
-| FR-WRK-06 | Onboarding tour on first visit, skippable, re-openable from Help. | Must | P2 |
+| FR-WRK-05 | Command palette (Ctrl/Cmd+K) for all actions and component search. *Status: done 2026-10-27 (toolbar actions, code and circuit tools, panels, every part; FA + EN search).* | Should | P2 |
+| FR-WRK-06 | Onboarding tour on first visit, skippable, re-openable from Help. *Status: done 2026-10-27 (7 stops; once per account, or per browser for guests).* | Must | P2 |
 | FR-WRK-07 | Workspace switcher (personal ↔ organizations) visible in the header; the active workspace determines entitlements and data ownership. | Must | P3 |
 
 ### 6.2 Circuit editor (CIR)
@@ -159,7 +159,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-CIR-06 | Zoom, pan, zoom-to-fit, minimap; 60 FPS interaction at 200 components and 400 wires on the reference laptop. | Must | P1 |
 | FR-CIR-07 | Schematic view auto-generated from the netlist (read-only), switchable with the breadboard view. | Should | P4 |
 | FR-CIR-08 | Labels, notes, and grouping frames on the canvas. | Could | P4 |
-| FR-CIR-09 | Copy/paste between projects; paste preserves wiring inside the selection. | Should | P2 |
+| FR-CIR-09 | Copy/paste between projects; paste preserves wiring inside the selection. *Status: done 2026-10-27 (system clipboard, in-app fallback).* | Should | P2 |
 | FR-CIR-10 | Library search in FA and EN (with Persian normalization of ی/ي and ک/ك and ZWNJ), filtering by category, board compatibility, and "in stock in shop". | Must | P1 |
 
 ### 6.3 Code editor and languages (COD)
@@ -167,12 +167,12 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
 | FR-COD-01 | Monaco-based C++ editor with Arduino syntax highlighting, auto-indent, bracket matching, find/replace, multi-file sketches (`.ino`, `.h`, `.cpp` tabs); always LTR. | Must | P1 |
-| FR-COD-02 | Autocomplete for Arduino core APIs and allow-listed libraries, with hover documentation in the UI language. | Must | P2 |
+| FR-COD-02 | Autocomplete for Arduino core APIs and allow-listed libraries, with hover documentation in the UI language. *Status: done 2026-10-27 (core + 20 libraries, 588 docs in FA and EN).* | Must | P2 |
 | FR-COD-03 | Compile diagnostics (errors and warnings) shown inline with line/column, plus a Persian/English plain-language explanation for the 50 most common beginner errors. | Must | P1 |
 | FR-COD-04 | Block-based editor (Blockly) with blocks for pins, timing, serial, motors, servo, sensors, logic, maths, variables, functions. Blocks generate readable Arduino C++ shown side-by-side; "Convert to code" switches the project to C++ permanently after confirmation. Block labels are translated. | Must | P4 |
-| FR-COD-05 | Code formatting (clang-format, Arduino style) on demand. | Should | P2 |
+| FR-COD-05 | Code formatting (clang-format, Arduino style) on demand. *Status: done 2026-10-27 (clang-format WASM, Arduino's official style).* | Should | P2 |
 | FR-COD-06 | Lightweight static analysis in the browser (tree-sitter C++) extracting pin usage (`pinMode`, `digitalWrite`, `analogWrite`, `attach`) for code-aware safety rules (FR-SAF-03). | Must | P1 |
-| FR-COD-07 | Library manager listing the allow-listed Arduino libraries with versions; adding one inserts the `#include`. | Must | P2 |
+| FR-COD-07 | Library manager listing the allow-listed Arduino libraries with versions; adding one inserts the `#include`. *Status: done 2026-10-27 (also records the pinned version in the project).* | Must | P2 |
 
 ### 6.4 Build service (BLD)
 
