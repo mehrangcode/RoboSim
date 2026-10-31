@@ -4,7 +4,8 @@
     "mainLabel": "Admin navigation",
     "workspaces": "Workspaces",
     "plans": "Plans",
-    "prices": "Prices"
+    "prices": "Prices",
+    "ai": "AI"
   },
   "actions": {
     "cancel": "Cancel"
@@ -68,12 +69,26 @@
     "settings": "Settings"
   },
   "ent": {
-    "export": { "csv": "CSV export", "pdf": "PDF export" },
-    "collab": { "realtime": "Real-time collaboration" },
-    "community": { "publish": "Publish to community" },
-    "ai": { "byok": "AI with own key", "platform_credits_monthly": "Platform AI credits per month" },
-    "hwb": { "upload": "Upload to hardware" },
-    "arena": { "custom": "Custom arenas" },
+    "export": {
+      "csv": "CSV export",
+      "pdf": "PDF export"
+    },
+    "collab": {
+      "realtime": "Real-time collaboration"
+    },
+    "community": {
+      "publish": "Publish to community"
+    },
+    "ai": {
+      "byok": "AI with own key",
+      "platform_credits_monthly": "Platform AI credits per month"
+    },
+    "hwb": {
+      "upload": "Upload to hardware"
+    },
+    "arena": {
+      "custom": "Custom arenas"
+    },
     "org": {
       "classes": "Classes",
       "verified_grading": "Verified grading",
@@ -83,11 +98,24 @@
       "analytics": "Organization analytics",
       "audit_export": "Audit log export"
     },
-    "projects": { "cloud_max": "Cloud projects", "version_retention_days": "Version history (days)" },
-    "build": { "daily_quota": "Builds per day", "priority": "Build priority" },
-    "boards": { "allowed": "Allowed boards" },
-    "components": { "tier": "Component library" },
-    "learning": { "guided_projects": "Guided projects", "courses": "Courses" }
+    "projects": {
+      "cloud_max": "Cloud projects",
+      "version_retention_days": "Version history (days)"
+    },
+    "build": {
+      "daily_quota": "Builds per day",
+      "priority": "Build priority"
+    },
+    "boards": {
+      "allowed": "Allowed boards"
+    },
+    "components": {
+      "tier": "Component library"
+    },
+    "learning": {
+      "guided_projects": "Guided projects",
+      "courses": "Courses"
+    }
   },
   "value": {
     "yes": "Yes",
@@ -258,5 +286,67 @@
     "priceLabel": "Unit price (IRR)",
     "priceHint": "Whole rials; leave empty to list the part without a price.",
     "priceInvalid": "Enter a whole number of rials, or leave it empty."
+  },
+  "ai": {
+    "title": "AI assistant",
+    "intro": "Providers this deployment offers, the platform model catalogue, and usage. External providers need a legal review before they are enabled (BR-15).",
+    "provider": {
+      "platform": "Platform model",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "gemini": "Google Gemini",
+      "openrouter": "OpenRouter",
+      "compatible": "OpenAI-compatible endpoint"
+    },
+    "providers": {
+      "title": "Providers",
+      "intro": "The platform model is self-hosted. Users bring their own keys for the external providers you enable here.",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "defaultModel": "default model {model}",
+      "legal": "legal review {ref} ({date})",
+      "checkOk": "Reachable (checked {date})",
+      "checkFailed": "Not reachable: {error}",
+      "check": "Check",
+      "checkOf": "Check whether {provider} is reachable",
+      "edit": "Edit",
+      "editOf": "Edit {provider}",
+      "enabledLabel": "Enabled for this deployment",
+      "legalLabel": "Legal review reference",
+      "legalHint": "Required to enable an external provider.",
+      "baseUrlLabel": "Base URL",
+      "baseUrlHint": "Leave empty for the provider's default. User keys must point below it.",
+      "defaultModelLabel": "Default model",
+      "modelsLabel": "Allowed models",
+      "modelsHint": "Comma-separated; empty allows every model the provider lists.",
+      "priceInLabel": "Price per million input tokens (IRR)",
+      "priceOutLabel": "Price per million output tokens (IRR)",
+      "priceInvalid": "Prices are whole numbers of rials.",
+      "legalRequired": "Enter the legal review reference to enable this provider.",
+      "enableFailed": "The reachability check failed, so the provider stays disabled.",
+      "save": "Save"
+    },
+    "models": {
+      "title": "Platform models",
+      "intro": "Models the platform model server offers now. Limit them with “Allowed models” on the platform provider.",
+      "none": "The model server lists no models."
+    },
+    "usage": {
+      "title": "Usage and cost",
+      "period": "Period",
+      "days": "{count, plural, one {Last # day} other {Last # days}}",
+      "none": "No AI requests in this period.",
+      "ms": "{value} ms",
+      "col": {
+        "provider": "Provider",
+        "model": "Model",
+        "requests": "Requests",
+        "users": "Users",
+        "tokensIn": "Input tokens",
+        "tokensOut": "Output tokens",
+        "cost": "Estimated cost",
+        "latency": "Avg. time"
+      }
+    }
   }
 }

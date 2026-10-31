@@ -6,6 +6,7 @@ export type PaywallReason =
   | { readonly kind: 'locked'; readonly limit: number }
   | { readonly kind: 'parts'; readonly parts: readonly string[] }
   | { readonly kind: 'builds'; readonly limit: number; readonly resetAt: string | null }
+  | { readonly kind: 'aiCredits'; readonly resetAt: string | null }
   | { readonly kind: 'feature' };
 
 /** The paywall for an API error, or null when the error is not about the plan. */
@@ -23,6 +24,8 @@ export function paywallReason(e: unknown): PaywallReason | null {
         limit,
         resetAt: typeof params['resetAt'] === 'string' ? params['resetAt'] : null,
       };
+    case 'ai_credits_exhausted':
+      return { kind: 'aiCredits', resetAt: typeof params['resetAt'] === 'string' ? params['resetAt'] : null };
     case 'entitlement_required':
       return params['entitlement'] === 'components.tier' && Array.isArray(params['parts'])
         ? { kind: 'parts', parts: params['parts'].filter((p): p is string => typeof p === 'string') }

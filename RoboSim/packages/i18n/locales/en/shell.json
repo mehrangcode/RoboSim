@@ -404,7 +404,8 @@
       "parts": "Parts list",
       "wiring": "Wiring",
       "notRunning": "Run the project to see live values here.",
-      "noSerial": "This sketch does not use Serial."
+      "noSerial": "This sketch does not use Serial.",
+      "assistant": "Assistant"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {
@@ -550,6 +551,7 @@
   },
   "robot": {
     "view": "Robot from above (front up)",
+    "edge": { "front": "FRONT", "back": "BACK", "left": "LEFT", "right": "RIGHT" },
     "noChassis": "This project has no chassis. Add a 2WD chassis from the parts library to build a robot.",
     "board": "Arduino Uno",
     "partLabel": "{name}: x {x} mm, y {y} mm, height {z} mm, {yaw}°",

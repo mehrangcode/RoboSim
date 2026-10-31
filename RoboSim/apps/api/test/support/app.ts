@@ -11,6 +11,8 @@ export function testEnv(overrides: Record<string, string> = {}): Env {
     LOG_LEVEL: 'silent',
     // Most suites act as the development user; auth suites turn it off to exercise real sessions.
     DEV_IDENTITY: 'true',
+    // Deterministic answers; suites that script the model replace the provider factory.
+    AI_DEFAULT_PROVIDER: 'fake',
     ...overrides,
   });
 }

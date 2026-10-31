@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "id": "btn1",
+      "type": "sensor.push-button",
+      "typeVersion": "1.0.0",
+      "x": 60,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "board",
+        "pin": "D2"
+      },
+      "to": {
+        "part": "btn1",
+        "pin": "a1"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "btn1",
+        "pin": "b1"
+      },
+      "to": {
+        "part": "board",
+        "pin": "GND1"
+      },
+      "color": "black",
+      "points": []
+    }
+  ],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "void setup() {\n  pinMode(2, INPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  if (digitalRead(2) == LOW) {\n    Serial.println(\"pressed\");\n  }\n  delay(50);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Button"
+  }
+}

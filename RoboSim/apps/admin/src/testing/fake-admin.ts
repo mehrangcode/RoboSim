@@ -5,6 +5,8 @@ import {
   type AdminPlan,
   type AdminPriceList,
   type AdminWorkspace,
+  type AiProviderConfig,
+  type AiUsageReport,
   type EntitlementGrant,
   type ErrorCode,
   type StaffMe,
@@ -274,5 +276,74 @@ export class FakeAdmin implements AdminClient {
   removePrice: AdminClient['removePrice'] = async (partKey) => {
     this.record('removePrice', partKey);
     this.priceList = { ...this.priceList, items: this.priceList.items.filter((p) => p.partKey !== partKey) };
+  };
+
+  aiConfigs: AiProviderConfig[] = (['platform', 'openai', 'anthropic'] as const).map((provider) => ({
+    provider,
+    enabled: provider === 'platform',
+    baseUrl: null,
+    models: [],
+    defaultModel: provider === 'platform' ? 'qwen2.5:3b' : null,
+    legalRef: null,
+    legalApprovedAt: null,
+    priceInIrr: null,
+    priceOutIrr: null,
+    check: null,
+    updatedAt: '2026-10-31T08:00:00.000Z',
+  }));
+  aiReport: AiUsageReport = {
+    from: '2026-10-01T00:00:00.000Z',
+    to: '2026-10-31T00:00:00.000Z',
+    rows: [
+      {
+        provider: 'platform',
+        model: 'qwen2.5:3b',
+        requests: 42,
+        users: 7,
+        tokensIn: 120_000,
+        tokensOut: 30_000,
+        costIrr: null,
+        avgLatencyMs: 9_400,
+      },
+    ],
+  };
+
+  aiProviders = async () => this.aiConfigs;
+
+  updateAiProvider: AdminClient['updateAiProvider'] = async (provider, input) => {
+    this.record('updateAiProvider', provider, input);
+    if (input.enabled && provider !== 'platform' && !input.legalRef)
+      throw problem('validation_failed', 400, 'Legal reference required');
+    const next = this.aiConfigs.map((c) =>
+      c.provider === provider
+        ? {
+            ...c,
+            enabled: input.enabled,
+            legalRef: input.legalRef ?? c.legalRef,
+            legalApprovedAt: input.legalRef ? '2026-10-31T09:00:00.000Z' : c.legalApprovedAt,
+            defaultModel: input.defaultModel === undefined ? c.defaultModel : input.defaultModel,
+            models: input.models ?? c.models,
+            check: input.enabled ? { at: '2026-10-31T09:00:00.000Z', ok: true, error: null } : c.check,
+          }
+        : c,
+    );
+    this.aiConfigs = next;
+    const row = next.find((c) => c.provider === provider);
+    if (!row) throw problem('not_found', 404);
+    return row;
+  };
+
+  checkAiProvider: AdminClient['checkAiProvider'] = async (provider) => {
+    this.record('checkAiProvider', provider);
+    const row = this.aiConfigs.find((c) => c.provider === provider);
+    if (!row) throw problem('not_found', 404);
+    return { ...row, check: { at: '2026-10-31T09:00:00.000Z', ok: true, error: null } };
+  };
+
+  aiPlatformModels = async () => [{ id: 'qwen2.5:3b', label: 'qwen2.5:3b' }];
+
+  aiUsage: AdminClient['aiUsage'] = async (days) => {
+    this.record('aiUsage', days);
+    return this.aiReport;
   };
 }

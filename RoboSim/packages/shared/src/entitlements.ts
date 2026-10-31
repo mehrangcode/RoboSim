@@ -160,7 +160,8 @@ const NO_FEATURES = Object.fromEntries(FEATURE_ENTITLEMENTS.map((k) => [k, false
 
 /**
  * Plan defaults from PRD §3, seeded as each plan's first version; staff change them by publishing new versions.
- * Classroom values are per seat. `ai.platform_credits_monthly` is plan-configured (0 until AI ships).
+ * Classroom values are per seat. `ai.platform_credits_monthly` (tokens) are placeholders until
+ * product sets real allowances in the back office.
  */
 export const DEFAULT_PLAN_ENTITLEMENTS: Record<Exclude<PlanCode, 'private_cloud'>, EntitlementValues> = {
   free: {
@@ -175,7 +176,7 @@ export const DEFAULT_PLAN_ENTITLEMENTS: Record<Exclude<PlanCode, 'private_cloud'
     'build.priority': 'low',
     'learning.guided_projects': 'first',
     'learning.courses': 'none',
-    'ai.platform_credits_monthly': 0,
+    'ai.platform_credits_monthly': 20_000,
   },
   maker: {
     ...NO_FEATURES,
@@ -194,7 +195,7 @@ export const DEFAULT_PLAN_ENTITLEMENTS: Record<Exclude<PlanCode, 'private_cloud'
     'build.priority': 'normal',
     'learning.guided_projects': 'all',
     'learning.courses': 'public',
-    'ai.platform_credits_monthly': 0,
+    'ai.platform_credits_monthly': 200_000,
   },
   classroom: {
     ...NO_FEATURES,
@@ -216,7 +217,7 @@ export const DEFAULT_PLAN_ENTITLEMENTS: Record<Exclude<PlanCode, 'private_cloud'
     'build.priority': 'normal',
     'learning.guided_projects': 'all',
     'learning.courses': 'all',
-    'ai.platform_credits_monthly': 0,
+    'ai.platform_credits_monthly': 50_000,
   },
   institution: {
     ...(Object.fromEntries(FEATURE_ENTITLEMENTS.map((k) => [k, true])) as Record<
@@ -231,7 +232,7 @@ export const DEFAULT_PLAN_ENTITLEMENTS: Record<Exclude<PlanCode, 'private_cloud'
     'build.priority': 'high',
     'learning.guided_projects': 'all',
     'learning.courses': 'all',
-    'ai.platform_credits_monthly': 0,
+    'ai.platform_credits_monthly': 100_000,
   },
 };
 

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [],
+  "wires": [],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "void setup() {\n  Serial.begin(115200);\n}\n\nvoid loop() {\n  Serial.println(\"Hello from RoboSim\");\n  delay(1000);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Hello serial"
+  }
+}

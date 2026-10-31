@@ -1,4 +1,6 @@
 export * from './admin-api.js';
+export * from './ai-api.js';
+export * from './ai-patch.js';
 export * from './arduino-api.js';
 export * from './auth-api.js';
 export * from './bom-api.js';

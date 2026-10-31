@@ -1,0 +1,40 @@
+# AI quality gate (FR-AI-09, US-AI-06): any change to the assistant's prompt, tools, filter, providers or the item set
+# runs the bilingual evaluation and fails when the score drops more than 2 points below tools/ai-eval/baseline.json.
+# The run needs a model: set the repository variables AI_EVAL_BASE_URL (OpenAI-compatible, e.g. the staging vLLM)
+# and AI_EVAL_MODEL, and the secret AI_EVAL_API_KEY if the endpoint wants one. Without them the job is skipped.
+name: AI eval
+
+on:
+  pull_request:
+    paths:
+      - apps/api/src/modules/ai/**
+      - packages/ai-providers/**
+      - tools/ai-eval/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    name: Bilingual evaluation (≥ 200 items)
+    if: ${{ vars.AI_EVAL_BASE_URL != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build packages
+        run: pnpm turbo run build --filter "./packages/*"
+      - name: Evaluate against the baseline
+        env:
+          AI_EVAL_API_KEY: ${{ secrets.AI_EVAL_API_KEY }}
+        run: node tools/ai-eval/run.ts --check --base-url "${{ vars.AI_EVAL_BASE_URL }}" --model "${{ vars.AI_EVAL_MODEL }}"

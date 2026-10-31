@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [],
+  "wires": [],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "int count = 0;\n\nvoid setup() {\n  Serial.begin(9600)\n}\n\nvoid loop() {\n  count++;\n  Serial.println(count);\n  delay(500);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Counter"
+  }
+}

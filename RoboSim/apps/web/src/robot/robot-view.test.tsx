@@ -40,6 +40,19 @@ describe('RobotView (FR-ARN-09, US-ARN-06)', () => {
     expect(part(/^3-channel line sensor \(line\): x 85 mm/)).toBeInTheDocument();
   });
 
+  it('labels the robot sides so learners can tell left from right', async () => {
+    await setup();
+    expect(screen.getByTestId('robot-side-front')).toHaveTextContent('FRONT');
+    expect(screen.getByTestId('robot-side-back')).toHaveTextContent('BACK');
+    // Robot frame +y is left; the view draws left on the left (negative SVG x).
+    const left = screen.getByTestId('robot-side-left');
+    const right = screen.getByTestId('robot-side-right');
+    expect(left).toHaveTextContent('LEFT');
+    expect(right).toHaveTextContent('RIGHT');
+    expect(Number(left.getAttribute('x'))).toBeLessThan(0);
+    expect(Number(right.getAttribute('x'))).toBeGreaterThan(0);
+  });
+
   it('refuses a spot off the chassis and says why', async () => {
     const { user, mountOf } = await setup();
     await user.click(part(/\(drv\)/));

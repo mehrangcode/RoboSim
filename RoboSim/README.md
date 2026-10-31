@@ -46,6 +46,7 @@
 | 🧾 **Parts list & wiring guide**    | BOM with prices (staff-kept price list), "I already own" parts, jumper counts, and a printable step-by-step wiring guide with a diagram per step; export as CSV, XLSX, SVG, PNG, or a `.robosim` project file                                                                                                                                                                                                                                                                                                                                                                      |
 | 🎓 **Guided projects** (`/learn`)   | Step-by-step Line-follower (free) and Obstacle-avoider (Maker) builds: every step checks your circuit and code live, explains what is wrong, can point at the parts, and saves your progress                                                                                                                                                                                                                                                                                                                                                                                       |
 | 💳 **Plans & limits**               | Free and Maker plans with server-enforced limits (cloud projects, builds per day, pro parts, version retention); a paywall that says what is blocked and why; **Plans** page and **Plan & usage** on the account; staff back office for plans and workspaces (checkout is coming soon)                                                                                                                                                                                                                                                                                             |
+| 🤖 **AI assistant**                 | Ask about your circuit, code or robot in Persian or English: answers know your project (code, wires, serial output, safety findings, last run), and suggested fixes arrive as a code diff or a circuit change list you apply or reject. Runs on a self-hosted open model; you can add your own OpenAI, Anthropic, Gemini or OpenRouter key where enabled                                                                                                                                                                                                                           |
 
 ### 🔩 Supported hardware (simulated)
 
@@ -64,7 +65,7 @@
 
 ### 🗺️ Planned
 
-block-based coding · 2D/3D view toggle · phone (SMS) sign-in and two-factor authentication · one-click kit purchase and PDF exports · classes, assignments, and autograding · LMS (LTI 1.3) and SSO · community gallery and competitions · AI assistant · upload to a real board · Arduino Nano, Mega, and Raspberry Pi Pico.
+block-based coding · 2D/3D view toggle · phone (SMS) sign-in and two-factor authentication · one-click kit purchase and PDF exports · classes, assignments, and autograding · LMS (LTI 1.3) and SSO · community gallery and competitions · upload to a real board · Arduino Nano, Mega, and Raspberry Pi Pico.
 
 Full scope: [PRD](Docs/PRD.md) · timeline: [Release Plan](Docs/Release-Plan.md).
 
@@ -114,6 +115,7 @@ One **netlist** drives simulation, safety, and the parts list; one **world model
 | pnpm                | pinned in `package.json`                      | via Corepack: `corepack enable`                                                           |
 | AVR toolchain       | `gcc-avr`, `avr-libc`, `binutils-avr`         | Needed by the build service to compile sketches                                           |
 | Docker _(optional)_ | Compose v2                                    | Only for full local infrastructure (Mode B)                                               |
+| Ollama _(optional)_ | any recent, plus `ollama pull qwen2.5:3b`     | The AI assistant's platform model; without it set `AI_DEFAULT_PROVIDER=fake`              |
 
 ### 1. Clone and install
 
@@ -203,6 +205,7 @@ pnpm dev
 | `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:seed`  | Database migrations and seed data                                                           |
 | `pnpm versions:purge [--dry-run]`                        | Delete project versions past each plan's retention                                          |
 | `pnpm admin:grant <email> <role>`                        | Give an account a staff role for the admin app (`--revoke` removes it)                      |
+| `pnpm ai:eval [--lang fa] [--limit N] [--check]`         | Score the AI assistant on the bilingual evaluation set (needs a model, see `tools/ai-eval`) |
 
 ---
 
@@ -230,6 +233,7 @@ RoboSim/
 │   ├── i18n/             # English / Persian translations
 │   ├── ui/               # Shared UI components
 │   ├── shared/           # Schemas and shared types
+│   ├── ai-providers/     # LLM adapters: OpenAI-compatible, Anthropic, Gemini (server only)
 │   ├── config/           # Shared tool configs
 │   └── test-fixtures/    # Test benches and fixtures
 ├── infra/docker/         # Docker Compose for local infrastructure

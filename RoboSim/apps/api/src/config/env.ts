@@ -2,6 +2,8 @@ import { parseFlagOverrides, type FlagOverrides } from '@robosim/shared';
 import { z } from 'zod';
 
 export const DEV_SHARE_LINK_SECRET = 'robosim-development-share-link-secret-not-for-production';
+/** 32 bytes, base64. Wraps the per-key data keys of stored AI provider keys in local and test only. */
+export const DEV_AI_KEK = 'cm9ib3NpbS1kZXYtYWkta2V5LXdyYXBwZXItMzJiISE=';
 
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 
@@ -47,6 +49,25 @@ const envSchema = z
     ENTITLEMENTS_CACHE_MS: z.coerce.number().int().min(0).max(60_000).default(60_000),
     // Daily purge of versions past the plan's `projects.version_retention_days`; 0 turns the schedule off.
     VERSION_RETENTION_INTERVAL_HOURS: z.coerce.number().min(0).default(24),
+    // AI assistant (FR-AI-10, Technical Design §13). The platform model is an OpenAI-compatible server:
+    // `ollama` (OLLAMA_BASE_URL + /v1) for development and small on-prem, `vllm` (VLLM_BASE_URL) in production,
+    // `fake` = deterministic answers without a model server, `none` = no platform model (BYOK only).
+    AI_DEFAULT_PROVIDER: z.enum(['ollama', 'vllm', 'fake', 'none']).default('ollama'),
+    OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
+    VLLM_BASE_URL: z.url().optional(),
+    AI_PLATFORM_MODEL: z.string().min(1).default('qwen2.5:3b'),
+    // Key-encryption key (base64, 32 bytes) for stored provider keys; OpenBao Transit replaces it in staging.
+    AI_KEK: z
+      .string()
+      .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64')
+      .default(DEV_AI_KEK),
+    AI_CONTEXT_TOKENS: z.coerce.number().int().min(2000).default(12_000),
+    AI_MAX_OUTPUT_TOKENS: z.coerce.number().int().min(100).default(1500),
+    AI_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).default(10),
+    AI_RATE_LIMIT_PER_DAY: z.coerce.number().int().min(1).default(200),
+    // Conversation history (FR-AI-08, Security §6.5): adults / minors.
+    AI_HISTORY_DAYS: z.coerce.number().int().min(1).default(90),
+    AI_HISTORY_DAYS_MINOR: z.coerce.number().int().min(1).default(30),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_DRIVER === 'postgres' && !env.DATABASE_URL) {
@@ -86,6 +107,23 @@ const envSchema = z
         code: 'custom',
         path: ['SHARE_LINK_SECRET'],
         message: 'set a private secret of at least 32 characters',
+      });
+    }
+    if ((env.APP_ENV === 'production' || env.APP_ENV === 'staging') && env.AI_KEK === DEV_AI_KEK) {
+      ctx.addIssue({ code: 'custom', path: ['AI_KEK'], message: 'set a private 32-byte key (base64)' });
+    }
+    if (env.AI_DEFAULT_PROVIDER === 'vllm' && !env.VLLM_BASE_URL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['VLLM_BASE_URL'],
+        message: 'required when AI_DEFAULT_PROVIDER=vllm',
+      });
+    }
+    if ((env.APP_ENV === 'production' || env.APP_ENV === 'staging') && env.AI_DEFAULT_PROVIDER === 'fake') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AI_DEFAULT_PROVIDER'],
+        message: 'the fake model is for development and tests only',
       });
     }
     if (env.APP_ENV === 'production' && env.DATABASE_DRIVER === 'pglite') {

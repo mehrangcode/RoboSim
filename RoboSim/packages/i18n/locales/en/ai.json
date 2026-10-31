@@ -1,0 +1,96 @@
+{
+  "assistant": "Assistant",
+  "you": "You",
+  "provider": {
+    "label": "Model",
+    "platform": "RoboSim model",
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "gemini": "Google Gemini",
+    "openrouter": "OpenRouter",
+    "compatible": "Custom endpoint"
+  },
+  "credits": {
+    "left": "{left} of {total} tokens left this month"
+  },
+  "history": {
+    "button": "History",
+    "kept": "Conversations are kept for {days} days.",
+    "none": "No earlier conversations for this project.",
+    "delete": "Delete",
+    "deleteOf": "Delete conversation “{title}”"
+  },
+  "newChat": "New chat",
+  "empty": {
+    "intro": "Ask about your circuit, code or robot. I see the project as it is now, its serial output, safety findings and the last run.",
+    "examples": "For example: “Why doesn't my robot follow the line?” or “Is my LED wired safely?”"
+  },
+  "input": {
+    "label": "Your question",
+    "placeholder": "Ask the assistant… (Enter to send, Shift+Enter for a new line)",
+    "send": "Send",
+    "stop": "Stop"
+  },
+  "disclaimer": "Answers can be wrong. Suggestions change nothing until you apply them.",
+  "thinking": "Thinking…",
+  "filtered": "This answer was stopped by the safety filter. Please ask about your robot or circuit.",
+  "error": {
+    "generic": "The assistant could not answer. Try again.",
+    "rateLimited": "Too many questions at once. Try again in {seconds} seconds.",
+    "contentFiltered": "I can't help with that. Ask about robotics, electronics or your project.",
+    "minor": "Your account can use the RoboSim model only.",
+    "keyMissing": "Add a working key for this provider on your Account page first.",
+    "providerDisabled": "This model is not available right now.",
+    "provider": "The model service failed: {message}",
+    "stream": "The answer was cut off. Try again.",
+    "dismiss": "Dismiss"
+  },
+  "proposal": {
+    "codeTitle": "Suggested change to {file}",
+    "circuitTitle": "Suggested circuit change",
+    "apply": "Apply",
+    "reject": "Reject",
+    "readOnly": "This project is read-only, so suggestions cannot be applied.",
+    "applied": "Applied. You can undo it like any edit.",
+    "rejected": "Rejected.",
+    "failed": "Could not apply: {reason}",
+    "diffLabel": "Lines removed and added",
+    "added": "added:",
+    "removed": "removed:",
+    "noFile": "There is no file {file} any more."
+  },
+  "change": {
+    "addComponent": "Add {type} as {id}",
+    "removeComponent": "Remove {id} and its wires",
+    "setProp": "Set {prop} of {id} to {value}",
+    "addWire": "Wire {from} to {to}",
+    "removeWire": "Remove the wire between {from} and {to}"
+  },
+  "versionLabel": "AI: {summary}",
+  "guest": {
+    "title": "Sign in to use the assistant",
+    "body": "The AI assistant needs an account so it can keep your conversations and credits.",
+    "signIn": "Sign in"
+  },
+  "keys": {
+    "title": "AI provider keys",
+    "intro": "Use your own key with an external AI provider. Keys are tested when saved, stored encrypted and never shown again; only their last four characters appear.",
+    "noneEnabled": "No external AI providers are enabled on this platform. The RoboSim model is always available.",
+    "status": {
+      "active": "Active key …{last4}",
+      "invalid": "Key …{last4} was refused",
+      "pending": "Key …{last4} not tested yet"
+    },
+    "providerSaid": "The provider said: {message}",
+    "delete": "Delete key",
+    "deleteOf": "Delete the {provider} key",
+    "needsPlan": "Your own keys need the Maker plan.",
+    "seePlans": "See plans",
+    "minor": "Accounts under 18 use the RoboSim model only.",
+    "keyLabel": "{provider} API key",
+    "replaceLabel": "Replace the {provider} key",
+    "baseUrl": "Endpoint URL",
+    "save": "Test and save",
+    "testing": "Testing…"
+  }
+}

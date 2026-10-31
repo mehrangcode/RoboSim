@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "id": "line1",
+      "type": "sensor.line-3ch",
+      "typeVersion": "1.0.0",
+      "x": 60,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    },
+    {
+      "id": "drv1",
+      "type": "driver.l298n",
+      "typeVersion": "1.0.0",
+      "x": 120,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    },
+    {
+      "id": "mL",
+      "type": "actuator.tt-motor",
+      "typeVersion": "1.0.0",
+      "x": 180,
+      "y": 0,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    },
+    {
+      "id": "mR",
+      "type": "actuator.tt-motor",
+      "typeVersion": "1.0.0",
+      "x": 180,
+      "y": 60,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    },
+    {
+      "id": "bat1",
+      "type": "power.battery-4aa",
+      "typeVersion": "1.0.0",
+      "x": 120,
+      "y": 90,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "board",
+        "pin": "5V"
+      },
+      "to": {
+        "part": "line1",
+        "pin": "vcc"
+      },
+      "color": "red",
+      "points": []
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "board",
+        "pin": "GND1"
+      },
+      "to": {
+        "part": "line1",
+        "pin": "gnd"
+      },
+      "color": "black",
+      "points": []
+    },
+    {
+      "id": "w3",
+      "from": {
+        "part": "board",
+        "pin": "D2"
+      },
+      "to": {
+        "part": "line1",
+        "pin": "left"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w4",
+      "from": {
+        "part": "board",
+        "pin": "D3"
+      },
+      "to": {
+        "part": "line1",
+        "pin": "center"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w5",
+      "from": {
+        "part": "board",
+        "pin": "D4"
+      },
+      "to": {
+        "part": "line1",
+        "pin": "right"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w6",
+      "from": {
+        "part": "board",
+        "pin": "D5"
+      },
+      "to": {
+        "part": "drv1",
+        "pin": "in1"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w7",
+      "from": {
+        "part": "board",
+        "pin": "D6"
+      },
+      "to": {
+        "part": "drv1",
+        "pin": "in2"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w8",
+      "from": {
+        "part": "board",
+        "pin": "D7"
+      },
+      "to": {
+        "part": "drv1",
+        "pin": "in3"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w9",
+      "from": {
+        "part": "board",
+        "pin": "D8"
+      },
+      "to": {
+        "part": "drv1",
+        "pin": "in4"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w10",
+      "from": {
+        "part": "drv1",
+        "pin": "out1"
+      },
+      "to": {
+        "part": "mL",
+        "pin": "m1"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w11",
+      "from": {
+        "part": "drv1",
+        "pin": "out2"
+      },
+      "to": {
+        "part": "mL",
+        "pin": "m2"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w12",
+      "from": {
+        "part": "drv1",
+        "pin": "out3"
+      },
+      "to": {
+        "part": "mR",
+        "pin": "m1"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w13",
+      "from": {
+        "part": "drv1",
+        "pin": "out4"
+      },
+      "to": {
+        "part": "mR",
+        "pin": "m2"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w14",
+      "from": {
+        "part": "bat1",
+        "pin": "pos"
+      },
+      "to": {
+        "part": "drv1",
+        "pin": "vs"
+      },
+      "color": "red",
+      "points": []
+    },
+    {
+      "id": "w15",
+      "from": {
+        "part": "bat1",
+        "pin": "neg"
+      },
+      "to": {
+        "part": "drv1",
+        "pin": "gnd"
+      },
+      "color": "black",
+      "points": []
+    },
+    {
+      "id": "w16",
+      "from": {
+        "part": "drv1",
+        "pin": "gnd"
+      },
+      "to": {
+        "part": "board",
+        "pin": "GND2"
+      },
+      "color": "black",
+      "points": []
+    }
+  ],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "// Line follower: the sensor outputs HIGH (1) over the black line.\nconst int LEFT = 2;\nconst int CENTER = 3;\nconst int RIGHT = 4;\n\nvoid drive(int l1, int l2, int r1, int r2) {\n  digitalWrite(5, l1); digitalWrite(6, l2);\n  digitalWrite(7, r1); digitalWrite(8, r2);\n}\n\nvoid setup() {\n  for (int p = 5; p <= 8; p++) pinMode(p, OUTPUT);\n  pinMode(LEFT, INPUT); pinMode(CENTER, INPUT); pinMode(RIGHT, INPUT);\n}\n\nvoid loop() {\n  if (digitalRead(CENTER) == LOW) {\n    drive(HIGH, LOW, HIGH, LOW);   // forward\n  } else if (digitalRead(LEFT) == HIGH) {\n    drive(LOW, LOW, HIGH, LOW);    // turn left\n  } else {\n    drive(HIGH, LOW, LOW, LOW);    // turn right\n  }\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Line follower"
+  }
+}

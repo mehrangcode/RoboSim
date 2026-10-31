@@ -40,8 +40,14 @@ const pricesRoute = createRoute({
   path: '/prices',
   component: lazyRouteComponent(() => import('./prices/prices-page.js'), 'PricesPage'),
 });
+const aiRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/ai',
+  component: lazyRouteComponent(() => import('./ai/ai-page.js'), 'AiPage'),
+});
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  aiRoute,
   plansRoute,
   pricesRoute,
   workspacesRoute,

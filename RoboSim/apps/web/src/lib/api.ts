@@ -108,3 +108,63 @@ export function apiSend<T>(
     headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...headers },
   });
 }
+
+/**
+ * POST whose answer is a server-sent event stream (EventSource cannot POST). Refusals before the stream opens
+ * are problem documents and throw `ApiError` like the other helpers; the caller reads `response.body`.
+ */
+export async function apiStream(
+  path: string,
+  body: unknown,
+  locale: string,
+  signal?: AbortSignal,
+  retried = false,
+): Promise<Response> {
+  const token = await csrf();
+  const response = await fetch(`/api/v1${path}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: {
+      Accept: 'text/event-stream',
+      'Accept-Language': locale,
+      'Content-Type': 'application/json',
+      ...(token ? { 'X-CSRF-Token': token } : {}),
+    },
+    credentials: 'same-origin',
+    ...(signal ? { signal } : {}),
+  });
+  if (response.ok) return response;
+  const problem = problemDetailsSchema.safeParse(await response.json().catch(() => null));
+  if (problem.success && problem.data.code === 'csrf_failed' && !retried) {
+    csrfToken = undefined;
+    return apiStream(path, body, locale, signal, true);
+  }
+  if (problem.success) throw new ApiError(problem.data);
+  throw new Error(`HTTP ${response.status} from ${path}`);
+}
+
+/** Server-sent events from a response body, as `{ event, data }` with `data` lines joined. */
+export async function* readEvents(response: Response): AsyncGenerator<{ event: string; data: string }> {
+  if (!response.body) return;
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = '';
+  let event = 'message';
+  let data: string[] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (value) buffer += value;
+    let nl: number;
+    while ((nl = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, nl).replace(/\r$/, '');
+      buffer = buffer.slice(nl + 1);
+      if (line === '') {
+        if (data.length) yield { event, data: data.join('\n') };
+        event = 'message';
+        data = [];
+      } else if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
+      else if (line.startsWith('event:')) event = line.slice(6).trim();
+    }
+    if (done) break;
+  }
+  if (data.length) yield { event, data: data.join('\n') };
+}

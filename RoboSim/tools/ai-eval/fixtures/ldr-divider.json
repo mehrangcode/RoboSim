@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "id": "ldr1",
+      "type": "sensor.ldr",
+      "typeVersion": "1.0.0",
+      "x": 60,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    },
+    {
+      "id": "r1",
+      "type": "passive.resistor",
+      "typeVersion": "1.0.0",
+      "x": 60,
+      "y": 60,
+      "rotation": 0,
+      "flipped": false,
+      "props": {
+        "ohms": 10000
+      }
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "board",
+        "pin": "5V"
+      },
+      "to": {
+        "part": "ldr1",
+        "pin": "a"
+      },
+      "color": "red",
+      "points": []
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "ldr1",
+        "pin": "b"
+      },
+      "to": {
+        "part": "board",
+        "pin": "A0"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w3",
+      "from": {
+        "part": "board",
+        "pin": "A0"
+      },
+      "to": {
+        "part": "r1",
+        "pin": "a"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w4",
+      "from": {
+        "part": "r1",
+        "pin": "b"
+      },
+      "to": {
+        "part": "board",
+        "pin": "GND1"
+      },
+      "color": "black",
+      "points": []
+    }
+  ],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "void setup() {\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  int raw = analogRead(A0);\n  int percent = map(raw, 0, 1023, 0, 100);\n  Serial.println(percent);\n  delay(250);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Light meter"
+  }
+}

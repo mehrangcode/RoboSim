@@ -52,6 +52,18 @@ export function PaywallDialog({
             <p className="text-ink-muted">{t('plans:paywall.partsHint')}</p>
           </>
         )}
+        {reason.kind === 'aiCredits' && (
+          <>
+            <p>
+              {t('plans:paywall.aiCredits', {
+                date: reason.resetAt
+                  ? formatDate(locale, new Date(reason.resetAt), { dateStyle: 'medium' })
+                  : '',
+              })}
+            </p>
+            <p className="text-ink-muted">{t('plans:paywall.aiCreditPacks')}</p>
+          </>
+        )}
         {reason.kind === 'feature' && <p>{t('plans:paywall.feature')}</p>}
       </div>
       <div className="mt-4 flex flex-wrap justify-end gap-2">

@@ -119,6 +119,8 @@ export interface GuidePanelProps {
   /** Points the canvas at parts a hint is about. */
   readonly onShow: (parts: readonly string[]) => void;
   readonly onOpenParts: () => void;
+  /** The step on screen, in the UI language (the AI assistant's context, FR-AI-01). */
+  readonly onStepChange?: ((step: { title: string; instructions: string }) => void) | undefined;
 }
 
 /** The guided-project side panel (FR-LRN-01, US-LRN-01): steps checked live against the project. */
@@ -153,6 +155,7 @@ function Guide({
   projectId,
   onShow,
   onOpenParts,
+  onStepChange,
 }: GuidePanelProps & { project: GuidedProject }) {
   const { t } = useTranslation();
   const fmt = useFormat();
@@ -198,6 +201,9 @@ function Guide({
   useEffect(() => {
     if (scroller.current) scroller.current.scrollTop = 0;
   }, [shown]);
+  useEffect(() => {
+    onStepChange?.({ title: step.title[lang], instructions: step.body[lang] });
+  }, [onStepChange, step, lang]);
 
   return (
     <section aria-label={t('guided:guide.label')} className="flex h-full flex-col">

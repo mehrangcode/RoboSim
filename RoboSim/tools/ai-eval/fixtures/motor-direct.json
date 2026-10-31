@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "id": "m1",
+      "type": "actuator.tt-motor",
+      "typeVersion": "1.0.0",
+      "x": 60,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "board",
+        "pin": "D9"
+      },
+      "to": {
+        "part": "m1",
+        "pin": "m1"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "m1",
+        "pin": "m2"
+      },
+      "to": {
+        "part": "board",
+        "pin": "GND1"
+      },
+      "color": "black",
+      "points": []
+    }
+  ],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "void setup() {\n  pinMode(9, OUTPUT);\n}\n\nvoid loop() {\n  analogWrite(9, 200);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Motor"
+  }
+}

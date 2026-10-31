@@ -24,8 +24,11 @@
     "@opentelemetry/auto-instrumentations-node": "^0.81.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
     "@opentelemetry/sdk-node": "^0.223.0",
+    "@robosim/ai-providers": "workspace:*",
+    "@robosim/board-avr-uno": "workspace:*",
     "@robosim/catalog": "workspace:*",
     "@robosim/compiler": "workspace:*",
+    "@robosim/content": "workspace:*",
     "@robosim/i18n": "workspace:*",
     "@robosim/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",
@@ -33,8 +36,7 @@
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.6.6",
-    "@robosim/content": "workspace:*"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@nestjs/testing": "^12.1.3",

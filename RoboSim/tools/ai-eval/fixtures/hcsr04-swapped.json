@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "id": "us1",
+      "type": "sensor.hc-sr04",
+      "typeVersion": "1.0.0",
+      "x": 60,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "board",
+        "pin": "5V"
+      },
+      "to": {
+        "part": "us1",
+        "pin": "vcc"
+      },
+      "color": "red",
+      "points": []
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "board",
+        "pin": "GND1"
+      },
+      "to": {
+        "part": "us1",
+        "pin": "gnd"
+      },
+      "color": "black",
+      "points": []
+    },
+    {
+      "id": "w3",
+      "from": {
+        "part": "board",
+        "pin": "D10"
+      },
+      "to": {
+        "part": "us1",
+        "pin": "trig"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w4",
+      "from": {
+        "part": "board",
+        "pin": "D9"
+      },
+      "to": {
+        "part": "us1",
+        "pin": "echo"
+      },
+      "color": "green",
+      "points": []
+    }
+  ],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "const int TRIG = 9;\nconst int ECHO = 10;\n\nvoid setup() {\n  pinMode(TRIG, OUTPUT);\n  pinMode(ECHO, INPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  digitalWrite(TRIG, LOW);\n  delayMicroseconds(2);\n  digitalWrite(TRIG, HIGH);\n  delayMicroseconds(10);\n  digitalWrite(TRIG, LOW);\n  long us = pulseIn(ECHO, HIGH, 30000);\n  Serial.println(us / 58);\n  delay(200);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Distance"
+  }
+}

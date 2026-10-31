@@ -251,6 +251,27 @@ export function RobotView({
             }}
           >
             <polygon points={points(overhang)} className="fill-none stroke-line" strokeDasharray="4 3" />
+            {Object.entries({
+              front: [0, -maxX + 9, 0],
+              back: [0, -minX - 6, 0],
+              left: [-half + 8, -(maxX + minX) / 2, -90],
+              right: [half - 8, -(maxX + minX) / 2, 90],
+            } as const).map(([side, [x, y, turn]]) => (
+              <text
+                key={side}
+                data-testid={`robot-side-${side}`}
+                x={x}
+                y={y}
+                transform={turn ? `rotate(${turn} ${x} ${y})` : undefined}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={9}
+                letterSpacing={1}
+                className="pointer-events-none fill-ink-muted font-semibold select-none"
+              >
+                {t(`shell:robot.edge.${side}`)}
+              </text>
+            ))}
             <polygon
               points={points(plate)}
               className="fill-surface-raised stroke-ink-muted"

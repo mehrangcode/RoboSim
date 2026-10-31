@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 4,
+  "board": {
+    "id": "avr-uno",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "id": "r1",
+      "type": "passive.resistor",
+      "typeVersion": "1.0.0",
+      "x": 50,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {
+        "ohms": 220
+      }
+    },
+    {
+      "id": "led1",
+      "type": "actuator.led",
+      "typeVersion": "1.0.0",
+      "x": 80,
+      "y": 20,
+      "rotation": 0,
+      "flipped": false,
+      "props": {}
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": {
+        "part": "board",
+        "pin": "D12"
+      },
+      "to": {
+        "part": "r1",
+        "pin": "a"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w2",
+      "from": {
+        "part": "r1",
+        "pin": "b"
+      },
+      "to": {
+        "part": "led1",
+        "pin": "a"
+      },
+      "color": "green",
+      "points": []
+    },
+    {
+      "id": "w3",
+      "from": {
+        "part": "led1",
+        "pin": "k"
+      },
+      "to": {
+        "part": "board",
+        "pin": "GND1"
+      },
+      "color": "black",
+      "points": []
+    }
+  ],
+  "code": {
+    "language": "cpp",
+    "files": [
+      {
+        "name": "sketch.ino",
+        "content": "const int LED = 13;\n\nvoid setup() {\n  pinMode(LED, OUTPUT);\n}\n\nvoid loop() {\n  digitalWrite(LED, HIGH);\n  delay(300);\n  digitalWrite(LED, LOW);\n  delay(300);\n}\n"
+      }
+    ]
+  },
+  "libraries": [],
+  "meta": {
+    "title": "Blink on 12"
+  }
+}

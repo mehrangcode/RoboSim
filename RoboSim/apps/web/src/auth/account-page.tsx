@@ -5,6 +5,7 @@ import { Button, Card } from '@robosim/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AiKeysCard } from '../ai/ai-keys-card.js';
 import { PlanUsageCard } from '../plans/plan-usage.js';
 import { useAuth } from './use-auth.js';
 import { Field, FormError, SignInGate } from './auth-ui.js';
@@ -22,6 +23,7 @@ export function AccountPage() {
       <h1 className="text-2xl font-bold tracking-tight">{t('auth:account.title')}</h1>
       <ProfileCard />
       <PlanUsageCard />
+      <AiKeysCard />
       <PasswordCard />
       <SessionsCard />
     </div>

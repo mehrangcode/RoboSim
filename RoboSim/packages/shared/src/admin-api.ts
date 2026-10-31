@@ -21,6 +21,10 @@ export const ADMIN_PERMISSIONS = {
   overrides: ['platform_admin', 'finance', 'support_agent'],
   /** The parts price list behind the BOM (FR-BOM-02) until the shop catalogue replaces it. */
   prices: ['platform_admin', 'finance', 'shop_operator'],
+  /** AI providers, models and usage (FR-ADM-08). */
+  ai: ['platform_admin'],
+  /** AI usage and cost report, read-only. */
+  aiUsage: ['platform_admin', 'finance'],
 } as const satisfies Record<string, readonly StaffRole[]>;
 export type AdminPermission = keyof typeof ADMIN_PERMISSIONS;
 

@@ -64,6 +64,13 @@
       "when": 1793088663524,
       "tag": "0008_editor_tour",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793432481321,
+      "tag": "0009_ai_assistant",
+      "breakpoints": true
     }
   ]
 }

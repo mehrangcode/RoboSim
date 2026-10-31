@@ -40,6 +40,11 @@ export function RootLayout() {
                 {t('admin:nav.prices')}
               </Link>
             )}
+            {(staffCan(staff.roles, 'ai') || staffCan(staff.roles, 'aiUsage')) && (
+              <Link to="/ai" className={navLink}>
+                {t('admin:nav.ai')}
+              </Link>
+            )}
           </>
         )
       }

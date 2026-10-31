@@ -268,3 +268,35 @@ describe('FR-BOM-02 parts prices', () => {
     expect(screen.queryByRole('link', { name: 'Prices' })).not.toBeInTheDocument();
   });
 });
+
+describe('FR-ADM-08 AI assistant', () => {
+  it('enables a provider only with a legal reference and shows usage', async () => {
+    const client = new FakeAdmin();
+    await renderApp('/ai', client);
+    expect(await screen.findByRole('heading', { name: 'AI assistant', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'AI' })).toBeInTheDocument();
+    expect(await screen.findByText('qwen2.5:3b', { selector: 'td' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit OpenAI' }));
+    await userEvent.click(screen.getByLabelText('Enabled for this deployment'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter the legal review reference');
+    await userEvent.type(screen.getByLabelText('Legal review reference'), 'LEGAL-14');
+    await userEvent.type(screen.getByLabelText('Default model'), 'gpt-x');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText(/legal review LEGAL-14/)).toBeInTheDocument();
+    expect(client.callsTo('updateAiProvider').at(-1)).toEqual([
+      'openai',
+      expect.objectContaining({ enabled: true, legalRef: 'LEGAL-14', defaultModel: 'gpt-x' }),
+    ]);
+
+    await userEvent.selectOptions(screen.getByLabelText('Period'), '7');
+    expect(client.callsTo('aiUsage').at(-1)).toEqual([7]);
+  });
+
+  it('hides the AI link from support staff', async () => {
+    await renderApp('/plans', new FakeAdmin(SUPPORT));
+    expect(await screen.findByRole('link', { name: 'Plans' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'AI' })).not.toBeInTheDocument();
+  });
+});

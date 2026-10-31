@@ -8,13 +8,21 @@ import {
   useCircuitEditor,
   type CanvasMode,
 } from '@robosim/circuit-canvas';
-import { type ProjectDocument, type SharedLink } from '@robosim/shared';
+import {
+  applyCircuitChanges,
+  applyCodeEdits,
+  ProposalError,
+  type AiProposal,
+  type ChatContext,
+  type ProjectDocument,
+  type SharedLink,
+} from '@robosim/shared';
 import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@robosim/ui';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { findArena } from '@robosim/content/arenas';
 import type { Pose } from '@robosim/renderer-2d';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   arenaViewOf,
@@ -47,6 +55,9 @@ import { PaywallDialog } from '../plans/paywall.js';
 import { paywallReason, type PaywallReason } from '../plans/paywall-reason.js';
 import { projectsApi, type ProjectsClient } from '../lib/projects-api.js';
 import { GuidePanel } from '../learn/guide-panel.js';
+import { aiApi, type AiClient } from '../ai/ai-api.js';
+import { behaviourOf, chatContext } from '../ai/ai-context.js';
+import { PARTS } from '../ai/parts.js';
 import { learningApi, type LearningClient } from '../lib/learning-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { CommandPalette, type PaletteCommand } from './command-palette.js';
@@ -65,7 +76,10 @@ import { openCloudProject, useCloudSync, type CloudOpen, type OpenResult } from 
 import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
-type DockTab = 'serial' | 'pins' | 'analyzer' | 'safety' | 'challenge' | BomTab;
+type DockTab = 'serial' | 'pins' | 'analyzer' | 'safety' | 'challenge' | 'assistant' | BomTab;
+
+// The assistant is a chunk of its own, loaded when its tab first opens.
+const AiPanel = lazy(() => import('../ai/ai-panel.js').then((m) => ({ default: m.AiPanel })));
 type MobileTab = 'guide' | 'parts' | 'circuit' | 'robot' | 'code' | 'sim' | 'monitor';
 type CentreView = 'circuit' | 'robot';
 
@@ -139,6 +153,7 @@ interface EditorProps {
   projects?: ProjectsClient | undefined;
   bom?: BomClient | undefined;
   learning?: LearningClient | undefined;
+  ai?: AiClient | undefined;
 }
 
 /** A read-only workspace (a shared project the caller may only view): what to say and offer above it. */
@@ -329,6 +344,7 @@ function Workspace({
   projects,
   bom,
   learning,
+  ai,
   cloudOpen,
   initial,
   viewer,
@@ -363,6 +379,12 @@ function Workspace({
   const bomClient = bom ?? bomFallback;
   const [learningFallback] = useState(() => learningApi(() => i18n.language));
   const learningClient = learning ?? learningFallback;
+  const [aiFallback] = useState(() => aiApi(() => i18n.language));
+  const aiClient = ai ?? aiFallback;
+  /** Label of the version to take once an applied AI suggestion has rendered (US-AI-02: Apply creates a version). */
+  const aiVersion = useRef<string | null>(null);
+  /** The guided step on screen, sent with questions (FR-AI-01). */
+  const guidedStep = useRef<{ title: string; instructions: string } | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>('circuit');
   const [centre, setCentre] = useState<CentreView>('circuit');
   const [help, setHelp] = useState(false);
@@ -408,6 +430,13 @@ function Workspace({
   });
   const { watch } = run;
   useEffect(() => watch(current));
+  // After an applied AI suggestion renders, keep it as a version (the checkpoint saves what is on screen).
+  useEffect(() => {
+    const label = aiVersion.current;
+    if (!label) return;
+    aiVersion.current = null;
+    void cloud.checkpoint(label);
+  });
   useEffect(() => send({ type: 'speed', value: Number(speed) }), [speed, send]);
 
   /** Shows `next` in the workspace. */
@@ -685,7 +714,49 @@ function Workspace({
         {doc.arena ? t('shell:editor.sim.notRunning') : t('shell:editor.sim.bench')}
       </p>
     );
+  // AI assistant (FR-AI-01, FR-AI-05): the project as it is now, and suggestions applied on request.
+  const aiContext = (): ChatContext =>
+    chatContext({
+      doc: current,
+      currentFile: main?.name,
+      serial: serialLog.chunks,
+      findings: findings.map((f) => ({
+        rule: f.ruleId,
+        severity: f.severity,
+        message: t(`${f.messageKey}.title`, f.params),
+      })),
+      diagnostics: run.build.status === 'done' ? run.build.result.diagnostics : [],
+      ...(doc.guided && guidedStep.current ? { guidedStep: guidedStep.current } : {}),
+      ...(live
+        ? {
+            behaviour: behaviourOf(live, live.challenge, {
+              challenge: live.challenge?.id ?? '',
+              node: (n) => `${n.type} ${JSON.stringify(n.params)}`,
+            }),
+          }
+        : {}),
+    });
+  const applyProposal = (p: AiProposal): string | null => {
+    try {
+      if (p.kind === 'code_patch') {
+        const file = files.find((f) => f.name === p.file);
+        if (!file) return t('ai:proposal.noFile', { file: p.file });
+        const content = applyCodeEdits(file.content, p.edits);
+        setFiles((fs) => fs.map((f) => (f.name === p.file ? { ...f, content } : f)));
+      } else {
+        const next = applyCircuitChanges(doc, p.changes, PARTS);
+        editor.apply(() => next);
+      }
+    } catch (e) {
+      if (e instanceof ProposalError) return e.message;
+      throw e;
+    }
+    if (cloudOpen) aiVersion.current = t('ai:versionLabel', { summary: p.summary.slice(0, 80) });
+    return null;
+  };
+
   const dockTabs: DockTab[] = [
+    'assistant',
     'serial',
     'pins',
     'analyzer',
@@ -702,6 +773,9 @@ function Workspace({
     setCentre('circuit');
     setMobileTab('circuit');
   };
+  const rememberStep = (step: { title: string; instructions: string }) => {
+    guidedStep.current = step;
+  };
   // Guided project (FR-LRN-01): the steps beside the workspace, checked against the project as it changes.
   const guidePane = doc.guided ? (
     <GuidePanel
@@ -715,6 +789,7 @@ function Workspace({
         setCentre('circuit');
         setMobileTab('circuit');
       }}
+      onStepChange={rememberStep}
       onOpenParts={() => {
         setDockTab('parts');
         if (layout.collapsed.dock) toggle('dock');
@@ -739,6 +814,16 @@ function Workspace({
       <div className="min-h-0 flex-1 overflow-auto">
         {dockTab === 'parts' || dockTab === 'wiring' ? (
           <BomPanel doc={current} tab={dockTab} client={bomClient} onShow={showStep} />
+        ) : dockTab === 'assistant' ? (
+          <Suspense fallback={<p className="text-sm text-ink-muted">{t('common:status.loading')}</p>}>
+            <AiPanel
+              client={aiClient}
+              projectId={cloudOpen?.id ?? null}
+              context={aiContext}
+              onApply={readOnly ? undefined : applyProposal}
+              onPaywall={setPaywall}
+            />
+          </Suspense>
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : dockTab === 'pins' ? (

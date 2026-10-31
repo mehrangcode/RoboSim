@@ -517,3 +517,143 @@ export const guidedProgress = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.contentVersionId] })],
 );
+
+// ---- AI assistant (FR-AI-01…05, 07…09, FR-ADM-08; TD §8.9, §13) ----
+
+export const aiProviderEnum = pgEnum('ai_provider', [
+  'platform',
+  'openai',
+  'anthropic',
+  'gemini',
+  'openrouter',
+  'compatible',
+]);
+export const aiKeyOwnerEnum = pgEnum('ai_key_owner', ['user', 'workspace']);
+export const aiKeyStatusEnum = pgEnum('ai_key_status', ['pending', 'active', 'invalid']);
+export const aiModeEnum = pgEnum('ai_mode', ['full', 'hints']);
+export const aiRoleEnum = pgEnum('ai_role', ['user', 'assistant']);
+
+/**
+ * Providers enabled for this deployment (BR-15): an external provider is usable only once staff enable it
+ * with a legal-review reference. A global catalogue: system code reads it, staff write it.
+ */
+export const aiProviderConfigs = pgTable('ai_provider_configs', {
+  provider: aiProviderEnum().primaryKey(),
+  enabled: boolean().notNull().default(false),
+  baseUrl: text(),
+  /** Models users may pick; empty = every model the provider lists. */
+  models: jsonb().$type<string[]>().notNull().default([]),
+  defaultModel: text(),
+  legalRef: text(),
+  legalApprovedAt: timestamp({ withTimezone: true }),
+  priceInIrr: bigint({ mode: 'number' }),
+  priceOutIrr: bigint({ mode: 'number' }),
+  checkedAt: timestamp({ withTimezone: true }),
+  checkOk: boolean(),
+  checkError: text(),
+  updatedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * Bring-your-own keys (FR-AI-04): envelope-encrypted (AES-256-GCM data key per key, wrapped by the KEK).
+ * Only system code reads this table; the app role has no grant.
+ */
+export const aiKeys = pgTable(
+  'ai_keys',
+  {
+    id: id(),
+    ownerKind: aiKeyOwnerEnum().notNull(),
+    /** A user id or a workspace id, by `ownerKind`. */
+    ownerId: uuid().notNull(),
+    provider: aiProviderEnum().notNull(),
+    ciphertext: text().notNull(),
+    wrappedDek: text().notNull(),
+    keyLast4: text().notNull(),
+    baseUrl: text(),
+    status: aiKeyStatusEnum().notNull().default('pending'),
+    lastError: text(),
+    validatedAt: timestamp({ withTimezone: true }),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex('ai_keys_owner_provider').on(t.ownerKind, t.ownerId, t.provider)],
+);
+
+/** Conversations per project (FR-AI-08); `expiresAt` = last activity + 90 days (30 for minors). */
+export const aiConversations = pgTable(
+  'ai_conversations',
+  {
+    id: id(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** Null for a project that is not saved on the server. */
+    projectId: uuid().references(() => projects.id, { onDelete: 'cascade' }),
+    title: text().notNull(),
+    mode: aiModeEnum().notNull().default('full'),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('ai_conversations_user_project').on(t.userId, t.projectId, t.updatedAt),
+    index('ai_conversations_expires').on(t.expiresAt),
+  ],
+);
+
+export const aiMessages = pgTable(
+  'ai_messages',
+  {
+    id: id(),
+    conversationId: uuid()
+      .notNull()
+      .references(() => aiConversations.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: aiRoleEnum().notNull(),
+    content: text().notNull(),
+    proposals: jsonb().$type<unknown[]>().notNull().default([]),
+    provider: aiProviderEnum(),
+    model: text(),
+    tokensIn: integer().notNull().default(0),
+    tokensOut: integer().notNull().default(0),
+    /** The answer was cut by the output filter (FR-AI-07); `content` holds the notice. */
+    filtered: boolean().notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [index('ai_messages_conversation').on(t.conversationId, t.createdAt)],
+);
+
+/**
+ * Metered usage, one row per answered request: the credit ledger's debits (FR-AI-03). `credits` = platform
+ * tokens charged (0 with a BYOK key), so a month's use is a sum.
+ */
+export const aiUsage = pgTable(
+  'ai_usage',
+  {
+    id: id(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: aiProviderEnum().notNull(),
+    model: text().notNull(),
+    tokensIn: integer().notNull(),
+    tokensOut: integer().notNull(),
+    credits: integer().notNull(),
+    latencyMs: integer().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('ai_usage_user_month').on(t.workspaceId, t.userId, t.createdAt),
+    index('ai_usage_created').on(t.createdAt),
+  ],
+);

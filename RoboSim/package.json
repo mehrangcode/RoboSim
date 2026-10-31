@@ -32,7 +32,8 @@
     "versions:purge": "pnpm --filter @robosim/api run versions:purge",
     "verify": "node tools/require-wsl.ts && pnpm format:check && pnpm i18n:check && pnpm arch:check && turbo run lint typecheck test build && pnpm bundle:check",
     "bundle:check": "node tools/check-bundle-size.ts",
-    "new:component": "node tools/new-component.ts"
+    "new:component": "node tools/new-component.ts",
+    "ai:eval": "node tools/ai-eval/run.ts"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.6.0",

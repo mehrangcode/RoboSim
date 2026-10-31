@@ -32,6 +32,7 @@
     "shell:arena.family.",
     "shell:robot.slot.",
     "shell:robot.sides.",
+    "shell:robot.edge.",
     "shell:robot.field.",
     "editor:align.",
     "shell:cloud.status.",
@@ -60,6 +61,10 @@
     "guided:guide.status.",
     "shell:lab.analyzer.unit.",
     "apidocs:",
-    "shell:tour.stops."
+    "shell:tour.stops.",
+    "admin:ai.provider.",
+    "admin:ai.usage.col.",
+    "ai:provider.",
+    "ai:keys.status."
   ]
 }

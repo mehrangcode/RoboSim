@@ -12,6 +12,7 @@ import enPlans from '../locales/en/plans.json' with { type: 'json' };
 import enShare from '../locales/en/share.json' with { type: 'json' };
 import enBom from '../locales/en/bom.json' with { type: 'json' };
 import enGuided from '../locales/en/guided.json' with { type: 'json' };
+import enAi from '../locales/en/ai.json' with { type: 'json' };
 import enSafety from '../locales/en/safety.json' with { type: 'json' };
 import enShell from '../locales/en/shell.json' with { type: 'json' };
 import faAdmin from '../locales/fa/admin.json' with { type: 'json' };
@@ -25,6 +26,7 @@ import faPlans from '../locales/fa/plans.json' with { type: 'json' };
 import faShare from '../locales/fa/share.json' with { type: 'json' };
 import faBom from '../locales/fa/bom.json' with { type: 'json' };
 import faGuided from '../locales/fa/guided.json' with { type: 'json' };
+import faAi from '../locales/fa/ai.json' with { type: 'json' };
 import faSafety from '../locales/fa/safety.json' with { type: 'json' };
 import faShell from '../locales/fa/shell.json' with { type: 'json' };
 
@@ -42,6 +44,7 @@ export const NAMESPACES = [
   'plans',
   'bom',
   'guided',
+  'ai',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
@@ -60,6 +63,7 @@ export const resources = {
     plans: enPlans,
     bom: enBom,
     guided: enGuided,
+    ai: enAi,
   },
   fa: {
     common: faCommon,
@@ -75,6 +79,7 @@ export const resources = {
     plans: faPlans,
     bom: faBom,
     guided: faGuided,
+    ai: faAi,
   },
 } as const;
 

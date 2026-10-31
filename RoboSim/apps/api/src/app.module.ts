@@ -1,6 +1,7 @@
 import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { ENV, type Env } from './config/env.js';
 import { DATABASE, type Database } from './db/client.js';
+import { AiModule } from './modules/ai/index.js';
 import { AuditModule } from './modules/audit/index.js';
 import { BomModule } from './modules/bom/index.js';
 import { LearningModule } from './modules/learning/index.js';
@@ -46,6 +47,7 @@ export class AppModule {
         ProjectsModule,
         BomModule,
         LearningModule,
+        AiModule,
       ],
     };
   }

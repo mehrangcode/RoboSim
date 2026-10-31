@@ -769,6 +769,8 @@ PostgreSQL 16. Conventions: UUIDv7 PKs (`id`), `created_at`/`updated_at` `timest
 | `outbox_events` | id, aggregate_kind, aggregate_id, type, payload (jsonb), created_at, published_at |
 | `data_requests` | id, user_id, kind (`export`,`delete`), status, requested_at, completed_at, artifact_key |
 
+*AI tables as built (migration `0009_ai_assistant`):* `ai_provider_configs` is keyed by provider and adds `default_model`, `price_in_irr`/`price_out_irr` (per million tokens), and the last reachability check; the platform row ships enabled. `ai_keys` has a unique (owner_kind, owner_id, provider) and `last_error`; no grant to the app role. `ai_messages` carries `user_id` (RLS by owner), `proposals` (jsonb) and `filtered`. `ai_usage` adds `credits` (platform tokens charged, 0 with BYOK) and is the credit ledger: a month's use is its sum.
+
 ### 8.10 Project document schema
 
 `project_versions.document` follows `ProjectDocument` (Zod, `packages/shared/project-schema`), versioned by `schemaVersion` with pure forward migrations:
@@ -907,6 +909,14 @@ flowchart LR
 | Egress | AI module egress through an allow-list proxy with the hostnames of enabled providers only |
 | Metering | Tokens counted from provider responses (or tokenizer estimate); `ai_usage` + credit ledger debit in the same transaction after the stream completes |
 | Evaluation | `tools/ai-eval`: 200+ FA/EN tasks with graded rubrics; run in CI for prompt/model changes (FR-AI-09) |
+
+**Implemented (2026-10-31).** `apps/api/src/modules/ai` (`AiService`, `AiProvidersService`, `prompt.ts`, `proposals.ts`, `output-filter.ts`, `key-vault.ts`) over `packages/ai-providers` (`LLMProvider`: `OpenAICompatibleProvider` for the platform model, OpenAI, OpenRouter and custom endpoints, `AnthropicProvider`, `GeminiProvider`, `FakeProvider`; streaming with a first-byte timeout, tool calls, model list, key validation, token estimates).
+- **Platform model.** `AI_DEFAULT_PROVIDER` = `ollama` (`OLLAMA_BASE_URL`/v1, development: Ollama in WSL on CPU with `qwen2.5:3b`, ≈ 13 s to the first token), `vllm` (`VLLM_BASE_URL`), `fake` (tests) or `none`. Staff can switch it off and pin its models.
+- **Context.** The editor sends the document as edited and the facts only the browser has (nets through breadboard rows, decoded serial tail, translated findings, compiler diagnostics, a run summary, the guided step on screen); the server validates the document and fills the 12k budget in the order above, numbering code lines so answers can cite them (US-AI-01).
+- **Tools.** `propose_code_patch` takes exact find/replace edits, applied to the current file and shown as a unified diff; `propose_circuit_change` takes part/prop/wire operations checked against the catalogue and board pins and then the project schema (`applyCircuitChanges` in `packages/shared`, also used by the editor on Apply). Small models flatten arguments; the server accepts a single top-level edit or change.
+- **Keys.** `KeyWrapper` port; `LocalKeyWrapper` wraps per-key AES-256-GCM data keys with `AI_KEK` until OpenBao Transit. Only system code reads `ai_keys`.
+- **Filter.** Pattern rules for harmful intent in EN and FA (Persian verb-final order included), applied to the question and to the growing answer; minors add alcohol, gambling, drugs and profanity. A stand-in for a trained classifier, measured by the evaluation set.
+- **Not yet.** The egress allow-list proxy (deployment track), per-org ceilings and tutor mode (P3, organizations), credit packs (payments), anomaly alerts.
 
 ## 14. Deployment and infrastructure
 

@@ -1,4 +1,8 @@
 import {
+  aiModelListSchema,
+  aiProviderConfigListSchema,
+  aiProviderConfigSchema,
+  aiUsageReportSchema,
   adminPriceListSchema,
   adminPlanListSchema,
   catalogPriceSchema,
@@ -18,6 +22,11 @@ import {
   type SetSubscriptionInput,
   type StaffMe,
   type UpsertCatalogPriceInput,
+  type AiModel,
+  type AiProviderConfig,
+  type AiProviderId,
+  type AiUsageReport,
+  type UpdateAiProviderConfig,
 } from '@robosim/shared';
 import { apiGet, apiSend } from './api.js';
 
@@ -37,6 +46,12 @@ export interface AdminClient {
   prices(): Promise<AdminPriceList>;
   setPrice(partKey: string, input: UpsertCatalogPriceInput): Promise<CatalogPrice>;
   removePrice(partKey: string): Promise<void>;
+  /** AI providers, models and usage (FR-ADM-08). */
+  aiProviders(): Promise<AiProviderConfig[]>;
+  updateAiProvider(provider: AiProviderId, input: UpdateAiProviderConfig): Promise<AiProviderConfig>;
+  checkAiProvider(provider: AiProviderId): Promise<AiProviderConfig>;
+  aiPlatformModels(): Promise<AiModel[]>;
+  aiUsage(days: number): Promise<AiUsageReport>;
 }
 
 /** `locale` is a getter, so one client follows language switches (problem titles come back localized). */
@@ -75,5 +90,16 @@ export function adminApi(locale: () => string): AdminClient {
       catalogPriceSchema.parse(await apiSend('PUT', `/admin/catalog/prices/${id(key)}`, input, locale())),
     removePrice: async (key) =>
       void (await apiSend('DELETE', `/admin/catalog/prices/${id(key)}`, undefined, locale())),
+    aiProviders: async () => aiProviderConfigListSchema.parse(await get('/admin/ai/providers')).items,
+    updateAiProvider: async (provider, input) =>
+      aiProviderConfigSchema.parse(
+        await apiSend('PUT', `/admin/ai/providers/${id(provider)}`, input, locale()),
+      ),
+    checkAiProvider: async (provider) =>
+      aiProviderConfigSchema.parse(
+        await apiSend('POST', `/admin/ai/providers/${id(provider)}/check`, undefined, locale()),
+      ),
+    aiPlatformModels: async () => aiModelListSchema.parse(await get('/admin/ai/platform-models')).items,
+    aiUsage: async (days) => aiUsageReportSchema.parse(await get(`/admin/ai/usage?days=${days}`)),
   };
 }
