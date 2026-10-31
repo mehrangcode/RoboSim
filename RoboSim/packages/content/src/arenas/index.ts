@@ -6,6 +6,8 @@ import {
   gapsChallenge,
   squareArena,
   squareChallenge,
+  wideGapsArena,
+  wideGapsChallenge,
 } from './line-tracks.js';
 import {
   mazeArena,
@@ -38,6 +40,7 @@ export interface BuiltinArena {
 export const BUILTIN_ARENAS: readonly BuiltinArena[] = [
   { id: 'oval', family: 'line', spec: ovalArena, challenge: ovalChallenge },
   { id: 'oval-gaps', family: 'line', spec: gapsArena, challenge: gapsChallenge },
+  { id: 'oval-wide-gaps', family: 'line', spec: wideGapsArena, challenge: wideGapsChallenge },
   { id: 'square', family: 'line', spec: squareArena, challenge: squareChallenge },
   { id: 'figure-eight', family: 'line', spec: figureEightArena, challenge: figureEightChallenge },
   {

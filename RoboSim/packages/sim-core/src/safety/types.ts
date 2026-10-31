@@ -28,9 +28,12 @@ export interface CodeRef {
   readonly column: number;
 }
 
-/** How a sketch uses a pin (FR-COD-06). `servo` is `Servo.attach`; `tone` drives the pin like an output. */
+/**
+ * How a sketch uses a pin (FR-COD-06). `servo` is `Servo.attach`; `tone` drives the pin like an output;
+ * `dht` is a `DHT name(pin, type)` sensor object (the library drives the line open-drain).
+ */
 export type PinUseKind =
-  'pinMode' | 'digitalWrite' | 'digitalRead' | 'analogWrite' | 'analogRead' | 'servo' | 'tone';
+  'pinMode' | 'digitalWrite' | 'digitalRead' | 'analogWrite' | 'analogRead' | 'servo' | 'tone' | 'dht';
 
 export interface PinUse {
   /** Board pin id: 'D0'…'D13', 'A0'…'A5'. */

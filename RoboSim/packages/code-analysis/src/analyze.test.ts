@@ -66,6 +66,29 @@ describe('pin usage (FR-COD-06)', () => {
     ]);
   });
 
+  it('finds the pin of DHT sensor objects, however the constructor is written', () => {
+    const facts = sketch(`
+        #include <DHT.h>
+        const int DHT_PIN = 2;
+        #define OUTSIDE 7
+        DHT room(DHT_PIN, DHT11);
+        DHT garden(OUTSIDE, DHT22), attic{A1, DHT11};
+        DHT cellar = DHT(4, DHT11);
+        struct Station { DHT probe{5, DHT11}; };
+        DHT makeSensor(int pin, int type);
+        int wired;
+        DHT lost(wired, DHT11);`);
+    expect(facts.uses.map((u) => [u.use, u.pin])).toEqual([
+      ['dht', 'D2'],
+      ['dht', 'D7'],
+      ['dht', 'A1'],
+      ['dht', 'D4'],
+      ['dht', 'D5'],
+    ]);
+    expect(facts.uses[0]?.at).toEqual({ file: 'sketch.ino', line: 5, column: 9 });
+    expect(facts.unresolved.map((u) => u.call)).toEqual(['DHT']);
+  });
+
   it('lists calls whose pin or mode is not a constant as unresolved, without guessing', () => {
     const facts = sketch(`
       int led = 7;                 // not const: may change at run time

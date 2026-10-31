@@ -1,4 +1,5 @@
 import { UNO_PINS } from '@robosim/board-avr-uno/pins';
+import { findManifest } from '@robosim/catalog/manifests';
 import {
   BOARD_PART,
   type GuidedCheck,
@@ -62,6 +63,9 @@ export function boardPinsOfKind(kind: GuidedPinKind): readonly string[] {
   }).map((p) => p.id);
 }
 
+/** What the hint calls a code use that is not a plain function call. */
+const CODE_CALLS: Partial<Record<string, string>> = { servo: 'Servo.attach', dht: 'DHT' };
+
 class Checker {
   readonly #nets: CircuitNets;
 
@@ -95,17 +99,26 @@ class Checker {
       case 'part': {
         const parts = this.#parts(c.type);
         if (parts.length < c.count) return this.#missing(c.type, c.count);
-        if (!c.onRobot) return null;
+        if (!c.onRobot && !c.onServo) return null;
         const off = this.ctx.doc.components.filter((p) => p.type === c.type && !p.mount).map((p) => p.id);
         // Enough mounted ones is fine; extra loose copies do not matter.
-        return parts.length - off.length >= c.count
+        if (parts.length - off.length < c.count)
+          return { reason: 'notOnRobot', params: { type: c.type }, parts: off };
+        if (!c.onServo) return null;
+        const fixed = this.ctx.doc.components
+          .filter((p) => p.type === c.type && p.mount && p.mount.onServo === undefined)
+          .map((p) => p.id);
+        return parts.length - off.length - fixed.length >= c.count
           ? null
-          : { reason: 'notOnRobot', params: { type: c.type }, parts: off };
+          : { reason: 'notOnServo', params: { type: c.type }, parts: fixed };
       }
       case 'prop': {
         const parts = this.ctx.doc.components.filter((p) => p.type === c.type);
         if (!parts.length) return this.#missing(c.type);
-        return parts.some((p) => p.props[c.prop] === c.equals)
+        // An unset prop has its catalogue default (newly added parts store no props).
+        const value = (p: (typeof parts)[number]) =>
+          p.props[c.prop] ?? findManifest(c.type)?.props[c.prop]?.default;
+        return parts.some((p) => value(p) === c.equals)
           ? null
           : {
               reason: 'propMismatch',
@@ -151,7 +164,12 @@ class Checker {
           ? null
           : {
               reason: 'codeMissing',
-              params: { use: c.use, boardPin: reached[0] as string, type: c.at.type, pin: c.at.pin },
+              params: {
+                use: CODE_CALLS[c.use] ?? c.use,
+                boardPin: reached[0] as string,
+                type: c.at.type,
+                pin: c.at.pin,
+              },
               parts,
             };
       }

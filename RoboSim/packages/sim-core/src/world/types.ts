@@ -85,6 +85,11 @@ export interface MountSpec {
   readonly yMm: number;
   readonly angle?: number;
   readonly heightMm: number;
+  /**
+   * Mounted on a servo horn: the pose above is the one with the horn centred; at run time it turns
+   * about the pivot (the servo's mount point, robot frame mm) by the horn's current angle.
+   */
+  readonly onHorn?: { readonly componentId: string; readonly pivotXMm: number; readonly pivotYMm: number };
 }
 
 export interface RobotSpec {

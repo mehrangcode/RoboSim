@@ -8,10 +8,8 @@ import { ENGINE_VERSION } from './engine-version.js';
 import { grade } from './grade.js';
 
 /** Guided projects (FR-LRN-01): the reference builds pass every step and meet their challenge. */
-const FIRMWARE: Record<string, GuidedSketchId> = {
-  'line-follower': 'lineFollower',
-  'obstacle-avoider': 'obstacleAvoider',
-};
+/** A project's reference sketch is `GUIDED_SKETCHES[camelCase(slug)]`. */
+const sketchId = (slug: string) => slug.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
 const check = (c: GuidedContent, doc: ProjectDocument, runSucceeded: boolean, confirmed: string[] = []) =>
   evaluateGuide(
@@ -35,15 +33,25 @@ describe.each(GUIDED_PROJECTS.map((c) => [c.slug, c] as const))('guided project 
     for (const name of used) expect(c.assets).toHaveProperty(name as string);
   });
 
-  it('starts at the introduction, then asks for the motor driver', () => {
+  it('starts at the introduction, then asks for the first part', () => {
+    expect(c.steps[0]?.id).toBe('intro');
     expect(check(c, c.starter, false).current).toBe(0);
     const next = check(c, c.starter, false, ['intro']);
-    expect(c.steps[next.current]?.id).toBe('driver');
+    expect(next.current).toBe(1);
+    // Robots begin with the motor driver; every project's first build step has something to check.
+    if (c.arenaId) expect(c.steps[next.current]?.id).toBe('driver');
+    expect(c.steps[next.current]?.checks?.length).toBeGreaterThan(0);
+  });
+
+  it('is a robot in an arena, or a bench project whose goal needs no arena', () => {
+    expect(c.starter.arena?.arenaVersionId ?? null).toBe(c.arenaId);
+    expect(c.starter.successConditions).toBeDefined();
   });
 
   it('passes every step on the reference build once the run succeeds', () => {
     const before = check(c, c.reference, false, ['intro']);
     expect(c.steps[before.current]?.id).toBe('run');
+    expect(before.current).toBe(c.steps.length - 1);
     expect(check(c, c.reference, true, ['intro']).complete).toBe(true);
   });
 
@@ -55,7 +63,8 @@ describe.each(GUIDED_PROJECTS.map((c) => [c.slug, c] as const))('guided project 
   });
 
   it('meets the challenge with the reference sketch', () => {
-    const id = FIRMWARE[slug] as GuidedSketchId;
+    const id = sketchId(slug) as GuidedSketchId;
+    expect(GUIDED_SKETCHES).toHaveProperty(id);
     expect(c.reference.code.files[0]?.content).toBe(`${GUIDED_SKETCHES[id].trim()}\n`);
     const r = grade({
       log: {
@@ -64,7 +73,7 @@ describe.each(GUIDED_PROJECTS.map((c) => [c.slug, c] as const))('guided project 
         project: c.reference,
         firmware: { format: 'ihex', text: GUIDED_HEX[id], sha256: `demo:${id}` },
         seed: 1,
-        entries: [],
+        entries: (c.referenceInputs ?? []).map((i) => ({ kind: 'component' as const, ...i })),
       },
       maxSimSeconds: 120,
     });

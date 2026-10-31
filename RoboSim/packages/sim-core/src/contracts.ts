@@ -237,6 +237,18 @@ export function isWheelActuator(model: unknown): model is WheelActuator {
   );
 }
 
+/**
+ * A part that turns what is mounted on it (a servo horn). Parts mounted on it rotate about its pivot
+ * by this angle (rad, counter-clockwise seen from above; 0 = the horn's centre position).
+ */
+export interface HornActuator {
+  hornAngle(): number;
+}
+
+export function isHornActuator(model: unknown): model is HornActuator {
+  return typeof (model as Partial<HornActuator> | null)?.hornAngle === 'function';
+}
+
 export interface Fault {
   readonly code: string;
   readonly componentId: string;

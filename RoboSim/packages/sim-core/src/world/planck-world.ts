@@ -1,10 +1,12 @@
 import type { Body } from 'planck';
 import { Box, Circle, Edge, FrictionJoint, Polygon, World, Vec2 as PVec2 } from 'planck';
 import {
+  isHornActuator,
   isWheelActuator,
   type BodySnapshot,
   type ComponentModel,
   type ComponentPose,
+  type HornActuator,
   type RayHit,
   type Vec2,
   type WheelActuator,
@@ -13,7 +15,13 @@ import {
 import { atan2, cos, sin } from '../dmath/index.js';
 import { floorAt, rasterizeFloor, type FloorRaster } from './floor.js';
 import { robotMass } from './mass.js';
-import { DEFAULT_PHYSICS, type ArenaSpec, type PhysicsParams, type RobotSpec } from './types.js';
+import {
+  DEFAULT_PHYSICS,
+  type ArenaSpec,
+  type MountSpec,
+  type PhysicsParams,
+  type RobotSpec,
+} from './types.js';
 
 declare global {
   // Read by the patched planck build (patches/planck@1.5.0.patch, ADR-021) on every trig call.
@@ -66,6 +74,8 @@ export class PlanckWorld implements WorldModel {
   private readonly dynamicObstacles: { readonly id: string; readonly body: Body }[] = [];
   /** New contacts between each robot and anything that is not itself (walls, obstacles, other robots). */
   private readonly collisions = new Map<string, number>();
+  /** Servo horns that parts are mounted on, by component id (bound in `bind`). */
+  private readonly horns = new Map<string, HornActuator>();
 
   constructor(
     readonly arena: ArenaSpec,
@@ -118,7 +128,35 @@ export class PlanckWorld implements WorldModel {
         wheel.actuator = model;
       }
       this.applyReflectedInertia(robot);
+      for (const [id, m] of Object.entries(robot.spec.mounts)) {
+        if (!m.onHorn) continue;
+        const horn = lookup(m.onHorn.componentId);
+        if (!isHornActuator(horn))
+          throw new Error(
+            `Robot '${robot.spec.id}': '${id}' is mounted on '${m.onHorn.componentId}', which has no horn`,
+          );
+        this.horns.set(m.onHorn.componentId, horn);
+      }
     }
+  }
+
+  /** A mount in the robot frame right now (m, rad): parts on a servo horn turn with it. */
+  private mountNow(m: MountSpec): { x: number; y: number; angle: number } {
+    const x = m.xMm / 1000;
+    const y = m.yMm / 1000;
+    const angle = m.angle ?? 0;
+    const horn = m.onHorn && this.horns.get(m.onHorn.componentId);
+    if (!m.onHorn || !horn) return { x, y, angle };
+    const a = horn.hornAngle();
+    const px = m.onHorn.pivotXMm / 1000;
+    const py = m.onHorn.pivotYMm / 1000;
+    const c = cos(a);
+    const s = sin(a);
+    return {
+      x: px + c * (x - px) - s * (y - py),
+      y: py + s * (x - px) + c * (y - py),
+      angle: angle + a,
+    };
   }
 
   step(dt: number): void {
@@ -177,13 +215,14 @@ export class PlanckWorld implements WorldModel {
 
   componentPose(componentId: string): ComponentPose | null {
     for (const r of this.robots) {
-      const m = r.spec.mounts[componentId];
-      if (!m) continue;
-      const p = r.body.getWorldPoint(new PVec2(m.xMm / 1000, m.yMm / 1000));
+      const spec = r.spec.mounts[componentId];
+      if (!spec) continue;
+      const m = this.mountNow(spec);
+      const p = r.body.getWorldPoint(new PVec2(m.x, m.y));
       return {
         position: { x: p.x, y: p.y },
-        angle: r.body.getAngle() + (m.angle ?? 0),
-        heightMm: m.heightMm,
+        angle: r.body.getAngle() + m.angle,
+        heightMm: spec.heightMm,
       };
     }
     return null;
@@ -191,9 +230,10 @@ export class PlanckWorld implements WorldModel {
 
   componentMotion(componentId: string): { velocity: Vec2; yawRate: number } | null {
     for (const r of this.robots) {
-      const m = r.spec.mounts[componentId];
-      if (!m) continue;
-      const v = r.body.getLinearVelocityFromLocalPoint(new PVec2(m.xMm / 1000, m.yMm / 1000));
+      const spec = r.spec.mounts[componentId];
+      if (!spec) continue;
+      const m = this.mountNow(spec);
+      const v = r.body.getLinearVelocityFromLocalPoint(new PVec2(m.x, m.y));
       return { velocity: { x: v.x, y: v.y }, yawRate: r.body.getAngularVelocity() };
     }
     return null;

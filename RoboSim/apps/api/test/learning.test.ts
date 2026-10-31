@@ -39,13 +39,24 @@ const LF = 'line-follower@1';
 const OA = 'obstacle-avoider@1';
 
 describe('guided projects catalogue', () => {
-  it('shows guests and Free users the line follower in full and the avoider as a teaser', async () => {
+  it('shows guests and Free users the free projects in full and the paid robots as teasers', async () => {
     for (const user of [undefined, person('free')]) {
       const list = await call('GET', '/guided-projects', user);
       expect(list.statusCode).toBe(200);
       expect(list.json<GuidedSummary[]>().map((p) => [p.slug, p.locked, p.free])).toEqual([
+        ['blink-traffic-light', false, true],
+        ['button-counter', false, true],
+        ['dimmer-knob', false, true],
+        ['servo-sweep', false, true],
+        ['weather-station', false, true],
         ['line-follower', false, true],
+        ['square-track', true, false],
+        ['mind-the-gap', true, false],
+        ['pid-line-follower', true, false],
         ['obstacle-avoider', true, false],
+        ['scanning-avoider', true, false],
+        ['maze-explorer', true, false],
+        ['sumo-bot', true, false],
       ]);
 
       const open = await call('GET', '/guided-projects/line-follower', user);

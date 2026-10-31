@@ -269,7 +269,9 @@ export interface ComponentDefinition {       // exported by every packages/compo
   // commons, a buck module's shared ground), signalPassthrough (a series resistor: MCU edges and PWM reach parts
   // behind it through io.edges / io.pwm), isolationGroups (pins with no path between them, e.g. relay coil vs contacts).
 }
-// WorldModel.componentPose(id) gives a mounted part's arena pose (null on the bench); sim-core/sensors.ts has the
+// WorldModel.componentPose(id) gives a mounted part's arena pose (null on the bench). A part on a servo horn
+// (MountSpec.onHorn) turns about the servo's mount point by HornActuator.hornAngle() (Servo: angleDeg − 90°, CCW,
+// read live each step); PlanckWorld.bind resolves the horn by component id. sim-core/sensors.ts has the
 // shared optics (irReflectance, sonarRange). io.scheduleMcuInput(net, level, time) drives MCU inputs at an exact cycle
 // (e.g. an HC-SR04 echo), bypassing per-slice thresholding.
 // ComponentIO also offers io.pwm(net) (MCU PWM duty on a net) and io.edges(net) (cycle-stamped pin edges),
@@ -392,7 +394,7 @@ Circuits are small (< 200 nodes), so a dense LU decomposition is used; solves on
 | Wheels | Longitudinal force `F = τ/r` at each wheel's mount point; lateral friction impulse cancels sideways slip up to `μ·N`; rolling resistance; caster as low-friction contact |
 | Motor dynamics | `τ = Kt·i`, `i = (V − Ke·ω)/R`, with gearbox ratio and efficiency. Drive motors implement `WheelActuator`: every physics step the world reads `shaftTorque()`, applies `F = τ/r` capped at μ·N, and imposes the resulting wheel ground speed via `setShaftSpeed()` (no-slip coupling). That speed sets the back-EMF of the next electrical solve. On the bench (no world) the motor integrates its own first-order mechanics |
 | Battery | Open-circuit voltage curve by state of charge + internal resistance → sag under load |
-| Line sensor | Floor is a luminance raster (1 px = 1 mm), rasterised deterministically from the arena's vector paint (`rasterizeFloor`); built-in arenas live in `packages/content` (*current, slice 14:* eight arenas in `BUILTIN_ARENAS`, engine-free subpath `@robosim/content/arenas` with default challenges and the start-pose fit check `startPoseProblem`, which the loader and the editor share). Sensor samples a disc whose radius depends on mount height; reflectance → analog voltage via calibration curve; digital modules apply comparator threshold (potentiometer property) with hysteresis |
+| Line sensor | Floor is a luminance raster (1 px = 1 mm), rasterised deterministically from the arena's vector paint (`rasterizeFloor`); built-in arenas live in `packages/content` (*current, slice 14:* eight arenas in `BUILTIN_ARENAS`, nine since 2026-10-31 with `oval-wide-gaps`, engine-free subpath `@robosim/content/arenas` with default challenges and the start-pose fit check `startPoseProblem`, which the loader and the editor share). Sensor samples a disc whose radius depends on mount height; reflectance → analog voltage via calibration curve; digital modules apply comparator threshold (potentiometer property) with hysteresis |
 | Ultrasonic | On a valid TRIG pulse (≥ 10 µs, cycle-stamped), cast 7 rays across a 15° cone; nearest hit distance `d` within 2–400 cm → ECHO HIGH after calibrated latency for `2d / 343 m·s⁻¹`; no hit → timeout pulse like the real module |
 | Contact skin | planck separates polygons and edges by `polygonRadius` (1 cm each). `PlanckWorld` insets polygon fixtures and moves the perimeter out by that skin, so bodies touch at their true outlines, and `raycast` subtracts it again (`skin / cos(incidence)`), so ranging measures the true faces (slice 16c) |
 | Bump switch | *Tier A (slice 16c):* the lever is a short ray cast from the switch's mount pose (reach from the manifest). A wall or obstacle within reach closes the contact; the robot body's own collision still stops it. Avoids contact listeners, so it stays deterministic and engine-free |
@@ -782,7 +784,8 @@ type ProjectDocument = {
            position?: { x: number; y: number; rotation: 0 | 90 | 180 | 270 } };  // v4: on the circuit canvas
   components: Array<{ id: string; type: string; typeVersion: string; x: number; y: number;
                       rotation: 0 | 90 | 180 | 270; flipped: boolean; props: Record<string, unknown>;
-                      mount?: { x: number; y: number; z: number; yaw: number };
+                      mount?: { x: number; y: number; z: number; yaw: number;
+                                onServo?: string };  // additive: rides on that servo's horn
                       seats?: Record<string, PinRef> }>;   // v2: legs plugged into breadboard holes
   wires: Array<{ id: string; from: PinRef; to: PinRef; color: string; points: Array<[number, number]> }>;
   code: { language: 'cpp' | 'blocks'; files: Array<{ name: string; content: string }>; blocksXml?: string };
@@ -797,6 +800,7 @@ type ProjectDocument = {
 
 - `parseProjectDocument` runs forward migrations (`PROJECT_MIGRATIONS`, one per schema version), then strict Zod validation. Unknown keys, duplicate ids, dangling wire ends and arena-only conditions without an arena are rejected. `successConditions` has its own schema, the JSON form of `ChallengeSpec` (§5.7), so the API can validate documents without the engine.
 - `PinRef = { part, pin }`. The board is part `board`: MCU pins (`D0…D13`, `A0…A5`) are wired as is, `GND1…3` are ground, and `5V` is the rail stand-in. `3V3` and `VIN` are rejected until the board power tree is in the netlist.
+- Servo-mounted parts (`mount.onServo`, additive, no version bump like `guided`): the part's pose is the one with the horn centred (90°); in the run it turns with the horn about the servo's `mount.x/y` (180° = left, 0° = right, SG90 standing horn-up). The schema requires the host to exist, be mounted and not ride on a servo itself (one level, no cycles); the loader requires it to be a servo (`isServoType`). The mounting editor offers "Mount on servo" (the part goes on top of the horn and then moves, turns and unmounts with its servo); the Lab overlay turns its sonar cone with the servo's `angleDeg`.
 - Additions to the sketch above: `arena` is optional (bench projects have none). A component's `inputs` holds its interaction state at power-on (a switch left ON, a knob position), applied before slice 0 and not logged. Units are mm for `x`, `y` and `mount`, and degrees for `rotation`, `mount.yaw` and `startPose.heading`.
 - `loadProject(document, firmware, seed)` checks every component against the catalogue at its exact `typeVersion`. Components without pins (the chassis) stay out of the circuit. The robot is built from the chassis plus every mounted part: the payload is their mass plus the Uno, and the TT motor with `mount.y > 0` drives the left wheel. The loader also validates success conditions against the arena and runs static safety analysis. It reports all problems at once (`ProjectLoadError`).
 - *Schema v2 (slice 11):* `components[].seats` maps a part's own pin to another part's pin (a breadboard hole): the leg is plugged in there. The circuit canvas writes it whenever a seatable part's leg lands exactly on a hole; the v1 → v2 migration is the identity. Seats into `board` or into the part itself are rejected.

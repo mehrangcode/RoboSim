@@ -1,4 +1,5 @@
 import type { ArenaSpec, ChallengeSpec, FloorStroke } from '@robosim/sim-core';
+import * as dmath from '@robosim/sim-core/dmath';
 import { lemniscatePath, rectanglePath, stadiumPath } from './shapes.js';
 
 /*
@@ -108,3 +109,40 @@ export const gapsArena: ArenaSpec = {
 };
 
 export const gapsChallenge = lapChallenge('oval-gaps-one-lap', 60, 45, 0.8);
+
+// Oval with wide gaps on the bends: four 12 cm breaks at the 45° points of the two bends. Driving straight
+// on across one leaves the curve, so a robot has to remember which way the line was bending.
+const bendGap = (cx: number, deg: number): FloorStroke => ({
+  kind: 'circle',
+  center: {
+    x: cx + GAP_R * dmath.cos((deg * Math.PI) / 180),
+    y: GAP.y + GAP_R * dmath.sin((deg * Math.PI) / 180),
+  },
+  radiusM: 0.06,
+  value: 1,
+});
+
+export const wideGapsArena: ArenaSpec = {
+  id: 'oval-wide-gaps',
+  widthM: 2.4,
+  heightM: 1.6,
+  floor: {
+    background: 1,
+    strokes: [
+      tape(stadiumPath(GAP, 1.0, GAP_R)),
+      bendGap(1.7, -45),
+      bendGap(1.7, 45),
+      bendGap(0.7, 135),
+      bendGap(0.7, 225),
+    ],
+  },
+  start: { x: 0.9, y: 0.3, angle: 0 },
+  zones: [
+    { id: 'start', kind: 'start', center: { x: 0.9, y: 0.3 }, radiusM: 0.12 },
+    { id: 'cp-right', kind: 'checkpoint', center: { x: 2.2, y: 0.8 }, radiusM: 0.15 },
+    { id: 'cp-top', kind: 'checkpoint', center: { x: 1.2, y: 1.3 }, radiusM: 0.15 },
+    { id: 'cp-left', kind: 'checkpoint', center: { x: 0.2, y: 0.8 }, radiusM: 0.15 },
+  ],
+};
+
+export const wideGapsChallenge = lapChallenge('oval-wide-gaps-one-lap', 60, 45, 0.75);

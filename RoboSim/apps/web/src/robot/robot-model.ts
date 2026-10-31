@@ -15,7 +15,7 @@ import {
   type MountedBox,
 } from '@robosim/component-chassis-2wd/mounting';
 import { boxInertia, robotMass, type PointMass, type RobotMass } from '@robosim/sim-core/mass';
-import { BOARD_PART, type ProjectDocument } from '@robosim/shared';
+import { BOARD_PART, isServoType, type ProjectDocument } from '@robosim/shared';
 
 /*
  * Mounting editor model (FR-ARN-09), engine-free and pure: which parts can go on the chassis, where
@@ -26,6 +26,9 @@ const CHASSIS = 'mechanical.chassis-2wd';
 const MOTOR = 'actuator.tt-motor';
 export const BOARD_ID = BOARD_PART;
 const YAW_SNAP_DEG = 15;
+
+/** A document mount: a pose, optionally on a servo horn (the pose is with the horn centred). */
+export type PartMount = MountPose & { readonly onServo?: string | undefined };
 
 export interface Mountable {
   readonly id: string;
@@ -39,7 +42,9 @@ export interface Mountable {
   readonly overhang: boolean;
   /** TT motors sit in their side's motor slot (the wheels are chassis props). */
   readonly motor: boolean;
-  readonly mount: MountPose | null;
+  /** Parts can be mounted on its horn. */
+  readonly servo: boolean;
+  readonly mount: PartMount | null;
 }
 
 export interface Chassis {
@@ -77,6 +82,7 @@ export function mountablesOf(doc: ProjectDocument): readonly Mountable[] {
       ...UNO_BODY.mounting,
       overhang: false,
       motor: false,
+      servo: false,
       mount: doc.board.mount ?? (chassis ? defaultBoardMount(chassis) : null),
     },
   ];
@@ -90,6 +96,7 @@ export function mountablesOf(doc: ProjectDocument): readonly Mountable[] {
       ...m.mounting,
       overhang: m.category === 'sensor',
       motor: c.type === MOTOR,
+      servo: isServoType(c.type),
       mount: c.mount ?? null,
     });
   }
@@ -105,19 +112,69 @@ export const boxOf = (p: Mountable, pose: MountPose): MountedBox => ({
   overhang: p.overhang,
 });
 
-export function setMount(doc: ProjectDocument, id: string, mount: MountPose | null): ProjectDocument {
+/**
+ * Sets (or with null removes) a part's mount. Parts on a servo's horn ride along: they move and turn
+ * with the servo, and come off the robot with it.
+ */
+export function setMount(doc: ProjectDocument, id: string, mount: PartMount | null): ProjectDocument {
   if (id === BOARD_ID) {
     const { mount: _old, ...board } = doc.board;
-    return { ...doc, board: mount ? { ...board, mount } : board };
+    if (!mount) return { ...doc, board };
+    const { onServo: _s, ...pose } = mount;
+    return { ...doc, board: { ...board, mount: pose } };
   }
+  const from = doc.components.find((c) => c.id === id)?.mount;
+  const follow = (m: PartMount): PartMount | null => {
+    if (!mount || !from) return null;
+    const a = ((mount.yaw - from.yaw) * Math.PI) / 180;
+    const dx = m.x - from.x;
+    const dy = m.y - from.y;
+    const round = (v: number) => Math.round(v * 10) / 10;
+    return {
+      ...m,
+      x: round(mount.x + Math.cos(a) * dx - Math.sin(a) * dy),
+      y: round(mount.y + Math.sin(a) * dx + Math.cos(a) * dy),
+      z: m.z + mount.z - from.z,
+      yaw: wrapYaw(m.yaw + mount.yaw - from.yaw),
+    };
+  };
   return {
     ...doc,
     components: doc.components.map((c) => {
-      if (c.id !== id) return c;
+      const next = c.id === id ? mount : c.mount?.onServo === id ? follow(c.mount) : undefined;
+      if (next === undefined) return c;
       const { mount: _old, ...rest } = c;
-      return mount ? { ...rest, mount } : rest;
+      return next ? { ...rest, mount: next } : rest;
     }),
   };
+}
+
+/** Degrees wrapped to −180…180. */
+export const wrapYaw = (yaw: number): number => ((((yaw + 180) % 360) + 360) % 360) - 180;
+
+/** Servos on the robot that `id` could ride on: mounted, not on a horn themselves, not the part. */
+export function servoHostsFor(doc: ProjectDocument, id: string): readonly Mountable[] {
+  const parts = mountablesOf(doc);
+  const part = parts.find((p) => p.id === id);
+  if (!part || part.id === BOARD_ID || part.motor || part.servo) return [];
+  return parts.filter((p) => p.servo && p.mount && p.mount.onServo === undefined && p.id !== id);
+}
+
+/**
+ * Puts a part on a servo's horn (centred on the pivot, on top of the servo, facing where the horn
+ * points at 90°), or with null takes it off the horn and leaves it where it is.
+ */
+export function mountOnServo(doc: ProjectDocument, id: string, servoId: string | null): ProjectDocument {
+  const part = mountablesOf(doc).find((p) => p.id === id);
+  if (!part?.mount) return doc;
+  if (servoId === null) {
+    const { onServo: _s, ...pose } = part.mount;
+    return setMount(doc, id, pose);
+  }
+  const host = servoHostsFor(doc, id).find((p) => p.id === servoId);
+  if (!host?.mount) return doc;
+  const { x, y, z, yaw } = host.mount;
+  return setMount(doc, id, { x, y, z: Math.min(z + host.heightMm, 150), yaw, onServo: servoId });
 }
 
 const slot = (c: Chassis, id: string): MountSlot | undefined =>
@@ -230,7 +287,12 @@ export function setChassisProp(doc: ProjectDocument, name: keyof Chassis2wdProps
 
 /** Pairs of mounted parts that occupy the same space. */
 export function overlapsOf(doc: ProjectDocument): readonly (readonly [string, string])[] {
-  return mountOverlaps(mountablesOf(doc).flatMap((p) => (p.mount ? [boxOf(p, p.mount)] : [])));
+  const parts = mountablesOf(doc);
+  const host = new Map(parts.map((p) => [p.id, p.mount?.onServo]));
+  // A part on a horn sits on its servo by design.
+  return mountOverlaps(parts.flatMap((p) => (p.mount ? [boxOf(p, p.mount)] : []))).filter(
+    ([a, b]) => host.get(a) !== b && host.get(b) !== a,
+  );
 }
 
 /** Mass distribution exactly as the loader builds it (board, mounted parts, parts plugged into them). */

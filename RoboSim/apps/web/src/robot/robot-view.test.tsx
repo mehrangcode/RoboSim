@@ -40,6 +40,38 @@ describe('RobotView (FR-ARN-09, US-ARN-06)', () => {
     expect(part(/^3-channel line sensor \(line\): x 85 mm/)).toBeInTheDocument();
   });
 
+  it('puts the sonar on a servo horn: it follows the servo and keeps only its yaw field', async () => {
+    const base = builtinSource('line-follower').project;
+    const extra = (id: string, type: string, mount: { x: number; y: number; z: number; yaw: number }) => ({
+      id,
+      type,
+      typeVersion: '1.0.0',
+      x: 0,
+      y: 0,
+      rotation: 0 as const,
+      flipped: false,
+      props: {},
+      mount,
+    });
+    const doc = {
+      ...base,
+      components: [
+        ...base.components,
+        extra('servo', 'actuator.sg90-servo', { x: 50, y: 0, z: 70, yaw: 0 }),
+        extra('sonar', 'sensor.hc-sr04', { x: 60, y: 0, z: 110, yaw: 0 }),
+      ],
+    };
+    const { user, mountOf } = await setup(doc);
+    await user.click(part(/\(sonar\)/));
+    await user.selectOptions(screen.getByLabelText('Mount on servo'), 'servo');
+    expect(mountOf('sonar')).toEqual({ x: 50, y: 0, z: 100, yaw: 0, onServo: 'servo' });
+    expect(screen.queryByLabelText('x (mm, forward)')).toBeNull();
+    // Moving the servo carries the sonar along.
+    part(/\(servo\)/).focus();
+    await user.keyboard('{ArrowDown}');
+    expect(mountOf('sonar')).toMatchObject({ x: 49, y: 0, onServo: 'servo' });
+  });
+
   it('labels the robot sides so learners can tell left from right', async () => {
     await setup();
     expect(screen.getByTestId('robot-side-front')).toHaveTextContent('FRONT');

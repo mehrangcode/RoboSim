@@ -80,6 +80,19 @@ describe('built-in arenas', () => {
     expect([...bottom, ...top]).toEqual([1, 1, 1, 1]);
   });
 
+  it('the wide-gaps track breaks the tape in the middle of both bends', () => {
+    const a = findArena('oval-wide-gaps')?.spec;
+    if (!a) throw new Error('missing');
+    const raster = rasterizeFloor(a.floor, a.widthM, a.heightM);
+    const at = (cx: number, deg: number) =>
+      floorAt(raster, {
+        x: cx + 0.5 * Math.cos((deg * Math.PI) / 180),
+        y: 0.8 + 0.5 * Math.sin((deg * Math.PI) / 180),
+      });
+    expect([at(1.7, -45), at(1.7, 45), at(0.7, 135), at(0.7, 225)]).toEqual([1, 1, 1, 1]);
+    expect([at(1.7, 0), at(0.7, 180)]).toEqual([0, 0]);
+  });
+
   it('the maze is solvable from the start cell to the goal cell', () => {
     const open = mazeOpenings();
     const goal = `${MAZE_SIZE - 1},${MAZE_SIZE - 1}`;

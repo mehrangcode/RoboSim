@@ -52,6 +52,7 @@
   "reason": {
     "missingPart": "{count, plural, one {{part} را از کتابخانهٔ قطعات اضافه کن.} other {# عدد {part} از کتابخانهٔ قطعات اضافه کن (الان {have} تا داری).}}",
     "notOnRobot": "{part} را روی ربات بگذار: نمای ربات را باز کن و آن را روی شاسی بکش.",
+    "notOnServo": "{part} را روی سروو سوار کن: در نمای ربات انتخابش کن و از «سوار روی سروو» سروو را انتخاب کن.",
     "propMismatch": "«{prop}» در {part} را در پنل ویژگی‌ها روی {value} بگذار.",
     "notConnected": "پایهٔ {pin} از {part} را به پایهٔ {otherPin} از {otherPart} وصل کن.",
     "notOnBoard": "پایهٔ {pin} از {part} را به آردوینو وصل کن.",

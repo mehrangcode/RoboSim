@@ -113,6 +113,22 @@ describe('guided checks (FR-LRN-01)', () => {
     expect(evaluateStep(motors, ctx(both)).pass).toBe(true);
   });
 
+  it('requires a part on a servo horn when asked', () => {
+    const scan = step('scan', [{ kind: 'part', type: 'sensor.hc-sr04', onServo: true }]);
+    const servoMount = { x: 60, y: 0, z: 40, yaw: 0 };
+    const servo = part('sv', 'actuator.sg90-servo', { mount: servoMount });
+    expect(evaluateStep(scan, ctx(doc([servo, part('s', 'sensor.hc-sr04')]))).failures[0]?.reason).toBe(
+      'notOnRobot',
+    );
+    const fixed = doc([servo, part('s', 'sensor.hc-sr04', { mount: { ...servoMount, z: 70 } })]);
+    expect(evaluateStep(scan, ctx(fixed)).failures[0]).toMatchObject({ reason: 'notOnServo', parts: ['s'] });
+    const onHorn = doc([
+      servo,
+      part('s', 'sensor.hc-sr04', { mount: { ...servoMount, z: 70, onServo: 'sv' } }),
+    ]);
+    expect(evaluateStep(scan, ctx(onHorn)).pass).toBe(true);
+  });
+
   it('follows nets through the board’s joined grounds', () => {
     const gnd = step('gnd', [
       { kind: 'connected', a: { type: 'sensor.hc-sr04', pin: 'gnd' }, b: { type: BOARD_PART, pin: 'GND1' } },
@@ -149,6 +165,34 @@ describe('guided checks (FR-LRN-01)', () => {
     expect(evaluateStep(code, ctx(d, { code: null })).failures[0]?.reason).toBe('codeUnavailable');
   });
 
+  it('checks library pin uses (Servo.attach, DHT) and names them in the hint', () => {
+    const lib = step('lib', [
+      { kind: 'code', use: 'servo', at: { type: 'actuator.sg90-servo', pin: 'signal' } },
+      { kind: 'code', use: 'dht', at: { type: 'sensor.dht11', pin: 'data' } },
+    ]);
+    const d = doc(
+      [part('servo', 'actuator.sg90-servo'), part('dht', 'sensor.dht11')],
+      [
+        ['servo.signal', 'board.D9'],
+        ['dht.data', 'board.D2'],
+      ],
+    );
+    const uses = [
+      { pin: 'D9', use: 'servo' },
+      { pin: 'D2', use: 'dht' },
+    ];
+    expect(evaluateStep(lib, ctx(d, { code: { uses } })).pass).toBe(true);
+    expect(
+      evaluateStep(lib, ctx(d, { code: { uses: [{ pin: 'D9', use: 'pinMode' }] } })).failures.map((f) => [
+        f.reason,
+        f.params['use'],
+      ]),
+    ).toEqual([
+      ['codeMissing', 'Servo.attach'],
+      ['codeMissing', 'DHT'],
+    ]);
+  });
+
   it('checks props and the run', () => {
     const jumper = step('jumper', [{ kind: 'prop', type: 'driver.l298n', prop: 'enaJumper', equals: false }]);
     expect(
@@ -157,6 +201,13 @@ describe('guided checks (FR-LRN-01)', () => {
     expect(
       evaluateStep(jumper, ctx(doc([part('d', 'driver.l298n', { props: { enaJumper: false } })]))).pass,
     ).toBe(true);
+    // A prop the learner never changed has its catalogue default (added parts store no props).
+    const red = step('red', [{ kind: 'prop', type: 'actuator.led', prop: 'color', equals: 'red' }]);
+    expect(evaluateStep(red, ctx(doc([part('led', 'actuator.led')]))).pass).toBe(true);
+    expect(
+      evaluateStep(red, ctx(doc([part('led', 'actuator.led', { props: { color: 'green' } })]))).pass,
+    ).toBe(false);
+    expect(evaluateStep(jumper, ctx(doc([part('d', 'driver.l298n')]))).pass).toBe(false); // default: on
     const run = step('run', [{ kind: 'run' }]);
     expect(evaluateStep(run, ctx(doc([]))).failures[0]?.reason).toBe('notRun');
     expect(evaluateStep(run, ctx(doc([]), { runSucceeded: true })).pass).toBe(true);

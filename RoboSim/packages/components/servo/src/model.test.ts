@@ -2,7 +2,9 @@ import { UNO_ELECTRICAL, avrUno } from '@robosim/board-avr-uno';
 import { validateManifest } from '@robosim/sim-core';
 import { bench, dcSupply, firmware } from '@robosim/test-fixtures';
 import { describe, expect, it } from 'vitest';
+import { isHornActuator } from '@robosim/sim-core';
 import { definitions, mg996r, sg90 as definition, type ServoState as Sg90ServoState } from './index.js';
+import { SG90, Servo } from './model.js';
 
 /** Timer1 fast PWM (mode 14, /8, ICR1 = 39999 → 50 Hz) on D9 with the given pulse width. */
 function servoFirmware(pulseUs: number) {
@@ -79,6 +81,17 @@ describe('actuator.sg90-servo', () => {
     const weak = rig(1000, 3);
     weak.run(0.2);
     expect(weak.state<Sg90ServoState>('servo').angleDeg).toBe(90);
+  });
+
+  it('turns parts mounted on its horn: 90° centred, 180° left (counter-clockwise), 0° right', () => {
+    const servo = new Servo(SG90);
+    expect(isHornActuator(servo)).toBe(true);
+    expect(servo.hornAngle()).toBe(0);
+    const b = rig(500); // 0°
+    b.run(0.3);
+    expect(b.state<Sg90ServoState>('servo').angleDeg).toBeCloseTo(0, 1);
+    const model = b.sim.model('servo') as Servo;
+    expect(model.hornAngle()).toBeCloseTo(-Math.PI / 2, 2);
   });
 
   it('flags over-voltage', () => {

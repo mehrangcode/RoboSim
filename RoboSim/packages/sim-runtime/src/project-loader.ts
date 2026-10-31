@@ -25,7 +25,7 @@ import {
   type PropValue,
   type RobotSpec,
 } from '@robosim/sim-core';
-import { BOARD_PART, type PinRef, type ProjectDocument } from '@robosim/shared';
+import { BOARD_PART, isServoType, type PinRef, type ProjectDocument } from '@robosim/shared';
 import { unoFiveVolt, unoThreeVolt } from './board-rail.js';
 import { buildCircuit, type Circuit, type CircuitSpec } from './circuit.js';
 import type { ArenaScene, FindingView, FirmwarePayload, PartInfo, SceneInfo } from './protocol.js';
@@ -339,6 +339,15 @@ export function loadProject(doc: ProjectDocument, firmware: FirmwarePayload, see
               x: m.xMm / 1000,
               y: m.yMm / 1000,
               angle: m.angle ?? 0,
+              ...(m.onHorn
+                ? {
+                    onServo: {
+                      id: m.onHorn.componentId,
+                      pivotX: m.onHorn.pivotXMm / 1000,
+                      pivotY: m.onHorn.pivotYMm / 1000,
+                    },
+                  }
+                : {}),
             })),
           },
         }
@@ -391,6 +400,9 @@ function robotSpec(
     const problem = mountProblem(props, m, manifest.category === 'sensor');
     if (problem)
       issues.push(`component '${c.id}': ${MOUNT_PROBLEM[problem]} (x ${m.x}, y ${m.y}, z ${m.z} mm)`);
+    // The schema checked the host exists and is mounted; only a servo has a horn to carry it.
+    if (m.onServo !== undefined && !isServoType(defs.get(m.onServo)?.manifest.id ?? ''))
+      issues.push(`component '${c.id}': '${m.onServo}' is not a servo, so nothing can be mounted on it`);
   }
   const boardMount = doc.board.mount ?? { x: props.bodyCenterXMm, y: 0, z: 0, yaw: 0 };
   const boardProblem = mountProblem(props, boardMount, false);
@@ -402,10 +414,20 @@ function robotSpec(
     issues.push('the chassis needs one TT motor mounted on each side (mount.y > 0 = left)');
     return null;
   }
+  const byId = new Map(doc.components.map((c) => [c.id, c]));
   const mounts: Record<string, MountSpec> = {};
   for (const c of mounted) {
     const m = c.mount as NonNullable<typeof c.mount>;
-    mounts[c.id] = { xMm: m.x, yMm: m.y, heightMm: m.z, ...(m.yaw !== 0 ? { angle: radians(m.yaw) } : {}) };
+    const servo = m.onServo === undefined ? undefined : byId.get(m.onServo)?.mount;
+    mounts[c.id] = {
+      xMm: m.x,
+      yMm: m.y,
+      heightMm: m.z,
+      ...(m.yaw !== 0 ? { angle: radians(m.yaw) } : {}),
+      ...(servo
+        ? { onHorn: { componentId: m.onServo as string, pivotXMm: servo.x, pivotYMm: servo.y } }
+        : {}),
+    };
   }
   // Mass distribution (FR-ARN-09): every mounted part where it sits; parts plugged into a mounted
   // part (an LED on a mounted breadboard) ride at their host's mount.
@@ -419,7 +441,6 @@ function robotSpec(
     massKg: massG / 1000,
     ...(box ? { inertiaKgM2: boxInertia(massG / 1000, box.lengthMm, box.widthMm) } : {}),
   });
-  const byId = new Map(doc.components.map((c) => [c.id, c]));
   const payload: PointMass[] = [at(boardMount, UNO_BODY.massG, UNO_BODY.mounting)];
   for (const c of doc.components) {
     if (c.id === body.id) continue;

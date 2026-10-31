@@ -92,7 +92,9 @@ function evaluate(node: Node | null, env: Lookup): number | null {
               : NaN;
       return Number.isFinite(n) ? n : null;
     }
-    case 'identifier': {
+    case 'identifier':
+    case 'type_identifier': {
+      // a name in `DHT d(PIN, DHT11)`, parsed as a parameter type
       const v = env(node.text);
       return v !== undefined ? v : (BUILTINS.get(node.text) ?? null);
     }
@@ -115,6 +117,39 @@ function evaluate(node: Node | null, env: Lookup): number | null {
   }
 }
 
+/**
+ * Pin arguments of `DHT name(PIN, TYPE)` declarations (one per declarator; null when the pin is not an
+ * expression). `DHT d(PIN, DHT11)` with named constants parses as a function declaration whose
+ * "parameter types" are the arguments, so those count too.
+ */
+function dhtPinArgs(decl: Node): (Node | null)[] {
+  const first = (list: Node | null | undefined): Node | null => list?.namedChildren[0] ?? null;
+  if (decl.type === 'field_declaration') {
+    const init = decl.childForFieldName('default_value');
+    return init ? [first(init)] : [];
+  }
+  return decl.childrenForFieldName('declarator').flatMap((d): (Node | null)[] => {
+    if (d.type === 'init_declarator') {
+      const value = d.childForFieldName('value');
+      if (value?.type === 'argument_list' || value?.type === 'initializer_list') return [first(value)];
+      if (value?.type === 'call_expression' && value.childForFieldName('function')?.text === 'DHT')
+        return [first(value.childForFieldName('arguments'))];
+      return [];
+    }
+    if (d.type === 'function_declarator') {
+      const params = d.childForFieldName('parameters')?.namedChildren ?? [];
+      // A real function declaration names its parameters; an object declaration has bare names.
+      const bare = (p: Node | null) =>
+        p?.type === 'parameter_declaration' &&
+        !p.childForFieldName('declarator') &&
+        p.childForFieldName('type')?.type === 'type_identifier';
+      if (!params.length || !params.every(bare)) return [];
+      return [params[0]?.childForFieldName('type') ?? null];
+    }
+    return [];
+  });
+}
+
 const isConstDeclaration = (decl: Node): boolean =>
   decl.namedChildren.some((c) => c?.type === 'type_qualifier' && /^(const|constexpr)$/.test(c.text)) &&
   (decl
@@ -125,7 +160,8 @@ const isConstDeclaration = (decl: Node): boolean =>
 
 /**
  * Pin usage of an Arduino sketch (FR-COD-06): every pin call with a constant pin is a `PinUse`; a pin
- * call whose pin (or mode) is not a constant expression is listed as unresolved. Constants: literals,
+ * call whose pin (or mode) is not a constant expression is listed as unresolved. `Servo.attach(pin)` and
+ * `DHT name(pin, type)` declarations count as pin uses too. Constants: literals,
  * A0–A5, LED_BUILTIN, `#define`, and `const` / `constexpr` integer declarations, with + − ×.
  */
 export function extractPinUsage(parser: Parser, files: readonly SourceFile[]): CodeFacts {
@@ -219,6 +255,18 @@ function extract(
       }
       if (n.type === 'identifier' && PORT_REGISTER.test(n.text)) {
         unresolved.push({ call: n.text, at });
+        return;
+      }
+      if (
+        (n.type === 'declaration' || n.type === 'field_declaration') &&
+        n.childForFieldName('type')?.text === 'DHT'
+      ) {
+        for (const arg of dhtPinArgs(n)) {
+          const v = arg && evaluate(arg, lookup);
+          const pin = v === null || v === undefined ? null : pinId(v);
+          if (pin) uses.push({ pin, use: 'dht', at });
+          else unresolved.push({ call: 'DHT', at });
+        }
         return;
       }
       if (n.type !== 'call_expression') return;

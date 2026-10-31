@@ -190,6 +190,7 @@
       "name": {
         "oval-one-lap": "One lap of the oval in under 60 s, without collisions, staying on the line",
         "oval-gaps-one-lap": "One lap of the oval with gaps in under 60 s, without collisions, staying on the line",
+        "oval-wide-gaps-one-lap": "One lap of the oval with gaps on the bends in under 60 s, without collisions, mostly on the line",
         "square-one-lap": "One lap of the 90° track in under 90 s, without collisions, staying on the line",
         "figure-eight-one-lap": "One lap of the figure eight in under 90 s, without collisions, staying on the line",
         "obstacle-course-goal": "Reach the goal of the obstacle course in under 2 min",
@@ -525,6 +526,10 @@
       "name": "Oval with gaps",
       "goal": "1 lap in under 60 s, across the gaps"
     },
+    "oval-wide-gaps": {
+      "name": "Oval with gaps on the bends",
+      "goal": "1 lap in under 60 s, across the bend gaps"
+    },
     "square": {
       "name": "90° turns",
       "goal": "1 lap in under 90 s"
@@ -605,7 +610,12 @@
       "front-top": "Front top (ultrasonic)",
       "deck": "Deck"
     },
-    "onRobot": "On the robot"
+    "onRobot": "On the robot",
+    "onServo": {
+      "label": "Mount on servo",
+      "none": "No (fixed)",
+      "hint": "Rides on the servo horn: it moves with the servo and turns as the sketch turns it. At 90° it faces the yaw set here; 180° turns it left, 0° right."
+    }
   },
   "cloud": {
     "opening": "Opening the project…",

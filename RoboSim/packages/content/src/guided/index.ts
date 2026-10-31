@@ -1,15 +1,40 @@
 import { contentVersionId, guidedStepSchema, type GuidedProject, type GuidedSummary } from '@robosim/shared';
+import { blinkTrafficLight } from './blink-traffic-light.js';
+import { buttonCounter } from './button-counter.js';
+import { dimmerKnob } from './dimmer-knob.js';
 import { lineFollower } from './line-follower.js';
+import { mazeExplorer } from './maze-explorer.js';
+import { mindTheGap } from './mind-the-gap.js';
 import { obstacleAvoider } from './obstacle-avoider.js';
+import { pidLineFollower } from './pid-line-follower.js';
+import { scanningAvoider } from './scanning-avoider.js';
+import { servoSweep } from './servo-sweep.js';
+import { squareTrack } from './square-track.js';
+import { sumoBot } from './sumo-bot.js';
+import { weatherStation } from './weather-station.js';
 import type { GuidedContent } from './types.js';
 
-export type { GuidedContent } from './types.js';
+export type { GuidedContent, GuidedInput } from './types.js';
 
 /**
- * Built-in guided projects (FR-LRN-01, P2 set), in catalogue order. Kept off the package root so the web
- * bundle never carries paid content: browsers get it from the API, which applies the plan.
+ * Built-in guided projects (FR-LRN-01), in learn order: free bench projects first, then the robots.
+ * Kept off the package root so the web bundle never carries paid content: browsers get it from the API, which applies the plan.
  */
-export const GUIDED_PROJECTS: readonly GuidedContent[] = [lineFollower, obstacleAvoider];
+export const GUIDED_PROJECTS: readonly GuidedContent[] = [
+  blinkTrafficLight,
+  buttonCounter,
+  dimmerKnob,
+  servoSweep,
+  weatherStation,
+  lineFollower,
+  squareTrack,
+  mindTheGap,
+  pidLineFollower,
+  obstacleAvoider,
+  scanningAvoider,
+  mazeExplorer,
+  sumoBot,
+];
 
 export const findGuided = (slug: string): GuidedContent | undefined =>
   GUIDED_PROJECTS.find((p) => p.slug === slug);

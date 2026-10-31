@@ -22,7 +22,20 @@ export const BOARD_PART = 'board';
 export const pinRefSchema = z.strictObject({ part: z.string().min(1), pin: z.string().min(1) });
 export type PinRef = z.infer<typeof pinRefSchema>;
 
-const mountSchema = z.strictObject({ x: finite, y: finite, z: finite, yaw: finite });
+/** Catalogue types with a horn other parts can be mounted on (`mount.onServo`): SG90, MG996R. */
+export const isServoType = (type: string): boolean => /^actuator\.[a-z0-9-]+-servo$/.test(type);
+
+const mountSchema = z.strictObject({
+  x: finite,
+  y: finite,
+  z: finite,
+  yaw: finite,
+  /**
+   * Mounted on this servo's horn (component id): the pose above is with the horn centred (90°), and
+   * the part turns with the horn about the servo's mount point (180° = left). Additive, no version bump.
+   */
+  onServo: id.optional(),
+});
 
 export const componentInstanceSchema = z.strictObject({
   id: id.refine((v) => v !== BOARD_PART, `'${BOARD_PART}' is reserved for the board`),
@@ -186,6 +199,24 @@ export const projectDocumentSchema = z
             path: ['components', i, 'seats', pin, 'part'],
           });
       }
+    });
+    const byId = new Map(doc.components.map((c) => [c.id, c]));
+    doc.components.forEach((c, i) => {
+      const servo = c.mount?.onServo;
+      if (servo === undefined) return;
+      const host = byId.get(servo);
+      // One level only: a part on a horn cannot carry others (no chains, no cycles).
+      const problem = !host
+        ? `unknown part '${servo}'`
+        : host.id === c.id
+          ? 'a part cannot be mounted on itself'
+          : !host.mount
+            ? `'${servo}' is not mounted on the robot`
+            : host.mount.onServo !== undefined
+              ? `'${servo}' is itself mounted on a servo`
+              : null;
+      if (problem)
+        ctx.addIssue({ code: 'custom', message: problem, path: ['components', i, 'mount', 'onServo'] });
     });
     if (doc.successConditions && !doc.arena) {
       const needsArena = JSON.stringify(doc.successConditions.condition).match(

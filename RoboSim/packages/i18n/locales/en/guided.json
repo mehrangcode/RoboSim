@@ -52,6 +52,7 @@
   "reason": {
     "missingPart": "{count, plural, one {Add the {part} from the parts library.} other {Add # × {part} from the parts library (you have {have}).}}",
     "notOnRobot": "Put the {part} on the robot: open the Robot view and drag it onto the chassis.",
+    "notOnServo": "Mount the {part} on the servo: in the Robot view select it and pick the servo under “Mount on servo”.",
     "propMismatch": "Set “{prop}” of the {part} to {value} in the Properties panel.",
     "notConnected": "Connect {pin} of the {part} to {otherPin} of the {otherPart}.",
     "notOnBoard": "Wire {pin} of the {part} to the Arduino.",

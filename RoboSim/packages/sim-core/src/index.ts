@@ -1,5 +1,5 @@
 export type * from './contracts.js';
-export { isDamageable, isWheelActuator } from './contracts.js';
+export { isDamageable, isHornActuator, isWheelActuator } from './contracts.js';
 export * as dmath from './dmath/index.js';
 export { Prng } from './prng.js';
 export { buildNetlist, NetlistError, type Netlist, type NetlistInput, type Terminal } from './netlist.js';

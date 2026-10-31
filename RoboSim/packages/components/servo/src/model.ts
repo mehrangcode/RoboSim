@@ -3,6 +3,7 @@ import type {
   ComponentModel,
   Damageable,
   Fault,
+  HornActuator,
   MnaStamper,
   ModelContext,
   NetId,
@@ -69,9 +70,10 @@ const ON_TARGET_DEG = 0.5;
  * Hobby servo (SG90, MG996R). Pulse widths are measured from cycle-stamped MCU edges on the signal net
  * (Servo library, timer PWM, or bit-banged), mapped linearly min..max pulse → 0..180°. The horn slews
  * at a voltage-proportional rate; supply current is a behavioural sink per state (idle / hold / moving).
- * Limitation: pulses are seen only when an MCU pin drives the signal net directly.
+ * Limitation: pulses are seen only when an MCU pin drives the signal net directly. Parts mounted on
+ * the horn (a sonar on a scanning servo) turn with it through {@link Servo.hornAngle}.
  */
-export class Servo implements ComponentModel<ServoProps, ServoState>, Damageable {
+export class Servo implements ComponentModel<ServoProps, ServoState>, Damageable, HornActuator {
   readonly type: string;
   private id = '';
   private signal: NetId = 0;
@@ -140,6 +142,14 @@ export class Servo implements ComponentModel<ServoProps, ServoState>, Damageable
     }
     this.supplyA = moving ? movingA : this.target !== null && powered ? holdA : idleA;
     if (this.supplyA !== this.stampedA) io.invalidate();
+  }
+
+  /**
+   * Horn angle for parts mounted on it (rad, counter-clockwise from above): 90° is centred, 180° turns
+   * left and 0° right, as a servo standing horn-up at the front of a robot does.
+   */
+  hornAngle(): number {
+    return ((this.angle - 90) / 180) * Math.PI;
   }
 
   faults(): readonly Fault[] {

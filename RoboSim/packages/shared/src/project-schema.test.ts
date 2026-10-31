@@ -139,6 +139,36 @@ describe('project document schema', () => {
     expect(issues(seated({ a: { part: 'r1', pin: 'b' } }))).toHaveLength(1);
   });
 
+  it('accepts a part on a mounted servo horn and rejects dangling, unmounted or chained hosts', () => {
+    const onServo = (target: string, hostMount = true, hostOn?: string) => {
+      const doc = valid();
+      const [r1, sw] = doc.components as [
+        ProjectDocument['components'][number],
+        ProjectDocument['components'][number],
+      ];
+      const host = { ...sw, mount: { x: 10, y: 0, z: 5, yaw: 0, ...(hostOn ? { onServo: hostOn } : {}) } };
+      return {
+        ...doc,
+        components: [
+          { ...r1, mount: { x: 10, y: 0, z: 35, yaw: 0, onServo: target } },
+          hostMount ? host : sw,
+        ],
+      };
+    };
+    expect(issues(onServo('sw'))).toEqual([]);
+    expect(issues(onServo('nope'))).toEqual(["components.0.mount.onServo: unknown part 'nope'"]);
+    expect(issues(onServo('r1'))).toEqual(['components.0.mount.onServo: a part cannot be mounted on itself']);
+    const loose = onServo('sw');
+    const { mount: _m, ...bare } = loose.components[1] as ProjectDocument['components'][number];
+    expect(issues({ ...loose, components: [loose.components[0], bare] })).toEqual([
+      "components.0.mount.onServo: 'sw' is not mounted on the robot",
+    ]);
+    expect(issues(onServo('sw', true, 'r1'))).toEqual([
+      "components.0.mount.onServo: 'sw' is itself mounted on a servo",
+      "components.1.mount.onServo: 'r1' is itself mounted on a servo",
+    ]);
+  });
+
   it('rejects non-objects and versions it cannot read', () => {
     expect(issues(null)).toEqual(['document must be an object']);
     expect(issues({ ...valid(), schemaVersion: 0 })).toEqual(['schemaVersion must be a positive integer']);

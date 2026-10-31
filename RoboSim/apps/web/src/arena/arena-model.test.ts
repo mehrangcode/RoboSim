@@ -109,4 +109,38 @@ describe('arena model', () => {
     expect(overlay.wheels[0]?.speedMps).toBeCloseTo(Math.PI * 0.065, 12);
     expect(overlay.wheels[0]).toMatchObject({ x: 1, y: 1.065, label: '0.20 m/s' });
   });
+
+  it('turns a sonar on a servo horn with the servo angle', () => {
+    let doc = withChassis;
+    for (const [type, id, mount] of [
+      ['actuator.sg90-servo', 'servo', { x: 50, y: 0, z: 45, yaw: 0 }],
+      ['sensor.hc-sr04', 'sonar', { x: 50, y: 0, z: 75, yaw: 0, onServo: 'servo' }],
+    ] as const) {
+      const r = addComponent(doc, type, [0, 0]);
+      doc = {
+        ...r.doc,
+        components: r.doc.components.map((c) => (c.id === r.id ? { ...c, id, mount } : c)),
+      };
+    }
+    const robot = robotOf(doc);
+    if (!robot) throw new Error('robot');
+    expect(robot.mounts.find((m) => m.id === 'sonar')?.onServo).toEqual({
+      id: 'servo',
+      pivotX: 0.05,
+      pivotY: 0,
+    });
+    const sonarAt = (angleDeg: number) =>
+      overlayOf(
+        robot,
+        { x: 1, y: 1, angle: 0 },
+        { servo: { angleDeg }, sonar: { distanceCm: 20 } },
+        doc,
+        (v, d = 0) => v.toFixed(d),
+        { cm: (v) => `${v} cm`, mps: (v) => `${v} m/s`, noEcho: 'none' },
+      ).sonars[0];
+    expect(sonarAt(90)?.angle).toBeCloseTo(0, 12);
+    expect(sonarAt(150)?.angle).toBeCloseTo(Math.PI / 3, 12);
+    expect(sonarAt(30)?.angle).toBeCloseTo(-Math.PI / 3, 12);
+    expect(sonarAt(30)).toMatchObject({ x: 1.05, y: 1 });
+  });
 });

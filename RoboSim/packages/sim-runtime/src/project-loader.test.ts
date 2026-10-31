@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN_ARENAS } from '@robosim/content';
-import type { ProjectDocument } from '@robosim/shared';
+import type { ComponentInstance, ProjectDocument } from '@robosim/shared';
 import { SimClient } from './client.js';
 import { HeadlessRun } from './input-log.js';
 import { SimHost } from './host.js';
@@ -262,6 +262,66 @@ describe('project loader', () => {
     expect(drive(lineFollower())).toEqual(stock); // deterministic
     expect(drive(remount('bat', (m) => ({ x: m.x + 120 })))).not.toEqual(stock);
   }, 30_000);
+
+  /** The line follower plus an SG90 (horn at `angleDeg`) carrying an HC-SR04 on its horn. */
+  const scanner = (angleDeg: number, host = 'servo') => {
+    const base = lineFollower();
+    const part = (
+      id: string,
+      type: string,
+      props: Record<string, number>,
+      mount: NonNullable<ComponentInstance['mount']>,
+    ): ComponentInstance => ({
+      id,
+      type,
+      typeVersion: '1.0.0',
+      x: 0,
+      y: 0,
+      rotation: 0 as const,
+      flipped: false,
+      props,
+      mount,
+    });
+    return {
+      ...base,
+      project: {
+        ...base.project,
+        components: [
+          ...base.project.components,
+          part('servo', 'actuator.sg90-servo', { initialAngleDeg: angleDeg }, { x: 20, y: 0, z: 60, yaw: 0 }),
+          part('sonar', 'sensor.hc-sr04', {}, { x: 20, y: 0, z: 90, yaw: 0, onServo: host }),
+        ],
+      },
+    };
+  };
+
+  it('a part on a servo horn turns with the servo: the sonar looks where the horn points', () => {
+    const look = (angleDeg: number) => {
+      const run = buildRun(scanner(angleDeg));
+      const robot = run.world?.componentPose('servo');
+      const pose = run.world?.componentPose('sonar');
+      if (!pose || !robot || !run.world) throw new Error('not mounted');
+      const dir = { x: Math.cos(pose.angle), y: Math.sin(pose.angle) };
+      return { robot, pose, hit: run.world.raycast(pose.position, dir, 4)?.distance ?? null };
+    };
+    const ahead = look(90);
+    const left = look(180);
+    const right = look(0);
+    expect(ahead.pose.angle).toBeCloseTo(ahead.robot.angle, 12);
+    expect(left.pose.angle - left.robot.angle).toBeCloseTo(Math.PI / 2, 12);
+    expect(right.pose.angle - right.robot.angle).toBeCloseTo(-Math.PI / 2, 12);
+    // The horn sits on the servo's pivot, so only the heading changes, and with it what is seen.
+    expect(left.pose.position.x).toBeCloseTo(ahead.pose.position.x, 12);
+    expect(new Set([ahead.hit, left.hit, right.hit].map((d) => d?.toFixed(3))).size).toBe(3);
+    const scene = buildRun(scanner(90)).scene.robot?.mounts.find((m) => m.id === 'sonar');
+    expect(scene?.onServo).toEqual({ id: 'servo', pivotX: 0.02, pivotY: 0 });
+  });
+
+  it('refuses a part mounted on something that is not a servo', () => {
+    expect(problems((d) => d, scanner(90, 'drv'))).toEqual([
+      "component 'sonar': 'drv' is not a servo, so nothing can be mounted on it",
+    ]);
+  });
 
   it('refuses parts mounted off the chassis or that cannot be mounted', () => {
     const issues = (source: ReturnType<typeof lineFollower>) => problems((d) => d, source);

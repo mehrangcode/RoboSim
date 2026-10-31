@@ -21,14 +21,18 @@ import {
   defaultMount,
   massOf,
   motorMount,
+  mountOnServo,
   mountablesOf,
   moveTo,
   overlapsOf,
+  servoHostsFor,
   setChassisProp,
   setMount,
+  wrapYaw,
   yawTowards,
   type Chassis,
   type Mountable,
+  type PartMount,
 } from './robot-model.js';
 
 /** Drag payload type for parts dragged from the tray onto the chassis. */
@@ -64,13 +68,14 @@ const fillOf = (p: Mountable): string =>
   FILL[p.id === BOARD_ID ? 'board' : (findManifest(p.type)?.category ?? 'passive')] ?? '#78716c';
 
 type Drag =
-  | { readonly kind: 'move'; readonly id: string; readonly offset: Pt; readonly preview: MountPose }
-  | { readonly kind: 'rotate'; readonly id: string; readonly preview: MountPose };
+  | { readonly kind: 'move'; readonly id: string; readonly offset: Pt; readonly preview: PartMount }
+  | { readonly kind: 'rotate'; readonly id: string; readonly preview: PartMount };
 
 /**
  * Mounting editor (FR-ARN-09; US-ARN-06): the chassis from above. Drag parts to move them (slots
  * snap, Shift is free), turn them with the handle (15° steps), or use the exact fields. Positions
- * off the chassis are refused; overlapping parts are warned about. Wheels are chassis props.
+ * off the chassis are refused; overlapping parts are warned about. Wheels are chassis props. A part
+ * can ride on a servo's horn ("Mount on servo"): it then moves with the servo and only turns itself.
  */
 export function RobotView({
   editor,
@@ -106,7 +111,7 @@ export function RobotView({
     editor.setSelection(id && id !== BOARD_ID ? { parts: [id], wire: null } : NO_SELECTION);
   };
   /** Commits a pose as one undo step, unless the rules refuse it. */
-  const commit = (part: Mountable, mount: MountPose | null) => {
+  const commit = (part: Mountable, mount: PartMount | null) => {
     const problem = mount ? checkMount(chassis, part, mount) : null;
     setRefused(problem);
     if (problem) return;
@@ -131,7 +136,8 @@ export function RobotView({
     e.stopPropagation();
     select(part.id);
     const at = pointer(e);
-    if (disabled || !part.mount || !at) return;
+    // A part on a servo horn goes where the servo goes; it can still be turned.
+    if (disabled || !part.mount || !at || (kind === 'move' && part.mount.onServo !== undefined)) return;
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     setDrag(
       kind === 'move'
@@ -182,6 +188,7 @@ export function RobotView({
     };
     const d = nudge[e.key];
     if (d) {
+      if (m.onServo !== undefined) return;
       if (part.motor) {
         if (d.y !== 0) commit(part, motorMount(chassis, d.y > 0 ? 'left' : 'right'));
       } else {
@@ -189,8 +196,7 @@ export function RobotView({
         commit(part, { ...m, x: round(m.x + d.x), y: round(m.y + d.y) });
       }
     } else if ((e.key === 'r' || e.key === 'R') && !part.motor) {
-      const yaw = m.yaw + (e.shiftKey ? -15 : 15);
-      commit(part, { ...m, yaw: ((((yaw + 180) % 360) + 360) % 360) - 180 });
+      commit(part, { ...m, yaw: wrapYaw(m.yaw + (e.shiftKey ? -15 : 15)) });
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && part.id !== BOARD_ID) {
       commit(part, null);
     } else return;
@@ -211,7 +217,7 @@ export function RobotView({
     [front, p.widthMm / 2],
   ] as const;
   const overlapping = new Set(overlaps.flat());
-  const shown = (part: Mountable): MountPose | null => (drag?.id === part.id ? drag.preview : part.mount);
+  const shown = (part: Mountable): PartMount | null => (drag?.id === part.id ? drag.preview : part.mount);
   const mounted = parts.filter((x) => x.mount);
   // Low parts first so stacked ones stay visible; the selected part on top so it can be dragged.
   const rank = (x: Mountable) => (x.id === selectedId ? Infinity : (shown(x)?.z ?? 0));
@@ -416,8 +422,14 @@ export function RobotView({
               part={selected}
               chassis={chassis}
               name={nameOf(selected)}
+              hosts={servoHostsFor(doc, selected.id)}
+              nameOf={nameOf}
               disabled={disabled}
               onCommit={(m) => commit(selected, m)}
+              onServo={(servoId) => {
+                setRefused(null);
+                apply((d) => mountOnServo(d, selected.id, servoId));
+              }}
             />
           ) : (
             <p className="text-ink-muted">{t('shell:robot.selectHint')}</p>
@@ -547,14 +559,21 @@ function SelectedPart({
   part,
   chassis,
   name,
+  hosts,
+  nameOf,
   disabled,
   onCommit,
+  onServo,
 }: {
   part: Mountable;
   chassis: Chassis;
   name: string;
+  /** Servos the part could ride on. */
+  hosts: readonly Mountable[];
+  nameOf: (p: Mountable) => string;
   disabled: boolean;
-  onCommit: (mount: MountPose | null) => void;
+  onCommit: (mount: PartMount | null) => void;
+  onServo: (servoId: string | null) => void;
 }) {
   const { t } = useTranslation();
   const m = part.mount;
@@ -579,37 +598,60 @@ function SelectedPart({
       ) : (
         <fieldset disabled={disabled} className="flex flex-col gap-1">
           <legend className="sr-only">{t('shell:robot.pose')}</legend>
-          <NumberField
-            label={t('shell:robot.field.x')}
-            value={round(m.x)}
-            step={1}
-            disabled={disabled}
-            className={FIELD}
-            onCommit={(v) => onCommit({ ...m, x: v })}
-          />
-          <NumberField
-            label={t('shell:robot.field.y')}
-            value={round(m.y)}
-            step={1}
-            disabled={disabled}
-            className={FIELD}
-            onCommit={(v) => onCommit({ ...m, y: v })}
-          />
-          <NumberField
-            label={t('shell:robot.field.z')}
-            value={round(m.z)}
-            step={1}
-            disabled={disabled}
-            className={FIELD}
-            onCommit={(v) => onCommit({ ...m, z: v })}
-          />
+          {(hosts.length > 0 || m.onServo !== undefined) && (
+            <label className={FIELD}>
+              <span className="text-ink-muted">{t('shell:robot.onServo.label')}</span>
+              <select
+                value={m.onServo ?? ''}
+                disabled={disabled}
+                onChange={(e) => onServo(e.target.value === '' ? null : e.target.value)}
+                className="min-w-0 rounded border border-line bg-surface px-1 py-0.5"
+              >
+                <option value="">{t('shell:robot.onServo.none')}</option>
+                {hosts.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {nameOf(h)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {m.onServo !== undefined && <p className="text-ink-muted">{t('shell:robot.onServo.hint')}</p>}
+          {m.onServo === undefined && (
+            <>
+              <NumberField
+                label={t('shell:robot.field.x')}
+                value={round(m.x)}
+                step={1}
+                disabled={disabled}
+                className={FIELD}
+                onCommit={(v) => onCommit({ ...m, x: v })}
+              />
+              <NumberField
+                label={t('shell:robot.field.y')}
+                value={round(m.y)}
+                step={1}
+                disabled={disabled}
+                className={FIELD}
+                onCommit={(v) => onCommit({ ...m, y: v })}
+              />
+              <NumberField
+                label={t('shell:robot.field.z')}
+                value={round(m.z)}
+                step={1}
+                disabled={disabled}
+                className={FIELD}
+                onCommit={(v) => onCommit({ ...m, z: v })}
+              />
+            </>
+          )}
           <NumberField
             label={t('shell:robot.field.yaw')}
             value={round(m.yaw)}
             step={15}
             disabled={disabled}
             className={FIELD}
-            onCommit={(v) => onCommit({ ...m, yaw: ((((v + 180) % 360) + 360) % 360) - 180 })}
+            onCommit={(v) => onCommit({ ...m, yaw: wrapYaw(v) })}
           />
         </fieldset>
       )}

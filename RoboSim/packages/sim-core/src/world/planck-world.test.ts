@@ -149,6 +149,58 @@ describe('PlanckWorld sensing', () => {
     expect(world.componentPose('nope')).toBeNull();
   });
 
+  it('turns a part mounted on a servo horn about the pivot with the horn angle', () => {
+    const robot: RobotSpec = {
+      id: 'bot',
+      geometry: GEOMETRY,
+      payload: [{ ...plateCentroid(GEOMETRY), massKg: 0.34 }],
+      mounts: {
+        servo: { xMm: 50, yMm: 0, heightMm: 40 },
+        sonar: { xMm: 60, yMm: 0, heightMm: 70, onHorn: { componentId: 'servo', pivotXMm: 50, pivotYMm: 0 } },
+      },
+      drives: { left: 'mL', right: 'mR' },
+      start: { x: 1, y: 1.5, angle: 0 },
+    };
+    const world = new PlanckWorld(arena(), [robot]);
+    const horn = {
+      angle: 0,
+      hornAngle() {
+        return this.angle;
+      },
+    };
+    const models: Record<string, unknown> = { mL: new FakeMotor(0), mR: new FakeMotor(0), servo: horn };
+    world.bind((id) => models[id] as ComponentModel);
+
+    const ahead = world.componentPose('sonar');
+    expect(ahead?.position.x).toBeCloseTo(1.06, 9);
+    expect(ahead?.angle).toBeCloseTo(0, 12);
+    expect(ahead?.heightMm).toBe(70);
+
+    horn.angle = Math.PI / 2; // horn turned to the robot's left
+    const left = world.componentPose('sonar');
+    expect(left?.position.x).toBeCloseTo(1.05, 9);
+    expect(left?.position.y).toBeCloseTo(1.51, 9);
+    expect(left?.angle).toBeCloseTo(Math.PI / 2, 12);
+    // The servo body itself does not turn.
+    expect(world.componentPose('servo')?.angle).toBe(0);
+  });
+
+  it('refuses a part mounted on something without a horn', () => {
+    const robot: RobotSpec = {
+      id: 'bot',
+      geometry: GEOMETRY,
+      payload: [],
+      mounts: {
+        sonar: { xMm: 60, yMm: 0, heightMm: 70, onHorn: { componentId: 'mL', pivotXMm: 0, pivotYMm: 0 } },
+      },
+      drives: { left: 'mL', right: 'mR' },
+      start: { x: 1, y: 1.5, angle: 0 },
+    };
+    const world = new PlanckWorld(arena(), [robot]);
+    const models: Record<string, unknown> = { mL: new FakeMotor(0), mR: new FakeMotor(0) };
+    expect(() => world.bind((id) => models[id] as ComponentModel)).toThrow(/has no horn/);
+  });
+
   it('raycasts walls but not the robot it starts inside', () => {
     const { world } = setup(0, 0);
     const sonar = world.componentPose('sonar');

@@ -61,7 +61,18 @@ export function robotOf(doc: ProjectDocument): RobotScene | null {
       .filter((c) => c.mount && c.id !== chassis.id)
       .map((c) => {
         const m = c.mount as NonNullable<typeof c.mount>;
-        return { id: c.id, type: c.type, x: m.x / 1000, y: m.y / 1000, angle: m.yaw * RAD_PER_DEG };
+        const servo =
+          m.onServo === undefined ? undefined : doc.components.find((x) => x.id === m.onServo)?.mount;
+        return {
+          id: c.id,
+          type: c.type,
+          x: m.x / 1000,
+          y: m.y / 1000,
+          angle: m.yaw * RAD_PER_DEG,
+          ...(servo
+            ? { onServo: { id: m.onServo as string, pivotX: servo.x / 1000, pivotY: servo.y / 1000 } }
+            : {}),
+        };
       }),
   };
 }
@@ -142,6 +153,26 @@ interface Units {
   readonly noEcho: string;
 }
 
+/** A part on a servo horn where the horn has turned it (servo `angleDeg` − 90°, counter-clockwise). */
+function hornTurned(
+  m: RobotScene['mounts'][number],
+  parts: Readonly<Record<string, unknown>>,
+): RobotScene['mounts'][number] {
+  if (!m.onServo) return m;
+  const deg = (parts[m.onServo.id] as { angleDeg?: unknown } | undefined)?.angleDeg;
+  if (typeof deg !== 'number') return m;
+  const a = (deg - 90) * RAD_PER_DEG;
+  const { pivotX: px, pivotY: py } = m.onServo;
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return {
+    ...m,
+    x: px + c * (m.x - px) - s * (m.y - py),
+    y: py + s * (m.x - px) + c * (m.y - py),
+    angle: m.angle + a,
+  };
+}
+
 /**
  * Overlay of what the robot senses and how its wheels turn (FR-ARN-07), from the live part states:
  * line spots with their reading, ultrasonic cone + range, wheel surface speeds.
@@ -163,7 +194,8 @@ export function overlayOf(
     sonars: [],
     wheels: [],
   };
-  for (const m of robot.mounts) {
+  for (const mount of robot.mounts) {
+    const m = hornTurned(mount, parts);
     const state = parts[m.id] as Record<string, unknown> | undefined;
     const at = (dx: number, dy: number) => {
       const c = Math.cos(m.angle);

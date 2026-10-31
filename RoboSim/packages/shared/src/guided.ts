@@ -22,23 +22,32 @@ export type GuidedPin = z.infer<typeof guidedPinSchema>;
 export const GUIDED_PIN_KINDS = ['pwm', 'digital', 'analog', 'ground', '5v'] as const;
 export type GuidedPinKind = (typeof GUIDED_PIN_KINDS)[number];
 
-/** Sketch calls a code check can ask for (subset of the code-analysis pin uses). */
+/**
+ * Sketch calls a code check can ask for (subset of the code-analysis pin uses): `servo` is
+ * `Servo.attach(pin)`, `dht` a `DHT name(pin, type)` sensor object.
+ */
 export const GUIDED_CODE_USES = [
   'pinMode',
   'digitalWrite',
   'digitalRead',
   'analogWrite',
   'analogRead',
+  'servo',
+  'dht',
 ] as const;
 export type GuidedCodeUse = (typeof GUIDED_CODE_USES)[number];
 
 export const guidedCheckSchema = z.discriminatedUnion('kind', [
-  /** At least `count` parts of `type`; with `onRobot`, each of them mounted on the chassis. */
+  /**
+   * At least `count` parts of `type`; with `onRobot`, each of them mounted on the chassis; with
+   * `onServo`, mounted on a servo horn (implies `onRobot`).
+   */
   z.strictObject({
     kind: z.literal('part'),
     type: partType,
     count: z.number().int().min(1).max(8).default(1),
     onRobot: z.boolean().default(false),
+    onServo: z.boolean().default(false),
   }),
   /** Some part of `type` has `prop` set to `equals`. */
   z.strictObject({
@@ -63,6 +72,7 @@ export type GuidedCheckInput = z.input<typeof guidedCheckSchema>;
 export const GUIDED_FAIL_REASONS = [
   'missingPart',
   'notOnRobot',
+  'notOnServo',
   'propMismatch',
   'notConnected',
   'notOnBoard',
@@ -102,7 +112,8 @@ export const guidedSummarySchema = z.strictObject({
   /** Part of Free's `learning.guided_projects: first`; the rest need `all`. */
   free: z.boolean(),
   stepCount: z.number().int().min(1),
-  arenaId: z.string(),
+  /** Arena the robot runs in; null for bench projects (no robot). */
+  arenaId: z.string().nullable(),
   /** Inline SVG for the card. */
   cover: z.string().optional(),
   /** The caller's plan does not include it: only the summary is returned. */

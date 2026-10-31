@@ -7,11 +7,13 @@ import {
   chassisOf,
   defaultMount,
   massOf,
+  mountOnServo,
   mountablesOf,
   moveTo,
   overlapsOf,
   setChassisProp,
   setMount,
+  servoHostsFor,
   yawTowards,
   type Mountable,
 } from './robot-model.js';
@@ -86,6 +88,27 @@ describe('FR-ARN-09 mounting editor model', () => {
       z: 20,
       yaw: 0,
     });
+  });
+
+  it('mounts a part on a servo horn; it rides along when the servo moves or comes off', () => {
+    let doc = robot('actuator.sg90-servo', 'sensor.hc-sr04', 'actuator.tt-motor');
+    const [servo, sonar, motor] = doc.components.slice(1).map((c) => c.id) as [string, string, string];
+    expect(servoHostsFor(doc, sonar)).toEqual([]); // the servo is not on the robot yet
+    doc = setMount(doc, servo, { x: 55, y: 0, z: 45, yaw: 0 });
+    doc = setMount(doc, sonar, defaultMount(doc, sonar));
+    expect(servoHostsFor(doc, sonar).map((p) => p.id)).toEqual([servo]);
+    expect(servoHostsFor(doc, servo)).toEqual([]); // no servo on a servo
+    expect(servoHostsFor(doc, motor)).toEqual([]);
+
+    doc = mountOnServo(doc, sonar, servo);
+    expect(partOf(doc, sonar).mount).toEqual({ x: 55, y: 0, z: 45 + 30, yaw: 0, onServo: servo });
+    expect(overlapsOf(doc)).toEqual([]); // sitting on its servo is not an overlap
+
+    doc = setMount(doc, servo, { x: 40, y: 10, z: 45, yaw: 90 });
+    expect(partOf(doc, sonar).mount).toEqual({ x: 40, y: 10, z: 75, yaw: 90, onServo: servo });
+
+    expect(partOf(mountOnServo(doc, sonar, null), sonar).mount).toEqual({ x: 40, y: 10, z: 75, yaw: 90 });
+    expect(partOf(setMount(doc, servo, null), sonar).mount).toBeNull();
   });
 
   it('turns parts in 15° steps (free with Shift)', () => {

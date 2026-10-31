@@ -248,6 +248,11 @@ export interface RobotScene {
     readonly x: number;
     readonly y: number;
     readonly angle: number;
+    /**
+     * On a servo horn: the pose above is with the horn centred; the part turns about the pivot (m) by
+     * the servo's `angleDeg` − 90° (counter-clockwise, 180° = left).
+     */
+    readonly onServo?: { readonly id: string; readonly pivotX: number; readonly pivotY: number };
   }[];
   /** Centre of mass in the robot frame (m), from where everything is mounted (FR-ARN-09). */
   readonly centerOfMass?: { readonly x: number; readonly y: number };

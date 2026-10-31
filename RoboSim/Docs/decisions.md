@@ -244,4 +244,5 @@
   - New or changed content ships with a release until the CMS exists; the content tables can import these modules unchanged, because the shape is already the API contract.
   - Changing a project's steps needs a version bump, or old progress would point at steps that no longer exist.
 - **Alternatives.** TypeScript validator functions per step (flexible, but content could never live outside the code); server-side checking on every edit (latency, and no help for guests offline); building the CMS first (delays the first guided project by a slice).
+- **Later (2026-10-31), 13 projects.** Guided projects may have no arena (`arenaId: null`): bench projects on the Uno alone, free, completed when the project's own success conditions (`serialMatches`, `pinState`) are met, so no new check kind was needed. Interactive references carry `referenceInputs` that the headless test replays. Free's `learning.guided_projects: first` now means "the projects marked `free`" (five bench projects and the Line-follower). The servo radar needed real engine support rather than a fake: a part mounted `onServo` turns with the horn (TD §8.10).
 
