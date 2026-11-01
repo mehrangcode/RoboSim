@@ -65,7 +65,6 @@ Run every `pnpm` command from WSL, never from Windows PowerShell/cmd on the same
 |---|---|---|
 | http://localhost:5173 | Web app | P0 |
 | http://localhost:5173/editor | Editor workspace: build a circuit, write its code, run it (`?demo=<scenario>` opens a demo) | P1 |
-| http://localhost:5173/lab | Simulator Lab: engine demos per slice (arena, component bench, safety, your code), each with “Open in editor” | P1 |
 | http://localhost:5173/plans | Plans: Free vs Maker, current plan, Upgrade (checkout coming soon) | P1 (pulled forward) |
 | http://localhost:5173/editor (bottom dock) | **Parts list** and **Wiring** tabs: BOM with prices and owned parts, step-by-step wiring guide, CSV/XLSX/SVG/PNG/`.robosim` exports, print | P1 (pulled forward) |
 | http://localhost:5174 | Admin app: plans, workspaces and the part price list (`/prices`) for staff (sign in with a staff account) | P0 |
@@ -121,7 +120,7 @@ Seed users (`learner@dev.local`, `teacher@dev.local`, `admin@dev.local` with the
 | `pnpm test:perf` | Slice/analysis/netlist budgets (`packages/sim-runtime/scripts/perf-budgets.ts`, against built dist); `ROBOSIM_PERF_SCALE` scales every budget for slower machines |
 | `pnpm golden:update` | Record missing golden traces, or re-record after an `engineVersion` bump (refuses otherwise) |
 | `pnpm compiler:setup` | Fetch the pinned Arduino core and libraries (`apps/compiler/toolchain.lock.json`) into `.local/toolchain`; checks avr-gcc |
-| `pnpm firmware:gen` | Recompile the firmware sets in `apps/compiler/scripts/firmware-sets.ts` into their `generated.ts`: the Lab demos (`packages/sim-runtime/src/firmware/sketches.ts`), the Uno conformance sketches and the guided-project solutions (`packages/content/src/guided/sketches.ts`) |
+| `pnpm firmware:gen` | Recompile the firmware sets in `apps/compiler/scripts/firmware-sets.ts` into their `generated.ts`: the built-in demos (`packages/sim-runtime/src/firmware/sketches.ts`), the Uno conformance sketches and the guided-project solutions (`packages/content/src/guided/sketches.ts`) |
 | `pnpm --filter @robosim/compiler compile <main.ino> [files…]` | Compile a sketch from the command line (diagnostics with explanation keys, `--out firmware.hex`) |
 | `pnpm bench` | Performance benchmarks (§17 of Technical Design) |
 | `pnpm bundle:check` | Initial-JS budget for web and admin (NFR-PERF-04) |

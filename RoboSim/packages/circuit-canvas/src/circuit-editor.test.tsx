@@ -204,4 +204,23 @@ describe('circuit editor', () => {
     expect(screen.queryByRole('img', { name: /Circuit overview/ })).toBeNull();
     expect(localStorage.getItem('robosim.circuit.minimap')).toBe('off');
   });
+
+  it('expands the canvas to the whole page and Esc leaves it once nothing else is left to cancel', async () => {
+    const { container, editor } = setup();
+    const user = userEvent.setup();
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    const frame = () => svg.parentElement as HTMLElement;
+    expect(frame()).not.toHaveClass('fixed');
+    await user.click(screen.getByRole('button', { name: 'Expand to full page (Esc to exit)' }));
+    expect(frame()).toHaveClass('fixed', 'inset-0');
+    const collapse = screen.getByRole('button', { name: 'Exit full page (Esc)' });
+    expect(collapse).toHaveAttribute('aria-pressed', 'true');
+    // The first Esc clears the selection; the second leaves the full-page view.
+    act(() => editor().setSelection({ parts: ['board'], wire: null }));
+    fireEvent.keyDown(svg, { key: 'Escape' });
+    expect(editor().selection.parts).toEqual([]);
+    expect(frame()).toHaveClass('fixed');
+    fireEvent.keyDown(svg, { key: 'Escape' });
+    expect(frame()).not.toHaveClass('fixed');
+  });
 });

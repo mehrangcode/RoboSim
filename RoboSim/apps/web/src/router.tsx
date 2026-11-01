@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   lazyRouteComponent,
+  redirect,
   type RouterHistory,
 } from '@tanstack/react-router';
 import type * as AuthPages from './auth/auth-pages.js';
@@ -11,13 +12,16 @@ import { NotFound, RootLayout } from './routes/root.js';
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound });
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Home });
-// The Lab pulls in the engine worker and renderer: a lazy chunk keeps them out of the initial bundle.
+// The former Simulator Lab: its demos live in the editor's demo picker; old links land there.
 const labRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/lab',
-  component: lazyRouteComponent(() => import('./lab/lab-page.js'), 'LabPage'),
+  beforeLoad: () => {
+    throw redirect({ to: '/editor' });
+  },
 });
-// The editor workspace (FR-WRK-01): lazy like the Lab; `?demo=<scenario>` opens a built-in demo.
+// The editor workspace (FR-WRK-01): lazy, keeping the engine worker and renderer out of the initial
+// bundle; `?demo=<scenario>` opens a built-in demo.
 const editorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/editor',

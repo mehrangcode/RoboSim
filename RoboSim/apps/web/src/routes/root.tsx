@@ -46,12 +46,6 @@ export function RootLayout() {
             {t('shell:nav.editor')}
           </Link>
           <Link
-            to="/lab"
-            className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
-          >
-            {t('shell:nav.lab')}
-          </Link>
-          <Link
             to="/plans"
             className="text-ink-muted hover:text-ink [&.active]:font-medium [&.active]:text-ink"
           >

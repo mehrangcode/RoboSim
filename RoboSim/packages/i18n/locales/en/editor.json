@@ -33,7 +33,9 @@
     "viewHelp": "View only: editing needs a larger screen",
     "damaged": "damaged",
     "minimap": "Circuit overview: click or drag to move the view",
-    "minimapToggle": "Show or hide the overview (M)"
+    "minimapToggle": "Show or hide the overview (M)",
+    "expand": "Expand to full page (Esc to exit)",
+    "collapse": "Exit full page (Esc)"
   },
   "toolbar": "Edit",
   "actions": {

@@ -3,7 +3,6 @@
     "learn": "Learn",
     "home": "Home",
     "mainLabel": "Main navigation",
-    "lab": "Lab",
     "editor": "Editor",
     "projects": "Projects"
   },
@@ -20,34 +19,18 @@
     "body": "The page you are looking for does not exist or has moved."
   },
   "lab": {
-    "title": "Simulator Lab",
-    "intro": "Live demos of the simulation engine as it is built. Everything runs in your browser.",
-    "tabsLabel": "Lab view",
-    "tabs": {
-      "arena": "Robot arena",
-      "bench": "Component bench",
-      "safety": "Safety",
-      "sketch": "Your code"
-    },
     "controls": {
-      "label": "Simulation controls",
       "run": "Run",
       "pause": "Pause",
       "reset": "Reset",
       "step": "Step 10 ms",
-      "speed": "Speed",
-      "replay": "Replay run",
-      "exportLog": "Export input log",
-      "verify": "Verify run"
+      "speed": "Speed"
     },
     "status": {
       "time": "Sim time {seconds} s",
       "rtf": "{factor}× real time",
-      "paused": "Paused",
-      "loading": "Loading the engine…",
-      "replaying": "{count, plural, one {replaying # input} other {replaying # inputs}}"
+      "paused": "Paused"
     },
-    "scenarioLabel": "Demo",
     "scenario": {
       "line-follower": "Line follower",
       "blink": "Blink",
@@ -83,68 +66,8 @@
       "thermometers": "Two thermometers",
       "neopixel-rainbow": "NeoPixel rainbow"
     },
-    "scenarioHint": {
-      "line-follower": "Arduino Uno + L298N + two TT motors + 3-channel line sensor on 4×AA. The firmware follows the black line around the oval.",
-      "blink": "The Uno toggles D13 every 500 ms through a 220 Ω resistor.",
-      "button": "Hold the button: D2 reads LOW through the internal pull-up and the sketch turns the LED on.",
-      "dimmer": "Turn the knob: analogRead(A0) sets the PWM duty on D6.",
-      "servo": "Turn the knob: the sketch maps A0 to the servo pulse width on D9. The servo runs from its own 4×AA pack — a stalled SG90 needs more than the Uno's 5 V pin can give.",
-      "led-no-resistor": "An LED straight on D13 with no resistor. The checker flags it before you run; run it and watch the pin and the LED burn out.",
-      "outputs-fighting": "D2 and D3 are wired together; the sketch drives D2 HIGH and D3 LOW — a short circuit through both pins.",
-      "motor-on-pin": "A TT motor straight on D9. Motors need a driver: the pin cannot supply the current.",
-      "floating-input": "A button on D2 to GND, but the sketch uses INPUT without a pull-up: released, the pin floats.",
-      "serial": "The sketch prints a greeting and a tick every second over Serial at 115200 baud, and echoes what you send in capitals (D13 toggles on every byte).",
-      "rgb-melody": "Turn the knob: the RGB LED walks the colour wheel with PWM on D9/D6/D5. Hold the button: tone() plays a melody on the passive buzzer on D8 (turn on Sound to hear it).",
-      "relay-counter": "Press the button to count 0–9 on the 7-segment display. On even numbers the relay closes and the 9 V battery lights the lamp through an LM7805 — a separate circuit the Uno only switches.",
-      "half-adder": "Press the buttons: a 74HC86 XOR makes the sum and a 74HC08 AND the carry, in hardware. The Uno only reads the result and prints it to the serial monitor.",
-      "led-bar": "A lit LED sweeps back and forth across 8 LEDs. shiftOut() clocks each pattern into a 74HC595, which drives the LEDs from just three Uno pins. The knob sets the speed.",
-      "stepper-knob": "Turn the knob: the 28BYJ-48 shaft follows it, one knob turn per shaft turn (2048 steps). The Stepper library drives the coils through a ULN2003A, because a pin cannot supply coil current.",
-      "motor-driver": "Two TT motors on a TB6612FNG MOSFET driver ramp from full reverse to full forward. STBY must be HIGH, or the driver sleeps. MOSFETs waste less voltage than the L298N.",
-      "bump-avoider": "Two lever switches at the front corners: when one hits an obstacle the robot backs up, turns away, and later turns back, working its way to the goal of the obstacle course.",
-      "keypad-lock": "Click the keys on the keypad: type 1234 then # to unlock (green LED); * clears. The Keypad library scans the rows and columns, and the serial monitor shows what you typed.",
-      "input-devices": "Turn the rotary encoder (its slider sets the knob position) and move the joystick: the sketch counts detents from the quadrature contacts and prints both to the serial monitor.",
-      "timer-555": "An NE555 timer blinks the LED about once a second all by itself: R1, R2 and the 10 µF capacitor set the rhythm (f = 1.44 / ((R1 + 2·R2)·C)). The Uno only listens on D2 and prints the period it measures.",
-      "rc-charge": "D7 charges a 100 µF capacitor through 10 kΩ and A0 watches it rise: 63 % of 5 V after one time constant (R·C = 1 s), almost full after five. Every 4 s the pin flips and it discharges. Watch the numbers in the serial monitor.",
-      "transistor-motor": "Turn the knob: the PWM duty on D9 switches a TIP120 Darlington, which carries the motor current from the 4×AA pack (a pin could not). The 1N4007 across the motor catches the coil's current every time the transistor switches off.",
-      "mosfet-ramp": "An IRLZ44N logic-level MOSFET, fully on with 5 V on its gate, ramps the motor up over 2 s, runs it, ramps it down and rests. 220 Ω limits the gate charging current; 10 kΩ keeps the gate low while the Uno boots.",
-      "no-flyback": "The same TIP120 motor switch, but without the diode. The checker flags it before you run. Run it: each time the PWM switches the motor off, its coil kicks the collector up to 60 V until the transistor breaks down, and soon it fails.",
-      "laser-avoider": "A VL53L0X time-of-flight sensor on the front measures the gap ahead with an infrared laser. Something within 45 cm: the robot veers right; with a clear view it veers back left until it has undone its turns, so it works its way to the goal. It talks I²C on A4/A5; XSHUT on D11 lets the sketch reset it.",
-      "maze-solver": "Three HC-SR04 ultrasonic sensors look ahead, left and right. In the middle of each cell the robot turns right if it can, else goes straight, else left, else turns around: keeping its right hand on the wall leads it through the 5 × 5 maze to the goal. Between cells it steers to the middle of the corridor, and the front sensor measures how far it has driven.",
-      "sumo-bot": "An HC-SR04 on the front spins around looking for the opponent and charges anything within 60 cm; farther echoes are the arena walls. The line sensor, facing down, sees the white edge of the black ring: the robot backs off and turns, so it pushes the block out without leaving the ring itself.",
-      "oled-knob": "Turn the knob: the Adafruit_SSD1306 library draws the title, the reading and a bar into a 1 KB frame buffer in the Uno's RAM and sends it to the 128×64 OLED over I²C (A4/A5, address 0x3C) ten times a second.",
-      "lcd-hello": "A 16×2 character LCD driven through a PCF8574 I²C backpack: only two data wires instead of six. The sketch defines a heart as a custom character and counts the seconds on the second line. Turn the contrast knob if the text fades.",
-      "imu-tilt": "Tilt the MPU-6050 (its sliders set the angles) and watch the serial monitor: the sketch works out the tilt from gravity on the three axes and lights the LED past 20°. The gyroscope reports how fast it turns.",
-      "weather-station": "A BMP280 on the Uno's 3.3 V pin: it is a 3.3 V chip, so its module pulls the bus up to 3.3 V and the sketch switches off the Uno's own 5 V pull-ups after Wire starts. Change the temperature and altitude sliders and watch the readings follow (the IIR filter smooths them).",
-      "thermometers": "A DHT11 on D2 and a DS18B20 on D4, read every 2 s. Both talk over a single wire with precisely timed pulses: the DHT11 answers a 20 ms start pulse with 40 bits, the DS18B20 speaks 1-Wire and needs the 4.7 kΩ pull-up. Change their temperature sliders and compare: the DS18B20 resolves 1/16 °C, the DHT11 whole degrees.",
-      "neopixel-rainbow": "Eight WS2812B LEDs on D6 take their colours as 800 kHz pulses: a short HIGH is a 0, a long one a 1, 24 bits per LED, passed along the strip. Turn the knob for brightness. Each LED draws up to 36 mA at full white, so long strips need their own 5 V supply."
-    },
     "telemetry": {
-      "title": "Telemetry",
-      "motorLeft": "Left motor",
-      "motorRight": "Right motor",
-      "rpm": "{value} rpm",
-      "milliamps": "{value} mA",
-      "volts": "{value} V",
-      "percent": "{value}%",
-      "lineSensor": "Line sensor",
-      "left": "L",
-      "center": "C",
-      "right": "R",
-      "battery": "Battery",
-      "driver": "Motor driver"
-    },
-    "bridge": {
-      "forward": "forward",
-      "reverse": "reverse",
-      "brake": "brake",
-      "coast": "coast"
-    },
-    "parts": {
-      "hold": "Hold to press",
-      "knob": "Knob position",
-      "angle": "{value}°",
-      "pulse": "Pulse {value} µs",
-      "noSignal": "No signal"
+      "volts": "{value} V"
     },
     "pins": {
       "title": "Uno pins",
@@ -183,7 +106,6 @@
       "acknowledge": "Got it",
       "acknowledged": "{count, plural, one {# warning acknowledged} other {# warnings acknowledged}}"
     },
-    "damaged": "Damaged",
     "pinDamaged": "damaged",
     "challenge": {
       "title": "Challenge",
@@ -256,29 +178,8 @@
       "text": "Monitor",
       "plot": "Plotter"
     },
-    "verify": {
-      "title": "Verified run",
-      "hint": "Re-runs this run headless and unpaced, the way the grader does. Only verified runs count for grades; runs in the browser are unofficial.",
-      "grading": "Grading…",
-      "outcome": {
-        "success": "Challenge complete",
-        "failure": "Challenge failed",
-        "unresolved": "No decision — ran to {seconds} s"
-      },
-      "score": "Score {total}/{max}",
-      "match": {
-        "identical": "Identical to your run at {seconds} s",
-        "differs": "Differs from your run at {seconds} s",
-        "moved": "Your run has moved on — pause it to compare"
-      },
-      "speed": "Simulated {sim} s in {wall} s ({factor}× real time)",
-      "trace": "{count, plural, one {Trace of # sample} other {Trace of # samples}}, SHA-256",
-      "error": "Verification failed: {message}"
-    },
     "sketch": {
       "title": "Sketch",
-      "templateLabel": "Circuit",
-      "hint": "Edit the Arduino code of a demo circuit, compile it with the build service, and run your firmware on the same parts.",
       "editor": "Arduino code",
       "compile": "Compile & run",
       "compiling": "Compiling…",
@@ -297,7 +198,6 @@
       },
       "queued": "Queued, #{position, number} in line…"
     },
-    "openInEditor": "Open in editor →",
     "plot": {
       "window": "Points",
       "pause": "Pause",
@@ -556,7 +456,12 @@
   },
   "robot": {
     "view": "Robot from above (front up)",
-    "edge": { "front": "FRONT", "back": "BACK", "left": "LEFT", "right": "RIGHT" },
+    "edge": {
+      "front": "FRONT",
+      "back": "BACK",
+      "left": "LEFT",
+      "right": "RIGHT"
+    },
     "noChassis": "This project has no chassis. Add a 2WD chassis from the parts library to build a robot.",
     "board": "Arduino Uno",
     "partLabel": "{name}: x {x} mm, y {y} mm, height {z} mm, {yaw}°",

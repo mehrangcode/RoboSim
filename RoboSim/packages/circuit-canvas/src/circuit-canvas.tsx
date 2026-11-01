@@ -121,6 +121,8 @@ export function CircuitCanvas({
   const [drawing, setDrawing] = useState<Drawing | null>(null);
   const [hover, setHover] = useState<{ pin: PinRef; at: Point } | null>(null);
   const [minimap, setMinimap] = useState(loadMinimap);
+  /** The canvas fills the whole page (above the app shell and the other panes). */
+  const [expanded, setExpanded] = useState(false);
   /** Space held: a left drag pans instead of selecting. */
   const [spaceDown, setSpaceDown] = useState(false);
   /** Part whose input popover is open, and the button held down (run mode). */
@@ -215,6 +217,14 @@ export function CircuitCanvas({
     ([x, y]: Point) => setView((v) => ({ ...v, x: size.width / 2 - x * v.k, y: size.height / 2 - y * v.k })),
     [size],
   );
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) setExpanded(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [expanded]);
   const toggleMinimap = () =>
     setMinimap((on) => {
       try {
@@ -436,10 +446,15 @@ export function CircuitCanvas({
       return;
     }
     if (!editing) {
-      if (e.key === 'Escape') setInspecting(null);
+      if (e.key === 'Escape' && inspecting) {
+        setInspecting(null);
+        e.preventDefault();
+      }
       return;
     }
     if (e.key === 'Escape') {
+      // Esc cancels the innermost thing first; left unhandled, it leaves the full-page view.
+      if (!drawing && !ids.length && !selection.wire) return;
       setDrawing(null);
       setSelection({ parts: [], wire: null });
     } else if (e.key === 'Delete' || e.key === 'Backspace') removeSelection();
@@ -483,11 +498,16 @@ export function CircuitCanvas({
         }
       : null;
   const panning = drag?.kind === 'pan' || spaceDown;
+  const expandLabel = expanded ? t('editor:canvas.collapse') : t('editor:canvas.expand');
 
   return (
     <div
       dir="ltr"
-      className={`relative overflow-hidden rounded-md border border-line bg-[#f1f5f9] ${className ?? ''}`}
+      className={
+        expanded
+          ? 'fixed inset-0 z-50 overflow-hidden bg-[#f1f5f9]'
+          : `relative overflow-hidden rounded-md border border-line bg-[#f1f5f9] ${className ?? ''}`
+      }
     >
       <svg
         ref={svg}
@@ -589,6 +609,31 @@ export function CircuitCanvas({
           <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true" fill="none" stroke="currentColor">
             <rect x={1.5} y={2.5} width={13} height={11} rx={1} />
             <rect x={7.5} y={8} width={5} height={3.5} fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          title={expandLabel}
+          aria-label={expandLabel}
+          aria-pressed={expanded}
+          onClick={() => setExpanded((on) => !on)}
+          className="grid size-7 place-items-center rounded border border-line bg-surface shadow-sm hover:bg-surface-raised aria-pressed:bg-surface-raised"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            className="size-4"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {expanded ? (
+              <path d="M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4" />
+            ) : (
+              <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />
+            )}
           </svg>
         </button>
       </div>
