@@ -1,7 +1,7 @@
 {
   "learn": {
     "title": "Guided projects",
-    "intro": "Build a working robot step by step. Each step checks your circuit and code as you go and tells you what to fix.",
+    "intro": "Build working circuits and robots step by step: start on the bench with LEDs, buttons and sensors, then build robots. Each step checks your circuit and code as you go and tells you what to fix.",
     "minutes": "about {n} min",
     "steps": "{n, plural, one {# step} other {# steps}}",
     "free": "Free",

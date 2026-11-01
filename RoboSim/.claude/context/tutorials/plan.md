@@ -38,7 +38,7 @@ servo-mounted parts.
 - [x] 4. Bench tutorials 1–5 (weather-station serial-only: LCD is pro; prop-default fallback + code checks servo/dht added).
 - [x] 5. Robot tutorials 7, 8, 9, 12, 13, then 11 (after step 3).
 - [x] 6. Register in index (order), sketches, `pnpm firmware:gen`, FIRMWARE map, learning.test, fake-learning.
-- [ ] 7. Docs: Release-Plan, decisions ADR-025, PRD/README mentions; i18n; `pnpm verify` (serialised to
+- [x] 7. Docs: Release-Plan, decisions ADR-025, PRD/README mentions; i18n; `pnpm verify` (serialised to
       avoid OOM); browser check of Learn page + one bench + one robot tutorial.
 
 ## Acceptance

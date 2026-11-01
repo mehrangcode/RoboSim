@@ -11,7 +11,10 @@
   index (learn order), firmware regenerated (conformance file diff was formatting-only → reverted),
   learning.test updated. guided.test 91/91, api learning 7/7, content 45/45.
 - Step 7: docs done (Release-Plan P2 block + arena note, PRD FR-LRN-01/FR-ARN-05, TD arenas, ADR-025 'Later',
-  README). format/i18n/arch green. Serialised turbo verify running; then browser check (Learn + 1 bench + 1 robot).
+  README). format/i18n/arch green; turbo lint/typecheck/test/build --concurrency=1: 279/279; bundle check OK.
+  Browser (guest): Learn shows 13 in order, 6 Start / 7 Maker teasers; Blink bench opens with guide + starter,
+  no arena. Learn intro text generalised (en/fa). Robot tutorial NOT opened in browser (needs a Maker account).
+- DONE. Uncommitted (user commits).
 
 ## Authoring conventions (every new tutorial)
 - Module `packages/content/src/guided/<slug>.ts` exporting `export const <camelSlug>: GuidedContent`.
