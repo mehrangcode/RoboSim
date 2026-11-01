@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>RoboSim</title>
+    <script>
+      // Apply the saved theme before first paint (key mirrors THEME_STORAGE_KEY in @robosim/ui).
+      try {
+        const t = localStorage.getItem('robosim.theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

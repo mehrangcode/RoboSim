@@ -3,6 +3,7 @@ import { Link, Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AccountBanner, AccountMenu } from '../auth/auth-ui.js';
 import { LanguageSwitch } from '../language-switch.js';
+import { ThemeSwitch } from '../theme-switch.js';
 
 export function RootLayout() {
   const { t } = useTranslation();
@@ -69,6 +70,7 @@ export function RootLayout() {
       actions={
         <>
           <LanguageSwitch />
+          <ThemeSwitch />
           <AccountMenu />
         </>
       }

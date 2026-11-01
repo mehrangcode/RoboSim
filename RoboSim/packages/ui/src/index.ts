@@ -5,3 +5,14 @@ export { Card } from './card.js';
 export { cn } from './cn.js';
 export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from './segmented-control.js';
 export { ResizeHandle, type ResizeHandleProps } from './resize-handle.js';
+export {
+  THEME_PREFERENCES,
+  THEME_STORAGE_KEY,
+  applyStoredTheme,
+  readThemePreference,
+  resolveTheme,
+  setThemePreference,
+  useTheme,
+  type ResolvedTheme,
+  type ThemePreference,
+} from './theme.js';

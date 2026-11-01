@@ -1,6 +1,7 @@
 import type { BuildDiagnostic } from '@robosim/shared';
 import { addApiDocs } from '@robosim/i18n/apidocs';
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useTheme } from '@robosim/ui';
 import { useTranslation } from 'react-i18next';
 import { ARDUINO_LANGUAGE, THEMES, monaco, setDocsTranslator } from './monaco.js';
 import type { EditorImplProps } from './types.js';
@@ -11,11 +12,9 @@ const SEVERITY: Record<BuildDiagnostic['severity'], monaco.MarkerSeverity> = {
   note: monaco.MarkerSeverity.Info,
 };
 
-const darkScheme = () => window.matchMedia('(prefers-color-scheme: dark)');
-
 /**
  * Monaco on the sketch files (FR-COD-01): one model per file (undo history survives tab switches),
- * build diagnostics as inline markers (FR-COD-03), theme follows the system colour scheme.
+ * build diagnostics as inline markers (FR-COD-03), theme follows the app theme (System / Light / Dark).
  */
 export function MonacoEditor({
   files,
@@ -37,6 +36,8 @@ export function MonacoEditor({
   });
   const scope = useId().replace(/[^a-z0-9]/gi, '');
   const { t, i18n } = useTranslation();
+  const { resolved: appTheme } = useTheme();
+  const initialTheme = useRef(appTheme);
   // Hover and completion docs in the UI language (FR-COD-02); the bundle ships with this chunk.
   useLayoutEffect(() => {
     addApiDocs(i18n);
@@ -47,14 +48,18 @@ export function MonacoEditor({
     editor.current?.updateOptions({ readOnly });
   }, [readOnly]);
 
+  // Monaco themes are global, so this also restyles any other open editor instance.
+  useEffect(() => {
+    monaco.editor.setTheme(THEMES[appTheme]);
+  }, [appTheme]);
+
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const scheme = darkScheme();
     const ed = monaco.editor.create(el, {
       model: null,
       language: ARDUINO_LANGUAGE,
-      theme: scheme.matches ? THEMES.dark : THEMES.light,
+      theme: THEMES[initialTheme.current],
       ariaLabel: label,
       automaticLayout: true,
       minimap: { enabled: false },
@@ -76,11 +81,8 @@ export function MonacoEditor({
       const name = [...models.current].find(([, m]) => m === model)?.[0];
       if (name) onChangeRef.current(name, model.getValue());
     });
-    const theme = () => monaco.editor.setTheme(scheme.matches ? THEMES.dark : THEMES.light);
-    scheme.addEventListener('change', theme);
     const owned = models.current;
     return () => {
-      scheme.removeEventListener('change', theme);
       changes.dispose();
       ed.dispose();
       for (const m of owned.values()) m.dispose();

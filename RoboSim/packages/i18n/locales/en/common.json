@@ -6,6 +6,12 @@
     "en": "English",
     "fa": "فارسی"
   },
+  "theme": {
+    "label": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
   "actions": {
     "retry": "Retry",
     "backHome": "Back to home"

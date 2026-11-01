@@ -3,6 +3,7 @@ import { AppShell, Button } from '@robosim/ui';
 import { Link, Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '../language-switch.js';
+import { ThemeSwitch } from '../theme-switch.js';
 import { NoAccessPage, SignInPage } from '../session/session-gate.js';
 import { useSession, useSignOut } from '../session/use-session.js';
 import { StaffContext } from '../session/session.js';
@@ -51,6 +52,7 @@ export function RootLayout() {
       actions={
         <>
           <LanguageSwitch />
+          <ThemeSwitch />
           {staff && (
             <>
               <div className="hidden min-w-0 flex-col text-end text-xs leading-tight md:flex">

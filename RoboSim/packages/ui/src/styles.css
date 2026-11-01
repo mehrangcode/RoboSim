@@ -49,8 +49,37 @@
   color-scheme: light;
 }
 
+/* Theme: `<html data-theme="light|dark">` is an explicit choice; no attribute follows the OS. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+:root[data-theme='dark'] {
+  --rs-surface: oklch(0.18 0.015 250);
+  --rs-surface-raised: oklch(0.23 0.015 250);
+  --rs-ink: oklch(0.95 0.005 250);
+  --rs-ink-muted: oklch(0.72 0.015 250);
+  --rs-line: oklch(0.32 0.015 250);
+  --rs-series-1: #3987e5;
+  --rs-series-2: #d95926;
+  --rs-series-3: #199e70;
+  --rs-series-4: #c98500;
+  --rs-series-5: #d55181;
+  --rs-series-6: #008300;
+  --rs-series-7: #9085e9;
+  --rs-series-8: #e66767;
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --rs-surface: oklch(0.18 0.015 250);
     --rs-surface-raised: oklch(0.23 0.015 250);
     --rs-ink: oklch(0.95 0.005 250);

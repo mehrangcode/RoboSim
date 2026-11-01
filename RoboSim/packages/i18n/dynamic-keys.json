@@ -3,6 +3,7 @@
   "prefixes": [
     "errors:",
     "common:language.",
+    "common:theme.",
     "components:",
     "shell:lab.scenario.",
     "shell:lab.scenarioHint.",
