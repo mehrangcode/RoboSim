@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [swc.vite({ module: { type: 'es6' } })],
   test: {
-    maxWorkers: '50%',
+    maxWorkers: 4,
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
     testTimeout: 30_000,
     hookTimeout: 30_000,

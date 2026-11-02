@@ -34,5 +34,5 @@ export default defineConfig({
   // Monaco's lazy chunk is ~3.4 MB raw (0.87 MB gz, TD §4); the initial-JS budget is checked by bundle:check.
   build: { sourcemap: true, target: 'es2023', chunkSizeWarningLimit: 3600 },
   worker: { format: 'es' },
-  test: { maxWorkers: '50%', environment: 'jsdom', setupFiles: ['./src/test-setup.ts'] },
+  test: { maxWorkers: 4, environment: 'jsdom', setupFiles: ['./src/test-setup.ts'] },
 });
