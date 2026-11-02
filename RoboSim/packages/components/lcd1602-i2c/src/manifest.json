@@ -11,6 +11,7 @@
     { "name": "sda", "kind": "digital" },
     { "name": "scl", "kind": "digital" }
   ],
+  "signalDirection": { "sda": "bidir", "scl": "bidir" },
   "props": {
     "address": { "type": "enum", "default": "0x27", "options": ["0x27", "0x3F"] }
   },

@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./consistency": {
+      "types": "./dist/rules/consistency-rules.d.ts",
+      "default": "./dist/rules/consistency-rules.js"
     }
   },
   "files": [

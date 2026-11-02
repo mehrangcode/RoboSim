@@ -42,6 +42,34 @@ export interface PinUse {
   /** `pinMode` only. */
   readonly mode?: 'INPUT' | 'OUTPUT' | 'INPUT_PULLUP';
   readonly at: CodeRef;
+  /** The use only seeds the random generator (`randomSeed(analogRead(A0))`): an unwired pin is intended. */
+  readonly context?: 'randomSeed';
+  /**
+   * Where the pin number is written (FR-SAF-08 quick fix): the literal in the call, or the value of the
+   * single `#define` / `const` it names. Absent when the pin comes from an expression.
+   */
+  readonly arg?: PinArg;
+}
+
+/** Source span of a pin number: 1-based line, 1-based columns, `end` exclusive. */
+export interface PinArg {
+  readonly file: string;
+  readonly line: number;
+  readonly column: number;
+  readonly endColumn: number;
+  /** The text at that span, e.g. `9`, `A0`, `LED_BUILTIN`. */
+  readonly text: string;
+}
+
+/**
+ * A pin a library object drives (FR-SAF-08): `NewPing sonar(TRIG, ECHO)`, `Stepper`, `SoftwareSerial`,
+ * `Adafruit_NeoPixel`, `OneWire`, and `Serial` (D0/D1). `pin` is null when the argument is not constant.
+ */
+export interface LibraryPin {
+  readonly lib: string;
+  readonly pin: string | null;
+  readonly role: 'in' | 'out' | 'bidir';
+  readonly at: CodeRef;
 }
 
 /** Pin usage extracted from the sketch (`@robosim/code-analysis`), input to the code-aware rules. */
@@ -55,6 +83,8 @@ export interface CodeFacts {
   readonly unresolved: readonly { readonly call: string; readonly at: CodeRef }[];
   /** Library `#include`s, e.g. 'Servo.h' (the project's own files are left out): libraries drive pins without calls the analysis sees. */
   readonly includes: readonly string[];
+  /** Pins library objects use (FR-SAF-08); additive, the code-aware engine rules do not read it. */
+  readonly libraryPins?: readonly LibraryPin[];
 }
 
 export interface BoardInfo {

@@ -434,6 +434,9 @@ importers:
       '@robosim/renderer-2d':
         specifier: workspace:*
         version: link:../../packages/renderer-2d
+      '@robosim/safety-rules':
+        specifier: workspace:*
+        version: link:../../packages/safety-rules
       '@robosim/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -758,9 +761,15 @@ importers:
       '@robosim/catalog':
         specifier: workspace:*
         version: link:../catalog
+      '@robosim/safety-rules':
+        specifier: workspace:*
+        version: link:../safety-rules
       '@robosim/shared':
         specifier: workspace:*
         version: link:../shared
+      '@robosim/sim-core':
+        specifier: workspace:*
+        version: link:../sim-core
       '@robosim/ui':
         specifier: workspace:*
         version: link:../ui

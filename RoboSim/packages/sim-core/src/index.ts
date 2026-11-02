@@ -74,6 +74,8 @@ export {
   type Finding,
   type CodeFacts,
   type CodeRef,
+  type LibraryPin,
+  type PinArg,
   type PinUse,
   type PinUseKind,
   type RuntimeContext,

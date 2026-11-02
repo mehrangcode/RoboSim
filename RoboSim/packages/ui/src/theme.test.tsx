@@ -1,6 +1,12 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { THEME_STORAGE_KEY, applyStoredTheme, readThemePreference, setThemePreference, useTheme } from './theme.js';
+import {
+  THEME_STORAGE_KEY,
+  applyStoredTheme,
+  readThemePreference,
+  setThemePreference,
+  useTheme,
+} from './theme.js';
 
 function Probe() {
   const { preference, resolved } = useTheme();

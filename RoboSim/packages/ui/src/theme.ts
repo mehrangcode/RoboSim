@@ -75,7 +75,11 @@ function subscribe(onChange: () => void): () => void {
 
 /** Current preference plus the effective theme, updating on user choice, other tabs and OS changes. */
 export function useTheme() {
-  const preference = useSyncExternalStore(subscribe, () => readThemePreference(), () => 'system' as const);
+  const preference = useSyncExternalStore(
+    subscribe,
+    () => readThemePreference(),
+    () => 'system' as const,
+  );
   const resolved = useSyncExternalStore(
     subscribe,
     () => resolveTheme(preference),

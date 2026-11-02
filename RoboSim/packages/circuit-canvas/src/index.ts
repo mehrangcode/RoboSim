@@ -1,5 +1,5 @@
 export { BoardArt, PartArt } from './art.js';
-export { CircuitCanvas, type CanvasMode } from './circuit-canvas.js';
+export { CircuitCanvas, type CanvasHighlight, type CanvasMode } from './circuit-canvas.js';
 export { interactionOf, type Interaction } from './interaction.js';
 export { resistorBands } from './colors.js';
 export { PART_DRAG_TYPE, WIRE_COLORS, contentBox } from './view.js';
@@ -16,6 +16,7 @@ export {
 } from './clipboard.js';
 export { PITCH, footprintOf, pinPosition, withSeats, type Footprint, type Point } from './geometry.js';
 export { LibraryPanel } from './library-panel.js';
+export { boardPinView } from './board-pin-view.js';
 export { CircuitNets } from './nets.js';
 export { PropertyPanel } from './property-panel.js';
 export { E12_OHMS, matches, normalizeSearch } from './search.js';

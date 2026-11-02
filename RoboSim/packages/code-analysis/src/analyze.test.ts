@@ -11,7 +11,14 @@ const pins = (content: string) =>
 describe('pin usage (FR-COD-06)', () => {
   it('US-COD-06 AC1: analogWrite(7, 128) reports pin 7 as a PWM output, at its line and column', () => {
     expect(sketch('void setup() {}\nvoid loop() {\n  analogWrite(7, 128);\n}\n')).toEqual({
-      uses: [{ pin: 'D7', use: 'analogWrite', at: { file: 'sketch.ino', line: 3, column: 3 } }],
+      uses: [
+        {
+          pin: 'D7',
+          use: 'analogWrite',
+          at: { file: 'sketch.ino', line: 3, column: 3 },
+          arg: { file: 'sketch.ino', line: 3, column: 15, endColumn: 16, text: '7' },
+        },
+      ],
       unresolved: [],
       includes: [],
     });
@@ -129,9 +136,17 @@ describe('pin usage (FR-COD-06)', () => {
       { name: 'pins.h', content: '#pragma once\nconst int MOTOR = 6;' },
       { name: 'drive.cpp', content: '#include "pins.h"\nvoid go() {\n  analogWrite(MOTOR, 200);\n}' },
     ]);
+    // A constant's uses point at its one definition, where a quick fix rewrites the pin.
+    const motor = { file: 'pins.h', line: 2, column: 19, endColumn: 20, text: '6' };
     expect(facts.uses).toEqual([
-      { pin: 'D6', use: 'pinMode', mode: 'OUTPUT', at: { file: 'main.ino', line: 2, column: 16 } },
-      { pin: 'D6', use: 'analogWrite', at: { file: 'drive.cpp', line: 3, column: 3 } },
+      {
+        pin: 'D6',
+        use: 'pinMode',
+        mode: 'OUTPUT',
+        at: { file: 'main.ino', line: 2, column: 16 },
+        arg: motor,
+      },
+      { pin: 'D6', use: 'analogWrite', at: { file: 'drive.cpp', line: 3, column: 3 }, arg: motor },
     ]);
   });
 
@@ -167,5 +182,80 @@ describe('pin usage (FR-COD-06)', () => {
       ['digitalWrite', 'D3'],
       ['analogWrite', 'D9'],
     ]);
+  });
+});
+
+describe('wiring ↔ sketch facts (FR-SAF-08)', () => {
+  const argOf = (content: string) => sketch(content).uses.map((u) => u.arg?.text ?? null);
+
+  it('locates the pin literal, a #define value (comment after it) and Uno core names', () => {
+    const content =
+      '#define LED  7  // پایه‌ی LED\nvoid setup() { /* سلام */ pinMode(LED, OUTPUT); analogRead(A1); digitalWrite(LED_BUILTIN, 1); }';
+    const lines = content.split('\n');
+    const args = sketch(content).uses.map((u) => u.arg);
+    expect(args.map((a) => [a?.line, a?.text])).toEqual([
+      [1, '7'],
+      [2, 'A1'],
+      [2, 'LED_BUILTIN'],
+    ]);
+    // Columns are UTF-16 (editor) columns: the span cuts exactly the token, Persian text before it included.
+    for (const a of args)
+      expect(lines[(a?.line ?? 0) - 1]?.slice((a?.column ?? 0) - 1, (a?.endColumn ?? 0) - 1)).toBe(a?.text);
+  });
+
+  it('has no span for expressions, redefined names or constants computed from others', () => {
+    expect(
+      argOf(`
+        #define BASE 4
+        #define NEXT (BASE + 1)
+        const int A = 3;
+        void f() { pinMode(NEXT, OUTPUT); pinMode(2 + 1, OUTPUT); pinMode(A, OUTPUT); }`),
+    ).toEqual([null, null, '3']);
+  });
+
+  it('marks analogRead used only to seed the random generator', () => {
+    const facts = sketch('void setup() { randomSeed(analogRead(A0)); int v = analogRead(A1); }');
+    expect(facts.uses.map((u) => [u.pin, u.context ?? null])).toEqual([
+      ['A0', 'randomSeed'],
+      ['A1', null],
+    ]);
+  });
+
+  it('lists pins of library objects with their role, and Serial on D0/D1', () => {
+    const facts = sketch(`
+      #include <NewPing.h>
+      #include <SoftwareSerial.h>
+      #include <Stepper.h>
+      #include <Adafruit_NeoPixel.h>
+      #include <OneWire.h>
+      #define TRIG 12
+      const int ECHO = 11;
+      NewPing sonar(TRIG, ECHO, 200);
+      SoftwareSerial bt(2, 3);
+      Stepper motor(2048, 8, 10, 9, 11);
+      Adafruit_NeoPixel strip(8, 6, NEO_GRB);
+      OneWire bus(4);
+      int p = 5;
+      OneWire other(p);
+      void setup() { Serial.begin(9600); }`);
+    expect(facts.libraryPins?.map((l) => [l.lib, l.pin, l.role])).toEqual([
+      ['NewPing', 'D12', 'out'],
+      ['NewPing', 'D11', 'in'],
+      ['SoftwareSerial', 'D2', 'in'],
+      ['SoftwareSerial', 'D3', 'out'],
+      ['Stepper', 'D8', 'out'],
+      ['Stepper', 'D10', 'out'],
+      ['Stepper', 'D9', 'out'],
+      ['Stepper', 'D11', 'out'],
+      ['Adafruit_NeoPixel', 'D6', 'out'],
+      ['OneWire', 'D4', 'bidir'],
+      ['OneWire', null, 'bidir'],
+      ['Serial', 'D0', 'in'],
+      ['Serial', 'D1', 'out'],
+    ]);
+  });
+
+  it('omits libraryPins when the sketch uses no such library', () => {
+    expect(sketch('void setup() { pinMode(3, OUTPUT); }').libraryPins).toBeUndefined();
   });
 });

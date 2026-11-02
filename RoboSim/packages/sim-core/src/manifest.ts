@@ -70,6 +70,11 @@ export function validateManifest(m: ComponentManifest): string[] {
     for (const pin of pair)
       if (!hasPin(pin))
         errors.push(`pin '${pin}' in bondedPins/signalPassthrough/isolationGroups does not exist`);
+  for (const [pin, dir] of Object.entries(m.signalDirection ?? {})) {
+    if (!hasPin(pin)) errors.push(`signalDirection pin '${pin}' does not exist`);
+    if (!['in', 'out', 'bidir', 'none'].includes(dir))
+      errors.push(`signalDirection '${pin}': unknown '${dir}'`);
+  }
   for (const pin of Object.keys(m.pinMaxVolts ?? {}))
     if (!hasPin(pin)) errors.push(`pinMaxVolts pin '${pin}' does not exist`);
   if (m.pinMaxVolts && !m.polarity) errors.push('pinMaxVolts needs a polarity pair as reference');

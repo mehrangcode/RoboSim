@@ -91,7 +91,7 @@ export interface ContextInput {
   doc: ProjectDocument;
   currentFile?: string | undefined;
   serial: readonly SerialChunk[];
-  findings: readonly { rule: string; severity: 'error' | 'warning'; message: string }[];
+  findings: readonly { rule: string; severity: 'error' | 'warning' | 'info'; message: string }[];
   diagnostics: readonly BuildDiagnostic[];
   behaviour?: ChatContext['behaviourSummary'];
   guidedStep?: ChatContext['guidedStep'];

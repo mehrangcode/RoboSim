@@ -34,3 +34,14 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 
 ## Acceptance (track)
 - All 20 stories' ACs automated and passing; common exit criteria in Release-Plan §3 IT met per slice.
+
+## IT-1 detailed steps (owner answers 2026-11-02: Safety tab + code markers while editing; both quick fixes; canvas highlight on click; never commit)
+- [x] a. sim-core types: `ComponentManifest.signalDirection?`, `PinUse.arg?`/`context?`, `CodeFacts.libraryPins?` (additive)
+- [x] b. code-analysis: arg locations, randomSeed context, library ctor pins (NewPing, SoftwareSerial, Stepper, NeoPixel, OneWire, Serial) + tests
+- [x] c. manifests: `signalDirection` on bidirectional parts + catalog test
+- [x] d. safety-rules `./consistency`: BoardPinView types, 3 rules, quick-fix candidates, `applyPinReplacements` + tests
+- [x] e. circuit-canvas: `boardPinView(doc)` (+ passthrough follow) + tests; `highlight` prop on CircuitCanvas
+- [x] f. web: `useCodeFacts` shared hook, `useConsistency` (300 ms), Safety tab works while editing (group + badge), fixes (one undo), code markers, click → canvas highlight, AI context
+- [x] g. i18n EN/FA (safety.json, shell.json, dynamic keys)
+- [ ] h. corpus test (demos/guided refs: no UNWIRED/DIRECTION), STATIC_RULES unchanged; `pnpm verify`; browser check FA/EN
+- [x] i. docs sync (PRD status, TD §18.1 implemented note, Release-Plan, README)

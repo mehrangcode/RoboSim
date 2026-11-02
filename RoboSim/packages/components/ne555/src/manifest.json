@@ -15,6 +15,7 @@
     { "name": "dis", "kind": "passive" },
     { "name": "vcc", "kind": "power" }
   ],
+  "signalDirection": { "thr": "in", "ctrl": "in" },
   "props": {},
   "inputs": [],
   "massG": 0.5,

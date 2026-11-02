@@ -6,17 +6,21 @@ import {
   cutParts,
   pasteParts,
   useCircuitEditor,
+  type CanvasHighlight,
   type CanvasMode,
 } from '@robosim/circuit-canvas';
 import {
   applyCircuitChanges,
   applyCodeEdits,
+  BOARD_PART,
   ProposalError,
   type AiProposal,
   type ChatContext,
+  type PinRef,
   type ProjectDocument,
   type SharedLink,
 } from '@robosim/shared';
+import { applyPinEdits, type QuickFix } from '@robosim/safety-rules/consistency';
 import { MAX_SIM_SECONDS, SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@robosim/ui';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
@@ -39,7 +43,9 @@ import { ArenaView } from '../arena/arena-view.js';
 import { RobotView } from '../robot/robot-view.js';
 import { StartPoseFields } from '../arena/start-pose-fields.js';
 import { ChallengePanel } from '../lab/challenge-panel.js';
+import { findingKey, type AnyFinding } from '../lab/finding-key.js';
 import { FindingsPanel } from '../lab/findings-panel.js';
+import { useConsistency } from '../lab/use-consistency.js';
 import { LogicAnalyzer } from '../lab/logic-analyzer.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
@@ -381,6 +387,9 @@ function Workspace({
   );
   const { doc, reset } = editor;
   const [files, setFiles] = useState<readonly SourceFile[]>(() => doc.code.files);
+  // Wiring ↔ sketch check while editing (FR-SAF-08), and the finding shown on the circuit.
+  const consistency = useConsistency(doc, files);
+  const [shownFinding, setShownFinding] = useState<string | null>(null);
   const [pristine, setPristine] = useState(() => stored?.pristine ?? runKey(doc));
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>('1');
   const [demoChoice, setDemoChoice] = useState<ScenarioId>('blink');
@@ -632,6 +641,44 @@ function Workspace({
     editor.apply((d) => withArena(d, id));
   };
   const findings = live && scene ? [...scene.staticFindings, ...live.findings] : [];
+  const safetyCount = findings.length + consistency.length;
+  const highlight = useMemo((): CanvasHighlight | null => {
+    const f: AnyFinding | undefined = [...consistency, ...findings].find(
+      (x) => findingKey(x) === shownFinding,
+    );
+    if (!f) return null;
+    return {
+      parts: f.componentIds,
+      wires: 'wireIds' in f ? f.wireIds : [],
+      pins: f.pinIds.map((pin) => ({ part: BOARD_PART, pin })),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- findings is rebuilt every render; its content follows live
+  }, [consistency, live, scene, shownFinding]);
+  /** A wiring ↔ sketch quick fix (FR-SAF-08): one code edit or one circuit edit, each one undo step. */
+  const applyFix = (fix: QuickFix) => {
+    if (fix.kind === 'code.replacePin') {
+      try {
+        setFiles(applyPinEdits(files, fix.edits));
+      } catch {
+        // The code changed since the check ran; the next check (300 ms) offers a fresh fix.
+      }
+      return;
+    }
+    const at = (r: PinRef): PinRef =>
+      r.part === BOARD_PART && r.pin === fix.from ? { part: BOARD_PART, pin: fix.to } : r;
+    const moved = new Set(fix.wireIds);
+    editor.apply((d) => ({
+      ...d,
+      wires: d.wires.map((w) => (moved.has(w.id) ? { ...w, from: at(w.from), to: at(w.to) } : w)),
+    }));
+  };
+  const showFinding = (key: string | null) => {
+    setShownFinding(key);
+    if (key) {
+      setCentre('circuit');
+      setMobileTab('circuit');
+    }
+  };
   const queuedAt =
     run.phase === 'building' && run.build.status === 'building' && run.build.progress?.phase === 'queued'
       ? run.build.progress.position
@@ -685,7 +732,7 @@ function Workspace({
       }
       state={run.build}
       modified={current !== doc}
-      findings={scene?.staticFindings}
+      findings={[...consistency, ...(scene?.staticFindings ?? [])]}
     />
   ) : null;
   const canvas = (
@@ -695,6 +742,7 @@ function Workspace({
       live={live?.parts}
       damaged={live?.damaged.parts}
       onInput={(componentId, name, value) => send({ type: 'input', componentId, name, value })}
+      highlight={highlight}
       className="h-full rounded-none border-0"
     />
   );
@@ -768,7 +816,7 @@ function Workspace({
       doc: current,
       currentFile: main?.name,
       serial: serialLog.chunks,
-      findings: findings.map((f) => ({
+      findings: [...consistency, ...findings].map((f) => ({
         rule: f.ruleId,
         severity: f.severity,
         message: t(`${f.messageKey}.title`, f.params),
@@ -856,8 +904,8 @@ function Workspace({
         options={dockTabs.map((v) => ({
           value: v,
           label:
-            v === 'safety' && findings.length
-              ? `${t(`shell:editor.dock.${v}`)} (${fmt(findings.length, 0)})`
+            v === 'safety' && safetyCount
+              ? `${t(`shell:editor.dock.${v}`)} (${fmt(safetyCount, 0)})`
               : t(`shell:editor.dock.${v}`),
         }))}
         onChange={setDockTab}
@@ -877,6 +925,16 @@ function Workspace({
           </Suspense>
         ) : shownDock === 'verify' ? (
           <VerifyPanel state={verified.state} frame={live} serial={sim.serial} />
+        ) : shownDock === 'safety' ? (
+          <FindingsPanel
+            findings={findings}
+            consistency={consistency}
+            partTypes={Object.fromEntries(doc.components.map((c) => [c.id, c.type]))}
+            running={!!live}
+            selected={shownFinding}
+            onSelect={showFinding}
+            onFix={readOnly ? undefined : applyFix}
+          />
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : shownDock === 'pins' ? (
@@ -888,11 +946,6 @@ function Workspace({
             probing={sim.probing}
             probe={sim.probe}
             onClear={sim.clearCapture}
-          />
-        ) : shownDock === 'safety' ? (
-          <FindingsPanel
-            findings={findings}
-            partTypes={Object.fromEntries(scene.parts.map((p) => [p.id, p.type]))}
           />
         ) : shownDock === 'challenge' && live.challenge ? (
           <ChallengePanel challenge={live.challenge} send={send} />

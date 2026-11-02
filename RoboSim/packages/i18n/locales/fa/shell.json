@@ -106,9 +106,22 @@
       "static": "بررسی سیم‌کشی",
       "runtime": "هنگام اجرا",
       "why": "چرا",
-      "fix": "راه حل",
+      "fix": {
+        "title": "راه حل",
+        "code": "در کد از {to} استفاده کن",
+        "wire": "سیم را از {from} به {to} ببر"
+      },
       "acknowledge": "متوجه شدم",
-      "acknowledged": "{count, plural, one {# هشدار تأیید شد} other {# هشدار تأیید شد}}"
+      "acknowledged": "{count, plural, one {# هشدار تأیید شد} other {# هشدار تأیید شد}}",
+      "infos": "اطلاعات",
+      "info": "اطلاعات",
+      "consistency": "سیم‌کشی ↔ کد",
+      "show": "نمایش روی مدار",
+      "hide": "پنهان کردن روی مدار",
+      "group": {
+        "consistency": "سیم‌کشی ↔ کد (هنگام ویرایش بررسی می‌شود)"
+      },
+      "runForMore": "برای بررسی کامل ایمنی الکتریکی، پروژه را اجرا کنید."
     },
     "pinDamaged": "آسیب‌دیده",
     "challenge": {

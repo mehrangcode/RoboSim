@@ -132,5 +132,20 @@
     "title": "{part}'s I²C pins see {volts} V",
     "why": "{part} is a 3.3 V chip: its pins tolerate at most {limit} V. Pull-ups to 5 V on the same bus push current into it and can damage it over time.",
     "fix": "Power every pull-up on this bus from 3.3 V, or put a level shifter between the 5 V parts and {part}."
+  },
+  "SAF-PIN-UNWIRED": {
+    "title": "Pin {pin} is used in the code but not connected",
+    "why": "The sketch reads or drives {pin}, but nothing in the circuit is wired to it, so that part of the program has no effect (or reads a floating pin).",
+    "fix": "Wire the part to {pin}, or change the code to the pin the part is actually connected to."
+  },
+  "SAF-PIN-UNUSED": {
+    "title": "{pin} is wired but never used in the code",
+    "why": "A part is connected to {pin}, but the sketch never reads or drives that pin, so the part will do nothing.",
+    "fix": "Use pin {pinArg} in the code (for example in pinMode and digitalWrite), or move the wire to the pin the code uses."
+  },
+  "SAF-PIN-DIRECTION": {
+    "title": "{pin} is read in the code, but it is wired to an input of {part}",
+    "why": "The sketch only reads {pin}, yet the part on that pin only listens (it is an input). Nothing drives the line, so the reading means nothing and the part is never controlled.",
+    "fix": "Drive {pin} as an output (pinMode OUTPUT, digitalWrite or analogWrite), or wire the sensor output you meant to read to {pin}."
   }
 }

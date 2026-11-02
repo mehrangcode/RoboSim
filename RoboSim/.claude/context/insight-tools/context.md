@@ -1,6 +1,6 @@
 # Context — Insight & tooling track
 
-**Status (2026-11-02):** documentation only. Nothing implemented yet. Next: IT-1.
+**Status (2026-11-02):** IT-1 implemented (all tests green; full `pnpm verify` + browser check pending at time of writing). Next: IT-2.
 
 ## Where the spec lives
 - PRD §6: FR-SAF-08, FR-SIM-12 (status note), FR-SIM-13…21, FR-CIR-11/12, FR-COD-08/09, FR-ARN-13/14, FR-BOM-07, FR-AI-11, FR-WRK-08; PRD §9 row "IT".
@@ -15,6 +15,9 @@
 - Optional manifest extensions (functions, substitutes, tolerance, faults, typicalCurrentMa) follow one contract (ADR-028).
 
 - Owner decisions (2026-11-02): all IT tools free (ADR-006); phasing IT-1…16 P2, IT-17…20 P4 (1.1); `@robosim/content` joins ENGINE_PACKAGES (one golden:update); `runs.cloud_max` Free 5 / Maker 200 / Classroom 50 per seat / Institution ∞, no run links for u13.
+
+- IT-1 decisions: quick fixes edit by span (`PinArg`/`applyPinEdits`), not whole-line finds; Safety tab works while editing; `CircuitCanvas.highlight`; `signalDirection` manifest field (ADR-028 metadata); guided starters intentionally get SAF-PIN-UNWIRED on their `0` placeholder pins.
+- Owner works git themselves: never commit or run git write commands.
 
 ## Blockers / open points
 - See each TD §18.<n> "Risks & open points".

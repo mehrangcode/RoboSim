@@ -1,4 +1,4 @@
-import type { CodeFacts, CodeRef, PinUse, PinUseKind } from '@robosim/sim-core';
+import type { CodeFacts, CodeRef, LibraryPin, PinArg, PinUse, PinUseKind } from '@robosim/sim-core';
 import type { Node, Parser, Tree } from 'web-tree-sitter';
 
 export interface SourceFile {
@@ -57,6 +57,21 @@ const CALLS: ReadonlyMap<string, PinUseKind> = new Map([
   ['tone', 'tone'],
   ['noTone', 'tone'],
 ]);
+
+/**
+ * Library objects whose constructor names pins (FR-SAF-08): the role of each constructor argument, by
+ * position (`null` = not a pin).
+ */
+const LIBRARY_CTORS: ReadonlyMap<string, readonly (LibraryPin['role'] | null)[]> = new Map([
+  ['NewPing', ['out', 'in']],
+  ['SoftwareSerial', ['in', 'out']],
+  ['Stepper', [null, 'out', 'out', 'out', 'out']],
+  ['Adafruit_NeoPixel', [null, 'out']],
+  ['OneWire', ['bidir']],
+]);
+
+/** A pin number written as a literal or an Uno core name (what a quick fix may rewrite). */
+const PIN_TOKEN = /^(\d+|A[0-5]|LED_BUILTIN)$/;
 
 /** Uno pin number → board pin id (14–19 are A0–A5). */
 function pinId(n: number): string | null {
@@ -118,22 +133,23 @@ function evaluate(node: Node | null, env: Lookup): number | null {
 }
 
 /**
- * Pin arguments of `DHT name(PIN, TYPE)` declarations (one per declarator; null when the pin is not an
- * expression). `DHT d(PIN, DHT11)` with named constants parses as a function declaration whose
- * "parameter types" are the arguments, so those count too.
+ * Constructor arguments of `Type name(ARGS)` declarations, one list per declarator (`DHT d(PIN, DHT11)`,
+ * `NewPing sonar(TRIG, ECHO, 200)`). `Type d(PIN, X)` with named constants parses as a function
+ * declaration whose "parameter types" are the arguments, so those count too.
  */
-function dhtPinArgs(decl: Node): (Node | null)[] {
-  const first = (list: Node | null | undefined): Node | null => list?.namedChildren[0] ?? null;
+function ctorArgs(decl: Node, type: string): Node[][] {
+  const all = (list: Node | null | undefined): Node[] =>
+    (list?.namedChildren ?? []).filter((c): c is Node => c !== null && c.type !== 'comment');
   if (decl.type === 'field_declaration') {
     const init = decl.childForFieldName('default_value');
-    return init ? [first(init)] : [];
+    return init ? [all(init)] : [];
   }
-  return decl.childrenForFieldName('declarator').flatMap((d): (Node | null)[] => {
+  return decl.childrenForFieldName('declarator').flatMap((d): Node[][] => {
     if (d.type === 'init_declarator') {
       const value = d.childForFieldName('value');
-      if (value?.type === 'argument_list' || value?.type === 'initializer_list') return [first(value)];
-      if (value?.type === 'call_expression' && value.childForFieldName('function')?.text === 'DHT')
-        return [first(value.childForFieldName('arguments'))];
+      if (value?.type === 'argument_list' || value?.type === 'initializer_list') return [all(value)];
+      if (value?.type === 'call_expression' && value.childForFieldName('function')?.text === type)
+        return [all(value.childForFieldName('arguments'))];
       return [];
     }
     if (d.type === 'function_declarator') {
@@ -144,7 +160,7 @@ function dhtPinArgs(decl: Node): (Node | null)[] {
         !p.childForFieldName('declarator') &&
         p.childForFieldName('type')?.type === 'type_identifier';
       if (!params.length || !params.every(bare)) return [];
-      return [params[0]?.childForFieldName('type') ?? null];
+      return [params.map((p) => p?.childForFieldName('type')).filter((t): t is Node => !!t)];
     }
     return [];
   });
@@ -188,10 +204,14 @@ function extract(
   // Pass 1: constants, across every file (Arduino merges the .ino tabs; headers share defines).
   // A name defined twice with different values is not a constant.
   const raw = new Map<string, Node[]>();
-  const add = (name: string, value: Node | null) => {
-    if (value) raw.set(name, [...(raw.get(name) ?? []), value]);
+  /** Where each definition writes its value, when that value is a plain pin token (quick fixes). */
+  const spans = new Map<string, (PinArg | null)[]>();
+  const add = (name: string, value: Node | null, span: PinArg | null) => {
+    if (!value) return;
+    raw.set(name, [...(raw.get(name) ?? []), value]);
+    spans.set(name, [...(spans.get(name) ?? []), span]);
   };
-  for (const { root } of trees) {
+  for (const { file, root } of trees) {
     if (!root) continue;
     walk(root, (n) => {
       if (n.type === 'preproc_def') {
@@ -201,12 +221,13 @@ function extract(
         const init = value
           ? parse(`int __robosim = ${value.text};`)?.descendantsOfType('init_declarator')[0]
           : null;
-        if (name && init) add(name, init.childForFieldName('value'));
+        if (name && init) add(name, init.childForFieldName('value'), value ? defineSpan(file, value) : null);
       } else if (n.type === 'declaration' && isConstDeclaration(n)) {
         for (const d of n.childrenForFieldName('declarator')) {
           if (d.type !== 'init_declarator') continue;
           const name = d.childForFieldName('declarator');
-          if (name?.type === 'identifier') add(name.text, d.childForFieldName('value'));
+          const value = d.childForFieldName('value');
+          if (name?.type === 'identifier') add(name.text, value, value ? tokenSpan(file, value) : null);
         }
       }
     });
@@ -224,6 +245,14 @@ function extract(
     const v = vs.every((x) => x !== null && x === vs[0]) ? (vs[0] ?? null) : null;
     env.set(name, v);
     return v;
+  };
+  /** Span of a pin argument: its own token, or the value of the one definition it names. */
+  const argSpan = (file: string, node: Node | null): PinArg | undefined => {
+    if (!node) return undefined;
+    const own = tokenSpan(file, node);
+    if (own && (node.type === 'number_literal' || !raw.has(node.text))) return own;
+    const defs = node.type === 'identifier' ? spans.get(node.text) : undefined;
+    return defs?.length === 1 ? (defs[0] ?? undefined) : undefined;
   };
 
   // Pass 2: Servo objects, then pin calls.
@@ -243,7 +272,12 @@ function extract(
   const uses: PinUse[] = [];
   const unresolved: { call: string; at: CodeRef }[] = [];
   const includes = new Set<string>();
+  const libraryPins: LibraryPin[] = [];
   const local = new Set(trees.map((t) => t.file));
+  const resolve = (arg: Node | null): string | null => {
+    const v = arg ? evaluate(arg, lookup) : null;
+    return v === null ? null : pinId(v);
+  };
   for (const { file, root } of trees) {
     if (!root) continue;
     walk(root, (n) => {
@@ -257,21 +291,36 @@ function extract(
         unresolved.push({ call: n.text, at });
         return;
       }
-      if (
-        (n.type === 'declaration' || n.type === 'field_declaration') &&
-        n.childForFieldName('type')?.text === 'DHT'
-      ) {
-        for (const arg of dhtPinArgs(n)) {
-          const v = arg && evaluate(arg, lookup);
-          const pin = v === null || v === undefined ? null : pinId(v);
-          if (pin) uses.push({ pin, use: 'dht', at });
-          else unresolved.push({ call: 'DHT', at });
+      if (n.type === 'declaration' || n.type === 'field_declaration') {
+        const type = n.childForFieldName('type')?.text ?? '';
+        if (type === 'DHT') {
+          for (const args of ctorArgs(n, type)) {
+            const arg = args[0] ?? null;
+            const pin = resolve(arg);
+            const span = pin ? argSpan(file, arg) : undefined;
+            if (pin) uses.push({ pin, use: 'dht', at, ...(span ? { arg: span } : {}) });
+            else unresolved.push({ call: 'DHT', at });
+          }
+          return;
         }
+        const roles = LIBRARY_CTORS.get(type);
+        if (roles)
+          for (const args of ctorArgs(n, type))
+            roles.forEach((role, i) => {
+              if (role) libraryPins.push({ lib: type, pin: resolve(args[i] ?? null), role, at });
+            });
         return;
       }
       if (n.type !== 'call_expression') return;
       const fn = n.childForFieldName('function');
       const args = n.childForFieldName('arguments')?.namedChildren ?? [];
+      if (fn?.type === 'field_expression' && fn.text === 'Serial.begin') {
+        libraryPins.push(
+          { lib: 'Serial', pin: 'D0', role: 'in', at },
+          { lib: 'Serial', pin: 'D1', role: 'out', at },
+        );
+        return;
+      }
       let use: PinUseKind | undefined;
       if (fn?.type === 'identifier') use = CALLS.get(fn.text);
       else if (
@@ -282,12 +331,18 @@ function extract(
         use = 'servo';
       if (!use || !fn) return;
       const call = use === 'servo' ? 'Servo.attach' : fn.text;
-      const n0 = evaluate(args[0] ?? null, lookup);
+      const a0 = args[0] ?? null;
+      const n0 = evaluate(a0, lookup);
       const pin = n0 === null ? null : use === 'analogRead' ? analogPinId(n0) : pinId(n0);
       if (pin === null) {
         unresolved.push({ call, at });
         return;
       }
+      const span = argSpan(file, a0);
+      const extra = {
+        ...(span ? { arg: span } : {}),
+        ...(use === 'analogRead' && seedsRandom(n) ? { context: 'randomSeed' as const } : {}),
+      };
       if (use === 'pinMode') {
         const m = evaluate(args[1] ?? null, lookup);
         const mode = m === null ? undefined : MODES[m];
@@ -295,9 +350,41 @@ function extract(
           unresolved.push({ call, at });
           return;
         }
-        uses.push({ pin, use, mode, at });
-      } else uses.push({ pin, use, at });
+        uses.push({ pin, use, mode, at, ...extra });
+      } else uses.push({ pin, use, at, ...extra });
     });
   }
-  return { uses, unresolved, includes: [...includes] };
+  return { uses, unresolved, includes: [...includes], ...(libraryPins.length ? { libraryPins } : {}) };
+}
+
+/** `randomSeed(analogRead(A0))`: the call is (inside) the argument of randomSeed. */
+function seedsRandom(call: Node): boolean {
+  for (let p = call.parent; p; p = p.parent) {
+    if (p.type === 'call_expression') return p.childForFieldName('function')?.text === 'randomSeed';
+    if (p.type !== 'argument_list' && p.type !== 'parenthesized_expression' && p.type !== 'cast_expression')
+      return false;
+  }
+  return false;
+}
+
+/** A node that is a plain pin token, as a span (positions are UTF-16 columns, like the editor's). */
+function tokenSpan(file: string, node: Node): PinArg | null {
+  if (!PIN_TOKEN.test(node.text) || node.startPosition.row !== node.endPosition.row) return null;
+  const { row, column } = node.startPosition;
+  return {
+    file,
+    line: row + 1,
+    column: column + 1,
+    endColumn: column + 1 + node.text.length,
+    text: node.text,
+  };
+}
+
+/** The pin token at the start of a `#define` value (`7  // pin` → `7`). */
+function defineSpan(file: string, value: Node): PinArg | null {
+  const m = /^(\s*)(\d+|A[0-5]|LED_BUILTIN)(?=\s*(?:$|\/\/|\/\*))/.exec(value.text);
+  if (!m?.[2]) return null;
+  const { row, column } = value.startPosition;
+  const start = column + 1 + (m[1]?.length ?? 0);
+  return { file, line: row + 1, column: start, endColumn: start + m[2].length, text: m[2] };
 }

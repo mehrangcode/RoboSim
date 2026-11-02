@@ -633,7 +633,15 @@ export interface ComponentManifest {
   readonly pinMaxVolts?: Readonly<Record<string, number>>;
   /** I²C target (Tier C): its bus pins and addressing, read by the bus safety rules. */
   readonly i2c?: I2cSpec;
+  /**
+   * Signal direction of pins whose `kind` does not say it (ADR-028, metadata only): a bidirectional data
+   * line (`dht11.data`, I²C `sda`) is `bidir`. Without an entry: `digital` → `in`, `output` | `analog` →
+   * `out`, others `none`. Read by the editor's wiring ↔ sketch check (FR-SAF-08), never by the engine.
+   */
+  readonly signalDirection?: Readonly<Record<string, SignalDirection>>;
 }
+
+export type SignalDirection = 'in' | 'out' | 'bidir' | 'none';
 
 export interface I2cSpec {
   readonly sda: string;

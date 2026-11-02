@@ -106,9 +106,22 @@
       "static": "Wiring check",
       "runtime": "While running",
       "why": "Why",
-      "fix": "How to fix",
+      "fix": {
+        "title": "How to fix",
+        "code": "Use {to} in the code",
+        "wire": "Move the wire from {from} to {to}"
+      },
       "acknowledge": "Got it",
-      "acknowledged": "{count, plural, one {# warning acknowledged} other {# warnings acknowledged}}"
+      "acknowledged": "{count, plural, one {# warning acknowledged} other {# warnings acknowledged}}",
+      "infos": "Info",
+      "info": "Info",
+      "consistency": "Wiring ↔ code",
+      "show": "Show on circuit",
+      "hide": "Hide on circuit",
+      "group": {
+        "consistency": "Wiring ↔ code (checked while you edit)"
+      },
+      "runForMore": "Run the project for the full electrical safety check."
     },
     "pinDamaged": "damaged",
     "challenge": {

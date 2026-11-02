@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { i18n as I18n } from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { CircuitCanvas, type CanvasMode } from './circuit-canvas.js';
+import { CircuitCanvas, type CanvasHighlight, type CanvasMode } from './circuit-canvas.js';
 import { addComponent, blankProject } from './document.js';
 import { PITCH } from './geometry.js';
 import { interactionOf } from './interaction.js';
@@ -146,5 +146,33 @@ describe('canvas run mode (FR-SIM-11)', () => {
     fireEvent.pointerUp(svg);
     fireEvent.pointerDown(body('joy1'), { button: 0 });
     expect(screen.getByRole('dialog', { name: 'Inputs of joy1' })).toBeInTheDocument();
+  });
+});
+
+describe('canvas highlight (FR-SAF-08)', () => {
+  it('rings the pins of a selected finding and fades the parts it is not about', () => {
+    const doc = project();
+    const [button, , , resistor] = doc.components;
+    const highlight: CanvasHighlight = {
+      parts: [resistor?.id ?? ''],
+      wires: [],
+      pins: [{ part: 'board', pin: 'D9' }],
+    };
+    const view = render(
+      <I18nextProvider i18n={i18n}>
+        {(() => {
+          function Harness() {
+            const editor = useCircuitEditor(() => doc);
+            return <CircuitCanvas editor={editor} mode="edit" highlight={highlight} />;
+          }
+          return <Harness />;
+        })()}
+      </I18nextProvider>,
+    );
+    expect(screen.getByTestId('mark-board.D9')).toBeInTheDocument();
+    const layer = (id: string) =>
+      view.container.querySelector(`[data-part-body="${id}"]`)?.closest('g[opacity]');
+    expect(layer(button?.id ?? '')?.getAttribute('opacity')).toBe('0.18');
+    expect(layer(resistor?.id ?? '')).toBeNull();
   });
 });

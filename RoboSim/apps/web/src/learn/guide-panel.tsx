@@ -1,10 +1,5 @@
 import { findManifest } from '@robosim/catalog/manifests';
-import {
-  evaluateGuide,
-  type GuidedCodeFacts,
-  type GuidedFailure,
-  type StepStatus,
-} from '@robosim/circuit-canvas';
+import { evaluateGuide, type GuidedFailure, type StepStatus } from '@robosim/circuit-canvas';
 import {
   BOARD_PART,
   isGuidedProjectBody,
@@ -18,6 +13,7 @@ import { Button } from '@robosim/ui';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCodeFacts } from '../lab/use-code-facts.js';
 import { useFormat } from '../lab/format.js';
 import type { LearningClient } from '../lib/learning-api.js';
 import { Markdown } from './markdown.js';
@@ -57,32 +53,6 @@ function useGuidedProject(client: LearningClient, slug: string): Loaded {
     };
   }, [client, slug]);
   return loaded?.slug === slug ? loaded.value : { state: 'loading' };
-}
-
-/**
- * Pin facts of the sketch for code steps (FR-COD-06 analyser), recomputed a moment after typing stops.
- * The parser is loaded on first use, outside the initial bundle; null until it is ready.
- */
-function useCodeFacts(files: ProjectDocument['code']['files'], wanted: boolean): GuidedCodeFacts | null {
-  const [facts, setFacts] = useState<GuidedCodeFacts | null>(null);
-  useEffect(() => {
-    if (!wanted) return;
-    let live = true;
-    const timer = setTimeout(() => {
-      void Promise.all([import('../lab/code-analysis.js'), import('@robosim/code-analysis')]).then(
-        async ([{ codeAnalysisReady }, { analyzeSketch }]) => {
-          await codeAnalysisReady;
-          if (live) setFacts(analyzeSketch(files));
-        },
-        () => undefined,
-      );
-    }, 400);
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, [files, wanted]);
-  return facts;
 }
 
 /** Names and wording for check failures: catalogue names, pin labels in capitals. */
@@ -168,7 +138,7 @@ function Guide({
     [project],
   );
   const hasCode = project.steps.some((s) => s.checks.some((c) => c.kind === 'code'));
-  const code = useCodeFacts(doc.code.files, hasCode);
+  const code = useCodeFacts(doc.code.files, hasCode, 400);
   // A success counts once; recording the run step keeps it counted after the run is reset.
   const runOk = runSucceeded || runSteps.some((s) => everCompleted.has(s));
   const state = useMemo(

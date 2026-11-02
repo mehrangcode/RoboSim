@@ -89,6 +89,13 @@ function loadMinimap(): boolean {
 /** edit: build the circuit · run: interact with parts of the running simulation · view: look only. */
 export type CanvasMode = 'edit' | 'run' | 'view';
 
+/** Parts, wires and pins to point out on the canvas (a selected safety finding). */
+export interface CanvasHighlight {
+  readonly parts: readonly string[];
+  readonly wires: readonly string[];
+  readonly pins: readonly PinRef[];
+}
+
 /**
  * The breadboard-style circuit canvas (ADR-005): React SVG with one root transform for pan and zoom.
  * Parts drag on the 0.1" grid, wires run pin to pin with bend points, hovering a pin highlights its net.
@@ -101,6 +108,7 @@ export function CircuitCanvas({
   mode = 'edit',
   onInput,
   damaged,
+  highlight = null,
 }: {
   editor: CircuitEditorState;
   /** Live part states by component id (from the running simulation). */
@@ -111,6 +119,11 @@ export function CircuitCanvas({
   onInput?: ((componentId: string, name: string, value: number | boolean) => void) | undefined;
   /** Ids of parts the damage model has broken. */
   damaged?: readonly string[] | undefined;
+  /**
+   * What a selected finding is about (FR-SAF-08): its parts and wires stay in full colour, the rest
+   * fades, and its pins are ringed (shape, not colour only). Null shows the circuit as usual.
+   */
+  highlight?: CanvasHighlight | null | undefined;
 }) {
   const { t } = useTranslation();
   const { doc, apply, selection, setSelection, viewCenterRef } = editor;
@@ -131,6 +144,14 @@ export function CircuitCanvas({
   /** Values sent to inputs the live state does not report (line-sensor surfaces…). */
   const [sent, setSent] = useState<Readonly<Record<string, Readonly<Record<string, number | boolean>>>>>({});
   const nets = useMemo(() => new CircuitNets(doc), [doc]);
+  // The board stays in colour: the pins a finding is about are on it.
+  const focus = useMemo(
+    () =>
+      highlight
+        ? { parts: new Set([BOARD_PART, ...highlight.parts]), wires: new Set(highlight.wires) }
+        : null,
+    [highlight],
+  );
   const editing = mode === 'edit';
   const running = mode === 'run' && onInput !== undefined;
   const [prevMode, setPrevMode] = useState(mode);
@@ -583,6 +604,8 @@ export function CircuitCanvas({
             interactive={interactive}
             damaged={broken}
             damagedText={t('editor:canvas.damaged')}
+            focus={focus}
+            marks={highlight?.pins ?? []}
           />
           {band && (
             <rect

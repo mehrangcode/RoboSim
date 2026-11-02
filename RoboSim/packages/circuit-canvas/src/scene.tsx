@@ -244,6 +244,8 @@ export interface SceneProps {
   damagedText: string;
   /** Wiring-guide view: these parts and wires stay in full colour, the rest is faded. */
   focus?: { readonly parts: ReadonlySet<string>; readonly wires: ReadonlySet<string> } | null;
+  /** Pins a finding points at (FR-SAF-08): ringed, drawn on top. */
+  marks?: readonly PinRef[];
 }
 
 /** Opacity of everything outside a `focus`. */
@@ -265,6 +267,7 @@ export const Scene = memo(function Scene({
   damaged,
   damagedText,
   focus = null,
+  marks = [],
 }: SceneProps) {
   const fade = (on: boolean) => (focus && !on ? FADED : undefined);
   const byId = new Map(doc.components.map((c) => [c.id, c]));
@@ -408,6 +411,23 @@ export const Scene = memo(function Scene({
             />
           ) : null;
         })}
+      {marks.map((ref) => {
+        const at = pinAt(ref);
+        return at ? (
+          <circle
+            key={`mark:${ref.part}.${ref.pin}`}
+            data-testid={`mark-${ref.part}.${ref.pin}`}
+            cx={at[0]}
+            cy={at[1]}
+            r={1.3}
+            fill="none"
+            stroke={ACCENT}
+            strokeWidth={0.5}
+            strokeDasharray="0.8 0.4"
+            pointerEvents="none"
+          />
+        ) : null;
+      })}
       {drawing &&
         (() => {
           const from = pinAt(drawing.from);

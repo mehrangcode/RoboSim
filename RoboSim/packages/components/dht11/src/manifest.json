@@ -10,6 +10,7 @@
     { "name": "data", "kind": "digital" },
     { "name": "gnd", "kind": "ground" }
   ],
+  "signalDirection": { "data": "bidir" },
   "props": {},
   "inputs": [
     { "name": "temperatureC", "type": "number", "default": 24, "min": 0, "max": 50 },

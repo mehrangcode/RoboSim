@@ -1,5 +1,4 @@
 import type { ArduinoLibrary, BuildDiagnostic } from '@robosim/shared';
-import type { FindingView } from '@robosim/sim-runtime/client';
 import { Button, Card, cn } from '@robosim/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +14,14 @@ const SEVERITY_ICON = { error: '⛔', warning: '⚠️', note: 'ℹ️' } as con
  * Sketch editor with build feedback (FR-COD-01, FR-COD-03): the code editor over the sketch's
  * files, build status, and diagnostics with plain-language explanations that jump to their line.
  */
+/** What the editor needs to mark a finding on its sketch lines. */
+interface MarkedFinding {
+  readonly severity: 'error' | 'warning' | 'info';
+  readonly messageKey: string;
+  readonly params: Readonly<Record<string, string | number>>;
+  readonly codeRefs?: readonly { readonly file: string; readonly line: number; readonly column: number }[];
+}
+
 export function SketchPanel({
   files,
   onChange,
@@ -42,8 +49,11 @@ export function SketchPanel({
   /** Fill the parent's height (workspace pane) instead of a fixed-height editor. */
   fill?: boolean;
   title?: string | undefined;
-  /** Safety findings of the loaded run; code-aware ones (FR-SAF-03) are marked on their sketch lines. */
-  findings?: readonly FindingView[] | undefined;
+  /**
+   * Safety findings with sketch lines: code-aware ones of the loaded run (FR-SAF-03) and the wiring ↔
+   * sketch check while editing (FR-SAF-08) are marked on their lines.
+   */
+  findings?: readonly MarkedFinding[] | undefined;
   readOnly?: boolean;
   /** A code tool to run (format, library manager), e.g. from the command palette. */
   command?: EditorCommand | null;
@@ -60,7 +70,13 @@ export function SketchPanel({
   const inCode = findings.flatMap((f) =>
     (f.codeRefs ?? [])
       .filter((r) => files.some((file) => file.name === r.file))
-      .map((r) => ({ finding: f, ...r, title: t(`${f.messageKey}.title`, f.params) })),
+      .map((r) => ({
+        finding: f,
+        ...r,
+        // An info finding is a note in the editor (blue "i"), never an error squiggle.
+        severity: f.severity === 'info' ? ('note' as const) : f.severity,
+        title: t(`${f.messageKey}.title`, f.params),
+      })),
   );
   const markers: BuildDiagnostic[] = [
     ...diagnostics,
@@ -68,7 +84,7 @@ export function SketchPanel({
       file: c.file,
       line: c.line,
       column: c.column,
-      severity: c.finding.severity,
+      severity: c.severity,
       message: c.title,
     })),
   ];
@@ -190,8 +206,8 @@ export function SketchPanel({
                   c.finding.severity === 'error' && 'text-danger',
                 )}
               >
-                <span aria-hidden>{SEVERITY_ICON[c.finding.severity]}</span>
-                <span className="font-semibold">{t(`shell:lab.sketch.severity.${c.finding.severity}`)}</span>
+                <span aria-hidden>{SEVERITY_ICON[c.severity]}</span>
+                <span className="font-semibold">{t(`shell:lab.sketch.severity.${c.severity}`)}</span>
                 <span className="text-ink-muted">
                   {t('shell:lab.sketch.location', {
                     file: c.file,

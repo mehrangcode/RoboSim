@@ -1,7 +1,7 @@
 // Shared DOM test setup for packages using Vitest + Testing Library.
 import '@testing-library/jest-dom/vitest';
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 // jest-dom 7.0.1 augments `Assertion<T>`, but Vitest 5 declares `Assertion<R, T>`, so its typings do not merge
@@ -14,6 +14,9 @@ declare module 'vitest' {
   > extends TestingLibraryMatchers<unknown, R> {}
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars */
+
+// The 1 s default is too short for lazy routes when turbo runs several packages' suites at once.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();

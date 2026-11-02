@@ -13,6 +13,7 @@
     { "name": "csb", "kind": "digital" },
     { "name": "sdo", "kind": "digital" }
   ],
+  "signalDirection": { "sda": "bidir", "scl": "bidir", "sdo": "bidir" },
   "props": {},
   "inputs": [
     { "name": "temperatureC", "type": "number", "default": 22, "min": -20, "max": 60 },

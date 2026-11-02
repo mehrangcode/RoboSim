@@ -13,6 +13,7 @@
     { "name": "gpio1", "kind": "output" },
     { "name": "xshut", "kind": "digital" }
   ],
+  "signalDirection": { "sda": "bidir", "scl": "bidir" },
   "props": {},
   "inputs": [{ "name": "distanceMm", "type": "number", "default": 300, "min": 0, "max": 2500 }],
   "massG": 1,

@@ -132,4 +132,21 @@ describe('component catalog', () => {
     expect(variantPropsOf('passive.resistor')).toEqual(['ohms']);
     expect(variantPropsOf('driver.l298n')).toEqual([]);
   });
+
+  it('declares bidirectional data lines for the wiring ↔ sketch check (FR-SAF-08)', () => {
+    for (const m of CATALOG_MANIFESTS) {
+      for (const pin of Object.keys(m.signalDirection ?? {}))
+        expect(
+          m.pins.map((p) => p.name),
+          `${m.id}.${pin}`,
+        ).toContain(pin);
+      // An I²C target's bus lines are read and written by the master: never a one-way input.
+      if (m.i2c) {
+        expect(m.signalDirection?.[m.i2c.sda], `${m.id} sda`).toBe('bidir');
+        expect(m.signalDirection?.[m.i2c.scl], `${m.id} scl`).toBe('bidir');
+      }
+    }
+    expect(findManifest('sensor.dht11')?.signalDirection?.['data']).toBe('bidir');
+    expect(findManifest('sensor.ds18b20')?.signalDirection?.['dq']).toBe('bidir');
+  });
 });
