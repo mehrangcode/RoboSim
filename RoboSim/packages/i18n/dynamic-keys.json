@@ -12,6 +12,8 @@
     "safety:",
     "shell:lab.findings.",
     "shell:lab.challenge.",
+    "shell:lab.verify.outcome.",
+    "shell:lab.verify.match.",
     "build:explain.",
     "auth:passwordRule.",
     "shell:lab.sketch.severity.",

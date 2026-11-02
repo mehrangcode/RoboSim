@@ -217,14 +217,42 @@ export function CircuitCanvas({
     ([x, y]: Point) => setView((v) => ({ ...v, x: size.width / 2 - x * v.k, y: size.height / 2 - y * v.k })),
     [size],
   );
+  // Full page acts as a modal layer: Tab stays inside it, and anything else that takes focus (a dialog
+  // opened by a shortcut, say) collapses it, so nothing ever opens hidden underneath.
+  const frame = useRef<HTMLDivElement>(null);
+  const expandButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!expanded) return;
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented) setExpanded(false);
+    const onFocus = (e: FocusEvent) => {
+      if (e.target instanceof Node && !frame.current?.contains(e.target)) setExpanded(false);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    document.addEventListener('focusin', onFocus);
+    return () => document.removeEventListener('focusin', onFocus);
   }, [expanded]);
+  const collapse = () => {
+    setExpanded(false);
+    expandButton.current?.focus();
+  };
+  /** Keys reaching the frame unhandled: Esc leaves full page, Tab wraps inside it. */
+  const onFrameKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!expanded || e.defaultPrevented) return;
+    if (e.key === 'Escape') {
+      collapse();
+      e.preventDefault();
+    } else if (e.key === 'Tab') {
+      const focusable = [
+        ...(frame.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex="0"]',
+        ) ?? []),
+      ];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) last?.focus();
+      else if (!e.shiftKey && document.activeElement === last) first?.focus();
+      else return;
+      e.preventDefault();
+    }
+  };
   const toggleMinimap = () =>
     setMinimap((on) => {
       try {
@@ -445,19 +473,20 @@ export function CircuitCanvas({
       e.preventDefault();
       return;
     }
-    if (!editing) {
-      if (e.key === 'Escape' && inspecting) {
-        setInspecting(null);
-        e.preventDefault();
-      }
+    if (e.key === 'Escape') {
+      // Esc cancels the innermost thing first; left unhandled, the frame leaves the full-page view.
+      if (inspecting) setInspecting(null);
+      else if (drag) {
+        if (drag.kind === 'pan') setView(drag.view);
+        setDrag(null);
+      } else if (drawing) setDrawing(null);
+      else if (editing && (ids.length || selection.wire)) setSelection({ parts: [], wire: null });
+      else return;
+      e.preventDefault();
       return;
     }
-    if (e.key === 'Escape') {
-      // Esc cancels the innermost thing first; left unhandled, it leaves the full-page view.
-      if (!drawing && !ids.length && !selection.wire) return;
-      setDrawing(null);
-      setSelection({ parts: [], wire: null });
-    } else if (e.key === 'Delete' || e.key === 'Backspace') removeSelection();
+    if (!editing) return;
+    if (e.key === 'Delete' || e.key === 'Backspace') removeSelection();
     else if (mod && key === 'z') (e.shiftKey ? editor.redo : editor.undo)();
     else if (mod && key === 'y') editor.redo();
     else if (mod && key === 'a')
@@ -502,7 +531,12 @@ export function CircuitCanvas({
 
   return (
     <div
+      ref={frame}
       dir="ltr"
+      onKeyDown={onFrameKeyDown}
+      role={expanded ? 'dialog' : undefined}
+      aria-modal={expanded || undefined}
+      aria-label={expanded ? t('editor:canvas.label') : undefined}
       className={
         expanded
           ? 'fixed inset-0 z-50 overflow-hidden bg-[#f1f5f9]'
@@ -612,11 +646,12 @@ export function CircuitCanvas({
           </svg>
         </button>
         <button
+          ref={expandButton}
           type="button"
           title={expandLabel}
           aria-label={expandLabel}
           aria-pressed={expanded}
-          onClick={() => setExpanded((on) => !on)}
+          onClick={() => (expanded ? collapse() : setExpanded(true))}
           className="grid size-7 place-items-center rounded border border-line bg-surface shadow-sm hover:bg-surface-raised aria-pressed:bg-surface-raised"
         >
           <svg

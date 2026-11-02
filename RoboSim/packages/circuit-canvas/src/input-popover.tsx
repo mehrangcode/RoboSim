@@ -29,7 +29,12 @@ export function InputPopover({
       aria-label={t('editor:inputs.title', { part: part.id })}
       className="absolute z-10 flex w-56 flex-col gap-2 rounded-md border border-line bg-surface p-2 text-sm text-ink shadow-lg"
       style={{ left, top }}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        // Handled here: the canvas must not also take this Esc (to leave its full-page view).
+        e.preventDefault();
+        onClose();
+      }}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono font-semibold">{part.id}</span>

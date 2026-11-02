@@ -222,5 +222,38 @@ describe('circuit editor', () => {
     expect(frame()).toHaveClass('fixed');
     fireEvent.keyDown(svg, { key: 'Escape' });
     expect(frame()).not.toHaveClass('fixed');
+    expect(screen.getByRole('button', { name: 'Expand to full page (Esc to exit)' })).toHaveFocus();
+  });
+
+  it('in full page, Esc during a band select cancels the band and keeps the full-page view', async () => {
+    const { container } = setup();
+    const user = userEvent.setup();
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    await user.click(screen.getByRole('button', { name: 'Expand to full page (Esc to exit)' }));
+    fireEvent.pointerDown(svg, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerMove(svg, { clientX: 60, clientY: 60 });
+    expect(screen.getByTestId('selection-band')).toBeInTheDocument();
+    fireEvent.keyDown(svg, { key: 'Escape' });
+    expect(screen.queryByTestId('selection-band')).toBeNull();
+    expect(svg.parentElement).toHaveClass('fixed');
+  });
+
+  it('full page is modal: Tab wraps inside it, and focus taken elsewhere (a dialog) collapses it', async () => {
+    const { container } = setup();
+    const user = userEvent.setup();
+    const svg = container.querySelector('svg[role="application"]') as SVGSVGElement;
+    await user.click(screen.getByRole('button', { name: 'Expand to full page (Esc to exit)' }));
+    const modal = screen.getByRole('dialog', { name: /circuit/i });
+    expect(modal).toHaveAttribute('aria-modal', 'true');
+    const collapse = screen.getByRole('button', { name: 'Exit full page (Esc)' });
+    collapse.focus();
+    await user.tab();
+    expect(modal).toContainElement(document.activeElement as HTMLElement);
+    // A dialog opened by a global shortcut takes focus: the full-page view gets out of its way.
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    act(() => outside.focus());
+    expect(svg.parentElement).not.toHaveClass('fixed');
+    outside.remove();
   });
 });

@@ -17,7 +17,7 @@ import {
   type ProjectDocument,
   type SharedLink,
 } from '@robosim/shared';
-import { SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
+import { MAX_SIM_SECONDS, SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@robosim/ui';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { findArena } from '@robosim/content/arenas';
@@ -48,6 +48,8 @@ import { SketchPanel } from '../lab/sketch-panel.js';
 import type { EditorCommand } from '../code-editor/types.js';
 import { compileWithApi, type CompileSketch } from '../lab/use-build.js';
 import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
+import { useVerifiedRun, type GradeWorkerLike } from '../lab/use-verified-run.js';
+import { VerifyPanel } from '../lab/verify-panel.js';
 import { SignInGate } from '../auth/auth-ui.js';
 import { useAuth } from '../auth/use-auth.js';
 import { ApiError } from '../lib/api.js';
@@ -65,7 +67,14 @@ import { HelpDialog } from './help-dialog.js';
 import { OnboardingTour } from './onboarding-tour.js';
 import { useTourState, type TourStop } from './tour-state.js';
 import { ShareDialog } from './share-dialog.js';
-import { PROJECT_FILE_ACCEPT, downloadProject, importErrorText, readProjectFile } from './project-file.js';
+import {
+  PROJECT_FILE_ACCEPT,
+  downloadBlob,
+  downloadProject,
+  fileBase,
+  importErrorText,
+  readProjectFile,
+} from './project-file.js';
 import { loadStored, mainFile, runKey, saveStored, withFiles } from './project-store.js';
 import { starterProject } from './starter.js';
 import { useBuzzerAudio } from './use-buzzer-audio';
@@ -76,7 +85,7 @@ import { openCloudProject, useCloudSync, type CloudOpen, type OpenResult } from 
 import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
-type DockTab = 'serial' | 'pins' | 'analyzer' | 'safety' | 'challenge' | 'assistant' | BomTab;
+type DockTab = 'serial' | 'pins' | 'analyzer' | 'safety' | 'challenge' | 'verify' | 'assistant' | BomTab;
 
 // The assistant is a chunk of its own, loaded when its tab first opens.
 const AiPanel = lazy(() => import('../ai/ai-panel.js').then((m) => ({ default: m.AiPanel })));
@@ -149,6 +158,8 @@ function Rail({ title, onExpand, vertical }: { title: string; onExpand: () => vo
 
 interface EditorProps {
   createWorker?: (() => WorkerLike) | undefined;
+  /** Worker for verified runs (FR-SIM-09); tests pass a fake. */
+  createGradeWorker?: (() => GradeWorkerLike) | undefined;
   compileSketch?: CompileSketch | undefined;
   projects?: ProjectsClient | undefined;
   bom?: BomClient | undefined;
@@ -340,6 +351,7 @@ function CloudWorkspace({ id, ...props }: EditorProps & { id: string; projects: 
  */
 function Workspace({
   createWorker,
+  createGradeWorker,
   compileSketch,
   projects,
   bom,
@@ -361,6 +373,7 @@ function Workspace({
   const search = useSearch({ strict: false }) as { demo?: string };
   const sim = useSimulation(createWorker);
   const { scene, frame, serialLog, clearSerial, send } = sim;
+  const verified = useVerifiedRun(createGradeWorker);
   const readOnly = viewer !== undefined;
   const [stored] = useState(() => (cloudOpen || initial ? null : loadStored()));
   const editor = useCircuitEditor(
@@ -500,7 +513,7 @@ function Workspace({
     send({ type: 'load', scenario: id });
   };
 
-  // /editor?demo=blink (the Lab's "Open in editor").
+  // /editor?demo=blink: a link that opens a built-in demo.
   const requested = SCENARIOS.find((s) => s === search.demo);
   useEffect(() => {
     if (!requested || readOnly) return;
@@ -527,6 +540,40 @@ function Workspace({
       );
   };
   const runOrPause = () => void run.start(current, running);
+  // A verified run belongs to the run it graded: stopping (or an edit) discards it.
+  const clearVerified = verified.clear;
+  useEffect(() => {
+    if (run.phase !== 'live') clearVerified();
+  }, [run.phase, clearVerified]);
+  /** Saves the input log of this run: with the same engine version it reproduces the run exactly. */
+  const exportInputLog = async () => {
+    const log = await sim.exportLog();
+    downloadBlob(
+      `${fileBase(log.project)}-seed${log.seed}.input-log.json`,
+      new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' }),
+    );
+  };
+  /** Re-runs from the start, replaying every input at the slice it happened. */
+  const replay = async () => {
+    const log = await sim.exportLog();
+    clearVerified();
+    const source = log.scenario
+      ? { scenario: log.scenario }
+      : { project: log.project, firmware: log.firmware };
+    send({ type: 'load', ...source, seed: log.seed, inputLog: log.entries });
+    send({ type: 'control', action: 'run' });
+  };
+  /** Pauses, then grades this run up to the same slice in a worker of its own, as the grader would. */
+  const verify = async () => {
+    send({ type: 'control', action: 'pause' });
+    const log = await sim.exportLog();
+    if (!log.endSlice) return;
+    verified.verify({ log, maxSimSeconds: Math.min(log.endSlice / 1000, MAX_SIM_SECONDS) });
+    setDockTab('verify');
+    if (layout.collapsed.dock) toggle('dock');
+    setMobileTab('monitor');
+  };
+  const canVerify = run.ready && !!frame?.simTime && verified.state.status !== 'grading';
   const step = () => run.ready && !running && send({ type: 'control', action: 'step' });
   const resetRun = () => run.ready && send({ type: 'control', action: 'reset' });
 
@@ -598,6 +645,7 @@ function Workspace({
         ? [
             t('shell:lab.status.time', { seconds: fmt(live.simTime, 2) }),
             running ? t('shell:lab.status.rtf', { factor: fmt(live.rtf, 2) }) : t('shell:lab.status.paused'),
+            ...(sim.replaying > 0 ? [t('shell:lab.status.replaying', { count: sim.replaying })] : []),
           ].join(' · ')
         : run.stoppedByEdit
           ? t('shell:editor.status.stoppedByEdit')
@@ -762,6 +810,7 @@ function Workspace({
     'analyzer',
     'safety',
     ...(live?.challenge ? (['challenge'] as const) : []),
+    ...(verified.state.status !== 'idle' ? (['verify'] as const) : []),
     'parts',
     'wiring',
   ];
@@ -797,11 +846,13 @@ function Workspace({
       }}
     />
   ) : null;
+  // A tab that went away (the challenge or verified run of an earlier run) falls back to the serial monitor.
+  const shownDock: DockTab = dockTabs.includes(dockTab) ? dockTab : 'serial';
   const dock = (
     <div className="flex h-full flex-col gap-2 p-2">
       <SegmentedControl
         label={t('shell:editor.pane.monitor')}
-        value={dockTabs.includes(dockTab) ? dockTab : 'serial'}
+        value={shownDock}
         options={dockTabs.map((v) => ({
           value: v,
           label:
@@ -812,9 +863,9 @@ function Workspace({
         onChange={setDockTab}
       />
       <div className="min-h-0 flex-1 overflow-auto">
-        {dockTab === 'parts' || dockTab === 'wiring' ? (
-          <BomPanel doc={current} tab={dockTab} client={bomClient} onShow={showStep} />
-        ) : dockTab === 'assistant' ? (
+        {shownDock === 'parts' || shownDock === 'wiring' ? (
+          <BomPanel doc={current} tab={shownDock} client={bomClient} onShow={showStep} />
+        ) : shownDock === 'assistant' ? (
           <Suspense fallback={<p className="text-sm text-ink-muted">{t('common:status.loading')}</p>}>
             <AiPanel
               client={aiClient}
@@ -824,11 +875,13 @@ function Workspace({
               onPaywall={setPaywall}
             />
           </Suspense>
+        ) : shownDock === 'verify' ? (
+          <VerifyPanel state={verified.state} frame={live} serial={sim.serial} />
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
-        ) : dockTab === 'pins' ? (
+        ) : shownDock === 'pins' ? (
           <PinTable bare scene={scene} frame={live} />
-        ) : dockTab === 'analyzer' ? (
+        ) : shownDock === 'analyzer' ? (
           <LogicAnalyzer
             pins={scene.pins}
             capture={sim.capture}
@@ -836,12 +889,12 @@ function Workspace({
             probe={sim.probe}
             onClear={sim.clearCapture}
           />
-        ) : dockTab === 'safety' ? (
+        ) : shownDock === 'safety' ? (
           <FindingsPanel
             findings={findings}
             partTypes={Object.fromEntries(scene.parts.map((p) => [p.id, p.type]))}
           />
-        ) : dockTab === 'challenge' && live.challenge ? (
+        ) : shownDock === 'challenge' && live.challenge ? (
           <ChallengePanel challenge={live.challenge} send={send} />
         ) : scene.serial ? (
           <SerialMonitor bare log={serialLog} send={send} onClear={clearSerial} />
@@ -885,6 +938,11 @@ function Workspace({
         disabled: run.phase !== 'live',
       }),
       cmd('reset', t('shell:lab.controls.reset'), resetRun, { shortcut: 'F6', disabled: !run.ready }),
+      cmd('replay', t('shell:lab.controls.replay'), () => void replay(), { disabled: !run.ready }),
+      cmd('exportLog', t('shell:lab.controls.exportLog'), () => void exportInputLog(), {
+        disabled: !run.ready,
+      }),
+      cmd('verify', t('shell:lab.controls.verify'), () => void verify(), { disabled: !canVerify }),
       cmd('sound', t('shell:editor.sound'), sound.toggle),
       editing && cmd('save', t('shell:editor.save'), save, { shortcut: 'Ctrl+S' }),
       editing &&
@@ -1098,6 +1156,15 @@ function Workspace({
       </Button>
       <Button size="sm" variant="secondary" onClick={resetRun} disabled={!run.ready} aria-keyshortcuts="F6">
         {t('shell:lab.controls.reset')}
+      </Button>
+      <Button size="sm" variant="secondary" onClick={() => void replay()} disabled={!run.ready}>
+        {t('shell:lab.controls.replay')}
+      </Button>
+      <Button size="sm" variant="secondary" onClick={() => void exportInputLog()} disabled={!run.ready}>
+        {t('shell:lab.controls.exportLog')}
+      </Button>
+      <Button size="sm" variant="secondary" onClick={() => void verify()} disabled={!canVerify}>
+        {t('shell:lab.controls.verify')}
       </Button>
       <SegmentedControl
         label={t('shell:lab.controls.speed')}

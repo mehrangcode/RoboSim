@@ -24,12 +24,16 @@
       "pause": "Pause",
       "reset": "Reset",
       "step": "Step 10 ms",
-      "speed": "Speed"
+      "speed": "Speed",
+      "replay": "Replay run",
+      "exportLog": "Export input log",
+      "verify": "Verify run"
     },
     "status": {
       "time": "Sim time {seconds} s",
       "rtf": "{factor}× real time",
-      "paused": "Paused"
+      "paused": "Paused",
+      "replaying": "{count, plural, one {replaying # input} other {replaying # inputs}}"
     },
     "scenario": {
       "line-follower": "Line follower",
@@ -248,6 +252,25 @@
         "kHz": "{value} kHz",
         "MHz": "{value} MHz"
       }
+    },
+    "verify": {
+      "title": "Verified run",
+      "hint": "Re-runs this run headless and unpaced, the way the grader does. Only verified runs count for grades; runs in the browser are unofficial.",
+      "grading": "Grading…",
+      "outcome": {
+        "success": "Challenge complete",
+        "failure": "Challenge failed",
+        "unresolved": "No decision — ran to {seconds} s"
+      },
+      "score": "Score {total}/{max}",
+      "match": {
+        "identical": "Identical to your run at {seconds} s",
+        "differs": "Differs from your run at {seconds} s",
+        "moved": "Your run has moved on — pause it to compare"
+      },
+      "speed": "Simulated {sim} s in {wall} s ({factor}× real time)",
+      "trace": "{count, plural, one {Trace of # sample} other {Trace of # samples}}, SHA-256",
+      "error": "Verification failed: {message}"
     }
   },
   "editor": {
@@ -306,7 +329,8 @@
       "wiring": "Wiring",
       "notRunning": "Run the project to see live values here.",
       "noSerial": "This sketch does not use Serial.",
-      "assistant": "Assistant"
+      "assistant": "Assistant",
+      "verify": "Verified run"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {

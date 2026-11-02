@@ -86,6 +86,19 @@ describe('canvas run mode (FR-SIM-11)', () => {
     expect(dialog).not.toBeInTheDocument();
   });
 
+  it('in full page, Esc in a part popover closes only the popover', () => {
+    const { body, svg } = setup('run', { pot1: { position: 0.5, wiperV: 2.5 } });
+    fireEvent.click(screen.getByRole('button', { name: 'Expand to full page (Esc to exit)' }));
+    const frame = svg.parentElement as HTMLElement;
+    fireEvent.pointerDown(body('pot1'), { button: 0 });
+    const popover = screen.getByRole('dialog', { name: 'Inputs of pot1' });
+    fireEvent.keyDown(screen.getByLabelText(/Knob position/), { key: 'Escape' });
+    expect(popover).not.toBeInTheDocument();
+    expect(frame).toHaveClass('fixed');
+    fireEvent.keyDown(svg, { key: 'Escape' });
+    expect(frame).not.toHaveClass('fixed');
+  });
+
   it('does not edit the circuit while running; shows damaged parts with text', () => {
     const { body, svg, editor, onInput } = setup('run', {}, ['r1']);
     fireEvent.pointerDown(body('r1'), { button: 0 });
