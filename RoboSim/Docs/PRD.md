@@ -55,6 +55,7 @@ Every user acts inside a **workspace**: a personal workspace (one per user) or a
 | `boards.allowed` | `uno` | all GA boards | all | all | `POST /builds` (board FQBN check) |
 | `components.tier` | `basic` | `all` | `all` | `all` | Project save and verified run (netlist validation) |
 | `projects.cloud_max` | 3 | ∞ | ∞ | ∞ | `POST /projects` |
+| `runs.cloud_max` (planned, IT-11) | 5 | 200 | 50 | ∞ | `POST /runs` (stored runs and run share links, FR-SIM-12) |
 | `projects.version_retention_days` | 7 | 365 | 365 | configurable (∞ default) | Retention job |
 | `build.daily_quota` | 30 | 500 | 300 | 300 (poolable) | Build service admission |
 | `build.priority` | low | normal | normal | high | Build queue |
@@ -80,7 +81,7 @@ Rules:
 - **Guests** (no account) get Free entitlements in demo mode with nothing persisted server-side (local storage only) and the guest build quota (10/day per IP+fingerprint).
 - **Trial:** new personal workspaces start a 14-day Maker trial (length configurable). Organizations start a 30-day Classroom pilot provisioned by sales or self-serve with a seat cap of 10. *Status (2026-10-24): no trial yet; every workspace is on Free until staff set a plan, and the trial waits for checkout.*
 - **Lapsed** trials or subscriptions fall back to **Free**, never below it. Data is never deleted because of lapse; projects above `projects.cloud_max` become read-only (viewable, exportable as files) until the user upgrades or deletes projects. *Status (2026-10-24): implemented; the most recently updated projects within the cap stay editable, and retention keeps named checkpoints.*
-- **3D view, 2D view, simulation run, safety checker, and the circuit editor are available in every edition.** They run client-side and are not gated ([ADR-006](decisions.md#adr-006--gate-only-server-enforceable-value)).
+- **3D view, 2D view, simulation run, safety checker, the circuit editor, and the simulation instruments (multimeter, oscilloscope, logic analyzer, power budget, time travel, fault injection, tolerance, sketch tests, debugger, parameter sweep) are available in every edition.** They run client-side and are not gated ([ADR-006](decisions.md#adr-006--gate-only-server-enforceable-value)).
 
 ## 4. Personas and roles
 
@@ -146,6 +147,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-WRK-05 | Command palette (Ctrl/Cmd+K) for all actions and component search. *Status: done 2026-10-27 (toolbar actions, code and circuit tools, panels, every part; FA + EN search).* | Should | P2 |
 | FR-WRK-06 | Onboarding tour on first visit, skippable, re-openable from Help. *Status: done 2026-10-27 (7 stops; once per account, or per browser for guests).* | Must | P2 |
 | FR-WRK-07 | Workspace switcher (personal ↔ organizations) visible in the header; the active workspace determines entitlements and data ownership. | Must | P3 |
+| FR-WRK-08 | Spectator / projector mode: a full-screen, read-only presentation of a live run or a replay (large arena, chosen instruments, large type, high contrast, no editing chrome, keyboard transport controls), with a short link and QR code that open the same replay view-only on phones. *Slice IT-19; See [Technical Design §18](Technical-Design.md#18-insight-and-tooling-track-it).* | Could | P4 (1.1) |
 
 ### 6.2 Circuit editor (CIR)
 
@@ -161,6 +163,8 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-CIR-08 | Labels, notes, and grouping frames on the canvas. | Could | P4 |
 | FR-CIR-09 | Copy/paste between projects; paste preserves wiring inside the selection. *Status: done 2026-10-27 (system clipboard, in-app fallback).* | Should | P2 |
 | FR-CIR-10 | Library search in FA and EN (with Persian normalization of ی/ي and ک/ك and ZWNJ), filtering by category, board compatibility, and "in stock in shop". | Must | P1 |
+| FR-CIR-11 | Wiring hints and auto-tidy: readability lint (colour conventions such as red for +V and black for GND, overly long wires, wires crossing parts, overlapping wires) and a **Tidy** command that recolours wires by net role and orthogonalises bend points in one undo step. Tidy never changes connectivity (netlist identical before and after). *Slice IT-7.* | Could | P2 |
+| FR-CIR-12 | Find a part by function: library search also matches what a part does ("measure distance", "drive two motors", FA and EN with the FR-CIR-10 normalization), via a controlled function vocabulary in component manifests; results explain why each part matches and compare key specs and price. Works offline without AI. *Slice IT-6.* | Could | P2 |
 
 ### 6.3 Code editor and languages (COD)
 
@@ -173,6 +177,8 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-COD-05 | Code formatting (clang-format, Arduino style) on demand. *Status: done 2026-10-27 (clang-format WASM, Arduino's official style).* | Should | P2 |
 | FR-COD-06 | Lightweight static analysis in the browser (tree-sitter C++) extracting pin usage (`pinMode`, `digitalWrite`, `analogWrite`, `attach`) for code-aware safety rules (FR-SAF-03). | Must | P1 |
 | FR-COD-07 | Library manager listing the allow-listed Arduino libraries with versions; adding one inserts the `#include`. *Status: done 2026-10-27 (also records the pinned version in the project).* | Must | P2 |
+| FR-COD-08 | Source-level debugger: breakpoints in the code-editor gutter, step over / into / out by source line, run to cursor, call stack, and a watch list of globals (simple locals best effort). Pausing at a breakpoint pauses simulated time and every view. Uses a debug build with a line table and symbol table; debug builds count against the build quota. *Slice IT-20; See [Technical Design §18](Technical-Design.md#18-insight-and-tooling-track-it).* | Should | P4 (1.1) |
+| FR-COD-09 | Sketch tests: a **Tests** tab where the learner writes test cases, each a timed input script (press a button at 1 s, set a knob, send serial text) plus expectations (`serialMatches`, `pinState` at a time, challenge conditions). All cases run headless and show pass/fail; a failing case opens the replay at the failing moment. Test cases are stored in the project document. *Slice IT-14.* | Should | P2 |
 
 ### 6.4 Build service (BLD)
 
@@ -201,7 +207,16 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-SIM-09 | Determinism: given the same project version, artifact, arena, start pose, inputs, and seed, the simulation produces identical results in the browser and in the headless grader. All randomness (sensor noise) uses a seeded PRNG. | Must | P1 |
 | FR-SIM-10 | Damage model: when a safety Error condition occurs at runtime (FR-SAF-04), the affected component enters a `damaged` state, stops functioning, shows a visual cue (smoke/crack icon and text, not colour only), and recovers only after the fault is fixed and the simulation is reset. | Must | P1 |
 | FR-SIM-11 | Interactive inputs during a run: press buttons, turn potentiometers, change LDR light level, place obstacles; all user inputs are recorded with timestamps for replay. | Must | P1 |
-| FR-SIM-12 | Record and replay: a run can be saved as an input log + seed and replayed deterministically; replays can be shared. | Should | P4 |
+| FR-SIM-12 | Record and replay: a run can be saved as an input log + seed and replayed deterministically; replays can be shared. *Status: replay and input-log export done in the editor (2026-11-02). Shareable run links (`/r/$token`, stored input log, owner revoke, engine-version check) pulled forward to P2 as slice IT-11; See [Technical Design §18](Technical-Design.md#18-insight-and-tooling-track-it).* | Should | P2 (share links), P4 (gallery) |
+| FR-SIM-13 | Virtual multimeter: red and black probes clicked on the canvas; modes voltage (between two points, default black = GND), current (through a selected wire or part pin), resistance (static, run stopped) and power (of a selected part); autoranged FA/EN readout updated live (≈10 Hz) during a run and when paused. View-only: not recorded in the input log. *Slice IT-2.* | Should | P2 |
+| FR-SIM-14 | Analog oscilloscope: up to 4 channels on net voltages or part currents, sampled every slice; timebase, volts/div, trigger (rising/falling, level, auto/normal/single), cursors (Δt, ΔV, frequency, RMS, min/max/average), ≥ 10 s rolling buffer, CSV export. Complements the digital logic analyzer (FR-SIM-08). *Slice IT-3.* | Should | P2 |
+| FR-SIM-15 | Power budget and battery life: per-part average/peak current and power over a run, source and regulator load against ratings, energy graph, and an estimated battery life (range) from the battery model; before a run, a static estimate from typical part currents in the manifests. *Slice IT-4.* | Should | P2 |
+| FR-SIM-16 | Damage post-mortem: when a part is damaged, a *What happened?* panel shows the last seconds before the damage (voltage/current of the part from an always-on low-rate buffer, the triggering finding, the code line running if known), a plain FA/EN explanation, the fix, and *replay the last 5 s*. *Slice IT-8.* | Should | P2 |
+| FR-SIM-17 | Time-travel scrubber: a timeline slider that moves every view (canvas, arena, pins, serial, instruments) to any past moment of the current run; *resume from here* forks a new run from that moment. Built on periodic full-state keyframes plus deterministic re-simulation; restore-and-continue is bit-identical to an uninterrupted run. *Slice IT-9; See [Technical Design §18](Technical-Design.md#18-insight-and-tooling-track-it).* | Should | P2 |
+| FR-SIM-18 | Parameter sweep and PID tuner: constants annotated in the code (`// @tune min..max step`) are swept over N headless runs in parallel workers against a chosen metric (challenge score, lap time, on-line ratio, a serial value); results show as a chart (1 parameter) or heatmap (2), and the best value can be applied to the code. *Slice IT-17; See [Technical Design §18](Technical-Design.md#18-insight-and-tooling-track-it).* | Should | P4 (1.1) |
+| FR-SIM-19 | Fault injection (*break it* mode): schedule faults before or during a run — sensor stuck/noisy/dead, wire open or intermittent, motor stall or weak, battery sag, button bounce, servo jitter — as declared by each part's manifest. Faults are input-log entries, so runs with faults are deterministic, replayable and gradable. *Slice IT-12.* | Should | P2 |
+| FR-SIM-20 | Tolerance mode: optional per-project setting that gives each part realistic variation (e.g. resistor ±5 %, motor constants ±10 %, sensor offsets) drawn from the seeded PRNG within manifest-declared tolerances; the seed is shown, stored in the input log and can be re-rolled; *run with N seeds* summarizes robustness. Off by default; results with it off are unchanged. *Slice IT-13.* | Could | P2 |
+| FR-SIM-21 | Serial log export and diff: export serial output as text/CSV with simulated timestamps, and compare the serial output of two runs (current vs previous, live vs verified, or two imported logs) with the first divergence marked. *Slice IT-5.* | Could | P2 |
 
 ### 6.6 Arena, physics, and views (ARN)
 
@@ -219,6 +234,8 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-ARN-10 | Arena editor: draw walls, obstacles, line paths (with width), start zones, and goal zones on a grid; set floor texture; save as a reusable arena. | Must | P4 |
 | FR-ARN-11 | Success conditions: declarative rules over simulation state — reach zone, complete N laps, avoid collisions, stay on line ≥ X %, time limits, serial output match — combined with AND/OR and weighted scoring. Used by guided projects, assignments, and competitions. | Must | P1 (engine), P3 (scoring) |
 | FR-ARN-12 | Multiple robots in one arena (e.g. sumo, races), each running its own firmware. | Could | P5 |
+| FR-ARN-13 | Ghost run and A/B comparison: a previous run's robot path (10 Hz trace) is drawn as a translucent, time-aligned ghost in the arena (sources: previous run, a saved or shared run, the guided project's reference run); an A/B panel compares times, score breakdown, path deviation and first divergence. *Slice IT-10.* | Should | P2 |
+| FR-ARN-14 | Seeded random arenas: generators (line track, maze, obstacle field, sumo start positions) produce a normal arena and matching success conditions from a seed and difficulty; the seed is shown and can be re-rolled. Prevents hard-coding a single track and enables hidden-seed grading later. *Slice IT-18.* | Could | P4 (1.1) |
 
 ### 6.7 Safety checker (SAF)
 
@@ -231,6 +248,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-SAF-05 | Rules are registry modules; generic rules read electrical limits declared in component manifests, so new parts get checks without new code. | Must | P1 |
 | FR-SAF-06 | Findings panel with filter by severity, "explain more" (opens AI assistant with the finding as context if available), and acknowledgement of Warnings (never of Errors). | Must | P1 |
 | FR-SAF-07 | Before hardware upload (FR-HWB-01) and BOM purchase, unresolved Errors block the action with an explanation; Warnings require explicit acknowledgement. | Must | P2 |
+| FR-SAF-08 | Wiring ↔ sketch consistency: live cross-check of the code's pin facts (FR-COD-06) against the netlist — pin used in code but unconnected, board pin wired to a part but never used in code, direction mismatch (writing to a sensor output, reading a pin wired only to an actuator input) — as Warnings with FA/EN explanations, highlighted wires and code lines, and quick fixes (change the pin in code, or move the wire). Unresolved pin expressions produce no finding. *Slice IT-1.* | Should | P2 |
 
 ### 6.8 BOM, wiring guide, and exports (BOM)
 
@@ -242,6 +260,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-BOM-04 | Wiring guide: ordered, step-by-step connection list generated from the netlist ("Uno D5 → L298N IN1, yellow wire"), grouped by subsystem (power, motors, sensors), with a diagram per step; printable. *Status: done (2026-10-25).* | Must | P2 |
 | FR-BOM-05 | Exports: BOM as CSV and XLSX; BOM, wiring guide, and project report as PDF rendered server-side with correct Persian shaping and RTL; circuit as SVG/PNG; project as `.robosim` file (FR-PRJ-06). PDF export requires `export.pdf`. *Status: partial (2026-10-25): CSV, XLSX, circuit SVG/PNG and `.robosim` are done in the browser and free on every plan; the PDFs wait for the server export service.* | Must | P2 |
 | FR-BOM-06 | "Buy this kit": create a cart from the BOM minus owned parts in one action (FR-SHP-03). | Must | P2 |
+| FR-BOM-07 | Cost and substitute optimizer: suggests compatible substitutions that lower cost or improve efficiency (e.g. L298N → TB6612FNG), checked against manifest compatibility (pins, voltage, current, interface) with prices from the price list and owned parts first; *Apply* shows a circuit change list with preview, applies in one undo step, and re-runs the safety checker. Substitution rules are catalogue data. *Slice IT-16.* | Could | P2 |
 
 ### 6.9 Projects, versions, sharing, and collaboration (PRJ)
 
@@ -324,6 +343,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-AI-08 | Rate limits per user and per org; conversation history stored per project for 90 days (configurable), deletable. *Status: done 2026-10-31 (10/min and 200/day per user; history per project, 90 days or 30 for minors, deletable; per-org limits wait for P3).* | Must | P2 |
 | FR-AI-09 | Evaluation harness: a fixed bilingual set of ≥ 200 robotics Q&A and debugging tasks scored before any model/prompt change ships. *Status: done 2026-10-31 (`tools/ai-eval`: 202 FA/EN items, rubric scoring, baseline gate in CI when an evaluation model is configured).* | Must | P2 |
 | FR-AI-10 | Development: server-level default provider via `AI_DEFAULT_PROVIDER` and `OLLAMA_BASE_URL` (default `http://localhost:11434`; from Docker under WSL2 `http://host.docker.internal:11434`). *Status: done 2026-10-31 (`AI_DEFAULT_PROVIDER` ollama/vllm/fake/none, `OLLAMA_BASE_URL`, `AI_PLATFORM_MODEL`).* | Must | P0 |
+| FR-AI-11 | *Explain this*: a context-menu action on a net, wire or part opens the assistant with a focused context (net members, measured voltage/current from FR-SIM-13, related code lines, findings on it) and answers in the UI language. Uses AI credits; hidden when the AI is not entitled. *Slice IT-15.* | Could | P2 |
 
 ### 6.15 Hardware bridge (HWB)
 
@@ -470,6 +490,7 @@ Every part ships with a datasheet-calibrated model, FA/EN name, breadboard art w
 | P3 | Education & enterprise: orgs, SSO/SCIM, classes, verified grading, LTI, org billing, analytics | **1.0 GA (Enterprise)** |
 | P4 | Ecosystem: Blockly, collaboration, community, competitions, hardware bridge, Nano/Mega/Pico, arena editor | 1.1 – 1.3 |
 | P5 | Expansion: ESP32 (conditional), MicroPython, multi-robot arenas, Private Cloud v2 | 2.0 |
+| IT | Insight & tooling track (slices IT-1…IT-20): instruments (multimeter, oscilloscope, power budget), time travel, ghost runs, run share links, fault injection, tolerance, sketch tests, wiring checks, debugger, parameter sweep. IT-1…16 in P2, IT-17…20 in P4 (1.1) | Ships slice by slice behind feature flags |
 
 Details, exit criteria, and timeline: [Release-Plan.md](Release-Plan.md).
 

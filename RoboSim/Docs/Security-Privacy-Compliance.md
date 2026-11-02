@@ -43,6 +43,7 @@
 | Community | Abuse, grooming risk for minors | No DMs, pre-moderation for minors, contact-info filters, reporting, age-band policies |
 | Admin | **R**epudiation / insider misuse | MFA, IP allow-list option, least-privilege staff roles, consented impersonation, append-only audit log |
 | Exports | **I**nformation disclosure via shared links | Signed, short-lived URLs (15 min); entitlement and permission check at creation |
+| Run share links (planned, IT-11) | **I**nformation disclosure via a replay (project document, serial output, owner name) | Owner-only RLS on `runs`; token stored hashed; owner revoke; display name only; links refused for `u13` and when org policy disables public links (`policy_restricted`); viewer re-simulates, never trusts the stored summary ([TD §18.11](Technical-Design.md#1811-shareable-run-links-fr-sim-12-detailed-slice-it-11), ADR-031) |
 | Supply chain | Malicious dependency or image | Lockfiles, Verdaccio mirror with allow-list, SBOM (CycloneDX), image signing (cosign), Harbor vulnerability scanning, Renovate with review |
 | Web client | XSS via user content (descriptions, comments, markdown) | Sanitized markdown subset (DOMPurify), strict CSP with nonces, no `dangerouslySetInnerHTML` outside the sanitizer |
 
@@ -207,7 +208,7 @@ Export (JSON + `.robosim`, within 24 h automated), correction (profile), deletio
 | Use | Algorithm / mechanism |
 |---|---|
 | Passwords | argon2id (m = 64 MiB, t = 3, p = 1; parameters reviewed yearly) |
-| Tokens (reset, invite, consent, share links) | 256-bit random; stored as SHA-256 hashes; single use; short expiry |
+| Tokens (reset, invite, consent, project and run share links) | 256-bit random; stored as SHA-256 hashes; single use; short expiry |
 | OTP | 6 digits, 2-minute expiry, ≤ 5 attempts, per-phone and per-IP throttling |
 | TOTP secrets, SSO secrets, DOB, phone, guardian contact | AES-256-GCM via OpenBao Transit (column-level) |
 | BYOK keys | Envelope encryption (per-key DEK + Transit KEK) |

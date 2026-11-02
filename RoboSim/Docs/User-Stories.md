@@ -14,14 +14,14 @@
 
 | Epic | Module | Stories |
 |---|---|---|
-| E1 Workspace | WRK | US-WRK-01 … 05 |
-| E2 Circuit design | CIR | US-CIR-01 … 07 |
-| E3 Programming | COD | US-COD-01 … 06 |
+| E1 Workspace | WRK | US-WRK-01 … 06 |
+| E2 Circuit design | CIR | US-CIR-01 … 09 |
+| E3 Programming | COD | US-COD-01 … 08 |
 | E4 Build | BLD | US-BLD-01 … 04 |
-| E5 Simulation | SIM | US-SIM-01 … 08 |
-| E6 Arena | ARN | US-ARN-01 … 08 |
-| E7 Safety | SAF | US-SAF-01 … 05 |
-| E8 BOM & exports | BOM | US-BOM-01 … 05 |
+| E5 Simulation | SIM | US-SIM-01 … 17 |
+| E6 Arena | ARN | US-ARN-01 … 10 |
+| E7 Safety | SAF | US-SAF-01 … 06 |
+| E8 BOM & exports | BOM | US-BOM-01 … 06 |
 | E9 Projects & collaboration | PRJ | US-PRJ-01 … 07 |
 | E10 Identity | IAM | US-IAM-01 … 07 |
 | E11 Organizations | ORG | US-ORG-01 … 06 |
@@ -29,7 +29,7 @@
 | E13 Community | CMY | US-CMY-01 … 05 |
 | E14 Billing | BIL | US-BIL-01 … 07 |
 | E15 Shop | SHP | US-SHP-01 … 06 |
-| E16 AI assistant | AI | US-AI-01 … 06 |
+| E16 AI assistant | AI | US-AI-01 … 07 |
 | E17 Hardware bridge | HWB | US-HWB-01 … 03 |
 | E18 Internationalization | I18N | US-I18N-01 … 03 |
 | E19 Extensibility | EXT | US-EXT-01 … 04 |
@@ -70,6 +70,14 @@
 *FR-WRK-07 · Must · P3*
 - **AC1** Given I belong to an org, when I switch workspace in the header, then the project list, entitlements, and policies of that workspace apply immediately.
 - **AC2** Given I am in the org workspace, when I create a project, then it is owned by the org.
+
+### US-WRK-06 — Present a run to the class
+**As** Ms. Rezaei **I want** a full-screen projector view of a run or replay **so that** the whole class can follow it from the back of the room.
+*FR-WRK-08 · Could · P4*
+- **AC1** Given a run or a `/r/<token>` replay, when I press `F11` or "Present", then the arena and my selected instruments fill the screen with no editor chrome, fonts ≥ 2× the normal size, and a high-contrast theme.
+- **AC2** Given the presentation view, when I press Space, `←`/`→`, or `Home`, then the run plays/pauses, steps, or restarts without a mouse; focus is visible and transport controls have accessible names in FA and EN.
+- **AC3** Given I show the QR/short link, when a student scans it on a phone, then the same replay opens view-only (FR-WRK-03 phone policy) and cannot edit or start a new run.
+- **AC4** Given colour-coded state in the view (pass/fail, damaged part), then each is also conveyed by icon or text, never colour alone.
 
 ## E2 — Circuit design (CIR)
 
@@ -118,6 +126,22 @@
 *FR-CIR-07 · Should · P4*
 - **AC1** Given a circuit, when I switch to schematic view, then every net and component appears and the view is read-only.
 
+### US-CIR-08 — Tidy my wiring
+**As** Sara **I want** hints and a one-click "Tidy" for messy wires **so that** my circuit is easy to read and copy onto a real breadboard.
+*FR-CIR-11 · Could · P2*
+- **AC1** Given a wire from 5 V drawn black and one from GND drawn red, when linting runs, then an Info hint "Red is usually +V, black GND" appears on each wire (not colour only) and can be dismissed or the convention changed in settings.
+- **AC2** Given a messy circuit, when I press Tidy, then wires are recoloured by net role, bend points are orthogonalised, and the netlist hash is identical before and after (test invariant on all fixture circuits).
+- **AC3** Given I pressed Tidy, when I press `Ctrl+Z` once, then the whole tidy is undone in a single step.
+- **AC4** Given a wire crossing over a component or overlapping another wire, then a readability hint (not a safety finding) lists it and highlights the wire; the safety findings panel is unchanged.
+
+### US-CIR-09 — Find a part by what it does
+**As** Sara **I want** to search "measure distance" or "اندازه‌گیری فاصله" **so that** I find the right part without knowing its name.
+*FR-CIR-12 · Could · P2*
+- **AC1** Given the query "measure distance", then HC-SR04 appears first with a "why this part" line and chips for voltage, interface, and price from the catalogue.
+- **AC2** Given "اندازه‌گیری فاصله" typed with Arabic "ي"/"ك", then results are identical to the Persian "ی"/"ک" query and to the English query.
+- **AC3** Given "drive two motors", then L298N and TB6612FNG are ranked above single-motor parts, and the search works offline with no AI call.
+- **AC4** Given a user without an AI entitlement, then no "Ask AI" fallback is shown; with one, it appears only when there are zero matches.
+
 ## E3 — Programming (COD)
 
 ### US-COD-01 — Write Arduino code
@@ -155,6 +179,22 @@
 *FR-COD-06 · Must · P1*
 - **AC1** Given `analogWrite(7, 128)`, then the analyzer reports pin 7 as PWM output.
 - **AC2** Given pins in `const int` or `#define`, then constants are resolved for literal values.
+
+### US-COD-07 — Step through my code
+**As** Ali **I want** breakpoints and single-stepping by source line **so that** I can find logic bugs without adding `Serial.print` everywhere.
+*FR-COD-08 · Should · P4*
+- **AC1** Given a breakpoint on line 20 in `loop()`, when the run reaches it, then the simulation pauses, simulated time stops, line 20 is highlighted, and the call stack and global variables are shown.
+- **AC2** Given a pause at a call, when I choose step over, step into, or step out, then execution stops at the next source line accordingly; "run to cursor" stops at the cursor line.
+- **AC3** Given no breakpoints are set, then a run with a debug build has the same cycle count and traceDigest as the normal run, and breakpoint checking costs nothing.
+- **AC4** Given a debug build, then it is counted against the build quota and a Free user at quota sees `429 build_quota_exceeded`; all debugger controls work from the keyboard and expose accessible names.
+
+### US-COD-08 — Write tests for my sketch
+**As** Ali **I want** to script inputs and expected outputs **so that** I can check my code still works after I change it.
+*FR-COD-09 · Should · P2*
+- **AC1** Given a test "press button at 1 s, expect serial `ON`", when I press Run all, then it runs headless in the grade worker and shows green; changing the code so `ON` is not printed shows red.
+- **AC2** Given a failing test, when I click it, then the replay opens at the first failing slice with the expectation and the actual value displayed.
+- **AC3** Given a test suite saved in a project, when I reopen a v4 project, then it migrates to schema v5 and opens identically; a v5 project with tests round-trips through `.robosim` export/import unchanged.
+- **AC4** Given the same suite and artifact, when it runs 10 times, then every verdict and traceDigest is identical (determinism).
 
 ## E4 — Build (BLD)
 
@@ -224,8 +264,84 @@
 
 ### US-SIM-08 — Replay a run
 **As** Ali **I want** to save and share a replay **so that** others can see exactly what happened.
-*FR-SIM-12 · Should · P4*
+*FR-SIM-12 · Should · P2 (pulled forward from P4)*
 - **AC1** Given a recorded run, when replayed, then the robot trace is identical to the original.
+- **AC2** Given I am signed in and a finished run, when I press "Share run", then the input log, project version reference, result summary, and traceDigest are saved and a `/r/<token>` link is shown; an anonymous user opening it sees a read-only replay with transport controls and no editing chrome.
+- **AC3** Given an anonymous visitor, when they try to create a run link, then they are asked to sign in; opening an existing link needs no sign-in. A run whose gzipped input log exceeds the size cap or the plan's storage quota is refused with the reason and my work intact.
+- **AC4** Given I revoke the link, when anyone opens it afterwards, then they get "This run is no longer shared" and no run data is returned; the revocation takes effect within 5 s.
+- **AC5** Given a run recorded with engine version N and a viewer running N+1 that cannot replay it, when the link opens, then the viewer shows "Recorded with an older engine" (FA/EN), displays the stored result summary, and offers "Re-run with current engine"; it never shows a wrong trace silently.
+
+### US-SIM-09 — Measure like a real multimeter
+**As** Sara **I want** red and black probes to read voltage, current, and resistance **so that** I can check my circuit the way I would on a real bench.
+*FR-SIM-13 · Should · P2*
+- **AC1** Given an LED with 220 Ω at 5 V running, when I put the multimeter in A mode through the LED, then it reads 13–14 mA; in V mode across the resistor it reads about 3 V, updating at ~10 Hz.
+- **AC2** Given a 10 kΩ resistor and the simulation stopped, when I select Ω mode and probe its legs, then it reads 10 kΩ (± 1 %); with the simulation running it shows "Stop the run to measure resistance".
+- **AC3** Given readings below 1 V or 1 A, then units autorange (mV/V, µA/mA/A) and the value is also announced via an accessible label (not colour only); Persian digits in FA.
+- **AC4** Given a run with and without the multimeter open, then the traceDigest is identical and the input log has no multimeter entries (view-only, no engine bump).
+
+### US-SIM-10 — See signals on an oscilloscope
+**As** Ali **I want** an analog oscilloscope **so that** I can see PWM, ripple, and sensor voltages over time.
+*FR-SIM-14 · Should · P2*
+- **AC1** Given `analogWrite(5, 128)` and channel 1 on D5, when the trigger is set to rising at 2.5 V, then the trace is a stable 5 V square wave of ~980 Hz at ~50 % duty and the cursors report frequency within 2 %.
+- **AC2** Given 4 channels (nets or part currents) and a 10 s rolling buffer, when I pause, then I can scroll back through the whole buffer and read Δt, ΔV, RMS, min/max/avg with cursors.
+- **AC3** Given a capture, when I choose Export CSV, then the file contains time (ms) and each channel's value in its unit.
+- **AC4** Given a run with the scope open or closed, then the traceDigest is identical; each channel has a name and colour plus distinct line style (not colour only).
+
+### US-SIM-11 — Know my power budget and battery life
+**As** Ali **I want** a per-part current and power table with a battery-life estimate **so that** I can size my battery and regulator before building.
+*FR-SIM-15 · Should · P2*
+- **AC1** Given a 2000 mAh battery and an average draw of 200 mA over a run, then the panel shows a battery-life estimate of about 10 h × usable fraction, presented as a range, and lists avg and peak current per part.
+- **AC2** Given a regulator rated 1 A and a load peaking at 1.4 A, then the panel marks the regulator "over rating" with icon and text and links to the existing SAF-SUPPLY-OVERLOAD finding.
+- **AC3** Given a project not yet run, then a static estimate uses the manifests' `typicalCurrentMa` and is labelled "estimate"; after a run the measured values replace it.
+- **AC4** Given the panel is open, then the traceDigest is identical to a run without it (view-only).
+
+### US-SIM-12 — Understand why a part broke
+**As** Sara **I want** a "What happened?" timeline when a part is damaged **so that** I learn the cause instead of just seeing smoke.
+*FR-SIM-16 · Should · P2*
+- **AC1** Given a motor wired directly to D9 and driven HIGH, when the pin is damaged, then the panel shows the last 5 s of the part's current and voltage, the triggering finding, and the code line executing at that moment (if available).
+- **AC2** Given the panel, then a plain FA/EN explanation, the `learnMoreSlug` link, and a "Replay last 5 s" action are shown; replay reaches the same damage at the same simulated time.
+- **AC3** Given a damaged part and the ring buffer always on, then the extra cost is ≤ 2 % of run time (benchmark) and the traceDigest is unchanged.
+- **AC4** Given the timeline, then the damage moment is marked by icon and text as well as colour.
+
+### US-SIM-13 — Go back in time
+**As** Ali **I want** to drag a timeline back to an earlier moment of my run **so that** I can see exactly what led to a bug without restarting.
+*FR-SIM-17 · Should · P2*
+- **AC1** Given a run at t = 12 s, when I drag the slider to t = 4.2 s, then the canvas, arena, pins, and serial output (up to that point) all show that moment.
+- **AC2** Given keyframes every K slices, when I restore from a keyframe and continue to t = 12 s, then the traceDigest equals the straight run's (bit-exact golden test).
+- **AC3** Given "Resume from here" at t = 4.2 s, then a forked run starts with the input log truncated at that slice and continues live.
+- **AC4** Given the keyframe memory cap is reached, then the oldest keyframes are dropped and scrubbing further back falls back to headless re-simulation from slice 0 with a visible "rebuilding" status; the slider is keyboard operable (`←`/`→`, `Home`).
+
+### US-SIM-14 — Tune a constant by sweeping it
+**As** Ali **I want** to sweep a marked constant and see a score chart **so that** I can tune my PID gains without trying each value by hand.
+*FR-SIM-18 · Should · P4*
+- **AC1** Given `// @tune 0.5..3.0 0.25` on `Kp` and target metric "lap time", when I run the sweep, then 11 headless variants run in parallel workers and a chart of metric vs `Kp` is shown.
+- **AC2** Given the preferred path, then variants patch the constant's initial value in the firmware image using the build's symbol map, with no extra builds; a fallback to N builds via `-D` overrides counts against the build quota and warns before starting.
+- **AC3** Given the best value, when I press "Apply", then the constant in the source is updated in one undoable edit.
+- **AC4** Given the same sweep repeated, then each variant's metric and traceDigest are identical (determinism); chart points have text labels and a data table alternative.
+
+### US-SIM-15 — Break it on purpose
+**As** Ms. Rezaei **I want** to inject faults such as a dead sensor **so that** students learn to make robust robots.
+*FR-SIM-19 · Should · P2*
+- **AC1** Given the "Break it" panel with "left line sensor stuck at 0" at t = 3 s, then the sensor reads 0 from t = 3 s and the fault is recorded as a `fault` entry in the input log.
+- **AC2** Given a verified run of that input log, then the grader reproduces the same fault and the traceDigest matches the browser run.
+- **AC3** Given a component manifest, then only the faults it declares (`faults: [...]`) are offered for that part, and a replay of the run shows each fault with its time.
+- **AC4** Given an assignment condition "robot must still finish the lap with the left sensor dead", then the grade reflects the fault; adding faults bumps ENGINE_VERSION and golden traces without faults remain unchanged.
+
+### US-SIM-16 — Real parts are never exact
+**As** Dr. Karimi **I want** part-to-part variation drawn from a seed **so that** my lab demonstrates why robots need margins.
+*FR-SIM-20 · Could · P2*
+- **AC1** Given tolerance mode on with seed 42 and a 1 kΩ ±5 % resistor, then its value is the same each run with seed 42 and within 950–1050 Ω.
+- **AC2** Given the seed is shown and stored in the input log, then a verified run and replay reproduce the identical traceDigest; "Re-roll" picks a new seed.
+- **AC3** Given "Run with 20 seeds", then a summary of the metric (min/median/max, number of failures) is shown.
+- **AC4** Given tolerance mode off (default), then golden traces are unchanged.
+
+### US-SIM-17 — Compare serial output between runs
+**As** Ms. Rezaei **I want** to export a serial log and diff it against another run **so that** I can see where a student's output first goes wrong.
+*FR-SIM-21 · Could · P2*
+- **AC1** Given a run with serial output, when I choose Export, then a `.txt` or `.csv` is saved with simulated timestamps in ms (slice converted to ms).
+- **AC2** Given two runs (live vs verified, current vs previous, or two imported logs), when I open Diff, then the first divergence is marked and lines are aligned.
+- **AC3** Given two identical runs, then the diff reports "identical" and the logs' bytes are equal; serial capture over the 1 MB cap is marked truncated in both exports.
+- **AC4** Given the diff view, then differences are shown by symbol and text as well as colour; Persian digits and RTL labels apply in FA while log content stays LTR.
 
 ## E6 — Arena (ARN)
 
@@ -274,6 +390,22 @@
 *FR-ARN-11 · Must · P1*
 - **AC1** Given success condition "1 lap in < 60 s", when the robot passes all checkpoints in order within 60 s, then a success message appears and the event is recorded.
 
+### US-ARN-09 — Race my previous run
+**As** Sara **I want** a translucent ghost of my previous run in the arena **so that** I can see whether my change made the robot better or worse.
+*FR-ARN-13 · Should · P2*
+- **AC1** Given a previous run, when I enable "Ghost", then a translucent robot follows that run's 10 Hz pose trace, time-aligned with the live run.
+- **AC2** Given the A/B panel after a second run, then lap/segment times, score breakdown, path deviation, and the first divergence time are shown for both runs.
+- **AC3** Given the guided project's reference run as the ghost source, then it is selectable; the ghost uses `GradeResult.trace` and never changes the live run's traceDigest.
+- **AC4** Given the ghost, then it is distinguished by outline style and a legend label, not colour only.
+
+### US-ARN-10 — A different track every time
+**As** Ms. Rezaei **I want** seeded random tracks **so that** students cannot hard-code a path.
+*FR-ARN-14 · Could · P4*
+- **AC1** Given generator "maze", difficulty 3, and seed 7, when generated twice, then the two ArenaSpecs are identical; a different seed yields a different arena.
+- **AC2** Given the "Random track" button, then the seed is shown and a "Re-roll" picks a new one; the result is a normal ArenaSpec usable in projects and assignments.
+- **AC3** Given a generated arena, then its challenge conditions are generated with it and a reference solution (or reachability check) confirms the goal is reachable.
+- **AC4** Given the generator is in the DOM-free engine package, then the grader produces the same arena from the same seed.
+
 ## E7 — Safety (SAF)
 
 ### US-SAF-01 — Get warned before I break something
@@ -303,6 +435,14 @@
 *FR-SAF-05, FR-EXT-02 · Must · P1*
 - **AC1** Given a new component manifest with `vin.absMax = 12`, when 15 V is connected, then the generic overvoltage rule fires without code changes.
 
+### US-SAF-06 — Code and wiring disagree
+**As** Sara **I want** to be told when a pin used in my code is not wired, or a wired pin is never used **so that** I find silent mistakes before running.
+*FR-SAF-08 · Should · P2*
+- **AC1** Given `pinMode(5, OUTPUT)` while nothing is connected to D5, then a Warning "Pin 5 is used in code but not connected" appears on the code line and the pin, with FA/EN why/how-to-fix.
+- **AC2** Given a wire from D9 to an LED but no reference to D9 in code, then an Info "D9 is wired but never used" appears; the quick-fix "change code to pin 9" or "move wire" applies in one undoable step.
+- **AC3** Given `analogRead(A0)` where A0 goes to a part's input-only pin (or `digitalWrite` on a sensor output), then a direction-mismatch Warning appears; PWM/ADC capability checks remain only in the existing rules (no duplicate finding).
+- **AC4** Given a pin expression that cannot be resolved (e.g. `pinMode(pins[i], OUTPUT)`), then no finding appears (no false positives); a finding disappears within 300 ms of the fix.
+
 ## E8 — BOM & exports (BOM)
 
 ### US-BOM-01 — Get a priced parts list
@@ -331,6 +471,14 @@
 *FR-BOM-06, FR-SHP-03, FR-SHP-06 · Must · P2*
 - **AC1** Given a BOM without Errors, when I click "Buy this kit", then a cart with all non-owned products and quantities is created.
 - **AC2** Given a guided project, then its ready-made kit and kit price are shown inside the project and can be added to the cart.
+
+### US-BOM-06 — Spend less on the same robot
+**As** Ali **I want** suggested cheaper or more efficient substitutes **so that** my kit costs less or my battery lasts longer.
+*FR-BOM-07 · Could · P2*
+- **AC1** Given an L298N in the project and a TB6612FNG in the catalogue, then the substitute is suggested only if pins, voltage, current, and interface are compatible per the manifests, showing price difference from `catalog_prices` and the efficiency gain.
+- **AC2** Given I own a compatible part in my inventory, then it is suggested first at zero cost.
+- **AC3** Given "Apply", then a change list with preview is shown; confirming applies it as one undo step and re-runs the safety checker, and any new Error is listed before I accept.
+- **AC4** Given the substitution rules, then they are data in the catalogue (`substitutes` with pin mapping), and adding one needs no code change.
 
 ## E9 — Projects & collaboration (PRJ)
 
@@ -637,6 +785,14 @@
 **As** the product owner **I want** an evaluation harness **so that** model or prompt changes never reduce quality.
 *FR-AI-09 · Must · P2*
 - **AC1** Given a candidate change, then CI runs the 200-item FA/EN eval; release is blocked if the score drops > 2 points.
+
+### US-AI-07 — Ask AI to explain a net
+**As** Sara **I want** to right-click a wire or net and choose "Explain this" **so that** I understand what is happening there.
+*FR-AI-11 · Could · P2*
+- **AC1** Given a net, when I choose "Explain this", then the AI chat opens prefilled with a focus block: net members, measured V/I (from the multimeter channel), relevant code lines, and findings on it.
+- **AC2** Given a UI language of FA, then the answer is in Persian with pin and code names kept LTR.
+- **AC3** Given a user without an AI entitlement, then "Explain this" is hidden; with one, each request uses credits and the meter updates.
+- **AC4** Given the answer proposes a change, then it appears as a diff with Apply and Reject as in US-AI-02.
 
 ## E17 — Hardware bridge (HWB)
 

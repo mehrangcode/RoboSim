@@ -29,6 +29,14 @@
 | 022 | Build service drives avr-gcc directly; Linux-namespace sandbox for development | Accepted |
 | 023 | Entitlements resolved in-process from plan versions ⊕ overrides; grants only raise | Accepted |
 | 024 | Parts list computed in the browser from the document; interim staff price list keyed by part key | Accepted |
+| 025 | Guided projects as built-in content with declarative checks evaluated in the browser | Accepted |
+| 026 | View-only measurement channel in the worker protocol | Proposed |
+| 027 | Full-state snapshot and restore contract for time travel | Proposed |
+| 028 | Catalogue metadata (functions, directions, currents, faults, tolerance) as optional manifest extensions; cross-part relations as catalogue tables | Proposed |
+| 029 | Firmware variants by patching initialised data via a build symbol map | Proposed |
+| 030 | Debug builds and source-level debugging in the emulator | Proposed |
+| 031 | Stored runs and run share links | Proposed |
+| 032 | Behaviour-changing run options travel in the input log | Proposed |
 
 ---
 
@@ -246,3 +254,202 @@
 - **Alternatives.** TypeScript validator functions per step (flexible, but content could never live outside the code); server-side checking on every edit (latency, and no help for guests offline); building the CMS first (delays the first guided project by a slice).
 - **Later (2026-10-31), 13 projects.** Guided projects may have no arena (`arenaId: null`): bench projects on the Uno alone, free, completed when the project's own success conditions (`serialMatches`, `pinState`) are met, so no new check kind was needed. Interactive references carry `referenceInputs` that the headless test replays. Free's `learning.guided_projects: first` now means "the projects marked `free`" (five bench projects and the Line-follower). The servo radar needed real engine support rather than a fake: a part mounted `onServo` turns with the horn (TD §8.10).
 
+## ADR-026 — View-only measurement channel in the worker protocol
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.**
+  - FR-SIM-13/14/15/16 and FR-AI-11 need voltages, currents and power from the running simulation.
+  - The MNA solution exposes node voltages and source, diode and transistor currents. It does not expose currents through conductances, current sources or wires: wires are merged into nets.
+  - The logic-analyzer `probe` (FR-SIM-08) already showed the pattern for a view-only worker feature: it is not part of the input log and leaves `engineVersion` unchanged.
+  - Instruments must not perturb determinism (ADR-011), must cost little per slice (§17), and must stay free (ADR-006).
+- **Decision.**
+  - **Attribution in the solver.** `MnaCircuit` tags every stamped element with its owner: component index, −1 for the MCU bus, −2 for probe stamps. `terminalCurrent(owner, net, solution)` derives the current from a net into a part from the element kind (one table, KCL-tested). Pin, part-power and wire currents are all built on it.
+  - **Wire currents** come from a document-level cut set: the sum of part-pin currents on one side of the wire. A wire that is part of a zero-ohm loop reports "undefined", because the solver cannot distinguish the parallel paths.
+  - **One channel.** A single subscription message `measure { channel, probes }` with probes addressed by document refs (`PointRef`). The worker resolves the refs per load and answers with `measures` messages carrying transferred `Float32Array`s, drained with each snapshot (≤ 30 Hz). Each instrument (meter, scope, power, black box) is a `SliceObserver` flagged `viewOnly`, registered before the `InputLogger`.
+  - **Resistance** is measured on a fresh static instance with sources removed and a 1 mA test current. The live run is never touched.
+  - **Determinism contract.**
+    - Measurement code only reads `Simulation` and its solutions.
+    - It is absent from the input log and grade jobs.
+    - It changes no `ENGINE_PACKAGES` version.
+    - Every instrument slice adds a test that the golden digest is unchanged with the instrument attached.
+- **Consequences.**
+  - Physically meaningful pin, part and wire currents, live and paused, at a cost of ≤ 1 % for tagging plus small per-probe costs.
+  - Later instruments reuse one resolution, transport and test pattern.
+  - The ledger describes the last stamped operating point, which can differ slightly from the time-averaged solution in transient circuits (documented).
+  - The grader gains nothing. Verified results stay as before.
+- **Alternatives.**
+  - Add handles for every conductance to `MnaSolution`: invasive API change for every model, and still no wire currents.
+  - Model wires as tiny resistors: grows the matrix (O(n³) dense LU) and changes every golden result.
+  - Compute currents in the main thread from snapshots: lacks the stamps, and per-slice data is too large to post.
+  - Use `Simulation.netResistance` on the live run for Ω: disturbs warm-start state and therefore the replay guarantee.
+
+## ADR-027 — Full-state snapshot and restore contract for time travel
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.**
+  - FR-SIM-17 needs to show any past moment exactly and to resume a run from it.
+  - Re-simulating from slice 0 costs ≈ 0.3 ms per simulated ms, which takes too long for long runs.
+  - Run state is spread over: `Simulation` (scheduler fields, MNA stamps and warm-start regions, published solutions, per-component PRNG), about 50 component models, the avr8js core and peripherals, the planck.js world, and the observers (safety monitor, challenge tracker, input logger).
+  - Much of that state is behind closures: avr8js write hooks and clock events; planck's broadphase callbacks and contact listener; `ModelContext.random`.
+  - JSON-style serialisation alone cannot restore it, and restamping after a restore would change results. For example, `Battery.stampedOcv` restamps only after 1 mV of drift.
+- **Decision.**
+  - **Restore in place into a fresh build.** `buildRun(source, seed, options)` builds a new scenario, which recreates every closure and all topology. `restoreState` then overwrites only mutable data, in place. Snapshots are never applied to the live run.
+  - **Contract.** `snapshotState(): S` / `restoreState(s: S): void` on `Simulation`, `McuCore`, `WorldModel` and non-view `SliceObserver`s, and optionally on `ComponentModel`.
+    - `S` holds no functions.
+    - Capture is a pure read: deep copies, and no field or `dirty` changes.
+    - `restoreState(snapshotState())` on an identically built instance yields a state for which continuing is bit-identical to the original.
+  - **Components: generic walker by default** (`sim-core/src/state.ts`).
+    - It copies own enumerable data fields: primitives, typed arrays (`.set`), plain objects and arrays recursively, and `Map`/`Set` of primitives.
+    - It writes into the existing objects, so references shared with the solver (`ReactiveState` in an MNA branch) stay shared.
+    - It refuses functions-as-state, unknown class instances and references to other models, unless the class is registered (`Prng`) or the model implements `snapshotState` itself.
+    - A refusal disables keyframing for that run, which falls back to replay. It is never a silent partial restore.
+  - **MNA.** `MnaCircuit.exportState` saves the stamp lists exactly as last stamped, with each reactive branch's state located by owner and field path at capture time, plus the warm-start regions and the device operating points. The LU cache is dropped: it is bit-identical when rebuilt. Solutions (`Solution`, `AveragedSolution`, `WeightedSolution`) are serialised structurally. Nothing is restamped or re-solved on restore.
+  - **PRNG.** `Simulation` keeps each component's `Prng`, and restore sets the words in place (`Prng.setState`), so existing closures stay valid.
+  - **avr8js (pinned 0.21.1).**
+    - The state includes `cpu.data`, `pc`, `cycles`, pending-interrupt state, the EEPROM backend and the peripherals' own data fields, plus RoboSim's queues and level maps.
+    - Clock events are captured as descriptors through a registry that wraps `cpu.addClockEvent`: timer `count` (bound method), and RoboSim's SPI, TWI and USART frame callbacks.
+    - avr8js-internal closures that cannot be identified (ADC conversion result, EEPROM write) are "opaque". A keyframe is taken only at a slice boundary with no opaque event pending: it retries for up to 64 slices, else that keyframe is skipped.
+    - A shape-drift test freezes the peripherals' field lists.
+  - **planck.js (patched 1.5.0).**
+    - The world's object graph is deep-cloned with prototypes preserved, cycles handled and immutable shapes shared, then swapped into `PlanckWorld`. Body references are rebound by body-list order, and the contact listener is re-attached (`attachListeners`).
+    - The pnpm patch moves `BroadPhase.query` and `queryCallback` from per-instance closures to prototype methods, so a cloned graph carries no stale closures.
+    - These keyframes live only in worker memory and are not portable.
+  - **Keyframes**:
+    - every 1000 slices with thinning (1 s, then 5 s, then 20 s);
+    - 48 MB cap;
+    - seek = nearest keyframe + deterministic re-simulation with the run's input log;
+    - fork = the restored run becomes live with the log truncated after the slice (`InputLog.forkOf` is informational; replay from 0 is the source of truth).
+  - **Verification.**
+    - For every golden fixture: keyframe → fresh build → restore → continue gives the same `traceDigest` as a straight run.
+    - Capturing on vs off gives the same digest.
+    - In tests, a state-hash self-check runs after each capture.
+- **Consequences.**
+  - Exact scrubbing and forks with bounded memory, independent of run length.
+  - Every new stateful model must stay walker-compatible or implement the contract. The per-fixture golden round-trip catches violations.
+  - Upgrading avr8js or planck now requires re-validating snapshot support. The drift tests make that explicit.
+  - Keyframes are not shareable artefacts. Shared replays (IT-11) still use input logs.
+- **Alternatives.**
+  - **Replay from slice 0 only**: exact and simple, but seeks take seconds to minutes. Kept as the fallback.
+  - **Serialising planck through its JSON serializer**: drops contacts and warm-start impulses, so it diverges after restore.
+  - **Rebuilding contacts by stepping**: same problem.
+  - **Forking the worker by cloning the whole scenario graph**: closures would point into the old instance.
+  - **Recording every frame instead of state**: views only, so no exact resume.
+  - **Running a lagging shadow worker**: doubles CPU and cannot scrub backwards.
+
+## ADR-028 — Catalogue metadata (functions, directions, currents, faults, tolerance) as optional manifest extensions; cross-part relations as catalogue tables
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.** Several insight-track slices need facts about parts that today's `ComponentManifest` (`packages/sim-core/src/contracts.ts`) does not hold:
+  - FR-CIR-12 needs what a part is for (`functions`, `interfaces`);
+  - FR-SAF-08 needs which pins are inputs, outputs or both (`signalDirection`);
+  - FR-SIM-15 needs datasheet currents (`limits.typicalCurrentMa`, `limits.idleCurrentMa`);
+  - FR-SIM-19 needs the faults a model can simulate (`injectableFaults`);
+  - FR-SIM-20 needs per-property variation (`tolerance`);
+  - FR-BOM-07 needs substitutions between two parts with a pin mapping.
+  Each slice could invent its own field, file or table. Two problems follow from that: some fields change simulation results while others are plain metadata, and the loader pins every component to its exact manifest `version` (`typeVersion`), so a careless version bump would break saved projects. Component packages must not depend on each other (TD §3.1), and prices are staff data, not manifest data (ADR-024).
+- **Decision.**
+  - One optional contract, `ManifestExtensions`, which `ComponentManifest` extends (`sim-core/src/contracts.ts`):
+    - **Metadata class** (never read by models or engine rules):
+      - `functions?: string[]` (ids from `@robosim/catalog/functions`);
+      - `interfaces?: ('digital'|'analog'|'pwm'|'i2c'|'onewire'|'uart'|'pulse')[]`;
+      - `signalDirection?: Record<pin, 'in'|'out'|'bidir'>` (default from `PinKind`);
+      - datasheet currents go into the existing `limits: Record<string, number>` as `limits.typicalCurrentMa`, `limits.idleCurrentMa` and `limits.minSupplyV` (TD §18.4), so they need no new field.
+    - **Behaviour class** (read by component models through the engine):
+      - `injectableFaults?: readonly InjectableFaultSpec[]` (TD §18.12; named so to avoid a clash with the runtime `ComponentModel.faults()`);
+      - `tolerance?: Record<string, { kind: 'pct' | 'abs'; value: number; dist: 'uniform' | 'normal' }>`.
+  - Every extension is optional. A part without it is silent in the feature that reads it (no search hit, no direction warning, no estimate, no fault offered), never wrong.
+  - Validation lives in one place, `validateManifest` (`sim-core/src/manifest.ts`): pin and prop names are real; numbers are finite and in range; `tolerance` keys are number props or model parameters the manifest names. Vocabulary ids and cross-references are checked in `packages/catalog/src/catalog.test.ts`, because `sim-core` does not know the catalogue.
+  - Versioning rules:
+    - Extensions **never** bump a manifest's `version`, since saved documents pin `typeVersion`.
+    - Metadata-class changes need no package bump and leave goldens untouched.
+    - Behaviour-class changes bump the shared `components` version in `ENGINE_PACKAGES` (`packages/sim-runtime/src/engine-version.ts`) and need `pnpm golden:update` only when a golden fixture uses the part with the feature enabled. Faults and tolerance are off by default and recorded in the input log when on, so default runs stay bit-identical.
+  - Relations between parts are **catalogue tables**, not manifest fields: `@robosim/catalog/substitutes` (FR-BOM-07: `from`, `to`, `pinMap`, `bonds`, `ties`, `requires`, `codeImpact`, `benefits`). The same goes for the function vocabulary (`@robosim/catalog/functions`). Both are engine-free subpaths, so the editor and API can read them without models.
+  - Human text for extensions lives in i18n (`components:functions.*`, `components:substitutes.*`, `components:<id>.why.*`), never in manifest JSON. Synonyms used for search are data in the vocabulary, because search spans both languages.
+- **Consequences.**
+  - Each slice adds fields without schema churn elsewhere, and engine safety is preserved by the class split. Reviewers can tell at a glance whether a manifest diff needs a golden update.
+  - About 60 manifest JSON files get edited for `functions`/`interfaces`. Catalogue tests keep coverage complete (every part has a function; bidirectional sensor pins are declared).
+  - Substitutes and vocabulary ship with releases until the shop or CMS can own them. Their ids become a public contract like part keys (ADR-024): renaming a function id or a substitute id breaks saved UI state such as compare selections, so they are append-only.
+  - `limits.typicalCurrentMa` is a datasheet estimate. Measured values (FR-SIM-13/15) always win where available.
+- **Alternatives.**
+  - A separate side-car metadata file per part: two sources of truth that drift from pins.
+  - A single free-form `meta: Record<string, unknown>`: unvalidated, and hides whether a field affects simulation.
+  - Substitutes inside each manifest: needs knowledge of other packages' pins and breaks the no-cross-component-dependency rule.
+  - Prices in manifests: rejected already in ADR-024.
+
+## ADR-029 — Firmware variants by patching initialised data via a build symbol map
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.** FR-SIM-18 (parameter sweep, PID tuner) runs tens to hundreds of variants of one sketch that differ only in a few constants. Rebuilding each variant costs build quota, server CPU and queue time (§6), and needs a network round trip per variant; sweeps should run offline in the browser like other instruments (ADR-006). On AVR, initialised globals live in `.data`, whose initial image is stored in flash and copied to SRAM by the C runtime at reset, so a variable's start value is a few known bytes in the HEX.
+- **Decision.**
+  - Every successful AVR build emits a `SymbolMap` JSON artifact next to the HEX (read from the ELF the build already links; release flags already contain `-g`): `.data` VMA/LMA, global symbols, and the sketch's `// @tune min..max step` variables with their flash patch address, size and encoding.
+  - When sources contain `@tune`, the driver adds a generated translation unit that makes each tunable externally visible and possibly written (an `asm volatile` escape in a `used, externally_visible` function), so LTO cannot constant-fold it; a post-link check marks folded or missing variables as not patchable.
+  - The browser creates variants with `patchFirmware` (`packages/sim-runtime`): parse HEX, write the encoded value, re-serialise, new sha256. A variant is an ordinary `FirmwarePayload` in an ordinary input log, so it replays, verifies and grades like any run.
+  - Non-patchable tunables (`const`, `static`, array sizes, `#if`) fall back to rebuilds with `defines: { ROBOSIM_TUNE_<name>: value }`, which count against `build.daily_quota` (≤ 50 per sweep).
+  - The driver version goes to 3, so toolchain ids and caches roll once.
+- **Consequences.**
+  - Sweeps of patchable constants cost no builds and work offline. They are bounded by the learner's CPU (a pool of up to 4 grade workers).
+  - A patched image is not byte-identical to a rebuild with the new literal, because the compiler may generate different code for a literal. Applying the best value therefore rebuilds, and the learner re-verifies.
+  - The escape function changes code generation for tunables only, and costs a few bytes of flash.
+  - The annotation syntax and the encodings are a public contract between `packages/shared/src/tune.ts`, the compiler and the web app.
+- **Alternatives.** One build per variant (quota, latency, server load); patching machine code immediates (fragile, depends on instruction selection); reading parameters from EEPROM or serial at run time (changes the learner's sketch and teaches a pattern unrelated to tuning); always compiling with `-fno-lto` (changes timing and size of every build).
+
+## ADR-030 — Debug builds and source-level debugging in the emulator
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.** FR-COD-08 needs breakpoints, stepping by source line and variable inspection for Arduino sketches running in avr8js in a worker. Release builds are `-Os -flto`, which makes line mapping and variables unreliable. The scheduler runs the MCU inside each 1 ms slice, in some circuits in several transient chunks, so stopping mid-slice by returning from `McuCore.run` would mean making `Simulation.step` resumable, an invasive change in determinism-critical code. Hosts must never ship toolchain paths to clients (Security §5).
+- **Decision.**
+  - A build `profile: 'debug'` compiles user translation units with `-Og -g -fno-lto` and links them against the unchanged LTO core and library archives. The profile is part of the cache key.
+  - A TypeScript ELF/DWARF reader in `apps/compiler` turns the ELF into a `DebugInfo` JSON artifact: user-file line table, functions, globals, best-effort locals and types. Paths are mapped like diagnostics.
+  - `McuCore` gets an optional `McuDebugPort`. `AvrUnoCore` runs a separate debug loop only while a halt table is set, and calls a synchronous `onHalt` before the instruction executes.
+  - The worker halts by blocking in `Atomics.wait` on a debug mailbox `SharedArrayBuffer`. The simulation stack stays intact, so halts are instruction-exact mid-slice, and the main thread inspects memory through mailbox commands. Stepping is data (halt table plus stack-pointer predicates) computed on the main thread from the line table.
+  - The debugger requires cross-origin isolation, like shared snapshots.
+- **Consequences.**
+  - The release path has zero overhead and golden traces are unchanged. A debug session never changes simulated state, so its input log replays exactly.
+  - Debug builds count as builds. Their firmware behaves differently from release (timing, size), so the UI shows a banner, and graded submissions must use release artifacts.
+  - While halted, the worker answers only mailbox commands. `stop` and `load` go through an `abort` first.
+  - Electrical and world views at a halt show the last completed slice, and pin outputs show the halt cycle. This is documented in the UI.
+  - Locals and call stacks are best effort (no CFA unwinding in v1). Library and core code has no line info and is stepped over.
+- **Alternatives.** gdb remote stub (`avr8js` gdbserver) over a WebSocket bridge (needs a server or a gdb in the browser, heavy for learners); a resumable mid-slice scheduler (invasive, risks determinism); halting only at slice boundaries (up to 1 ms late, wrong line and variables); shipping the ELF and parsing DWARF in the browser (larger download, toolchain paths in the binary).
+
+## ADR-031 — Stored runs and run share links
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.** FR-SIM-12 asks for shareable replays. Input logs already reproduce a run bit-for-bit under the same engine version (§5.8, §5.9), and project share links exist (HMAC token, hashed in the database, `/s/$token`). Runs must not become an official result channel (ADR-011), storage is a server cost (ADR-006), and minors' sharing follows existing policy.
+- **Decision.**
+  - A `runs` table holds the gzipped `InputLog` (≤ 2 MiB, `bytea` until the object-storage track), a client-computed summary labelled unofficial, digests and the engine version.
+  - RLS restricts every row to its owner within the workspace (`runs_owner`). Public reads go through a system lookup by `share_token_hash` only.
+  - A run has at most one link. Its token is HMAC-SHA256(`SHARE_LINK_SECRET`, `run:<id>.<nonce>`), domain-separated from project tokens. The owner can regenerate or revoke it, and the database stores only its SHA-256.
+  - `/r/$token` re-simulates the log in the browser and shows the real outcome and trace digest. If the engine version differs, it shows a banner, replays on request in the live worker (`grade()` refuses other versions), and offers "open as project" instead of keeping old engine bundles.
+  - Saving needs an account and is limited by the quota `runs.cloud_max`. Viewing needs no account. Link creation answers `policy_restricted` for `u13` and for org policies without public links.
+  - `/r/*` may be framed (`frame-ancestors *`). Embeds hide account actions.
+- **Consequences.**
+  - Sharing a run costs one row and no server CPU. Viewers always see a result their own browser computed, not a stored claim.
+  - Logs embed the whole project document and firmware, so a run link discloses the sketch and circuit. The save dialog says so, and revoking the link removes access.
+  - Runs recorded under older engines may stop replaying identically. Accepted for the MVP; an engine-bundle archive or server re-grade is a later decision.
+  - `bytea` storage grows the database until the object-storage move. The quota and the 2 MiB cap bound it.
+- **Alternatives.** Server-side grading of every saved run (CPU per save, and official-looking results outside the grader's flow); storing traces or video instead of logs (large, and not re-verifiable); a separate `run_shares` table for people shares (not needed until runs get roles); reusing project links (a run is immutable and has its own lifecycle).
+
+## ADR-032 — Behaviour-changing run options travel in the input log
+
+- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Context.**
+  - Fault injection (FR-SIM-19) and tolerance mode (FR-SIM-20) change simulated behaviour.
+  - Verified runs, replays, shared run links and the grader must reproduce them exactly (FR-SIM-09, ADR-011).
+  - Today the input log (`InputLog`: project, firmware, seed, entries, `engineVersion`) fully determines a run.
+- **Decision.**
+  - **Run options in the log.** Every option that changes behaviour is part of the input log, never read from ambient state at grade time.
+    - Pre-run options go in the header: `faultPlan.breakableWires` and `tolerance.seed`.
+    - Timed events are entries: `fault` and `faultClear`.
+    - The grader and `HeadlessRun` read only the log. The project document's `simulation.tolerance` setting only pre-fills the next live run.
+  - **Separate random streams.** Option randomness uses PRNG streams separate from the run seed's per-component streams: `tol:<id>`, `<id>#<label>` and `#wire:<id>`. Enabling an option therefore never shifts unrelated random numbers.
+  - **Version bump.** Packages whose behaviour gains such options bump their versions, which yields a new `ENGINE_VERSION`. Goldens are re-recorded and must be result-identical, because no fixture uses the options.
+  - **Validation.** Logs are validated before slice 0 (`replayIssues`): declared fault ids and params in range, armed wires, numeric seeds.
+- **Consequences.**
+  - Faulted and tolerance runs are gradable and shareable like any run.
+  - Older engines reject newer logs through the existing `EngineVersionMismatchError`.
+  - The log schema grows by optional fields only, so old logs replay unchanged.
+  - Arming wires before a run is a visible constraint of the netlist model, accepted in exchange for a cheap solve.
+- **Alternatives.**
+  - Storing options in the project document only: a grade job could disagree with what the learner ran.
+  - Encoding faults as component inputs (`component` entries): would bypass manifest-declared fault semantics and validation, and cannot open wires.
+  - Making every wire breakable: dense LU cost grows with nets³.

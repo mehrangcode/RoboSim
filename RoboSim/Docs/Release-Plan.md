@@ -27,6 +27,7 @@ RoboSim is built as **one enterprise product delivered in phases**, not as an MV
 | **P3** | Education & enterprise | 2027-06-07 → 2027-09-10 (14 w, overlaps P2 tail) | **1.0 GA (Enterprise): 2027-09-13**, before the school year (1 Mehr) |
 | **P4** | Ecosystem | 2027-09-13 → 2028-03-03 | 1.1 (Nov 2027), 1.2 (Jan 2028), 1.3 (Mar 2028) |
 | **P5** | Expansion | from 2028-04 | 2.0 |
+| **IT** | Insight & tooling track (cross-phase, [§3 IT](#it--insight--tooling-track)) | IT-1…16 with P2, IT-17…20 with P4 (1.1) | Feature-flagged per slice |
 
 ```mermaid
 gantt
@@ -341,6 +342,40 @@ gantt
 | Private Cloud v2 | Self-service upgrades, multi-site HA | Two customer deployments upgraded without downtime |
 | Mobile companion | Phone as Bluetooth controller panel for real robots | User research supports it |
 
+### IT — Insight & tooling track
+
+A cross-phase track of 20 vertical slices that turn data the engine already computes (MNA currents, part snapshots, grade traces, input logs, code facts) into learner-facing tools. Slices IT-1…16 belong to P2 and may ship any time after their dependencies; IT-17…20 belong to P4 (1.1). Every slice merges behind its feature flag (FR-ADM-09) and is implementable on its own, in the order below, by one engineer or AI agent from the PRD row, the user story and [TD §18](Technical-Design.md#18-insight-and-tooling-track-it).
+
+**Common exit criteria for every IT slice**
+- Every acceptance criterion of the slice's story passes as an automated test; `pnpm verify` is green.
+- Golden traces unchanged, unless the slice changes simulated behaviour (IT-12, IT-13), which bumps `ENGINE_VERSION` and re-records only the affected goldens.
+- View-only instruments (IT-2…5, 8, 10) add nothing to the input log and leave `traceDigest` unchanged.
+- FA and EN UI with i18n key parity; RTL checked; WCAG 2.2 AA (never colour only; keyboard-operable).
+- Checked in the browser in both languages; PRD status note, TD §18, README and this plan updated in the same change.
+
+| Slice | Requirement | Story | Scope | Depends on | Pri | Phase | Feature flag | Exit criteria (in addition to the common ones) |
+|---|---|---|---|---|---|---|---|---|
+| IT-1 | FR-SAF-08 | US-SAF-06 | Wiring ↔ sketch consistency check — [TD §18.1](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.wiring-sketch-check` | Fixture projects: unwired pin, unused wired pin, direction mismatch each give exactly one finding; unresolved pin expressions give none; quick fix clears the finding. |
+| IT-2 | FR-SIM-13 | US-SIM-09 | Virtual multimeter + view-only measure channel (ADR-026) — [TD §18.2](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.multimeter` | LED + 220 Ω at 5 V reads 13–14 mA; voltage divider within 1 %; goldens and input log unchanged with the meter on. |
+| IT-3 | FR-SIM-14 | US-SIM-10 | Analog oscilloscope — [TD §18.3](Technical-Design.md#18-insight-and-tooling-track-it) | IT-2 | Should | P2 | `it.scope` | RC charge curve τ within 2 %; 490 Hz PWM triggers stably; CSV export round-trips; 4 channels keep RTF ≥ 1× on the reference device. |
+| IT-4 | FR-SIM-15 | US-SIM-11 | Power budget and battery life — [TD §18.4](Technical-Design.md#18-insight-and-tooling-track-it) | IT-2 | Should | P2 | `it.power-budget` | Per-part currents sum to the source current within 1 %; battery-life estimate within 10 % of a full simulated discharge on a fixture. |
+| IT-5 | FR-SIM-21 | US-SIM-17 | Serial log export and diff — [TD §18.5](Technical-Design.md#18-insight-and-tooling-track-it) | — | Could | P2 | `it.serial-diff` | Export has slice-accurate timestamps; diff of live vs verified run shows no divergence; an edited sketch shows the first divergent line. |
+| IT-6 | FR-CIR-12 | US-CIR-09 | Find a part by function — [TD §18.6](Technical-Design.md#18-insight-and-tooling-track-it) | — | Could | P2 | `it.part-functions` | Every catalogue part has ≥ 1 function tag (CI check); FA and EN function queries return the expected parts in the top 3. |
+| IT-7 | FR-CIR-11 | US-CIR-08 | Wiring hints and auto-tidy — [TD §18.7](Technical-Design.md#18-insight-and-tooling-track-it) | — | Could | P2 | `it.wire-tidy` | Netlist hash identical before/after Tidy on every built-in demo and guided reference; one undo restores the layout. |
+| IT-8 | FR-SIM-16 | US-SIM-12 | Damage post-mortem — [TD §18.8](Technical-Design.md#18-insight-and-tooling-track-it) | IT-2, IT-3 | Should | P2 | `it.post-mortem` | Every safety demo that damages a part opens the panel with the correct finding and a non-empty trace; replay of the last 5 s reproduces the damage. |
+| IT-9 | FR-SIM-17 | US-SIM-13 | Time-travel scrubber + state snapshot contract (ADR-027) — [TD §18.9](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.time-travel` | For every golden scenario: restore at a keyframe and continue gives the same `traceDigest` as a straight run; seek < 300 ms on the reference device for a 60 s run. |
+| IT-10 | FR-ARN-13 | US-ARN-09 | Ghost run and A/B comparison — [TD §18.10](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.ghost` | Ghost aligns with the original pose trace to 1 mm / 0.1°; A/B panel reports first divergence for two different sketches. |
+| IT-11 | FR-SIM-12 | US-SIM-08 | Shareable run links (ADR-031) — [TD §18.11](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.run-share` | Share → open `/r/$token` signed out → identical replay; revoke → 404; cross-tenant RLS test; size/quota limits enforced. |
+| IT-12 | FR-SIM-19 | US-SIM-15 | Fault injection — [TD §18.12](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.faults` | Faults recorded in the input log; verified run reproduces them; `ENGINE_VERSION` bumped; goldens without faults unchanged. |
+| IT-13 | FR-SIM-20 | US-SIM-16 | Tolerance mode — [TD §18.13](Technical-Design.md#18-insight-and-tooling-track-it) | — | Could | P2 | `it.tolerance` | Off: goldens unchanged. On: same seed → same trace; *run with N seeds* summary deterministic. |
+| IT-14 | FR-COD-09 | US-COD-08 | Sketch tests (project schema v5) — [TD §18.14](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P2 | `it.sketch-tests` | v4 → v5 migration tested; guided bench projects ship reference tests that pass headless; a failing case opens replay at its failing slice. |
+| IT-15 | FR-AI-11 | US-AI-07 | Explain this net — [TD §18.15](Technical-Design.md#18-insight-and-tooling-track-it) | IT-2 | Could | P2 | `it.ai-explain` | Context includes net members, measurements, code lines and findings; AI eval set gains ≥ 20 FA/EN explain items above the baseline score. |
+| IT-16 | FR-BOM-07 | US-BOM-06 | Cost and substitute optimizer (ADR-028 catalogue data) — [TD §18.16](Technical-Design.md#18-insight-and-tooling-track-it) | — | Could | P2 | `it.bom-optimizer` | Every substitute rule keeps the netlist valid and the safety checker free of new Errors on fixtures; one undo reverts. |
+| IT-17 | FR-SIM-18 | US-SIM-14 | Parameter sweep and PID tuner (ADR-029) — [TD §18.17](Technical-Design.md#18-insight-and-tooling-track-it) | IT-9 optional | Should | P4 (1.1) | `it.sweep` | Sweep of `Kp` on the PID line follower returns the same results twice; firmware patch equals a `-D` rebuild for every variant on fixtures. |
+| IT-18 | FR-ARN-14 | US-ARN-10 | Seeded random arenas — [TD §18.18](Technical-Design.md#18-insight-and-tooling-track-it) | — | Could | P4 (1.1) | `it.random-arena` | Same seed → identical ArenaSpec across Node/Chromium/Firefox; every generated track is solvable by the reference solution in ≥ 95 % of 1,000 seeds. |
+| IT-19 | FR-WRK-08 | US-WRK-06 | Spectator / projector mode — [TD §18.19](Technical-Design.md#18-insight-and-tooling-track-it) | IT-11 | Could | P4 (1.1) | `it.spectator` | Works for live runs and `/r/$token` replays; WCAG contrast check; phone view-only via QR. |
+| IT-20 | FR-COD-08 | US-COD-07 | Source-level debugger (ADR-030) — [TD §18.20](Technical-Design.md#18-insight-and-tooling-track-it) | — | Should | P4 (1.1) | `it.debugger` | Breakpoint on a source line stops at the correct PC in every bench demo; step over a `delay()` advances simulated time correctly; no breakpoints → RTF unchanged. |
+
 ## 4. Team and capacity
 
 **Planning assumption [A-7]:** the team below is in place from P0. With fewer engineers, durations scale roughly linearly (e.g. 6 engineers instead of 9 → P1–P3 take about 1.5×).
@@ -396,6 +431,9 @@ Probability (P) and impact (I): H/M/L.
 | R-14 | Key-person dependency in simulation squad | M | H | Pairing, ADRs, design docs, ≥ 2 people per subsystem | Single reviewer for sim-core PRs | Engineering lead |
 | R-15 | Upstream registry/package outages break CI/deploys | M | M | Harbor and Verdaccio mirrors; pinned versions; offline build caches | Pull failures in CI | SRE |
 | R-16 | Real-time collaboration complexity delays 1.3 | M | L | Yjs/Hocuspocus proven stack; collab isolated behind flag; not a GA dependency | Merge bugs in beta | Platform lead |
+| R-17 | Full-state snapshot/restore (time travel, IT-9) is not bit-exact for the physics engine or a part model | M | M | ADR-027 contract per model with a restore-and-continue golden test for every scenario; fallback: re-simulate from slice 0 headless | `traceDigest` mismatch after restore | Simulation lead |
+| R-18 | Source-level debugging on optimized AVR code maps poorly to lines and locals (IT-20) | M | M | Debug builds use `-Og -g`; globals first, locals best effort; clear "optimized out" display | Breakpoints land on wrong lines in demo fixtures | Simulation lead |
+| R-19 | Instrument sampling (scope, power budget) slows the simulation on low-end PCs | M | M | View-only channels sample only subscribed signals; per-frame transfer budget; perf test on the reference device | RTF < 1× with instruments open | Simulation lead |
 
 ## 7. Dependencies and long-lead items
 

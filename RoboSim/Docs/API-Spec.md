@@ -88,6 +88,9 @@ All errors use RFC 9457 Problem Details:
 | 502 | `provider_error` | Payment/AI/SMS provider failure (`params.provider`) |
 | 503 | `maintenance` | Planned maintenance (`Retry-After`) |
 | 500 | `internal_error` | Unexpected; includes `requestId` |
+| 422 | `debug_build_not_gradable` | *(new, P3)* A submission or verified-run job references a `profile: 'debug'` artifact |
+
+*Insight & tooling track (planned):* 403 `quota_exceeded` — *(existing; new quota)* `params.quota: 'runs.cloud_max'` when saving a run over the plan's stored-run limit; 403 `policy_restricted` — *(existing; new policy)* `params.policy: 'share_links'`: public links are disabled for this account (u13) or by org policy; 413 `payload_too_large` — *(existing; new use)* run log over 2 MiB gzipped / 4 MiB JSON (`params.limit`).
 
 ## 4. Endpoint inventory
 
@@ -189,6 +192,33 @@ Legend: **Auth** — `pub` public, `ses` session, `ws` session + `X-Workspace-Id
 
 *Parts list implemented (2026-10-25):* `.robosim` import/export is client-side for now (zip with `manifest.json` `{ format: "robosim", formatVersion: 1, schemaVersion, exportedAt }` and `project.json`; import also accepts the older `.robosim.json` and input logs, migrates and validates, and refuses a newer `formatVersion`), so `POST /projects/import` and `GET /projects/:id/export.robosim` are not built; an imported file is saved with the ordinary create call. The BOM and the wiring guide are computed in the browser from the document and the price list (§4.3); `GET /projects/:id/bom` and `…/wiring-guide` are not built. `GET /me/inventory` (ses) → `{ items: [{ partKey, quantity }] }`, the caller's owned parts (FR-BOM-03); `PUT /me/inventory` `{ items: [{ partKey, quantity }] }` (ses) replaces the list and answers it: at most 500 items, no duplicate keys, `quantity` 1…10 000, an unknown part or variant answers `400 validation_failed` (`params.errors[{ path, message }]`). Guests keep owned parts in the browser and the client merges them into the account on sign-in (the larger count wins).
 
+#### Stored runs and run links — planned (FR-SIM-12, slice IT-11, [TD §18.11](Technical-Design.md#1811-shareable-run-links-fr-sim-12-detailed-slice-it-11), ADR-031)
+
+| Method & path | Auth | Purpose |
+|---|---|---|
+| `POST /runs` | ws | Save a run: body `CreateRunRequest` (≤ 4 MiB JSON; `Content-Encoding: gzip` accepted) → `201 Run` — **Ent** `runs.cloud_max` |
+| `GET /runs?projectId=&limit=&cursor=` | ws | The caller's runs in the workspace, newest first (`{ items: Run[], nextCursor }`, `limit` ≤ 200) |
+| `GET /runs/:id` | ws | Run metadata (owner only) |
+| `GET /runs/:id/log` | ws | The stored `InputLog` (JSON; `Content-Encoding: gzip`) |
+| `PATCH /runs/:id` | ws | Rename: `{ title }` (`If-Match` `"r<revision>"`) |
+| `DELETE /runs/:id` | ws | Hard delete (row and log); retires its link |
+| `POST /runs/:id/share-link` · `DELETE /runs/:id/share-link` | ws | Create (or with `{ regenerate: true }` replace) / revoke the run's link → `RunShareLink` |
+| `GET /shared/runs/:token` | pub | Open a run link: `SharedRun` (summary, owner display name, engine version) |
+| `GET /shared/runs/:token/log` | pub | The run's `InputLog` for the replay viewer (`Content-Encoding: gzip`, `Cache-Control: private, max-age=300`) |
+
+*Rules.*
+- Runs belong to the caller. Another user's run, an unknown id, and an unknown, revoked or deleted link all answer `404 not_found`.
+- Guests get `401 unauthenticated` on `POST /runs`.
+- `CreateRunRequest.log` is validated with `inputLogSchema` (the grader's job schema) and its `project` with the project document schema. Errors answer `400 validation_failed` with `params.errors[{ path, message }]`.
+- Size limits answer `413 payload_too_large` with `params.limit`. The gzipped log may be at most 2 MiB, the JSON body at most 4 MiB, and `entries` at most 100 000.
+- At `runs.cloud_max` live runs, `POST /runs` answers `403 quota_exceeded` with `params: { quota: 'runs.cloud_max', limit, suggestedPlan: 'maker' }`. Existing runs stay readable and linkable after a downgrade.
+- `projectId`, when given, must be a project the caller can read (`404` otherwise). Deleting the project keeps the run, with `projectId: null`.
+- Link tokens are 43-char base64url strings (`shareTokenSchema`), HMAC-SHA256(`SHARE_LINK_SECRET`, `run:<id>.<nonce>`). Only the SHA-256 is stored, and the owner can see the same URL again.
+- Creating a link answers `403 policy_restricted` with `params.policy: 'share_links'` for `u13` callers, and when the workspace's org policy disables public links.
+- `GET /shared/runs/*` is limited to 60 requests/min per client address (`429 rate_limited` with `Retry-After`).
+- `summary` is client-reported and unofficial (ADR-011). The viewer re-simulates the log and shows its own result.
+- Audited actions: `run.link_created`, `run.link_revoked` and `run.deleted`.
+
 ### 4.5 Builds (BLD)
 
 | Method & path | Auth | Purpose |
@@ -223,6 +253,43 @@ type BuildAccepted = BuildStatus & { statusUrl: string; eventsUrl: string }; // 
 ```
 
 *Implemented (2026-10-21):* everything above except signed redirects (`GET /artifacts/:id` serves the HEX directly). A cache hit answers `200`; otherwise `202 BuildAccepted` with `Location`. Builds are scoped to the calling user (guests by client address); another user's build is `404`. Limits: 20 builds/min per user, 5/min per guest (`429 rate_limited`), and a daily quota of queued builds (`build.daily_quota` of the caller's plan, per user; guests 10 per client address; the day ends at 00:00 Asia/Tehran; `429 build_quota_exceeded` with `params.limit`, `params.resetAt`, `params.suggestedPlan: 'maker'` for signed-in callers, and `Retry-After`; cache hits are free). A board outside `boards.allowed` answers `403 entitlement_required`, and `build.priority` weighs the caller in the queue (low 1, normal 2, high 4). The SSE stream sends the current status first on every connection (so `Last-Event-ID` resumes without replay), a heartbeat comment every 15 s, and closes after the final event. Finished builds stay readable for 1 h.
+
+#### Build profiles, symbol maps and debug info — planned (slices IT-17, IT-20, TD §18.17, §18.20, ADR-029, ADR-030)
+
+| Method & path | Auth | Purpose |
+|---|---|---|
+| `POST /builds` | ws/guest | *Changed:* `BuildRequest` gains `profile?: 'release' \| 'debug'` (default `release`) and `defines?: Record<string, string>`; both are part of the cache key. A debug build counts as a build (`build.daily_quota`; cache hits free) |
+| `GET /artifacts/:id` | ws | *Changed:* also serves JSON artifacts (`symbols`, `debugInfo`) with `content-type: application/json`; HEX stays `text/plain`. Immutable, `Cache-Control: public, max-age=31536000, immutable` |
+
+```ts
+type BuildRequest = {
+  board: string;
+  files: Array<{ name: string; content: string }>;
+  libraries: Array<{ name: string; version: string }>;
+  projectId?: string;
+  profile?: 'release' | 'debug';                 // new: debug = user code -Og -g -fno-lto + DebugInfo artifact
+  defines?: Record<string, string>;              // new: sweep fallback only; ≤ 8 keys,
+                                                 //   key /^ROBOSIM_TUNE_[A-Za-z_]\w{0,63}$/, value numeric literal ≤ 32 chars
+};
+type BuildResult = {
+  buildId: string; status: 'succeeded' | 'failed'; cacheHit: boolean;
+  artifact?: {
+    id: string; format: 'ihex' | 'uf2'; sha256: string; sizeBytes: number; flashPct: number; ramPct: number; url: string;
+    profile: 'release' | 'debug';                                           // new
+    symbols?: { id: string; sha256: string; sizeBytes: number; url: string };   // new: SymbolMap JSON (every AVR build)
+    debugInfo?: { id: string; sha256: string; sizeBytes: number; url: string }; // new: DebugInfo JSON (profile 'debug')
+  };
+  diagnostics: BuildDiagnostic[];
+  durationMs: number;
+};
+```
+
+*Rules.*
+- A `defines` key outside the pattern, or a value that is not a numeric literal, answers `400 validation_failed`.
+- With `defines`, each `@tune` initializer named by a key is compiled from that value. A key without a matching `@tune` variable is a warning diagnostic, not an error.
+- Debug builds are refused as graded submissions in P3: the learning module answers `422 debug_build_not_gradable`.
+- The symbol map is at most 256 KB and the debug info at most 2 MB. Debug info over the cap makes the build succeed without `debugInfo`, with a warning diagnostic (`explanationKey: 'debug_info_too_large'`).
+- All paths in the JSON artifacts are user file names or shortened toolchain names (`arduino:avr/…`), never host paths.
 
 ### 4.6 Learning (LRN) and grading
 
@@ -400,6 +467,75 @@ type BomLine = {
 };
 ```
 
+#### Planned additions (insight & tooling track)
+
+```ts
+type RunOutcome = 'success' | 'failure' | 'unresolved' | 'running'; // 'running': saved before the challenge decided
+
+type RunSummary = {                       // client-reported, unofficial (ADR-011)
+  outcome: RunOutcome;
+  endSlice: number;                       // 1 slice = 1 ms
+  score: { total: number; max: number } | null;
+  decidedAt: number | null;               // seconds, ChallengeView.decidedAt
+  traceDigest: string | null;             // sha256 hex of the verified trace at endSlice, when the client verified it
+  arenaId: string | null;                 // built-in or generated id (`gen:<kind>@<v>:<seed>:<d>`)
+};
+
+type CreateRunRequest = {
+  projectId?: string;
+  title?: string;                         // 1–200 chars; default "<project name> — <date>"
+  log: InputLog;                          // TD §5.8: engineVersion, scenario, project, firmware, seed, entries, endSlice?
+  summary: RunSummary;
+};
+
+type Run = {
+  id: string; projectId: string | null; title: string;
+  engineVersion: string; seed: number; docSha256: string; firmwareSha256: string;
+  summary: RunSummary; logBytes: number;  // gzipped size
+  link: RunShareLink | null;              // owner's view only
+  createdAt: string; updatedAt: string;
+};
+
+type RunShareLink = { url: string; createdAt: string }; // url = `${WEB_ORIGIN}/r/${token}`
+
+type SharedRun = {                        // GET /shared/runs/:token
+  run: { title: string; projectName: string; engineVersion: string; seed: number; summary: RunSummary; createdAt: string };
+  ownerName: string;                      // display name only, never email
+  logUrl: string;                         // /api/v1/shared/runs/:token/log
+  engineMatches: boolean;                 // engineVersion === the API's bundled ENGINE_VERSION (hint; the viewer checks its own)
+};
+
+type SymbolMap = {                        // artifact JSON, every AVR build (ADR-029)
+  format: 'robosim-symbols'; version: 1; firmwareSha256: string;
+  data: { vma: number; lma: number; size: number };
+  symbols: Array<{ name: string; addr: number; size: number; section: 'text' | 'data' | 'bss' | 'rodata' }>;
+  tunables: Array<{
+    name: string; ctype: string; file: string; line: number; min: number; max: number; step: number; init: number;
+    patch: { flashAddr: number; size: 1 | 2 | 4; encoding: 'u8' | 'i8' | 'u16le' | 'i16le' | 'u32le' | 'i32le' | 'f32le' | 'bool' } | null;
+    reason?: 'const' | 'static' | 'folded' | 'not_in_data';
+  }>;
+};
+
+type DebugInfo = {                        // artifact JSON, profile 'debug' (ADR-030)
+  format: 'robosim-debug'; version: 1; firmwareSha256: string;
+  files: string[];
+  lines: Array<[addr: number, fileIdx: number, line: number, isStmt: 0 | 1]>;
+  functions: Array<{ name: string; lo: number; hi: number; fileIdx: number | null; line: number | null;
+                     frameBase: 'Y' | 'SP' | null; locals: VarInfo[] }>;
+  globals: VarInfo[];
+  types: TypeInfo[];
+};
+type VarInfo = { name: string; type: number; scope?: [number, number];
+  loc: { kind: 'addr'; addr: number } | { kind: 'fbreg'; offset: number } | { kind: 'reg'; regs: number[] } | { kind: 'optimized' } };
+type TypeInfo =
+  | { kind: 'base'; name: string; size: 1 | 2 | 4; enc: 'signed' | 'unsigned' | 'float' | 'bool' | 'char' }
+  | { kind: 'pointer'; to: number | null } | { kind: 'array'; of: number; count: number }
+  | { kind: 'struct'; name: string; size: number; fields: Array<{ name: string; type: number; offset: number }> }
+  | { kind: 'enum'; name: string; size: number; values: Array<[string, number]> } | { kind: 'typedef'; name: string; of: number };
+```
+
+`Entitlements.quotas` gains `'runs.cloud_max'`. The PRD §3 defaults are proposed as Free 5, Maker 200, Classroom 50 per seat, Institution unlimited, and Private Cloud by contract.
+
 ## 7. Rate limits (defaults, configurable)
 
 | Scope | Limit |
@@ -410,6 +546,8 @@ type BomLine = {
 | `POST /ai/chat` | 10/min and 200/day per user (plan-configurable); per-org ceiling |
 | `POST /exports` | 10/min per user |
 | SCIM | 300 req/min per org |
+| `GET /shared/runs/*` | 60/min per IP (same limiter as `GET /shared/:token`) |
+| `POST /runs` | 20/min per user |
 
 ## 8. Outbound webhooks (Institution)
 
