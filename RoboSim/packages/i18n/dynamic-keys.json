@@ -62,6 +62,10 @@
     "admin:ai.provider.",
     "admin:ai.usage.col.",
     "ai:provider.",
-    "ai:keys.status."
+    "ai:keys.status.",
+    "editor:meter.modes.",
+    "editor:meter.units.",
+    "editor:meter.armed.",
+    "editor:meter.hint."
   ]
 }

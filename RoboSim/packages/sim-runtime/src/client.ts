@@ -5,6 +5,7 @@ import type {
   Frame,
   HotFrame,
   InputLog,
+  MeasureChannel,
   SceneInfo,
   WorkerToMain,
 } from './protocol.js';
@@ -15,6 +16,23 @@ import { SerialLog } from './serial.js';
 
 /** Serial Monitor keeps this much of the output (characters). */
 export const SERIAL_TAIL_CHARS = 8192;
+/** The meter display averages the last 100 ms of slices (FR-SIM-13: ≈10 Hz readout). */
+export const METER_WINDOW_SLICES = 100;
+
+/** One probe's reading: average, minimum and maximum (NaN when the probe does not resolve). */
+export interface ProbeReading {
+  readonly avg: number;
+  readonly min: number;
+  readonly max: number;
+}
+
+/** Answer to an `ohms` request. */
+export type OhmsAnswer = Extract<WorkerToMain, { type: 'ohms' }>;
+
+interface MeasureBatch {
+  readonly slices: number;
+  readonly data: Float32Array;
+}
 
 /**
  * Main-thread side of the worker protocol (Technical Design §5.8), DOM-free: folds worker messages
@@ -38,6 +56,8 @@ export class SimClient {
   onInputLog: ((log: InputLog) => void) | null = null;
   /** Latest logic-analyzer capture (kept across resets until a new one starts). */
   capture: PinCapture | null = null;
+  /** Called with the worker's answer to an `ohms` request. */
+  onOhms: ((answer: OhmsAnswer) => void) | null = null;
 
   private utf8 = new TextDecoder();
   private decoder = new SnapshotDecoder();
@@ -46,6 +66,8 @@ export class SimClient {
   private findings: readonly FindingView[] = [];
   private faults: readonly Fault[] = [];
   private damaged: Damage = { parts: [], pins: [] };
+  /** Recent measurement batches per channel (newest last) of the latest subscription. */
+  private measures = new Map<MeasureChannel, { session: number; batches: MeasureBatch[] }>();
 
   receive(msg: WorkerToMain): boolean {
     switch (msg.type) {
@@ -64,6 +86,7 @@ export class SimClient {
         this.findings = [];
         this.faults = [];
         this.damaged = { parts: [], pins: [] };
+        this.measures.clear();
         return true;
       case 'channel':
         this.reader = new SharedSnapshotReader(msg.buffer);
@@ -95,10 +118,56 @@ export class SimClient {
         if (this.capture?.id !== msg.capture || this.capture.stopped) return false;
         this.capture.append(msg.data, msg.until, msg.full === true);
         return true;
+      case 'measures': {
+        const prev = this.measures.get(msg.channel);
+        if (prev && msg.session < prev.session) return false; // answers a superseded subscription
+        const batches = prev?.session === msg.session ? prev.batches : [];
+        // A paused sample (0 slices) stands alone; a run's batches form the rolling window.
+        if (msg.slices === 0) batches.splice(0, batches.length, { slices: 0, data: msg.data });
+        else {
+          if (batches[0]?.slices === 0) batches.length = 0;
+          batches.push({ slices: msg.slices, data: msg.data });
+          let total = batches.reduce((n, b) => n + b.slices, 0);
+          while (batches.length > 1 && total - (batches[0]?.slices ?? 0) >= METER_WINDOW_SLICES)
+            total -= batches.shift()?.slices ?? 0;
+        }
+        this.measures.set(msg.channel, { session: msg.session, batches });
+        return true;
+      }
+      case 'ohms':
+        this.onOhms?.(msg);
+        return false;
       case 'error':
         this.error = msg.message;
         return true;
     }
+  }
+
+  /**
+   * Readings of `channel` over the rolling window (≈ the last 100 slices), one per probe in subscription
+   * order; null before the first batch.
+   */
+  readings(channel: MeasureChannel): ProbeReading[] | null {
+    const batches = this.measures.get(channel)?.batches;
+    const first = batches?.[0];
+    if (!batches || !first) return null;
+    const probes = first.data.length / 3;
+    const out: ProbeReading[] = [];
+    for (let i = 0; i < probes; i++) {
+      let weighted = 0;
+      let weight = 0;
+      let min = Infinity;
+      let max = -Infinity;
+      for (const b of batches) {
+        const w = Math.max(1, b.slices);
+        weighted += w * (b.data[3 * i] ?? NaN);
+        weight += w;
+        min = Math.min(min, b.data[3 * i + 1] ?? NaN);
+        max = Math.max(max, b.data[3 * i + 2] ?? NaN);
+      }
+      out.push({ avg: weighted / weight, min, max });
+    }
+    return out;
   }
 
   /** Reads the shared buffer; true when a new snapshot arrived. */
@@ -129,7 +198,13 @@ export class SimClient {
 }
 
 // Main-thread entry (`@robosim/sim-runtime/client`): the protocol without the engine behind it.
-export { BENCH_SCENARIOS, MAX_SIM_SECONDS, SAFETY_SCENARIOS, SCENARIOS } from './protocol.js';
+export {
+  BENCH_SCENARIOS,
+  MAX_METER_PROBES,
+  MAX_SIM_SECONDS,
+  SAFETY_SCENARIOS,
+  SCENARIOS,
+} from './protocol.js';
 // Encoding side, for stand-in workers in UI tests.
 export { SnapshotEncoder } from './snapshot-codec.js';
 export { PinCapture, type PinTrace } from './capture.js';

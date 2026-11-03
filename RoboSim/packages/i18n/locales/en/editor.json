@@ -206,5 +206,64 @@
     "bottom": "Align bottom edges",
     "distributeH": "Distribute horizontally (3 or more parts)",
     "distributeV": "Distribute vertically (3 or more parts)"
+  },
+  "meter": {
+    "title": "Multimeter",
+    "modes": {
+      "label": "Measure",
+      "v": "Voltage",
+      "a": "Current",
+      "ohm": "Resistance",
+      "p": "Power"
+    },
+    "units": {
+      "v": "V",
+      "a": "A",
+      "ohm": "Ω",
+      "p": "W"
+    },
+    "place": {
+      "red": "Place red (+)",
+      "black": "Place black (COM)",
+      "wire": "Pick wire or pin",
+      "part": "Pick part"
+    },
+    "armed": {
+      "red": "Click a pin or hole for the red (+) probe · Esc cancels",
+      "black": "Click a pin or hole for the black (COM) probe · Esc cancels",
+      "wire": "Click a wire, or a part pin, to measure the current through it · Esc cancels",
+      "part": "Click a part to measure its power · Esc cancels"
+    },
+    "probe": {
+      "red": "Red probe (+)",
+      "black": "Black probe (COM)",
+      "current": "Current through",
+      "part": "Part",
+      "none": "Not placed",
+      "gnd": "GND (default)",
+      "wire": "Wire {id}",
+      "wires": "Wires"
+    },
+    "clear": "Clear probes",
+    "minMax": "min {min} · max {max}",
+    "reading": "{mode}: {value}",
+    "noReading": "—",
+    "ol": "OL",
+    "hint": {
+      "placeRed": "Place the red probe to start measuring.",
+      "pickCurrent": "Pick a wire or a part pin to measure current.",
+      "pickPart": "Pick a part to measure its power.",
+      "noRun": "Run the project to read live values. Resistance works without a run.",
+      "stopRun": "Stop the run to measure resistance",
+      "open": "Over range: no connection between the probes (OL).",
+      "unresolved": "This point is not simulated (an unused rail or an unconnected pin).",
+      "floating": "Nothing electrical is connected to this point.",
+      "loop": "Parallel path: this wire's current is not defined. Probe a part pin instead.",
+      "hole": "Current flows through a part pin or a wire, not a breadboard hole.",
+      "ground": "Current into GND is the sum of the whole circuit: probe a wire or part pin instead.",
+      "measuring": "Measuring…",
+      "direction": "Positive: current flows from {from} to {to}.",
+      "powerSign": "Negative power: the part delivers energy (a source)."
+    }
   }
 }

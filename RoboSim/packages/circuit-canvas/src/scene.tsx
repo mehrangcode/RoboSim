@@ -246,6 +246,8 @@ export interface SceneProps {
   focus?: { readonly parts: ReadonlySet<string>; readonly wires: ReadonlySet<string> } | null;
   /** Pins a finding points at (FR-SAF-08): ringed, drawn on top. */
   marks?: readonly PinRef[];
+  /** A multimeter probe is armed: pins and breadboard holes take clicks in every mode (FR-SIM-13). */
+  probing?: boolean;
 }
 
 /** Opacity of everything outside a `focus`. */
@@ -268,6 +270,7 @@ export const Scene = memo(function Scene({
   damagedText,
   focus = null,
   marks = [],
+  probing = false,
 }: SceneProps) {
   const fade = (on: boolean) => (focus && !on ? FADED : undefined);
   const byId = new Map(doc.components.map((c) => [c.id, c]));
@@ -317,7 +320,7 @@ export const Scene = memo(function Scene({
         dx={sx}
         dy={sy}
         holes={holes}
-        editing={editing}
+        editing={editing || probing}
       />
     );
   };
@@ -369,7 +372,7 @@ export const Scene = memo(function Scene({
         dx={bx}
         dy={by}
         holes={false}
-        editing={editing}
+        editing={editing || probing}
       />
       {parts.map((c) => pinsOf(c, false))}
       {hoverAt &&

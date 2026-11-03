@@ -1,5 +1,14 @@
 export { BoardArt, PartArt } from './art.js';
-export { CircuitCanvas, type CanvasHighlight, type CanvasMode } from './circuit-canvas.js';
+export {
+  CircuitCanvas,
+  type CanvasHighlight,
+  type CanvasMode,
+  type CanvasProbe,
+  type ProbeArm,
+  type ProbeTarget,
+} from './circuit-canvas.js';
+export { ProbeOverlay, type ProbeMarkers } from './probe-overlay.js';
+export { electricalPoint, wireCut, type WireCut } from './wire-cut.js';
 export { interactionOf, type Interaction } from './interaction.js';
 export { resistorBands } from './colors.js';
 export { PART_DRAG_TYPE, WIRE_COLORS, contentBox } from './view.js';
@@ -14,7 +23,15 @@ export {
   serializeClip,
   writeClip,
 } from './clipboard.js';
-export { PITCH, footprintOf, pinPosition, withSeats, type Footprint, type Point } from './geometry.js';
+export {
+  BOARD_FOOTPRINT,
+  PITCH,
+  footprintOf,
+  pinPosition,
+  withSeats,
+  type Footprint,
+  type Point,
+} from './geometry.js';
 export { LibraryPanel } from './library-panel.js';
 export { boardPinView } from './board-pin-view.js';
 export { CircuitNets } from './nets.js';

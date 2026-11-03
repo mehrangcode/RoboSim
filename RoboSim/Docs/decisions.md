@@ -30,7 +30,7 @@
 | 023 | Entitlements resolved in-process from plan versions ⊕ overrides; grants only raise | Accepted |
 | 024 | Parts list computed in the browser from the document; interim staff price list keyed by part key | Accepted |
 | 025 | Guided projects as built-in content with declarative checks evaluated in the browser | Accepted |
-| 026 | View-only measurement channel in the worker protocol | Proposed |
+| 026 | View-only measurement channel in the worker protocol | Accepted |
 | 027 | Full-state snapshot and restore contract for time travel | Proposed |
 | 028 | Catalogue metadata (functions, directions, currents, faults, tolerance) as optional manifest extensions; cross-part relations as catalogue tables | Proposed |
 | 029 | Firmware variants by patching initialised data via a build symbol map | Proposed |
@@ -256,7 +256,7 @@
 
 ## ADR-026 — View-only measurement channel in the worker protocol
 
-- **Status.** Proposed (2026-11-02, insight & tooling track; accept when the slice that needs it starts).
+- **Status.** Accepted (2026-11-03, slice IT-2; see the implemented note in [TD §18.2](Technical-Design.md#182-virtual-multimeter-fr-sim-13-slice-it-2)).
 - **Context.**
   - FR-SIM-13/14/15/16 and FR-AI-11 need voltages, currents and power from the running simulation.
   - The MNA solution exposes node voltages and source, diode and transistor currents. It does not expose currents through conductances, current sources or wires: wires are merged into nets.

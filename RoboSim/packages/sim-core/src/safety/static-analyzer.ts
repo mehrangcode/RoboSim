@@ -162,3 +162,52 @@ export function sortFindings<T extends Finding>(findings: readonly T[]): T[] {
       a.pinIds.join().localeCompare(b.pinIds.join()),
   );
 }
+
+/** DMM test current (A), as on a real meter's 2 kΩ range: diodes partly conduct as they do there. */
+export const OHMMETER_TEST_A = 1e-3;
+/** Above this the meter reads "OL" (Ω). */
+export const OHMMETER_OL_OHMS = 40e6;
+
+/** What the user set and broke during a run, re-applied to the ohmmeter's fresh instance. */
+export interface OhmmeterState {
+  /** Latest value per component input (pot position, switch state…). */
+  readonly inputs?: readonly {
+    readonly componentId: string;
+    readonly name: string;
+    readonly value: number | boolean;
+  }[];
+  /** Components damaged in the run. */
+  readonly damaged?: readonly string[];
+}
+
+/**
+ * Resistance meter on a fresh static instance (FR-SIM-13 Ω mode, ADR-026): the live run is never
+ * touched. Power is off (parts with the `source` trait — batteries, board rails — are removed, MCU pins
+ * high-Z), inputs and damage are applied, and a 1 mA test current reads R = ΔV / 1 mA. Returns a
+ * reusable reader: each call costs one re-stamp and two solves. `null` = OL (open / above 40 MΩ).
+ */
+export function ohmmeterInstance(
+  circuit: AssembledCircuit,
+  state: OhmmeterState = {},
+): (a: NetId, b: NetId) => number | null {
+  const powered: AssembledCircuit = {
+    ...circuit,
+    parts: circuit.parts.filter((p) => !(p.def.manifest.traits ?? []).includes('source')),
+  };
+  const sim = instantiateCircuit(powered, { dcOnly: true });
+  const present = new Set(powered.parts.map((p) => p.id));
+  for (const i of state.inputs ?? [])
+    if (present.has(i.componentId)) sim.input(i.componentId, i.name, i.value);
+  for (const id of state.damaged ?? [])
+    if (present.has(id)) sim.damageComponent(id, 'damaged during the run');
+  return (a, b) => {
+    if (a === b) return 0;
+    const ohms = sim.testCurrentResponse(a, b, OHMMETER_TEST_A) / OHMMETER_TEST_A;
+    return Number.isFinite(ohms) && Math.abs(ohms) <= OHMMETER_OL_OHMS ? ohms : null;
+  };
+}
+
+/** One-shot {@link ohmmeterInstance} reading between nets `a` and `b`. */
+export function ohmmeter(circuit: AssembledCircuit, state: OhmmeterState, a: NetId, b: NetId): number | null {
+  return ohmmeterInstance(circuit, state)(a, b);
+}

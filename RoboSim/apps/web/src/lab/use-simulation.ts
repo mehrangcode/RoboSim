@@ -1,4 +1,14 @@
-import { SimClient, type InputLog, type MainToWorker, type WorkerToMain } from '@robosim/sim-runtime/client';
+import {
+  SimClient,
+  type InputLog,
+  type MainToWorker,
+  type MeasureChannel,
+  type MeasureProbe,
+  type OhmsAnswer,
+  type PointRef,
+  type WorkerToMain,
+} from '@robosim/sim-runtime/client';
+import type { ProjectDocument } from '@robosim/shared';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 export interface WorkerLike {
@@ -116,6 +126,34 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     rerender();
   }, [client]);
 
+  /** Measurement channel (FR-SIM-13): subscribe `channel` to these probes (also across resets), or stop. */
+  const measure = useCallback(
+    (channel: MeasureChannel, probes: readonly MeasureProbe[] | null) =>
+      send({ type: 'measure', channel, probes: probes?.length ? probes : null }),
+    [send],
+  );
+
+  /**
+   * Resistance between two points: of the loaded run while it is not running, or of `project` (the
+   * circuit being edited). Answers arrive in request order; a superseded answer still resolves.
+   */
+  const ohmsPending = useRef(new Map<number, (answer: OhmsAnswer) => void>());
+  const ohmsId = useRef(0);
+  const ohms = useCallback(
+    (red: PointRef, black: PointRef | null, project?: ProjectDocument) =>
+      new Promise<OhmsAnswer>((resolve) => {
+        const id = ++ohmsId.current;
+        const pending = ohmsPending.current;
+        pending.set(id, resolve);
+        client.onOhms = (answer) => {
+          pending.get(answer.id)?.(answer);
+          pending.delete(answer.id);
+        };
+        send({ type: 'ohms', id, red, black, ...(project ? { project } : {}) });
+      }),
+    [client, send],
+  );
+
   return {
     scene: client.scene,
     frame: client.frame,
@@ -129,6 +167,9 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     probing,
     probe,
     clearCapture,
+    measure,
+    ohms,
+    meterReadings: client.readings('meter'),
     replaying: client.replaying,
     send,
     exportLog,

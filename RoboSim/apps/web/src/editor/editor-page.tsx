@@ -47,6 +47,8 @@ import { findingKey, type AnyFinding } from '../lab/finding-key.js';
 import { FindingsPanel } from '../lab/findings-panel.js';
 import { useConsistency } from '../lab/use-consistency.js';
 import { LogicAnalyzer } from '../lab/logic-analyzer.js';
+import { Multimeter } from '../lab/multimeter.js';
+import { useMultimeter } from '../lab/use-multimeter.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
 import { SerialMonitor } from '../lab/serial-monitor.js';
@@ -91,7 +93,8 @@ import { openCloudProject, useCloudSync, type CloudOpen, type OpenResult } from 
 import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
-type DockTab = 'serial' | 'pins' | 'analyzer' | 'safety' | 'challenge' | 'verify' | 'assistant' | BomTab;
+type DockTab =
+  'serial' | 'pins' | 'analyzer' | 'meter' | 'safety' | 'challenge' | 'verify' | 'assistant' | BomTab;
 
 // The assistant is a chunk of its own, loaded when its tab first opens.
 const AiPanel = lazy(() => import('../ai/ai-panel.js').then((m) => ({ default: m.AiPanel })));
@@ -622,6 +625,13 @@ function Workspace({
 
   const live = run.ready ? frame : null;
   const sound = useBuzzerAudio(live?.parts, running);
+  // Virtual multimeter (FR-SIM-13): probes on the canvas while its dock tab is shown; view-only.
+  const meter = useMultimeter({
+    doc,
+    sim,
+    active: dockTab === 'meter' && (size === 'narrow' || !layout.collapsed.dock),
+    run: !run.ready ? 'none' : running ? 'running' : 'paused',
+  });
   const canvasMode: CanvasMode =
     run.phase === 'live' ? 'run' : size === 'narrow' || readOnly ? 'view' : 'edit';
 
@@ -743,6 +753,7 @@ function Workspace({
       damaged={live?.damaged.parts}
       onInput={(componentId, name, value) => send({ type: 'input', componentId, name, value })}
       highlight={highlight}
+      probe={meter.canvasProbe}
       className="h-full rounded-none border-0"
     />
   );
@@ -856,6 +867,7 @@ function Workspace({
     'serial',
     'pins',
     'analyzer',
+    'meter',
     'safety',
     ...(live?.challenge ? (['challenge'] as const) : []),
     ...(verified.state.status !== 'idle' ? (['verify'] as const) : []),
@@ -935,6 +947,8 @@ function Workspace({
             onSelect={showFinding}
             onFix={readOnly ? undefined : applyFix}
           />
+        ) : shownDock === 'meter' ? (
+          <Multimeter doc={doc} meter={meter} />
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : shownDock === 'pins' ? (
@@ -1218,6 +1232,18 @@ function Workspace({
       </Button>
       <Button size="sm" variant="secondary" onClick={() => void verify()} disabled={!canVerify}>
         {t('shell:lab.controls.verify')}
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        aria-pressed={dockTab === 'meter' && !layout.collapsed.dock}
+        onClick={() => {
+          setDockTab('meter');
+          if (layout.collapsed.dock) toggle('dock');
+          setMobileTab('monitor');
+        }}
+      >
+        {t('shell:editor.dock.meter')}
       </Button>
       <SegmentedControl
         label={t('shell:lab.controls.speed')}

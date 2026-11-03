@@ -24,6 +24,8 @@ import {
   ZERO_SOLUTION,
   shapeOf,
 } from './mna/circuit.js';
+import { phaseAveragedPower, type PartTerminal } from './measure.js';
+import { OWNER_MCU, OWNER_PROBE } from './mna/ledger.js';
 import { Prng } from './prng.js';
 
 /** MCU ↔ component bus exchange period (Technical Design §5.3). */
@@ -80,6 +82,11 @@ export interface SliceContext {
 /** Hook for per-slice consumers: runtime safety rules (§5.6), success conditions (§5.7), tracing. */
 export interface SliceObserver {
   afterSlice(ctx: SliceContext): void;
+  /**
+   * The observer only reads (an instrument, ADR-026): it never changes the run, so replays and time
+   * travel may skip it.
+   */
+  readonly viewOnly?: boolean;
 }
 
 export interface ComponentSnapshot {
@@ -193,7 +200,12 @@ export class Simulation {
   /** Simulated time each pin last became an output, even for microseconds (a keypad's scanned columns). */
   private readonly lastDriven = new Map<string, number>();
   private readonly byId = new Map<string, ComponentInstance>();
+  private readonly indexById = new Map<string, number>();
   private readonly mcuElectrical: PinElectrical | null;
+  /** Parts whose power is integrated per sub-step in transient slices (view-only, see watchPower). */
+  private powerWatch: readonly number[] = [];
+  private powerAcc = new Float64Array(0);
+  private powerWeight = 0;
 
   constructor(options: SimulationOptions) {
     this.circuit = new MnaCircuit(options.netCount);
@@ -220,7 +232,10 @@ export class Simulation {
       c.model.init(ctx, c.props);
     }
 
-    for (const c of this.components) this.byId.set(c.id, c);
+    this.components.forEach((c, i) => {
+      this.byId.set(c.id, c);
+      this.indexById.set(c.id, i);
+    });
     this.order = logicOrder(this.components);
     this.settlers = this.components.filter((c) => c.model.settle).map((c) => c.model);
     this.world?.bind?.((id) => this.byId.get(id)?.model);
@@ -565,6 +580,8 @@ export class Simulation {
     this.envMin = new Float64Array(this.circuit.netCount + 1).fill(Infinity);
     this.envMax = new Float64Array(this.circuit.netCount + 1).fill(-Infinity);
     const acc: { average: WeightedSolution | null } = { average: null };
+    this.powerAcc.fill(0);
+    this.powerWeight = 0;
     while (t1 - t > TIME_EPS_S) {
       let chunkEnd = Math.min(t1, t + this.hNext);
       if (t1 - chunkEnd < MIN_STEP_S) chunkEnd = t1;
@@ -580,6 +597,7 @@ export class Simulation {
           if (shape) acc.average = new WeightedSolution(shape);
         }
         acc.average?.add(s, h);
+        this.accumulatePower(s, h);
       });
       if (t <= from) break; // defensive: no progress
       this.bus?.applyInputs(this.solution, this.bus.core.cycle);
@@ -768,11 +786,94 @@ export class Simulation {
     h: number | null = null,
   ): MnaSolution {
     this.circuit.clear();
+    // Owner tags feed the measurement ledger (ADR-026); they never change a result.
+    this.circuit.beginOwner(OWNER_MCU);
     this.bus?.stamp(this.circuit, pwmHigh, this.edgeDriven.size > 0 ? this.edgeLevel : undefined);
-    for (const c of this.components) c.model.stamp(this.circuit);
+    for (let i = 0; i < this.components.length; i++) {
+      this.circuit.beginOwner(i);
+      this.components[i]?.model.stamp(this.circuit);
+    }
+    this.circuit.beginOwner(OWNER_PROBE);
     extra?.(this.circuit);
     this.stats.solves++;
     return this.circuit.solve(h ?? (this.transient ? INSTANT_STEP_S : DC_STEP));
+  }
+
+  /**
+   * Current flowing into `componentId` through `pin` (A), from the measurement ledger (ADR-026). Pins
+   * of the part that share the net (bondedPins) are summed. Read-only.
+   */
+  pinCurrent(t: PartTerminal): number {
+    const i = this.indexById.get(t.componentId);
+    const c = i === undefined ? undefined : this.components[i];
+    if (i === undefined || !c) throw new Error(`Unknown component '${t.componentId}'`);
+    const net = c.pins[t.pin];
+    if (net === undefined) throw new Error(`Component '${t.componentId}' has no pin '${t.pin}'`);
+    return this.circuit.terminalCurrent(i, net, this.published);
+  }
+
+  /** Current flowing from the pin's net into the MCU pin (A): sinking > 0, sourcing < 0; 0 when unbound. */
+  mcuPinCurrentIn(pin: string): number {
+    const net = this.bus?.bindings().find((b) => b.pin === pin)?.net;
+    if (net === undefined || net === 0) return 0;
+    return this.circuit.terminalCurrent(OWNER_MCU, net, this.published);
+  }
+
+  /**
+   * Power absorbed by a part (W; < 0 when it delivers, like a battery): Σ V·I over its terminals,
+   * averaged per PWM phase, and per sub-step in a transient slice when the part is watched.
+   */
+  partPower(componentId: string): number {
+    const i = this.indexById.get(componentId);
+    if (i === undefined) throw new Error(`Unknown component '${componentId}'`);
+    const w = this.powerWatch.indexOf(i);
+    if (w >= 0 && this.powerWeight > 0 && this.published instanceof WeightedSolution)
+      return (this.powerAcc[w] ?? 0) / this.powerWeight;
+    return phaseAveragedPower((s) => this.circuit.ownerPower(i, s), this.published);
+  }
+
+  /**
+   * Parts whose power is integrated per sub-step from the next transient slice on (an instrument
+   * subscribing). View-only: it only reads solutions, so results and replays are unchanged.
+   */
+  watchPower(componentIds: readonly string[]): void {
+    this.powerWatch = componentIds.flatMap((id) => {
+      const i = this.indexById.get(id);
+      return i === undefined ? [] : [i];
+    });
+    this.powerAcc = new Float64Array(this.powerWatch.length);
+    this.powerWeight = 0;
+  }
+
+  private accumulatePower(s: MnaSolution, h: number): void {
+    if (this.powerWatch.length === 0) return;
+    this.powerWatch.forEach((i, k) => {
+      this.powerAcc[k] =
+        (this.powerAcc[k] ?? 0) + h * phaseAveragedPower((v) => this.circuit.ownerPower(i, v), s);
+    });
+    this.powerWeight += h;
+  }
+
+  /** Owner index of a component in the measurement ledger, for KCL audits and tests. */
+  ledgerOwner(componentId: string): number | undefined {
+    return this.indexById.get(componentId);
+  }
+
+  /** The measurement ledger of the present stamp (read-only use). */
+  get ledger(): Pick<MnaCircuit, 'elementsOf' | 'ownerIds' | 'terminalCurrent' | 'netCount'> {
+    return this.circuit;
+  }
+
+  /**
+   * Voltage V(a) − V(b) (V) a DC test current of `amps` injected into `a` and drawn from `b` adds to
+   * the present state, re-solved with the diode / transistor regions it causes. Disturbs warm-start
+   * state: use on static instances only (the ohmmeter), never on a live run (ADR-026).
+   */
+  testCurrentResponse(a: NetId, b: NetId, amps: number): number {
+    const base = this.solveWith(new Set(), undefined, DC_STEP);
+    const probed = this.solveWith(new Set(), (s) => s.currentSource(b, a, amps), DC_STEP);
+    this.dirty = true; // the circuit object now holds probe stamps; re-stamp before the next slice
+    return probed.voltage(a) - probed.voltage(b) - (base.voltage(a) - base.voltage(b));
   }
 
   /**

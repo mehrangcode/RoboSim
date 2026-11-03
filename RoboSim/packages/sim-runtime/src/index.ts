@@ -1,5 +1,12 @@
 export { SimHost, type SimHostOptions } from './host.js';
-export { SimClient, SERIAL_TAIL_CHARS } from './client.js';
+export {
+  SimClient,
+  SERIAL_TAIL_CHARS,
+  METER_WINDOW_SLICES,
+  type OhmsAnswer,
+  type ProbeReading,
+} from './client.js';
+export { MeasureHub, MeasureRecorder, resolvePoint, type ResolvedPoint } from './measure.js';
 export { HeadlessRun, InputLogError, InputLogger, applyInput, type LiveInput } from './input-log.js';
 export {
   EngineVersionMismatchError,
@@ -37,6 +44,7 @@ export {
 export { buildCircuit, type Circuit, type CircuitSpec } from './circuit.js';
 export {
   BENCH_SCENARIOS,
+  MAX_METER_PROBES,
   SAFETY_SCENARIOS,
   SCENARIOS,
   type BenchScenarioId,
@@ -50,6 +58,10 @@ export {
   type HotFrame,
   type FirmwarePayload,
   type InputLog,
+  type MeasureChannel,
+  type MeasureProbe,
+  type OhmsRefusal,
+  type PointRef,
   type RunSource,
   type InputLogEntry,
   type Frame,

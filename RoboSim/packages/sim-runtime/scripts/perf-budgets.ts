@@ -2,11 +2,11 @@
 // Performance budgets (Technical Design §17) against the built packages (`pnpm test:perf`), the code the
 // simulation worker runs. Each figure is the median of several timed runs after a warm-up. Exits 1 when a
 // budget is exceeded. ROBOSIM_PERF_SCALE scales every budget for machines slower than the reference.
-import { buildNetlist, type NetlistInput } from '@robosim/sim-core';
+import { buildNetlist, ohmmeterInstance, type NetlistInput } from '@robosim/sim-core';
 import type { ProjectDocument } from '@robosim/shared';
 import { initCodeAnalysis } from '@robosim/code-analysis';
 import { nodeCodeAnalysisWasm } from '@robosim/code-analysis/node';
-import { buildRun, builtinSource } from '@robosim/sim-runtime';
+import { MeasureHub, buildRun, builtinSource, type MeasureProbe } from '@robosim/sim-runtime';
 
 const SCALE = Number(process.env['ROBOSIM_PERF_SCALE'] ?? 1);
 
@@ -22,8 +22,21 @@ function timeMs(fn: () => void): number {
 }
 
 /** Average slice of a whole line-follower lap (Uno, 7 parts, physics, safety), until the challenge decides. */
-function lapSliceMs(): number {
+function lapSliceMs(meter = false): number {
   const run = buildRun({ scenario: 'line-follower' });
+  if (meter) {
+    // 8 probes of every kind (FR-SIM-13), read after every slice like the live meter.
+    const hub = new MeasureHub(run);
+    const parts = run.circuit.assembled.parts;
+    const pins = parts.flatMap((p) => Object.keys(p.pins).map((pin) => ({ part: p.id, pin })));
+    const probes: MeasureProbe[] = [
+      ...pins.slice(0, 3).map((red): MeasureProbe => ({ kind: 'v', red, black: null })),
+      ...pins.slice(3, 6).map((p): MeasureProbe => ({ kind: 'i', pins: [p], scale: 1 })),
+      ...parts.slice(0, 2).map((p): MeasureProbe => ({ kind: 'p', part: p.id })),
+    ];
+    hub.set('meter', probes);
+    run.circuit.sim.addObserver(hub);
+  }
   let slices = 0;
   const ms = timeMs(() => {
     while (run.challenge?.result().status === 'running' && slices < 60_000) {
@@ -82,12 +95,42 @@ function netlistInput(): NetlistInput {
 }
 
 const big = twoHundredParts();
+const bigRun = buildRun(big);
 const net = netlistInput();
 const budgets = [
   {
     name: 'Simulation slice, line-follower lap average (ms)',
     budget: 0.35,
     measure: () => (lapSliceMs(), median([lapSliceMs(), lapSliceMs(), lapSliceMs()])),
+  },
+  {
+    name: 'Meter with 8 probes, added time per slice on the lap (µs)',
+    budget: 5,
+    measure: () => {
+      lapSliceMs(true);
+      const runs = [0, 1, 2, 3, 4].map(() => (lapSliceMs(true) - lapSliceMs()) * 1000);
+      return Math.max(0, median(runs));
+    },
+  },
+  {
+    name: 'Ohmmeter, first reading (fresh instance) @ 200 parts (ms)',
+    budget: 30,
+    measure: () => {
+      const { assembled, net } = bigRun.circuit;
+      const read = () => ohmmeterInstance(assembled)(net('r0.a'), net('l0.k'));
+      read();
+      return median([0, 1, 2, 3, 4].map(() => timeMs(read)));
+    },
+  },
+  {
+    name: 'Ohmmeter, cached reading @ 200 parts (ms)',
+    budget: 2,
+    measure: () => {
+      const { assembled, net } = bigRun.circuit;
+      const read = ohmmeterInstance(assembled);
+      read(net('r0.a'), net('r0.b'));
+      return median([0, 1, 2, 3, 4].map((i) => timeMs(() => read(net(`r${i}.a`), net(`r${i}.b`)))));
+    },
   },
   {
     name: 'Circuit build + static safety pass @ 200 parts (ms)',

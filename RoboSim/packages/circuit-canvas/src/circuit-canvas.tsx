@@ -36,6 +36,7 @@ import { InputPopover } from './input-popover.js';
 import { interactionOf } from './interaction.js';
 import { Minimap } from './minimap.js';
 import { CircuitNets } from './nets.js';
+import { ProbeOverlay, type ProbeMarkers } from './probe-overlay.js';
 import { Scene } from './scene.js';
 import type { CircuitEditorState } from './use-circuit-editor.js';
 import { MAX_K, MIN_K, PART_DRAG_TYPE, contentBox, fitView, type View } from './view.js';
@@ -89,6 +90,24 @@ function loadMinimap(): boolean {
 /** edit: build the circuit · run: interact with parts of the running simulation · view: look only. */
 export type CanvasMode = 'edit' | 'run' | 'view';
 
+/** What an armed multimeter probe picks next (FR-SIM-13). */
+export type ProbeArm = 'red' | 'black' | 'wire' | 'part';
+
+/** A click on the canvas while a probe is armed: the pin or hole, else the wire, else the part. */
+export type ProbeTarget =
+  | { readonly kind: 'pin'; readonly pin: PinRef }
+  | { readonly kind: 'wire'; readonly wire: string }
+  | { readonly kind: 'part'; readonly part: string };
+
+/** The multimeter on the canvas: markers always, clicks routed to `onPick` while a probe is armed. */
+export interface CanvasProbe {
+  readonly armed: ProbeArm | null;
+  readonly onPick: (target: ProbeTarget) => void;
+  /** Esc on the canvas disarms the probe. */
+  readonly onCancel?: () => void;
+  readonly markers: ProbeMarkers;
+}
+
 /** Parts, wires and pins to point out on the canvas (a selected safety finding). */
 export interface CanvasHighlight {
   readonly parts: readonly string[];
@@ -109,6 +128,7 @@ export function CircuitCanvas({
   onInput,
   damaged,
   highlight = null,
+  probe = null,
 }: {
   editor: CircuitEditorState;
   /** Live part states by component id (from the running simulation). */
@@ -124,6 +144,8 @@ export function CircuitCanvas({
    * fades, and its pins are ringed (shape, not colour only). Null shows the circuit as usual.
    */
   highlight?: CanvasHighlight | null | undefined;
+  /** Virtual multimeter probes (FR-SIM-13): an armed probe takes the next click in any mode. */
+  probe?: CanvasProbe | null | undefined;
 }) {
   const { t } = useTranslation();
   const { doc, apply, selection, setSelection, viewCenterRef } = editor;
@@ -340,6 +362,24 @@ export function CircuitCanvas({
       e.preventDefault();
       return startPan(e);
     }
+    if (probe?.armed) {
+      const pin = pinFromTarget(e.target);
+      const wire = attr(e.target, 'data-wire');
+      const part = attr(e.target, 'data-part-body');
+      const target: ProbeTarget | null = pin
+        ? { kind: 'pin', pin }
+        : wire
+          ? { kind: 'wire', wire }
+          : part
+            ? { kind: 'part', part }
+            : null;
+      if (target) {
+        e.stopPropagation();
+        probe.onPick(target);
+        return;
+      }
+      return startPan(e);
+    }
     if (!editing) {
       const part = attr(e.target, 'data-part-body');
       const c = part ? doc.components.find((v) => v.id === part) : undefined;
@@ -497,6 +537,7 @@ export function CircuitCanvas({
     if (e.key === 'Escape') {
       // Esc cancels the innermost thing first; left unhandled, the frame leaves the full-page view.
       if (inspecting) setInspecting(null);
+      else if (probe?.armed && probe.onCancel) probe.onCancel();
       else if (drag) {
         if (drag.kind === 'pan') setView(drag.view);
         setDrag(null);
@@ -606,7 +647,9 @@ export function CircuitCanvas({
             damagedText={t('editor:canvas.damaged')}
             focus={focus}
             marks={highlight?.pins ?? []}
+            probing={probe?.armed != null}
           />
+          {probe && <ProbeOverlay doc={doc} markers={probe.markers} />}
           {band && (
             <rect
               data-testid="selection-band"
@@ -716,13 +759,15 @@ export function CircuitCanvas({
           );
         })()}
       <p id="circuit-canvas-help" className="absolute bottom-1 start-2 m-0 text-xs text-ink-muted">
-        {mode === 'run'
-          ? t('editor:canvas.runHelp')
-          : mode === 'view'
-            ? t('editor:canvas.viewHelp')
-            : drawing
-              ? t('editor:canvas.drawing')
-              : t('editor:canvas.help')}
+        {probe?.armed
+          ? t(`editor:meter.armed.${probe.armed}`)
+          : mode === 'run'
+            ? t('editor:canvas.runHelp')
+            : mode === 'view'
+              ? t('editor:canvas.viewHelp')
+              : drawing
+                ? t('editor:canvas.drawing')
+                : t('editor:canvas.help')}
       </p>
     </div>
   );

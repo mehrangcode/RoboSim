@@ -174,7 +174,48 @@ export type MainToWorker =
    * Logic analyzer (FR-SIM-08): records these MCU pins from now on, also after a reset, until
    * `pins: null`. Answered with `edges` messages; view only, so it is not part of the input log.
    */
-  | { readonly type: 'probe'; readonly pins: readonly string[] | null };
+  | { readonly type: 'probe'; readonly pins: readonly string[] | null }
+  /**
+   * Measurement channel (FR-SIM-13, ADR-026): subscribes `channel` to these probes from now on, also
+   * after a reset, until `probes: null`. Answered with `measures`; view only, never in the input log.
+   */
+  | {
+      readonly type: 'measure';
+      readonly channel: MeasureChannel;
+      readonly probes: readonly MeasureProbe[] | null;
+    }
+  /**
+   * Resistance between two points on a fresh static instance: of the loaded run while it is not
+   * running, or of `project` when given (the circuit being edited; no run needed).
+   */
+  | {
+      readonly type: 'ohms';
+      readonly id: number;
+      readonly red: PointRef;
+      readonly black: PointRef | null;
+      readonly project?: ProjectDocument;
+    };
+
+/** A point on the circuit addressed by document ids; part `board` is the Uno header (BOARD_PART). */
+export interface PointRef {
+  readonly part: string;
+  readonly pin: string;
+}
+
+/** What one probe reads: volts red − black (null = GND), scale·Σ current into the pins (A), or power (W). */
+export type MeasureProbe =
+  | { readonly kind: 'v'; readonly red: PointRef; readonly black: PointRef | null }
+  | { readonly kind: 'i'; readonly pins: readonly PointRef[]; readonly scale: 1 | -1 }
+  | { readonly kind: 'p'; readonly part: string };
+
+/** The meter reads at most this many probes at once (TD §18.2 budget). */
+export const MAX_METER_PROBES = 8;
+
+/** Why an ohms request has no value: running, OL (`open`), nothing to measure, an unsimulated point. */
+export type OhmsRefusal = 'running' | 'open' | 'not-loaded' | 'unresolved';
+
+/** Instruments sharing the measurement channel (the scope arrives with IT-3). */
+export type MeasureChannel = 'meter' | 'scope';
 
 export interface PartInfo {
   readonly id: string;
@@ -402,5 +443,25 @@ export type WorkerToMain =
       readonly data: Float64Array;
       readonly until: number;
       readonly full?: true;
+    }
+  /**
+   * Measurement-channel readings over `slices` slices from `fromSlice` (0 slices: a sample of the paused
+   * operating point). Meter: `[avg, min, max]` per probe. Probes in `unresolved` read NaN.
+   */
+  | {
+      readonly type: 'measures';
+      readonly channel: MeasureChannel;
+      readonly session: number;
+      readonly fromSlice: number;
+      readonly slices: number;
+      readonly data: Float32Array;
+      readonly unresolved?: readonly number[];
+    }
+  /** Answer to `ohms`: Ω, or null with why (`open` = over range, shown as OL). */
+  | {
+      readonly type: 'ohms';
+      readonly id: number;
+      readonly ohms: number | null;
+      readonly reason?: OhmsRefusal;
     }
   | { readonly type: 'error'; readonly message: string };

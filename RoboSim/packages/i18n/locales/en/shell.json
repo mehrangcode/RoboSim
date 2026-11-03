@@ -343,7 +343,8 @@
       "notRunning": "Run the project to see live values here.",
       "noSerial": "This sketch does not use Serial.",
       "assistant": "Assistant",
-      "verify": "Verified run"
+      "verify": "Verified run",
+      "meter": "Multimeter"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {

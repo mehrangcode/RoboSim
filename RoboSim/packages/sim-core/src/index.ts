@@ -11,6 +11,15 @@ export {
   ZERO_SOLUTION,
 } from './mna/circuit.js';
 export { SingularMatrixError } from './mna/lu.js';
+export {
+  elementTerminalCurrents,
+  currentInto,
+  powerInto,
+  OWNER_MCU,
+  OWNER_PROBE,
+  type LedgerElement,
+} from './mna/ledger.js';
+export { phaseAveragedPower, type PartTerminal } from './measure.js';
 export { McuBus, type McuPinBinding } from './bus.js';
 export { I2cRouter, SpiRouter, type BusContext } from './buses.js';
 export { RegisterPort, stampPullUp, type RegisterSpace } from './registers.js';
@@ -66,7 +75,15 @@ export {
   type InstantiateOptions,
 } from './circuit.js';
 export { SafetyMonitor } from './safety/monitor.js';
-export { analyzeCircuit, sortFindings } from './safety/static-analyzer.js';
+export {
+  analyzeCircuit,
+  sortFindings,
+  ohmmeter,
+  ohmmeterInstance,
+  OHMMETER_OL_OHMS,
+  OHMMETER_TEST_A,
+  type OhmmeterState,
+} from './safety/static-analyzer.js';
 export {
   finding,
   type BoardInfo,

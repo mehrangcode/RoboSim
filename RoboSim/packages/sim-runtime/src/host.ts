@@ -1,11 +1,17 @@
-import { Pacer } from '@robosim/sim-core';
+import { Pacer, ohmmeterInstance, type NetId } from '@robosim/sim-core';
 import type { ProjectDocument } from '@robosim/shared';
 import type { Level } from '@robosim/sim-core';
 import { ENGINE_VERSION } from './engine-version.js';
 import { InputLogger, type LiveInput } from './input-log.js';
+import { MeasureHub, resolvePoint } from './measure.js';
+import { MAX_METER_PROBES } from './protocol.js';
 import type {
   Damage,
   FirmwarePayload,
+  MeasureChannel,
+  MeasureProbe,
+  OhmsRefusal,
+  PointRef,
   RunSource,
   Fault,
   HotFrame,
@@ -50,6 +56,10 @@ interface Run {
   sentDamage: string;
   /** Logic-analyzer capture of this run, with the start message not yet posted. */
   probe: { id: number; recorder: PinRecorder; start: ProbeStart | null; until: number; done: boolean } | null;
+  /** Measurement channel (ADR-026): one view-only observer for every instrument. */
+  readonly measure: MeasureHub;
+  /** Ohmmeter on a fresh static instance, for one (input-log length, damage) state. */
+  ohmmeter: { key: string; read: (a: NetId, b: NetId) => number | null } | null;
 }
 
 /**
@@ -68,6 +78,16 @@ export class SimHost {
   /** Pins the logic analyzer records; kept across resets and loads. */
   private probePins: readonly string[] | null = null;
   private captures = 0;
+  /** Instrument probes per measurement channel; kept across resets and loads like `probePins`. */
+  private readonly measureProbes = new Map<MeasureChannel, readonly MeasureProbe[]>();
+  /** Subscription counter: a `measures` message names the subscription it answers. */
+  private measureSession = 0;
+  /** Ohmmeter of the document last measured without a run. */
+  private staticOhms: {
+    key: string;
+    scenario: Scenario;
+    read: (a: NetId, b: NetId) => number | null;
+  } | null = null;
 
   constructor(
     private readonly post: (msg: WorkerToMain, transfer?: ArrayBuffer[]) => void,
@@ -109,6 +129,27 @@ export class SimHost {
           if (this.run) this.startProbe(this.run);
           this.publish(true);
           break;
+        case 'measure':
+          if (msg.probes?.length) this.measureProbes.set(msg.channel, msg.probes.slice(0, MAX_METER_PROBES));
+          else this.measureProbes.delete(msg.channel);
+          this.measureSession++;
+          this.run?.measure.set(msg.channel, this.measureProbes.get(msg.channel) ?? null);
+          this.publish(true);
+          break;
+        case 'ohms': {
+          // Always answered, so the meter never waits forever; a failure is also reported as `error`.
+          let result: OhmsResult;
+          try {
+            result = msg.project
+              ? this.projectOhms(msg.project, msg.red, msg.black)
+              : this.ohms(msg.red, msg.black);
+          } catch (e) {
+            result = { ohms: null, reason: 'not-loaded' };
+            this.post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+          }
+          this.post({ type: 'ohms', id: msg.id, ...result });
+          break;
+        }
         case 'exportLog':
           if (this.run)
             this.post({
@@ -165,7 +206,11 @@ export class SimHost {
     this.running = false;
     const scenario = buildRun(source, seed);
     const logger = new InputLogger(scenario, replay);
-    scenario.circuit.sim.addObserver(logger); // last: replayed inputs land where live ones did
+    // Instruments observe before the logger, which must stay last: replayed inputs land where live ones did.
+    const measure = new MeasureHub(scenario);
+    for (const [channel, probes] of this.measureProbes) measure.set(channel, probes);
+    scenario.circuit.sim.addObserver(measure);
+    scenario.circuit.sim.addObserver(logger);
     const challenge = scenario.challenge;
     const pacer = new Pacer(scenario.circuit.sim, {
       now: this.now,
@@ -185,6 +230,8 @@ export class SimHost {
       sentFaults: '[]',
       sentDamage: JSON.stringify(NO_DAMAGE),
       probe: null,
+      measure,
+      ohmmeter: null,
     };
     const uart = scenario.scene.serial ? scenario.circuit.sim.mcu?.uart(0) : undefined;
     uart?.onData((bytes) => {
@@ -205,6 +252,68 @@ export class SimHost {
     });
     this.startProbe(run);
     this.publish(true);
+  }
+
+  /**
+   * Resistance between two points (FR-SIM-13 Ω mode). Refused while running; measured on a fresh
+   * static instance with the run's present inputs and damage, never on the live simulation (ADR-026).
+   */
+  private ohms(red: PointRef, black: PointRef | null): OhmsResult {
+    const run = this.run;
+    if (!run) return { ohms: null, reason: 'not-loaded' };
+    if (this.running) return { ohms: null, reason: 'running' };
+    const a = resolvePoint(run.scenario, red);
+    const b = black ? resolvePoint(run.scenario, black) : { net: 0 };
+    if (!a || !b) return { ohms: null, reason: 'unresolved' };
+    const sim = run.scenario.circuit.sim;
+    const applied = run.logger.entries.filter((e) => e.slice <= sim.slice);
+    const damaged = damageView(run.scenario).parts;
+    const key = `${applied.length}|${damaged.join(',')}`;
+    if (run.ohmmeter?.key !== key) {
+      const latest = new Map<string, { componentId: string; name: string; value: number | boolean }>();
+      for (const c of run.source.project.components)
+        for (const [name, value] of Object.entries(c.inputs ?? {}))
+          latest.set(`${c.id}\u0000${name}`, { componentId: c.id, name, value });
+      for (const e of applied)
+        if (e.kind === 'component')
+          latest.set(`${e.componentId}\u0000${e.name}`, {
+            componentId: e.componentId,
+            name: e.name,
+            value: e.value,
+          });
+      run.ohmmeter = {
+        key,
+        read: ohmmeterInstance(run.scenario.circuit.assembled, { inputs: [...latest.values()], damaged }),
+      };
+    }
+    const ohms = run.ohmmeter.read(a.net, b.net);
+    return ohms === null ? { ohms: null, reason: 'open' } : { ohms };
+  }
+
+  /**
+   * Ω on the circuit being edited (no run needed: a meter on an unpowered board). The document is
+   * loaded without firmware for its netlist only, cached until the document changes.
+   */
+  private projectOhms(project: ProjectDocument, red: PointRef, black: PointRef | null): OhmsResult {
+    const key = JSON.stringify([project.components, project.wires]);
+    if (this.staticOhms?.key !== key) {
+      let scenario: Scenario;
+      try {
+        scenario = buildRun({ project, firmware: NO_FIRMWARE }, 1);
+      } catch {
+        return { ohms: null, reason: 'not-loaded' };
+      }
+      const inputs = project.components.flatMap((c) =>
+        Object.entries(c.inputs ?? {}).map(([name, value]) => ({ componentId: c.id, name, value })),
+      );
+      this.staticOhms = { key, scenario, read: ohmmeterInstance(scenario.circuit.assembled, { inputs }) };
+    }
+    const { scenario, read } = this.staticOhms;
+    const a = resolvePoint(scenario, red);
+    const b = black ? resolvePoint(scenario, black) : { net: 0 };
+    if (!a || !b) return { ohms: null, reason: 'unresolved' };
+    const ohms = read(a.net, b.net);
+    return ohms === null ? { ohms: null, reason: 'open' } : { ohms };
   }
 
   /** Replaces the run's capture with one of {@link probePins} from the current cycle (or none). */
@@ -281,6 +390,22 @@ export class SimHost {
       );
       probe.start = null;
     }
+    for (const [channel, recorder] of run.measure.channels()) {
+      if (recorder.pending === 0 && !force) continue;
+      const { fromSlice, slices, data } = recorder.drain(sim);
+      this.post(
+        {
+          type: 'measures',
+          channel,
+          session: this.measureSession,
+          fromSlice,
+          slices,
+          data,
+          ...(recorder.unresolved.length ? { unresolved: recorder.unresolved } : {}),
+        },
+        [data.buffer as ArrayBuffer],
+      );
+    }
     if (run.serialOut.length) {
       const chunks = run.serialOut.map((c) => ({
         slice: c.slice,
@@ -340,3 +465,7 @@ export class SimHost {
 }
 
 const NO_DAMAGE: Damage = { parts: [], pins: [] };
+/** An empty program: the ohmmeter needs the netlist only (MCU pins are high-Z anyway). */
+const NO_FIRMWARE: FirmwarePayload = { format: 'ihex', text: ':00000001FF\n', sha256: '' };
+
+type OhmsResult = { ohms: number | null; reason?: OhmsRefusal };

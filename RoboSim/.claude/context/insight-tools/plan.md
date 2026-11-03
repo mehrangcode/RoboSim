@@ -12,7 +12,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 
 ## Slices (recommended order)
 - [ ] IT-1 — Wiring ↔ sketch consistency check · FR-SAF-08 · US-SAF-06 · TD §18.1
-- [ ] IT-2 — Virtual multimeter + measure channel (ADR-026) · FR-SIM-13 · US-SIM-09 · TD §18.2
+- [x] IT-2 — Virtual multimeter + measure channel (ADR-026) · FR-SIM-13 · US-SIM-09 · TD §18.2
 - [ ] IT-3 — Analog oscilloscope · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
 - [ ] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
 - [ ] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
@@ -45,3 +45,14 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] g. i18n EN/FA (safety.json, shell.json, dynamic keys)
 - [ ] h. corpus test (demos/guided refs: no UNWIRED/DIRECTION), STATIC_RULES unchanged; `pnpm verify`; browser check FA/EN
 - [x] i. docs sync (PRD status, TD §18.1 implemented note, Release-Plan, README)
+
+## IT-2 detailed steps (owner answers 2026-11-03: no flag (like IT-1); armed "Place red/black" buttons + Enter/Shift+Enter; probes session-only; KCL-audit fixes only if goldens hold, else document; never commit)
+- [x] a. sim-core: `beginOwner` + owner lists in `MnaCircuit`, `mna/ledger.ts` `elementTerminalCurrents`, `terminalCurrent`; `AveragedSolution.phases()`; ledger tests (signs + KCL)
+- [x] b. sim-core: `Simulation.pinCurrent` / `mcuPinCurrentIn` / `partPower` (`measure.ts`) + tests (13.6 mA, battery P<0, PWM power)
+- [x] c. sim-core: `ohmmeter()` in static-analyzer + tests; per-part KCL audit (fix result-neutral only)
+- [x] d. sim-runtime: protocol `PointRef`/`MeasureProbe`/`measure`/`ohms`; `MeasureRecorder` (viewOnly), host drain, client; determinism tests
+- [x] e. circuit-canvas: `wireCut` + tests; `probe-overlay.tsx` (+/COM glyphs, wire arrow)
+- [x] f. web: `formatSi`, `multimeter.tsx`, dock tab `'meter'`, toolbar + palette, `use-simulation` senders, armed probe buttons, keyboard; tests
+- [x] g. i18n EN/FA `meter.*`
+- [x] h. goldens unchanged; `pnpm verify` (279/279); browser check FA/EN (Ω 220.0 Ω without a run, live V/A, stop-run hint, Persian digits, RTL min/max)
+- [x] i. docs sync (PRD, TD §18.2 note, Release-Plan, README; note: no web flag consumer)

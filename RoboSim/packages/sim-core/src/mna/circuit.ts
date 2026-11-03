@@ -15,6 +15,7 @@ import type {
   TransistorRegion,
   VoltageSourceOptions,
 } from '../contracts.js';
+import { OWNER_MCU, elementTerminalCurrents, type LedgerElement } from './ledger.js';
 import { luFactor, luSolveFactored, type LuFactors } from './lu.js';
 
 /** Conductance from every net to ground so floating nets never make the matrix singular (SPICE GMIN). */
@@ -44,12 +45,16 @@ const LTE_REL_V = 1e-3;
 const LTE_ABS_A = 1e-3;
 const LTE_REL_A = 5e-3;
 
+// Stamped elements carry the fields of their LedgerElement (kind, handle, sign), so the measurement
+// ledger reads them in place without copying.
 interface Conductance {
+  readonly kind: 'conductance';
   readonly a: NetId;
   readonly b: NetId;
   readonly g: number;
 }
 interface CurrentSource {
+  readonly kind: 'current';
   readonly from: NetId;
   readonly to: NetId;
   readonly amps: number;
@@ -60,6 +65,8 @@ interface CurrentSource {
  * `returnNet`; a transformer additionally draws ratio·I from its primary.
  */
 interface Branch {
+  readonly kind: 'branch';
+  readonly handle: SourceHandle;
   readonly pos: NetId;
   readonly neg: NetId;
   readonly volts: number;
@@ -79,18 +86,35 @@ type Reactive =
       readonly state: ReactiveState;
     };
 interface Diode extends DiodeParams {
+  readonly kind: 'diode';
+  readonly handle: DiodeHandle;
   readonly anode: NetId;
   readonly cathode: NetId;
 }
 interface Bjt extends BjtParams {
+  readonly kind: 'bjt';
+  readonly handle: TransistorHandle;
+  readonly sign: 1 | -1;
   readonly c: NetId;
   readonly b: NetId;
   readonly e: NetId;
 }
 interface Mosfet extends MosfetParams {
+  readonly kind: 'mosfet';
+  readonly handle: TransistorHandle;
+  readonly sign: 1 | -1;
   readonly d: NetId;
   readonly g: NetId;
   readonly s: NetId;
+}
+/** Where one owner's elements start in each list; it ends where the next segment starts. */
+interface OwnerSegment {
+  owner: number;
+  readonly g: number;
+  readonly i: number;
+  readonly src: number;
+  readonly d: number;
+  readonly dev: number;
 }
 type BjtRegion = 'cutoff' | 'active' | 'saturation';
 /** Operating point a MOSFET is linearised around, in its own frame (N-channel signs). */
@@ -196,6 +220,18 @@ export class AveragedSolution implements MnaSolution {
       region: this.base.transistor(h).region,
       power: this.blend((s) => s.transistor(h).power),
     };
+  }
+
+  /**
+   * The PWM phases with their time weights (base: 1 − Σduty, each part: its duty). Non-linear readings
+   * such as power must be averaged per phase: P = V·I of averaged values is wrong under PWM.
+   */
+  phases(): readonly { readonly solution: MnaSolution; readonly weight: number }[] {
+    const rest = 1 - this.parts.reduce((sum, p) => sum + p.duty, 0);
+    return [
+      { solution: this.base, weight: rest },
+      ...this.parts.map((p) => ({ solution: p.solution, weight: p.duty })),
+    ];
   }
 
   private blend(read: (s: MnaSolution) => number): number {
@@ -341,6 +377,11 @@ export class MnaCircuit implements MnaStamper {
   /** Last factored system matrix (a copy, compared bit for bit) and its LU factors. */
   private factored: { readonly matrix: Float64Array; readonly lu: LuFactors } | null = null;
   private work = new Float64Array(0);
+  /**
+   * Owner segments of the present stamp (ADR-026 measurement ledger): a component index, OWNER_MCU or
+   * OWNER_PROBE per contiguous run of stamps. Bookkeeping only; it never enters the matrix.
+   */
+  private segments: OwnerSegment[] = [{ owner: OWNER_MCU, g: 0, i: 0, src: 0, d: 0, dev: 0 }];
 
   constructor(readonly netCount: number) {}
 
@@ -352,6 +393,116 @@ export class MnaCircuit implements MnaStamper {
     this.diodes = [];
     this.devices = [];
     this.reactive = [];
+    this.segments = [{ owner: OWNER_MCU, g: 0, i: 0, src: 0, d: 0, dev: 0 }];
+  }
+
+  /** Elements stamped from now on belong to `owner` (component index, OWNER_MCU or OWNER_PROBE). */
+  beginOwner(owner: number): void {
+    const last = this.segments[this.segments.length - 1];
+    const here = {
+      owner,
+      g: this.conductances.length,
+      i: this.currents.length,
+      src: this.sources.length,
+      d: this.diodes.length,
+      dev: this.devices.length,
+    };
+    // An owner that stamped nothing leaves no segment behind.
+    if (
+      last &&
+      last.g === here.g &&
+      last.i === here.i &&
+      last.src === here.src &&
+      last.d === here.d &&
+      last.dev === here.dev
+    )
+      last.owner = owner;
+    else this.segments.push(here);
+  }
+
+  /**
+   * Calls `fn` with every element `owner` stamped in the present stamp. Describes the last stamp: in a
+   * transient slice that is the end-of-slice stamp while the published solution is the slice average;
+   * exact for parts whose conductances do not change between sub-steps.
+   */
+  forEachElementOf(owner: number, fn: (el: LedgerElement) => void): void {
+    const segs = this.segments;
+    for (let j = 0; j < segs.length; j++) {
+      const seg = segs[j] as OwnerSegment;
+      if (seg.owner !== owner) continue;
+      const next = segs[j + 1];
+      const lists = [this.conductances, this.currents, this.sources, this.diodes, this.devices] as const;
+      const starts = [seg.g, seg.i, seg.src, seg.d, seg.dev];
+      const ends = next ? [next.g, next.i, next.src, next.d, next.dev] : lists.map((l) => l.length);
+      for (let l = 0; l < 5; l++) {
+        const list = lists[l] as readonly LedgerElement[];
+        for (let k = starts[l] ?? 0, e = ends[l] ?? 0; k < e; k++) fn(list[k] as LedgerElement);
+      }
+    }
+  }
+
+  /** The elements `owner` stamped (see {@link forEachElementOf}). */
+  elementsOf(owner: number): LedgerElement[] {
+    const out: LedgerElement[] = [];
+    this.forEachElementOf(owner, (el) => out.push(el));
+    return out;
+  }
+
+  // Reusable accumulator for the per-slice reads below: no closure or array per call (TD §18.2 budget).
+  private readonly acc = { net: 0 as NetId, sum: 0, s: null as MnaSolution | null };
+  private readonly addCurrent = (n: NetId, amps: number): void => {
+    if (n === this.acc.net) this.acc.sum += amps;
+  };
+  private readonly addPower = (n: NetId, amps: number): void => {
+    this.acc.sum += (this.acc.s?.voltage(n) ?? 0) * amps;
+  };
+
+  /** Feeds every terminal current of `owner`'s elements to `emit`, walking its segments in place. */
+  private visit(owner: number, s: MnaSolution, emit: (n: NetId, amps: number) => void): void {
+    const segs = this.segments;
+    for (let j = 0; j < segs.length; j++) {
+      const seg = segs[j] as OwnerSegment;
+      if (seg.owner !== owner) continue;
+      const next = segs[j + 1];
+      for (let k = seg.g, e = next ? next.g : this.conductances.length; k < e; k++)
+        elementTerminalCurrents(this.conductances[k] as Conductance, s, emit);
+      for (let k = seg.i, e = next ? next.i : this.currents.length; k < e; k++)
+        elementTerminalCurrents(this.currents[k] as CurrentSource, s, emit);
+      for (let k = seg.src, e = next ? next.src : this.sources.length; k < e; k++)
+        elementTerminalCurrents(this.sources[k] as Branch, s, emit);
+      for (let k = seg.d, e = next ? next.d : this.diodes.length; k < e; k++)
+        elementTerminalCurrents(this.diodes[k] as Diode, s, emit);
+      for (let k = seg.dev, e = next ? next.dev : this.devices.length; k < e; k++)
+        elementTerminalCurrents(this.devices[k] as Bjt | Mosfet, s, emit);
+    }
+  }
+
+  /** Current flowing from `net` into the elements `owner` stamped (A). */
+  terminalCurrent(owner: number, net: NetId, s: MnaSolution): number {
+    this.acc.net = net;
+    this.acc.sum = 0;
+    this.visit(owner, s, this.addCurrent);
+    return this.acc.sum;
+  }
+
+  /** Power absorbed by the elements `owner` stamped (W): Σ V(net)·I_in over their terminals. */
+  ownerPower(owner: number, s: MnaSolution): number {
+    this.acc.s = s;
+    this.acc.sum = 0;
+    this.visit(owner, s, this.addPower);
+    this.acc.s = null;
+    return this.acc.sum;
+  }
+
+  /** Owners with at least one element in the present stamp. */
+  ownerIds(): Set<number> {
+    const out = new Set<number>();
+    for (const seg of this.segments) {
+      let any = false;
+      this.forEachElementOf(seg.owner, () => (any = true));
+      if (any) out.add(seg.owner);
+    }
+    return out;
   }
 
   conductance(a: NetId, b: NetId, siemens: number): void {
@@ -359,7 +510,7 @@ export class MnaCircuit implements MnaStamper {
     this.checkNet(b);
     if (!(siemens >= 0) || !Number.isFinite(siemens))
       throw new RangeError(`Conductance must be finite and ≥ 0, got ${siemens}`);
-    this.conductances.push({ a, b, g: siemens });
+    this.conductances.push({ kind: 'conductance', a, b, g: siemens });
   }
 
   /** Convenience for resistors (Ω). */
@@ -371,7 +522,7 @@ export class MnaCircuit implements MnaStamper {
   currentSource(from: NetId, to: NetId, amps: number): void {
     this.checkNet(from);
     this.checkNet(to);
-    this.currents.push({ from, to, amps });
+    this.currents.push({ kind: 'current', from, to, amps });
   }
 
   voltageSource(
@@ -387,8 +538,19 @@ export class MnaCircuit implements MnaStamper {
     this.checkNet(returnNet);
     if (!(seriesResistance >= 0))
       throw new RangeError(`Series resistance must be ≥ 0, got ${seriesResistance}`);
-    this.sources.push({ pos, neg, volts, r: seriesResistance, returnNet, control: null, reactive: null });
-    return (this.sources.length - 1) as SourceHandle;
+    const handle = this.sources.length as SourceHandle;
+    this.sources.push({
+      kind: 'branch',
+      handle,
+      pos,
+      neg,
+      volts,
+      r: seriesResistance,
+      returnNet,
+      control: null,
+      reactive: null,
+    });
+    return handle;
   }
 
   transformer(
@@ -404,6 +566,8 @@ export class MnaCircuit implements MnaStamper {
     if (!(r >= 0)) throw new RangeError(`Series resistance must be ≥ 0, got ${r}`);
     if (!Number.isFinite(ratio)) throw new RangeError(`Transformer ratio must be finite, got ${ratio}`);
     this.sources.push({
+      kind: 'branch',
+      handle: this.sources.length as SourceHandle,
       pos: secondaryPos,
       neg: secondaryNeg,
       volts: -(options.offsetV ?? 0),
@@ -419,23 +583,28 @@ export class MnaCircuit implements MnaStamper {
     this.checkNet(anode);
     this.checkNet(cathode);
     if (!(params.rs > 0)) throw new RangeError(`Diode series resistance must be > 0, got ${params.rs}`);
-    this.diodes.push({ anode, cathode, vf: params.vf, rs: params.rs });
-    return (this.diodes.length - 1) as DiodeHandle;
+    const handle = this.diodes.length as DiodeHandle;
+    this.diodes.push({ kind: 'diode', handle, anode, cathode, vf: params.vf, rs: params.rs });
+    return handle;
   }
 
   bjt(collector: NetId, base: NetId, emitter: NetId, params: BjtParams): TransistorHandle {
     for (const n of [collector, base, emitter]) this.checkNet(n);
     if (!(params.beta > 0) || !(params.rb > 0) || !(params.rceSat > 0))
       throw new RangeError('BJT beta, rb and rceSat must be > 0');
-    this.devices.push({ ...params, c: collector, b: base, e: emitter });
-    return (this.devices.length - 1) as TransistorHandle;
+    const handle = this.devices.length as TransistorHandle;
+    const sign = params.polarity === 'npn' ? 1 : -1;
+    this.devices.push({ ...params, kind: 'bjt', handle, sign, c: collector, b: base, e: emitter });
+    return handle;
   }
 
   mosfet(drain: NetId, gate: NetId, source: NetId, params: MosfetParams): TransistorHandle {
     for (const n of [drain, gate, source]) this.checkNet(n);
     if (!(params.k > 0)) throw new RangeError(`MOSFET k must be > 0, got ${params.k}`);
-    this.devices.push({ ...params, d: drain, g: gate, s: source });
-    return (this.devices.length - 1) as TransistorHandle;
+    const handle = this.devices.length as TransistorHandle;
+    const sign = params.polarity === 'n' ? 1 : -1;
+    this.devices.push({ ...params, kind: 'mosfet', handle, sign, d: drain, g: gate, s: source });
+    return handle;
   }
 
   capacitor(
@@ -562,7 +731,17 @@ export class MnaCircuit implements MnaStamper {
   }
 
   private pushReactive(a: NetId, b: NetId, reactive: Reactive): SourceHandle {
-    this.sources.push({ pos: a, neg: b, volts: 0, r: 0, returnNet: b, control: null, reactive });
+    this.sources.push({
+      kind: 'branch',
+      handle: this.sources.length as SourceHandle,
+      pos: a,
+      neg: b,
+      volts: 0,
+      r: 0,
+      returnNet: b,
+      control: null,
+      reactive,
+    });
     this.reactive.push(this.sources.length - 1);
     return (this.sources.length - 1) as SourceHandle;
   }
@@ -849,7 +1028,7 @@ function companion(e: Reactive, h: number): { r: number; volts: number } {
   return { r: e.r + e.henries * a0, volts: e.emf + e.henries * (a1 * e.state.amps + a2 * prev) };
 }
 
-const isBjt = (d: Bjt | Mosfet): d is Bjt => 'beta' in d;
+const isBjt = (d: Bjt | Mosfet): d is Bjt => d.kind === 'bjt';
 
 /**
  * Level-1 MOSFET in its own frame (N-channel signs; `vgs` already includes the polarity): drain

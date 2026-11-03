@@ -87,6 +87,20 @@ const isRailPin = (pin: string): pin is RailPin => pin in RAILS;
 const MCU_PINS = new Set(UNO_MCU_PINS.map((p) => p.id));
 const GROUND_PINS = new Set(avrUno.pins.filter((p) => p.capabilities.includes('ground')).map((p) => p.id));
 
+/** What an Uno header pin is in the engine: an MCU pin, ground, a supply rail part, or not simulated. */
+export type BoardTerminal =
+  | { readonly kind: 'mcu'; readonly pin: string }
+  | { readonly kind: 'ground' }
+  | { readonly kind: 'rail'; readonly partId: string }
+  | null;
+
+export function boardTerminal(pin: string): BoardTerminal {
+  if (MCU_PINS.has(pin)) return { kind: 'mcu', pin };
+  if (GROUND_PINS.has(pin)) return { kind: 'ground' };
+  if (isRailPin(pin)) return { kind: 'rail', partId: RAILS[pin].id };
+  return null;
+}
+
 export function findingView(f: Finding): FindingView {
   return {
     ruleId: f.ruleId,
