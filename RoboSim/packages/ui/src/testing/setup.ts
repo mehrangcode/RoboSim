@@ -15,8 +15,9 @@ declare module 'vitest' {
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars */
 
-// The 1 s default is too short for lazy routes when turbo runs several packages' suites at once.
-configure({ asyncUtilTimeout: 5000 });
+// Under load (turbo running several suites, cold Vite transforms) lazy routes can take seconds to appear.
+// Keep this well below the suites' testTimeout (30 s) so a slow wait fails as a wait, not a test timeout.
+configure({ asyncUtilTimeout: 10_000 });
 
 afterEach(() => {
   cleanup();

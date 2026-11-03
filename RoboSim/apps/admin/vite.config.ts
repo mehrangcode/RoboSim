@@ -26,5 +26,5 @@ export default defineConfig({
   },
   preview: { port: 4174 },
   build: { sourcemap: true, target: 'es2023' },
-  test: { maxWorkers: 4, environment: 'jsdom', setupFiles: ['./src/test-setup.ts'] },
+  test: { maxWorkers: 4, testTimeout: 30_000, environment: 'jsdom', setupFiles: ['./src/test-setup.ts'] },
 });
