@@ -1,6 +1,6 @@
 # Context — Insight & tooling track
 
-**Status (2026-11-04):** IT-4 (power budget) done: `pnpm verify` 279/279, browser check EN/FA on motor-driver (estimate → measured, chart, ⚠ peak over rating, RTF 1.00× while recording). Next: IT-5 (serial log export). IT-1 browser check (step h) still open.
+**Status (2026-11-04):** IT-4 done incl. researched manifest power data and Uno 3.3 V = 50 mA (engine bump, goldens version-only); final `pnpm verify` 279/279. Next: IT-5 (serial log export)..
 
 ## Where the spec lives
 - PRD §6: FR-SAF-08, FR-SIM-12 (status note), FR-SIM-13…21, FR-CIR-11/12, FR-COD-08/09, FR-ARN-13/14, FR-BOM-07, FR-AI-11, FR-WRK-08; PRD §9 row "IT".

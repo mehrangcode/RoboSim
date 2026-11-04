@@ -11,7 +11,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 5. Docs sync: PRD status note on the FR row, TD §18.<n> *Implemented* note, Release-Plan row, README; tick the box below; update context.md.
 
 ## Slices (recommended order)
-- [ ] IT-1 — Wiring ↔ sketch consistency check · FR-SAF-08 · US-SAF-06 · TD §18.1
+- [x] IT-1 — Wiring ↔ sketch consistency check · FR-SAF-08 · US-SAF-06 · TD §18.1
 - [x] IT-2 — Virtual multimeter + measure channel (ADR-026) · FR-SIM-13 · US-SIM-09 · TD §18.2
 - [x] IT-3 — Analog oscilloscope (phase 1 + fine mode) · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
 - [x] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
@@ -43,7 +43,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] e. circuit-canvas: `boardPinView(doc)` (+ passthrough follow) + tests; `highlight` prop on CircuitCanvas
 - [x] f. web: `useCodeFacts` shared hook, `useConsistency` (300 ms), Safety tab works while editing (group + badge), fixes (one undo), code markers, click → canvas highlight, AI context
 - [x] g. i18n EN/FA (safety.json, shell.json, dynamic keys)
-- [ ] h. corpus test (demos/guided refs: no UNWIRED/DIRECTION), STATIC_RULES unchanged; `pnpm verify`; browser check FA/EN
+- [x] h. corpus test (demos/guided refs: no UNWIRED/DIRECTION), STATIC_RULES unchanged; `pnpm verify`; browser check FA/EN (owner checked it in the browser, 2026-11-04)
 - [x] i. docs sync (PRD status, TD §18.1 implemented note, Release-Plan, README)
 
 ## IT-2 detailed steps (owner answers 2026-11-03: no flag (like IT-1); armed "Place red/black" buttons + Enter/Shift+Enter; probes session-only; KCL-audit fixes only if goldens hold, else document; never commit)
