@@ -659,6 +659,7 @@ function Workspace({
     sim,
     active: dockTab === 'power' && (size === 'narrow' || !layout.collapsed.dock),
     projectKey: cloudOpen?.id ?? 'local',
+    runReady: run.ready,
   });
   const canvasMode: CanvasMode =
     run.phase === 'live' ? 'run' : size === 'narrow' || readOnly ? 'view' : 'edit';

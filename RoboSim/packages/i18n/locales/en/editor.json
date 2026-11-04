@@ -410,6 +410,7 @@
       "other": "Other",
       "at": "At {time}",
       "summary": "Stacked power of {count} series, up to {max}. Use the left and right arrow keys to read each moment; the table lists every part."
-    }
+    },
+    "includesOutputs": "(includes what it passes to its outputs)"
   }
 }

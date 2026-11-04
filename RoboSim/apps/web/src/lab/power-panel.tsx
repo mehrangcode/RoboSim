@@ -93,6 +93,8 @@ export function PowerPanel({
         ? t('editor:power.boardPin', { pin: key.slice(BOARD_PART.length + 1) })
         : key;
   const loadOf = useMemo(() => new Map(budget.loads.map((l) => [l.id, l])), [budget]);
+  /** Drivers feeding loads: measured, their supply current includes what their outputs pass on. */
+  const drivers = useMemo(() => new Set(budget.loads.flatMap((l) => (l.via ? [l.via] : []))), [budget]);
 
   const rows: PowerRow[] = useMemo(() => {
     if (mode === 'static' || !energy)
@@ -107,8 +109,10 @@ export function PowerPanel({
         joules: null,
       }));
     const ids = new Set(doc.components.map((c) => c.id));
+    // Batteries deliver energy: they have their own cards, not a load row.
+    const batteries = new Set(budget.sources.filter((s) => s.kind === 'battery').map((s) => s.part));
     return energy.parts
-      .filter((p) => ids.has(p.id) && (p.joules > 0 || p.avgMa > 0))
+      .filter((p) => ids.has(p.id) && !batteries.has(p.id) && (p.joules > 0 || p.avgMa > 0))
       .map((p) => ({
         id: p.id,
         source: loadOf.get(p.id)?.source ?? null,
@@ -316,6 +320,9 @@ export function PowerPanel({
                 <tr key={r.id} className="border-t border-line text-ink">
                   <th scope="row" className="px-1 py-0.5 text-start font-normal">
                     {r.id}
+                    {mode === 'measured' && drivers.has(r.id) ? (
+                      <span className="text-ink-muted"> {t('editor:power.includesOutputs')}</span>
+                    ) : null}
                     {loadOf.get(r.id)?.via ? (
                       <span className="text-ink-muted">
                         {' '}

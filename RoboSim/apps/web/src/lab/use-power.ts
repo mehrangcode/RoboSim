@@ -106,11 +106,14 @@ export function usePower({
   sim,
   active,
   projectKey,
+  runReady = true,
 }: {
   doc: ProjectDocument;
   sim: { energy: EnergyView | null; energyOn(on: boolean): void };
   active: boolean;
   projectKey: string;
+  /** A run of the document being edited is loaded: otherwise a report describes an older circuit. */
+  runReady?: boolean;
 }): PowerModel {
   const [settings, setSettings] = useState(load);
   const update = useCallback((f: (s: PowerSettings) => PowerSettings) => {
@@ -126,7 +129,7 @@ export function usePower({
 
   const duty = useMemo(() => settings.duty[projectKey] ?? {}, [settings.duty, projectKey]);
   const budget = useMemo(() => staticBudget(doc, duty), [doc, duty]);
-  const energy = sim.energy;
+  const energy = runReady ? sim.energy : null;
 
   const batteries = useMemo(() => {
     const roots = budget.sources.filter((s) => s.battery);

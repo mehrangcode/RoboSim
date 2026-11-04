@@ -14,7 +14,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [ ] IT-1 — Wiring ↔ sketch consistency check · FR-SAF-08 · US-SAF-06 · TD §18.1
 - [x] IT-2 — Virtual multimeter + measure channel (ADR-026) · FR-SIM-13 · US-SIM-09 · TD §18.2
 - [x] IT-3 — Analog oscilloscope (phase 1 + fine mode) · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
-- [ ] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
+- [x] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
 - [ ] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
 - [ ] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
 - [ ] IT-7 — Wiring hints and auto-tidy · FR-CIR-11 · US-CIR-08 · TD §18.7
@@ -76,5 +76,5 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] e. circuit-canvas: `power-budget.ts` `staticBudget(doc)` (supply tree, regulator chaining, buck η) + tests
 - [x] f. web: `lab/power-panel.tsx` (table, stacked SVG energy chart, battery cards, static/measured toggle, warnings → SAF-SUPPLY-OVERLOAD), dock tab `'power'`, duty in localStorage + tests
 - [x] g. i18n EN/FA `power.*`
-- [ ] h. cross-check test (motor-driver brown-out vs estimate ≤ 10 %); perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN
+- [x] h. cross-check test (motor-driver brown-out vs estimate ≤ 10 %); perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN
 - [x] i. docs sync (PRD, TD §18.4 note, Release-Plan, README)

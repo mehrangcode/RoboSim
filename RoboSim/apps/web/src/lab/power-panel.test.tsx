@@ -160,6 +160,8 @@ describe('power panel (FR-SIM-15, US-SIM-11)', () => {
     expect(hours).toBeLessThan(10);
     expect(card).toHaveTextContent(/Until \S*4\.4 V\S* at \S*200 mA/);
     expect(screen.getByRole('img', { name: /Stacked power of 3 series/ })).toBeInTheDocument();
+    // The pack delivers: it has its card, not a load row.
+    expect(screen.queryByRole('rowheader', { name: /^pack/ })).toBeNull();
   });
 
   it('marks a regulator over its rating and links to SAF-SUPPLY-OVERLOAD (AC2)', async () => {
@@ -203,6 +205,28 @@ describe('power panel (FR-SIM-15, US-SIM-11)', () => {
     expect(energyOn).toHaveBeenLastCalledWith(false);
     await user.click(screen.getByRole('checkbox', { name: 'Record power on every run' }));
     expect(energyOn).toHaveBeenLastCalledWith(true);
+  });
+
+  it('drops the measured values once the run no longer matches the document', async () => {
+    const i18n: I18n = await initI18n('en');
+    const d = robot();
+    function Stale() {
+      const power = usePower({
+        doc: d,
+        sim: { energy: measured(), energyOn: () => {} },
+        active: true,
+        projectKey: 'p1',
+        runReady: false,
+      });
+      return <PowerPanel doc={d} power={power} findings={[]} onShowFinding={() => {}} />;
+    }
+    render(
+      <I18nextProvider i18n={i18n}>
+        <Stale />
+      </I18nextProvider>,
+    );
+    expect(screen.queryByRole('radio', { name: /Measured/ })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Estimate' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('says since when it was opened mid-run', async () => {

@@ -1,6 +1,6 @@
 # Context — Insight & tooling track
 
-**Status (2026-11-04):** IT-4 (power budget) implemented: steps a–g + i done, step h: cross-check + perf + tests green; final `pnpm verify` and FA/EN browser check pending. IT-1 browser check (step h) still open.
+**Status (2026-11-04):** IT-4 (power budget) done: `pnpm verify` 279/279, browser check EN/FA on motor-driver (estimate → measured, chart, ⚠ peak over rating, RTF 1.00× while recording). Next: IT-5 (serial log export). IT-1 browser check (step h) still open.
 
 ## Where the spec lives
 - PRD §6: FR-SAF-08, FR-SIM-12 (status note), FR-SIM-13…21, FR-CIR-11/12, FR-COD-08/09, FR-ARN-13/14, FR-BOM-07, FR-AI-11, FR-WRK-08; PRD §9 row "IT".
@@ -28,3 +28,4 @@
 - IT-4 decisions (2026-11-04): hybrid capture (phase-averaged per slice; sub-step integration only on re-solving/transient slices); all manifests filled from datasheets with a review table; duty % in localStorage per project; energy buckets merge 2:1 past 300; no `it.power-budget` flag consumer (like IT-1..3).
 - IT-4 implementation notes (2026-11-04): no `peakCurrentMa` added (only SAF-SUPPLY-OVERLOAD reads it; adding would change static findings) — pessimistic static bound falls back to typical; new `limits.dropoutV` on the 3 regulators; `BATTERY_CELLS` exported by component-battery; `Simulation.mcuPower()` + `watchPower(ids, {mcu})` with O(1) slots and one ledger pass per sub-step (`MnaCircuit.addOwnerPowers`); energy buckets sent incrementally (TD's 20 KB at 50×300 was wrong: 60 KB) with `bucketFrom`.
 - IT-4 perf decision (owner, 2026-11-04): energy meter costs ~5 % lap / ~7 % worst while recording (TD's 1 % assumed identity-cache hits; motor robots re-solve every slice) → recording only while the Power panel is open or the opt-in "record every run" (localStorage) is set; main→worker `energy {on}`; report carries `fromSlice` ("measured since"); budgets 8 % / 12 % while recording, 0 when off.
+- IT-4 browser-check fixes (2026-11-04): measured values hidden unless `run.ready` (a stopped run of an older project showed a stale report); batteries left out of the load table (they have cards); a driver's measured row says it includes what it passes to its outputs (static shows only its own draw).
