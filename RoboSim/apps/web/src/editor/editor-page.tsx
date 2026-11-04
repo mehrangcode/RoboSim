@@ -55,7 +55,8 @@ import { PowerPanel } from '../lab/power-panel.js';
 import { usePower } from '../lab/use-power.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
-import { SerialMonitor } from '../lab/serial-monitor.js';
+import { SerialDiffPanel, type SourceId } from '../lab/serial-diff.js';
+import { SerialMonitor, savedMonitorBaud } from '../lab/serial-monitor.js';
 import { SketchPanel } from '../lab/sketch-panel.js';
 import type { EditorCommand } from '../code-editor/types.js';
 import { compileWithApi, type CompileSketch } from '../lab/use-build.js';
@@ -99,6 +100,7 @@ import { useRun } from './use-run.js';
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
 type DockTab =
   | 'serial'
+  | 'diff'
   | 'pins'
   | 'analyzer'
   | 'meter'
@@ -414,6 +416,9 @@ function Workspace({
   const opening = useRef<ScenarioId | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [dockTab, setDockTab] = useState<DockTab>('serial');
+  // Serial diff (FR-SIM-21): the sources it opens with, and the monitor's baud it decodes at.
+  const [diffRequest, setDiffRequest] = useState<{ key: number; a: SourceId; b: SourceId } | null>(null);
+  const [monitorBaud, setMonitorBaud] = useState(savedMonitorBaud);
   const [bomFallback] = useState(() => bomApi(() => i18n.language));
   const bomClient = bom ?? bomFallback;
   const [learningFallback] = useState(() => learningApi(() => i18n.language));
@@ -894,6 +899,7 @@ function Workspace({
   const dockTabs: DockTab[] = [
     'assistant',
     'serial',
+    'diff',
     'pins',
     'analyzer',
     'meter',
@@ -937,6 +943,13 @@ function Workspace({
       }}
     />
   ) : null;
+  const openDiff = (a: SourceId, b: SourceId) => {
+    setDiffRequest((r) => ({ key: (r?.key ?? 0) + 1, a, b }));
+    setDockTab('diff');
+    if (layout.collapsed.dock) toggle('dock');
+    setMobileTab('monitor');
+  };
+  const verifiedSerial = verified.state.status === 'done' ? verified.state.serialTrace : null;
   // A tab that went away (the challenge or verified run of an earlier run) falls back to the serial monitor.
   const shownDock: DockTab = dockTabs.includes(dockTab) ? dockTab : 'serial';
   const dock = (
@@ -967,7 +980,21 @@ function Workspace({
             />
           </Suspense>
         ) : shownDock === 'verify' ? (
-          <VerifyPanel state={verified.state} frame={live} serial={sim.serial} />
+          <VerifyPanel
+            state={verified.state}
+            frame={live}
+            serial={sim.serial}
+            onCompareSerial={() => openDiff('live', 'verified')}
+          />
+        ) : shownDock === 'diff' ? (
+          <SerialDiffPanel
+            key={diffRequest?.key ?? 0}
+            archive={sim.serialArchive}
+            previous={sim.previousSerial}
+            verified={verifiedSerial}
+            monitorBaud={monitorBaud}
+            {...(diffRequest ? { initial: diffRequest } : {})}
+          />
         ) : shownDock === 'safety' ? (
           <FindingsPanel
             findings={findings}
@@ -1018,7 +1045,22 @@ function Workspace({
         ) : shownDock === 'challenge' && live.challenge ? (
           <ChallengePanel challenge={live.challenge} send={send} />
         ) : scene.serial ? (
-          <SerialMonitor bare log={serialLog} send={send} onClear={clearSerial} />
+          <SerialMonitor
+            bare
+            log={serialLog}
+            archive={sim.serialArchive}
+            fileBase={fileBase(doc)}
+            send={send}
+            onClear={clearSerial}
+            onCompare={() =>
+              verifiedSerial
+                ? openDiff('live', 'verified')
+                : sim.previousSerial
+                  ? openDiff('previous', 'live')
+                  : openDiff('live', 'file')
+            }
+            onBaudChange={setMonitorBaud}
+          />
         ) : (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.noSerial')}</p>
         )}

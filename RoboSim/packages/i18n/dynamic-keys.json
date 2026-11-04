@@ -74,6 +74,11 @@
     "editor:scope.col.",
     "editor:scope.window.",
     "editor:power.status.",
-    "editor:power.life."
+    "editor:power.life.",
+    "shell:lab.serialExport.format.",
+    "shell:lab.serialDiff.source.",
+    "shell:lab.serialDiff.side.",
+    "shell:lab.serialDiff.first.",
+    "shell:lab.serialDiff.kind."
   ]
 }

@@ -36,10 +36,38 @@ export function resample(bytes: Uint8Array, txBaud: number, rxBaud: number): Uin
 }
 
 /** {@link resample} plus, per received byte, the index of the sent byte its start edge fell in. */
-function reframe(bytes: Uint8Array, txBaud: number, rxBaud: number): { bytes: Uint8Array; from: number[] } {
-  if (txBaud <= 0 || rxBaud <= 0 || Math.abs(txBaud - rxBaud) / rxBaud <= BAUD_TOLERANCE / 10) {
-    return { bytes, from: Array.from(bytes, (_, i) => i) };
+function reframe(
+  bytes: Uint8Array,
+  txBaud: number,
+  rxBaud: number,
+): { bytes: Uint8Array; from: number[] | null } {
+  // `from: null`: every received byte is the sent byte at the same index.
+  if (txBaud <= 0 || rxBaud <= 0 || framesExactly(txBaud, rxBaud)) return { bytes, from: null };
+  return reframeBits(bytes, txBaud, rxBaud);
+}
+
+/**
+ * True when a receiver at `rxBaud` reads back-to-back frames sent at `txBaud` unchanged: every
+ * mid-bit sample of a frame falls in the same sent bit (with a margin for float rounding) and the
+ * next start-edge search begins at the next frame's start bit.
+ */
+export function framesExactly(txBaud: number, rxBaud: number): boolean {
+  const r = txBaud / rxBaud;
+  const MARGIN = 1e-3;
+  for (let k = -1; k < 8; k++) {
+    const at = (k + 1.5) * r; // sent bit (from the start edge) the receiver samples for bit k
+    if (Math.floor(at) !== k + 1 || at - (k + 1) < MARGIN || k + 2 - at < MARGIN) return false;
   }
+  const next = 9.5 * r; // the search resumes at ceil(next); it must not pass the next start bit
+  return next <= 10 - MARGIN && next >= 9 + MARGIN;
+}
+
+/** The bit-level receiver behind {@link reframe} (exported for the equivalence test). */
+export function reframeBits(
+  bytes: Uint8Array,
+  txBaud: number,
+  rxBaud: number,
+): { bytes: Uint8Array; from: number[] } {
   const totalBits = bytes.length * 10;
   // Line level at tx bit index n: start 0, data LSB first, stop 1, idle 1 after the last frame.
   const level = (n: number): 0 | 1 => {
@@ -78,6 +106,8 @@ export interface SerialLine {
   /** Slice (ms) the line's first byte was sent in. */
   readonly slice: number;
   readonly text: string;
+  /** Standard rate the sketch sent the line's first byte at (0 before `Serial.begin`). */
+  readonly baud: number;
 }
 
 export interface DecodedSerial {
@@ -96,45 +126,78 @@ export interface DecodedSerial {
  */
 export function decodeSerial(chunks: readonly SerialChunk[], monitorBaud: number): DecodedSerial {
   const utf8 = new TextDecoder();
-  const lines: { slice: number; text: string }[] = [];
-  let open: { slice: number; text: string } | null = null;
+  const lines: SerialLine[] = [];
+  let open: { slice: number; text: string; baud: number } | null = null;
   let pendingCr = false;
   let sketchBaud: number | null = null;
   // Chunks that follow each other without an idle gap at one baud are one bit stream: re-framing
   // must see them joined. Each byte keeps the slice it was sent in.
-  const runs: { baud: number; bytes: number[]; slices: number[]; end: number }[] = [];
+  const runs: { baud: number; chunks: SerialChunk[]; size: number; end: number }[] = [];
   for (const c of chunks) {
     const ms = c.baud > 0 ? (c.bytes.length * 10_000) / c.baud : 0;
     let run = runs.at(-1);
     if (run && run.baud === c.baud && c.slice <= run.end + 1) {
-      run.bytes.push(...c.bytes);
+      run.chunks.push(c);
+      run.size += c.bytes.length;
       run.end = Math.max(run.end, c.slice) + ms;
     } else {
-      run = { baud: c.baud, bytes: [...c.bytes], slices: [], end: c.slice + ms };
+      run = { baud: c.baud, chunks: [c], size: c.bytes.length, end: c.slice + ms };
       runs.push(run);
     }
-    for (let i = 0; i < c.bytes.length; i++) run.slices.push(c.slice);
     if (c.baud > 0) sketchBaud = standardBaud(c.baud) ?? Math.round(c.baud);
   }
+  // Bytes still owed to a multi-byte UTF-8 character: those go through the stream decoder.
+  let owed = 0;
+  const take = (ch: string, slice: number, baud: number) => {
+    if (ch === '\n' && pendingCr) {
+      pendingCr = false;
+      return;
+    }
+    pendingCr = ch === '\r';
+    if (ch === '\n' || ch === '\r') {
+      lines.push(open ?? { slice, text: '', baud });
+      open = null;
+    } else {
+      open ??= { slice, text: '', baud };
+      open.text += ch;
+    }
+  };
   for (const run of runs) {
-    const { bytes, from } = reframe(Uint8Array.from(run.bytes), run.baud, monitorBaud);
+    const sent = new Uint8Array(run.size);
+    const slices = new Float64Array(run.size);
+    let at = 0;
+    for (const c of run.chunks) {
+      sent.set(c.bytes, at);
+      slices.fill(c.slice, at, at + c.bytes.length);
+      at += c.bytes.length;
+    }
+    const { bytes, from } = reframe(sent, run.baud, monitorBaud);
+    const baud = run.baud > 0 ? (standardBaud(run.baud) ?? Math.round(run.baud)) : 0;
     // Decode byte by byte so every character knows the slice of the byte that completed it.
     for (let i = 0; i < bytes.length; i++) {
-      const slice = run.slices[from[i] ?? 0] ?? 0;
-      for (const ch of utf8.decode(bytes.subarray(i, i + 1), { stream: true })) {
-        if (ch === '\n' && pendingCr) {
-          pendingCr = false;
+      const slice = slices[from ? (from[i] ?? 0) : i] ?? 0;
+      const b = bytes[i] ?? 0;
+      if (b < 0x80 && owed === 0) {
+        if (b === 10 || b === 13) {
+          take(b === 10 ? '\n' : '\r', slice, baud);
           continue;
         }
-        pendingCr = ch === '\r';
-        if (ch === '\n' || ch === '\r') {
-          lines.push(open ?? { slice, text: '' });
-          open = null;
-        } else {
-          open ??= { slice, text: '' };
-          open.text += ch;
+        // An ASCII span up to the next line ending is appended at once (the line keeps its first slice).
+        let j = i + 1;
+        for (; j < bytes.length && j - i < 4096; j++) {
+          const c = bytes[j] ?? 0;
+          if (c >= 0x80 || c === 10 || c === 13) break;
         }
+        pendingCr = false;
+        open ??= { slice, text: '', baud };
+        open.text += String.fromCharCode(...bytes.subarray(i, j));
+        i = j - 1;
+        continue;
       }
+      if (b >= 0xc0) owed = b >= 0xf0 ? 3 : b >= 0xe0 ? 2 : 1;
+      else if (b >= 0x80 && owed > 0) owed--;
+      else owed = 0; // a stray continuation or an ASCII byte ends the sequence
+      for (const ch of utf8.decode(bytes.subarray(i, i + 1), { stream: true })) take(ch, slice, baud);
     }
   }
   if (open) lines.push(open);
@@ -170,4 +233,38 @@ export class SerialLog {
     this.size = 0;
     this.version++;
   }
+}
+
+/** Serial output kept for export and diff (FR-SIM-21): the same cap as the grader's `MAX_SERIAL_CHARS`. */
+export const SERIAL_ARCHIVE_BYTES = 1 << 20;
+
+/**
+ * The whole UART output of a run up to {@link SERIAL_ARCHIVE_BYTES}; past the cap the rest is dropped
+ * and `truncated` is set (the first part is kept, like the grader).
+ */
+export class SerialArchive {
+  readonly chunks: SerialChunk[] = [];
+  bytes = 0;
+  truncated = false;
+  version = 0;
+
+  append(chunks: readonly SerialChunk[]): void {
+    for (const c of chunks) {
+      if (this.truncated) return;
+      const room = SERIAL_ARCHIVE_BYTES - this.bytes;
+      const kept = c.bytes.length > room ? { ...c, bytes: c.bytes.slice(0, room) } : c;
+      if (kept.bytes.length) this.chunks.push(kept);
+      this.bytes += kept.bytes.length;
+      this.truncated = c.bytes.length > room;
+      this.version++;
+    }
+  }
+}
+
+/**
+ * Lines of an archived run as a monitor at `monitorBaud` shows them, each stamped with the slice of
+ * its first byte (1 slice = 1 ms, so `t_ms = slice`) and the rate it was sent at.
+ */
+export function serialLines(chunks: readonly SerialChunk[], monitorBaud: number): readonly SerialLine[] {
+  return decodeSerial(chunks, monitorBaud).lines;
 }

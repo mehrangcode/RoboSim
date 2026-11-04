@@ -16,6 +16,7 @@ self.onmessage = async (event: MessageEvent<GradeJob>) => {
       type: 'graded',
       result,
       samples: trace.samples.length,
+      serialTrace: trace.serial,
       digest: await traceDigest(trace),
       wallMs,
     });

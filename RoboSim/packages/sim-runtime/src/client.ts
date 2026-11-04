@@ -15,7 +15,7 @@ import { PinCapture } from './capture.js';
 import { ScopeBuffer } from './scope.js';
 import { SharedSnapshotReader, unpackSnapshot, type SnapshotData } from './snapshot-channel.js';
 import { SnapshotDecoder } from './snapshot-codec.js';
-import { SerialLog } from './serial.js';
+import { SerialArchive, SerialLog } from './serial.js';
 
 export { batteryLife, type BatteryLife, type BatteryLifeInput } from './battery-life.js';
 export type { EnergyPart, EnergySource } from './protocol.js';
@@ -70,6 +70,10 @@ export class SimClient {
   serial = '';
   /** Raw UART output with slices and baud rates, for the Serial Monitor. */
   serialLog = new SerialLog();
+  /** The whole serial output of the present run (up to 1 MB), for export and diff (FR-SIM-21). */
+  serialArchive = new SerialArchive();
+  /** The previous run's archive (the last run that sent any output), for "current vs previous". */
+  previousSerial: SerialArchive | null = null;
   engineVersion: string | null = null;
   /** Input-log entries being replayed by the current run (0 = live run). */
   replaying = 0;
@@ -104,6 +108,8 @@ export class SimClient {
         this.error = null;
         this.serial = '';
         this.serialLog = new SerialLog();
+        if (this.serialArchive.chunks.length) this.previousSerial = this.serialArchive;
+        this.serialArchive = new SerialArchive();
         this.utf8 = new TextDecoder();
         this.decoder = new SnapshotDecoder();
         this.reader = null;
@@ -128,6 +134,7 @@ export class SimClient {
         for (const c of msg.chunks) this.serial += this.utf8.decode(c.bytes, { stream: true });
         this.serial = this.serial.slice(-SERIAL_TAIL_CHARS);
         this.serialLog.append(msg.chunks);
+        this.serialArchive.append(msg.chunks);
         return true;
       case 'findings':
         this.findings = msg.findings;
@@ -285,7 +292,29 @@ export {
   type ScopePwm,
 } from './scope.js';
 export { MAX_PROBE_PINS } from './probe.js';
-export { SERIAL_BAUD_RATES, SerialLog, decodeSerial, resample, standardBaud } from './serial.js';
+export {
+  SERIAL_ARCHIVE_BYTES,
+  SERIAL_BAUD_RATES,
+  SerialArchive,
+  SerialLog,
+  decodeSerial,
+  resample,
+  serialLines,
+  standardBaud,
+} from './serial.js';
+export {
+  DIFF_MAX_D,
+  DIFF_MAX_LINES,
+  diffSerial,
+  diffSerialSteps,
+  textLines,
+  verifiedLines,
+  type DiffLine,
+  type DiffOp,
+  type DiffOptions,
+  type FirstDivergence,
+  type SerialDiff,
+} from './serial-diff.js';
 export type { DecodedSerial, SerialLine } from './serial.js';
 export { packSnapshot } from './snapshot-channel.js';
 export type * from './protocol.js';

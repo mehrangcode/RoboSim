@@ -15,7 +15,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] IT-2 — Virtual multimeter + measure channel (ADR-026) · FR-SIM-13 · US-SIM-09 · TD §18.2
 - [x] IT-3 — Analog oscilloscope (phase 1 + fine mode) · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
 - [x] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
-- [ ] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
+- [x] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
 - [ ] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
 - [ ] IT-7 — Wiring hints and auto-tidy · FR-CIR-11 · US-CIR-08 · TD §18.7
 - [ ] IT-8 — Damage post-mortem · FR-SIM-16 · US-SIM-12 · TD §18.8 · after IT-2, IT-3
@@ -78,3 +78,14 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] g. i18n EN/FA `power.*`
 - [x] h. cross-check test (motor-driver brown-out vs estimate ≤ 10 %); perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN
 - [x] i. docs sync (PRD, TD §18.4 note, Release-Plan, README)
+
+## IT-5 detailed steps (owner answers 2026-11-04: new dock tab 'diff'; decode at the monitor's baud; Clear clears the view only; no flag; keys in shell.json `lab.serialExport.*`/`lab.serialDiff.*`; never commit)
+- [x] a. sim-runtime: `SerialArchive` (1 MB cap, `truncated`), `serialLines` + tests
+- [x] b. sim-runtime: `serial-diff.ts` `diffSerial` (Myers, timing, caps, linear fallback) + tests incl. live vs `grade()` showcase
+- [x] c. sim-runtime client: `serialArchive`, `previousSerial` (reset on `loaded`), exports
+- [x] d. web: `lab/serial-export.ts` (txt / txt+times / csv, `\xNN`, import parser, filename) + tests
+- [x] e. web: `lab/serial-diff.tsx` (sources, side-by-side/stacked, jump to first divergence, ± labels, LTR log) + dock tab `'diff'` + tests
+- [x] f. web: monitor Export ▾ / Compare…; verify-panel "Compare serial with live run" when `differs`
+- [x] g. i18n EN/FA
+- [x] h. perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN
+- [x] i. docs sync (PRD, TD §18.5 note, Release-Plan, README)

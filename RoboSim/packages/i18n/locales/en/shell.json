@@ -195,6 +195,55 @@
       "text": "Monitor",
       "plot": "Plotter"
     },
+    "serialExport": {
+      "button": "Export",
+      "format": {
+        "txt": "Text (.txt)",
+        "txt-times": "Text with times (.txt)",
+        "csv": "CSV (.csv)"
+      }
+    },
+    "serialDiff": {
+      "compare": "Compare…",
+      "side": {
+        "a": "A",
+        "b": "B"
+      },
+      "source": {
+        "live": "This run",
+        "previous": "Previous run",
+        "verified": "Verified run",
+        "file": "Log file…"
+      },
+      "chooseFile": "Log file for {side}",
+      "ignoreTiming": "Ignore timing",
+      "tolerance": "Timing tolerance (ms)",
+      "fileError": "Could not read {name}.",
+      "pick": "Choose a log file to compare.",
+      "comparing": "Comparing…",
+      "identical": "{count, plural, one {Identical: {n} line, same text and times.} other {Identical: {n} lines, same text and times.}}",
+      "first": {
+        "text": "First divergence: line {a} (A) and line {b} (B) differ from column {column}.",
+        "timing": "First divergence: line {a} (A) and line {b} (B) have the same text at different times.",
+        "length": "First divergence: one log ends at line {a} (A) / line {b} (B)."
+      },
+      "counts": "{added} added · {removed} removed · {timing} timing",
+      "jump": "Jump to first divergence",
+      "baudHint": "Baud differs: the monitor decodes this run at another rate than the sketch's Serial.begin, so its text cannot match the verified run. Set the monitor to the sketch's baud.",
+      "tooLarge": "Too large to align (over 20,000 lines or 2,000 changes): only the first divergence is shown.",
+      "truncated": "A log passed the 1 MB cap and was cut; lines after the cut are not compared.",
+      "table": "Aligned lines",
+      "earlier": "Show earlier lines",
+      "later": "Show later lines",
+      "seconds": "{s} s",
+      "kind": {
+        "timing": "timing",
+        "removed": "removed",
+        "added": "added",
+        "changed": "changed",
+        "equal": ""
+      }
+    },
     "sketch": {
       "title": "Sketch",
       "editor": "Arduino code",
@@ -283,7 +332,8 @@
       },
       "speed": "Simulated {sim} s in {wall} s ({factor}× real time)",
       "trace": "{count, plural, one {Trace of # sample} other {Trace of # samples}}, SHA-256",
-      "error": "Verification failed: {message}"
+      "error": "Verification failed: {message}",
+      "compareSerial": "Compare serial with live run"
     }
   },
   "editor": {
@@ -346,7 +396,8 @@
       "verify": "Verified run",
       "meter": "Multimeter",
       "scope": "Oscilloscope",
-      "power": "Power"
+      "power": "Power",
+      "diff": "Serial diff"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {

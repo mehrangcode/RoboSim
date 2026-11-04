@@ -1553,6 +1553,16 @@ The fresh instance is cached per (run, input-log length, damage key), so a secon
 - The verified trace's serial is UTF-8 text without baud, so a baud-mismatched live log differs from it by design. The diff then reports `reason: 'text'` at the first garbled line, with a hint "baud differs".
 - Long-run memory with 3 archives is ~9 MB worst case, which is acceptable.
 
+**Implemented (2026-11-04).** As designed, with these differences (owner decisions 2026-11-04):
+- *Decoded at the monitor's baud.* `serialLines(chunks, monitorBaud)` decodes as the Serial Monitor shows it (same `decodeSerial`), not at each chunk's own baud; every `SerialLine` now carries the `baud` it was sent at (CSV `baud` column). A live log sent at another rate than the monitor's differs from the verified run by design, and the diff then shows the "baud differs" hint. `decodeSerial` got an ASCII fast path and `framesExactly()` (rates whose ratio frames bytes unchanged skip the bit-level `reframeBits`): 1 MB decodes in ≈ 40 ms (budget 50).
+- *Diff is a dock tab.* `@robosim/ui` has no dialog primitive, so "Compare…" opens a new dock tab `'diff'` (`SerialDiffPanel`). Defaults: live ↔ verified when a verified run exists, else previous ↔ live, else live ↔ log file. Side-by-side from a 600 px container width, stacked below; 300 rows per page with earlier/later buttons.
+- *Clear clears the view only.* Export and Compare always use the whole `SerialArchive` (the `SerialLog` tail is untouched by them).
+- *Verified clock.* The grader stamps output with the slice count after the step, the live host with the slice it was sent in, so **new** `verifiedLines()` shifts grader stamps by −1 and splits lines on CR/LF/CRLF like `decodeSerial` (`textLines`); the live `serial` scenario vs `grade()` test is then identical including times. `grade.worker.ts` returns `serialTrace`.
+- *Chunked diff.* `diffSerialSteps()` is a generator; `apps/web/src/lab/run-diff.ts` `diffSerialAsync` runs it in ≈ 12 ms tasks with `setTimeout` between and an `AbortSignal` (a newer input aborts the older diff).
+- *Export.* A backslash that would read as an escape (`\` before `xNN`) is written `\x5C`, so import restores the text exactly; a truncated archive ends with a `--- truncated: output past 1 MB was not kept ---` line (txt) or row (csv). The import parser accepts the exported txt, txt-with-times and csv.
+- *i18n keys* live in `shell.json` (`lab.serialExport.*`, `lab.serialDiff.*`, `lab.verify.compareSerial`), not `editor.json`. No `it.serial-diff` flag consumer (like IT-1…4).
+- *Open point.* After Stop, the dock's live tabs (the Serial Monitor among them) show "Run the project…", so Export/Compare are reachable only while a run is live; the Serial diff tab keeps working after Stop.
+
 ### 18.6 Find a part by function (FR-CIR-12, slice IT-6)
 
 **Goal.** The library search understands what a part does ("measure distance", "اندازه‌گیری فاصله", "drive two motors"), ranks the results, says why each one matches and shows comparison chips. Works offline, no AI needed.

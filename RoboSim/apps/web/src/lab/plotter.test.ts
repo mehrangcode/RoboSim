@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_SERIES, buildPlot, niceTicks, parsePlotLine, plotRange } from './plotter.js';
 
-const line = (text: string, slice = 0) => ({ slice, text });
+const line = (text: string, slice = 0) => ({ slice, text, baud: 9600 });
 
 describe('serial plotter (FR-SIM-07, US-SIM-03 AC2)', () => {
   it('makes each comma-separated column a series (AC2)', () => {

@@ -9,6 +9,8 @@ export type VerifyReply =
       readonly type: 'graded';
       readonly result: VerifiedRun;
       readonly samples: number;
+      /** Serial output stamped with grader slices (`verifiedLines` maps them to the live clock). */
+      readonly serialTrace: GradeResult['trace']['serial'];
       readonly digest: string;
       readonly wallMs: number;
     }

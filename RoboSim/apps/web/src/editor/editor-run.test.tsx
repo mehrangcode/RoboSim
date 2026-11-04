@@ -272,7 +272,14 @@ describe('editor replay, input log and verified runs', () => {
       final: { slice: 1500, pins: live.pins, parts: live.parts },
       serial: '',
     };
-    graders[0]?.reply({ type: 'graded', result, samples: 16, digest: 'ab'.repeat(32), wallMs: 500 });
+    graders[0]?.reply({
+      type: 'graded',
+      result,
+      samples: 16,
+      serialTrace: [],
+      digest: 'ab'.repeat(32),
+      wallMs: 500,
+    });
     expect(graders[0]?.terminated).toBe(true);
     expect(screen.getByText('No decision — ran to 1.50 s')).toBeInTheDocument();
     expect(screen.getByText('Identical to your run at 1.50 s')).toBeInTheDocument();

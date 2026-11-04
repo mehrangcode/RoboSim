@@ -1,5 +1,5 @@
 import type { Frame } from '@robosim/sim-runtime/client';
-import { Card, cn } from '@robosim/ui';
+import { Button, Card, cn } from '@robosim/ui';
 import { useTranslation } from 'react-i18next';
 import { useFormat } from './format.js';
 import { compareWithLive } from './compare-run.js';
@@ -13,10 +13,13 @@ export function VerifyPanel({
   state,
   frame,
   serial,
+  onCompareSerial,
 }: {
   state: VerifyState;
   frame: Frame | null;
   serial: string;
+  /** Opens the serial diff of the live run against this one (FR-SIM-21). */
+  onCompareSerial?: () => void;
 }) {
   const { t } = useTranslation();
   const fmt = useFormat();
@@ -55,6 +58,11 @@ export function VerifyPanel({
               seconds: fmt(state.result.endSlice / 1000, 2),
             })}
           </p>
+          {match === 'differs' && onCompareSerial && (
+            <Button size="sm" variant="secondary" className="self-start" onClick={onCompareSerial}>
+              {t('shell:lab.verify.compareSerial')}
+            </Button>
+          )}
           <p className="text-xs text-ink-muted">
             {t('shell:lab.verify.speed', {
               sim: fmt(state.result.endSlice / 1000, 2),

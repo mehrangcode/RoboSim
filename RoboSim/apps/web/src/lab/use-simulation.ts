@@ -168,6 +168,9 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     restart,
     serial: client.serial,
     serialLog: client.serialLog,
+    /** Whole serial output of this run and of the previous one, for export and diff (FR-SIM-21). */
+    serialArchive: client.serialArchive,
+    previousSerial: client.previousSerial,
     clearSerial,
     capture: client.capture,
     probing,

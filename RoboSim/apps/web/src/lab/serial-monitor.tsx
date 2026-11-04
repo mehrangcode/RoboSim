@@ -1,13 +1,17 @@
 import {
   SERIAL_BAUD_RATES,
   decodeSerial,
+  serialLines,
   type MainToWorker,
+  type SerialArchive,
   type SerialLog,
 } from '@robosim/sim-runtime/client';
 import { Button, Card, SegmentedControl } from '@robosim/ui';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { downloadBlob } from '../editor/project-file.js';
 import { formatSliceTime } from './format.js';
+import { exportFileName, serialExport, type SerialExportFormat } from './serial-export.js';
 import { SerialPlotter } from './serial-plotter.js';
 
 const LINE_ENDINGS = { none: '', nl: '\n', cr: '\r', both: '\r\n' } as const;
@@ -24,6 +28,12 @@ interface MonitorSettings {
 const SETTINGS_KEY = 'robosim.serial.v1';
 // Arduino IDE 2 defaults.
 const DEFAULTS: MonitorSettings = { baud: 9600, lineEnding: 'nl', timestamps: false, view: 'text' };
+
+/** The monitor's baud as saved: export and diff decode at it, so they show what the monitor shows. */
+export const savedMonitorBaud = () => loadSettings().baud;
+
+const MENU_CARET = '▾';
+const EXPORT_FORMATS: readonly SerialExportFormat[] = ['txt', 'txt-times', 'csv'];
 
 function loadSettings(): MonitorSettings {
   try {
@@ -46,13 +56,24 @@ function loadSettings(): MonitorSettings {
  */
 export function SerialMonitor({
   log,
+  archive,
+  fileBase = 'robosim',
   send,
   onClear,
+  onCompare,
+  onBaudChange,
   bare = false,
 }: {
   log: SerialLog;
+  /** Whole output of the run (FR-SIM-21): Export saves it; Clear only empties the view. */
+  archive?: SerialArchive;
+  /** Project part of the export file name. */
+  fileBase?: string;
   send: (m: MainToWorker) => void;
   onClear?: () => void;
+  /** Opens the serial diff. */
+  onCompare?: () => void;
+  onBaudChange?: (baud: number) => void;
   /** Without the card frame and title (inside the editor dock). */
   bare?: boolean;
 }) {
@@ -60,11 +81,13 @@ export function SerialMonitor({
   const [line, setLine] = useState('');
   const [settings, setSettings] = useState(loadSettings);
   const [autoscroll, setAutoscroll] = useState(true);
+  const [exportOpen, setExportOpen] = useState(false);
   const out = useRef<HTMLPreElement>(null);
 
   const update = (patch: Partial<MonitorSettings>) =>
     setSettings((s) => {
       const next = { ...s, ...patch };
+      if (patch.baud !== undefined) onBaudChange?.(patch.baud);
       try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
       } catch {
@@ -88,6 +111,14 @@ export function SerialMonitor({
     if (!text) return;
     send({ type: 'serial', text });
     setLine('');
+  };
+
+  const exportAs = (format: SerialExportFormat) => {
+    setExportOpen(false);
+    if (!archive) return;
+    const body = serialExport(serialLines(archive.chunks, settings.baud), format, archive.truncated);
+    const type = format === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8';
+    downloadBlob(exportFileName(fileBase, format, new Date()), new Blob([body], { type }));
   };
 
   const text = decoded.lines
@@ -158,6 +189,48 @@ export function SerialMonitor({
         {onClear && (
           <Button size="sm" variant="ghost" onClick={onClear} disabled={!decoded.lines.length}>
             {t('shell:lab.serial.clear')}
+          </Button>
+        )}
+        {archive && (
+          <div
+            className="relative"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setExportOpen(false);
+            }}
+          >
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-haspopup="menu"
+              aria-expanded={exportOpen}
+              disabled={!archive.chunks.length}
+              onClick={() => setExportOpen((o) => !o)}
+            >
+              {t('shell:lab.serialExport.button')} <span aria-hidden>{MENU_CARET}</span>
+            </Button>
+            {exportOpen && (
+              <div
+                role="menu"
+                className="absolute end-0 z-20 mt-1 flex w-48 flex-col rounded-md border border-line bg-surface-raised py-1 shadow-md"
+              >
+                {EXPORT_FORMATS.map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    role="menuitem"
+                    className="px-3 py-1 text-start hover:bg-surface focus:bg-surface"
+                    onClick={() => exportAs(f)}
+                  >
+                    {t(`shell:lab.serialExport.format.${f}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {onCompare && (
+          <Button size="sm" variant="ghost" onClick={onCompare}>
+            {t('shell:lab.serialDiff.compare')}
           </Button>
         )}
       </div>

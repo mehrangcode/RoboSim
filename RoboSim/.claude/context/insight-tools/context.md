@@ -1,6 +1,6 @@
 # Context — Insight & tooling track
 
-**Status (2026-11-04):** IT-4 done incl. researched manifest power data and Uno 3.3 V = 50 mA (engine bump, goldens version-only); final `pnpm verify` 279/279. Next: IT-5 (serial log export)..
+**Status (2026-11-04):** IT-4 done incl. researched manifest power data and Uno 3.3 V = 50 mA (engine bump, goldens version-only); final `pnpm verify` 279/279. IT-5 (serial log export/diff) done 2026-11-04: `pnpm verify` 279/279 (web 304 tests), browser check FA/EN, `serialLines` 1 MB ≈ 40 ms. Next: IT-6.
 
 ## Where the spec lives
 - PRD §6: FR-SAF-08, FR-SIM-12 (status note), FR-SIM-13…21, FR-CIR-11/12, FR-COD-08/09, FR-ARN-13/14, FR-BOM-07, FR-AI-11, FR-WRK-08; PRD §9 row "IT".
@@ -30,3 +30,5 @@
 - IT-4 perf decision (owner, 2026-11-04): energy meter costs ~5 % lap / ~7 % worst while recording (TD's 1 % assumed identity-cache hits; motor robots re-solve every slice) → recording only while the Power panel is open or the opt-in "record every run" (localStorage) is set; main→worker `energy {on}`; report carries `fromSlice` ("measured since"); budgets 8 % / 12 % while recording, 0 when off.
 - IT-4 browser-check fixes (2026-11-04): measured values hidden unless `run.ready` (a stopped run of an older project showed a stale report); batteries left out of the load table (they have cards); a driver's measured row says it includes what it passes to its outputs (static shows only its own draw).
 - 3.3 V pin (2026-11-04, owner: fix if Arduino's 50 mA is right): Arduino Uno Rev3 spec is 50 mA (LP2985 chip 150) → board.ts, pins.ts, board-rail.ts, power-budget.ts set to 50; ENGINE bump board-avr-uno 0.4.1 + sim-runtime 0.7.1; golden:update changed only engineVersion (66 files).
+- IT-5 decisions (owner, 2026-11-04): diff view is a new dock tab `'diff'` (no Dialog primitive in @robosim/ui); export/diff decode at the **monitor's** baud (what the monitor shows; verified-run diff then hints "baud differs"); monitor Clear clears the view only, export/compare use the full archive; no flag; i18n keys in shell.json (TD said editor.json).
+- IT-5 notes (2026-11-04): `verifiedLines` shifts grader stamps −1 (grader stamps after the step); Compare… defaults live↔verified, else previous↔live, else live↔file; diff panel derives state (no setState in effects, lint rule `react-hooks/set-state-in-effect`); open point for owner: after Stop the dock's live tabs incl. the Serial Monitor hide, so Export/Compare need a live run (Serial diff tab still works).
