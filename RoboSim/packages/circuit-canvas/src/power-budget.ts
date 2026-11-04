@@ -54,10 +54,10 @@ export interface Budget {
   readonly loads: readonly BudgetLoad[];
 }
 
-/** The board's supply pins (TD §18.4): the USB polyfuse behind 5 V, the LP2985 behind 3.3 V. */
+/** The board's supply pins (TD §18.4): the USB polyfuse behind 5 V; Arduino rates the 3.3 V pin 50 mA. */
 const BOARD_SUPPLIES = [
   { pin: '5V', volts: 5, ratingMa: 500 },
-  { pin: '3V3', volts: 3.3, ratingMa: 150 },
+  { pin: '3V3', volts: 3.3, ratingMa: 50 },
 ] as const;
 
 /** Fixed regulator outputs (V); a buck reads its `outputV` prop. */

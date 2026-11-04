@@ -30,8 +30,8 @@
   "limits": {
     "maxVoltageV": 35,
     "maxOutputCurrentMa": 1500,
-    "typicalCurrentMa": 5,
-    "idleCurrentMa": 5,
+    "typicalCurrentMa": 4.2,
+    "idleCurrentMa": 4.2,
     "minSupplyV": 7,
     "dropoutV": 2
   },

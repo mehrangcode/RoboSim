@@ -44,5 +44,5 @@ function rail(id: string, volts: number, ohms: number, maxCurrentMa: number): Co
 
 /** The Uno's 5 V pin, limited by the USB polyfuse. */
 export const unoFiveVolt = rail('board.uno-5v', 5, 0.1, 500);
-/** The Uno's 3.3 V pin: the LP2985 regulator fed from 5 V (150 mA). */
-export const unoThreeVolt = rail('board.uno-3v3', 3.3, 0.5, 150);
+/** The Uno's 3.3 V pin: the LP2985 fed from 5 V; Arduino rates the pin 50 mA (the chip alone 150 mA). */
+export const unoThreeVolt = rail('board.uno-3v3', 3.3, 0.5, 50);

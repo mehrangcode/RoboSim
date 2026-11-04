@@ -56,7 +56,7 @@
     "peakCurrentMa": 2500,
     "typicalCurrentMa": 500,
     "idleCurrentMa": 10,
-    "minSupplyV": 4
+    "minSupplyV": 4.8
   },
   "traits": ["inductive"],
   "polarity": ["vcc", "gnd"]

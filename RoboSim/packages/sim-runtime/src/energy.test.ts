@@ -202,6 +202,27 @@ describe('battery life against a simulated discharge (Release-Plan IT-4 exit)', 
   });
 });
 
+describe('board supply ratings', () => {
+  it('rates the Uno 3.3 V pin 50 mA (Arduino spec), so 80 mA on it is an overload', () => {
+    const onPin = (pin: string) =>
+      buildRun(
+        project(
+          [{ id: 'line', type: 'sensor.line-5ch' }],
+          [
+            ['board', pin, 'line', 'vcc'],
+            ['line', 'gnd', 'board', 'GND1'],
+          ],
+        ),
+      ).scene.staticFindings.filter((f) => f.ruleId === 'SAF-SUPPLY-OVERLOAD');
+    expect(onPin('3V3')).toEqual([
+      expect.objectContaining({
+        params: expect.objectContaining({ supply: '3V3-rail.pos', ma: 80, limit: 50 }),
+      }),
+    ]);
+    expect(onPin('5V')).toEqual([]); // 80 mA is fine on the 500 mA pin
+  });
+});
+
 describe('energy messages', () => {
   it('reach the client on a forced publish and fold into a per-part series', () => {
     const client = new SimClient();

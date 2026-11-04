@@ -20,7 +20,7 @@ export const avrUno: Board = {
   power: {
     rails: [
       { id: '5V', volts: 5, maxCurrentMa: 500 }, // USB polyfuse
-      { id: '3V3', volts: 3.3, maxCurrentMa: 150 }, // LP2985
+      { id: '3V3', volts: 3.3, maxCurrentMa: 50 }, // Arduino Uno Rev3 spec (LP2985 chip: 150 mA)
       { id: 'VIN', volts: 9, maxCurrentMa: 1000 },
     ],
     regulator: { minInV: 7, maxInV: 12, dropoutV: 1.2 }, // NCP1117 recommended input window

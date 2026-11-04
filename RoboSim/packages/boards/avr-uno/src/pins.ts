@@ -67,7 +67,7 @@ export const UNO_PINS: readonly BoardPinDef[] = [
     maxCurrentMa: GPIO_MAX_MA,
   })),
   power('5V', '5V', 5.5, 500),
-  power('3V3', '3.3V', 3.6, 150),
+  power('3V3', '3.3V', 3.6, 50), // Arduino Uno Rev3 spec: 50 mA (the LP2985 alone is rated 150 mA)
   power('VIN', 'VIN', 20, 1000),
   power('GND1', 'GND', 0, 1000),
   power('GND2', 'GND', 0, 1000),

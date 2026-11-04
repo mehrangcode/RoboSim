@@ -20,7 +20,7 @@
     "minVoltageV": 3.3,
     "maxVoltageV": 5.5,
     "peakCurrentMa": 35,
-    "typicalCurrentMa": 10,
+    "typicalCurrentMa": 35,
     "idleCurrentMa": 5,
     "minSupplyV": 3.3
   },

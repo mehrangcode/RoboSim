@@ -20,9 +20,9 @@
     "minVoltageV": 3.3,
     "maxVoltageV": 5.5,
     "peakCurrentMa": 25,
-    "typicalCurrentMa": 20,
-    "idleCurrentMa": 20,
-    "minSupplyV": 3.3
+    "typicalCurrentMa": 43,
+    "idleCurrentMa": 40,
+    "minSupplyV": 3
   },
   "polarity": ["vcc", "gnd"]
 }

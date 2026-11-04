@@ -76,8 +76,8 @@
     "maxChannelCurrentMa": 1200,
     "peakChannelCurrentMa": 3200,
     "peakCurrentMa": 2,
-    "typicalCurrentMa": 1,
-    "idleCurrentMa": 0.002,
+    "typicalCurrentMa": 1.5,
+    "idleCurrentMa": 0.001,
     "minSupplyV": 2.7
   },
   "polarity": ["vm", "gnd"],

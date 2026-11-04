@@ -5,11 +5,11 @@
  */
 export const ENGINE_PACKAGES = {
   'sim-core': '0.6.0',
-  'board-avr-uno': '0.4.0',
+  'board-avr-uno': '0.4.1',
   components: '0.3.0',
   'safety-rules': '0.4.0',
   'code-analysis': '0.1.0',
-  'sim-runtime': '0.7.0',
+  'sim-runtime': '0.7.1',
 } as const;
 
 export const ENGINE_VERSION = Object.entries(ENGINE_PACKAGES)

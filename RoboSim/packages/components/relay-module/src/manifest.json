@@ -56,8 +56,8 @@
     "peakCurrentMa": 75,
     "contactMaxCurrentMa": 10000,
     "contactMaxDcV": 30,
-    "typicalCurrentMa": 72,
-    "idleCurrentMa": 0.5,
+    "typicalCurrentMa": 85,
+    "idleCurrentMa": 2,
     "minSupplyV": 3.75
   },
   "traits": ["inductive"],

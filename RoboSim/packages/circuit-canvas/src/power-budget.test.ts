@@ -40,7 +40,7 @@ describe('staticBudget (FR-SIM-15, TD §18.4)', () => {
       ),
     );
     const rail = source(b, `${B}.5V`);
-    expect(rail).toMatchObject({ kind: 'rail', volts: 5, ratingMa: 500, typMa: 16, status: 'ok' });
+    expect(rail).toMatchObject({ kind: 'rail', volts: 5, ratingMa: 500, typMa: 15.5, status: 'ok' });
     expect(rail?.loads).toEqual(['sonar', 'dht']);
     expect(load(b, 'sonar')).toMatchObject({ source: `${B}.5V`, typMa: 15, peakMa: 15, duty: 1 });
     expect(source(b, `${B}.3V3`)?.typMa).toBe(0);
@@ -67,7 +67,7 @@ describe('staticBudget (FR-SIM-15, TD §18.4)', () => {
     expect(source(b, 'reg.out')).toMatchObject({ kind: 'regulator', parent: 'bat.pos', volts: 5, typMa: 75 });
     // Linear: the input draws the output current plus the quiescent current.
     const bat = source(b, 'bat.pos');
-    expect(bat).toMatchObject({ kind: 'battery', typMa: 80, cutoffV: 7 });
+    expect(bat).toMatchObject({ kind: 'battery', typMa: 79.2, cutoffV: 7 });
     expect(bat?.battery).toEqual({ cells: 6, capacityMah: 550, internalOhms: 1.5, charge: 1 });
     expect(bat?.volts).toBeCloseTo(6 * 1.58, 6);
   });
@@ -87,8 +87,8 @@ describe('staticBudget (FR-SIM-15, TD §18.4)', () => {
       ),
     );
     const vin = source(b, 'bat.pos')?.volts ?? 0;
-    expect(source(b, 'buck.out+')?.typMa).toBe(72);
-    expect(source(b, 'bat.pos')?.typMa).toBeCloseTo((5 * 72) / (0.85 * vin) + 5, 6);
+    expect(source(b, 'buck.out+')?.typMa).toBe(85);
+    expect(source(b, 'bat.pos')?.typMa).toBeCloseTo((5 * 85) / (0.85 * vin) + 5, 6);
     expect(source(b, 'bat.pos')?.cutoffV).toBeCloseTo(6.5, 9); // 5 V + 1.5 V dropout
   });
 
@@ -114,7 +114,7 @@ describe('staticBudget (FR-SIM-15, TD §18.4)', () => {
       ),
     );
     expect(load(b, 'mA')).toMatchObject({ source: 'pack.pos', via: 'drv', typMa: 75, peakMa: 600 });
-    expect(source(b, 'pack.pos')?.typMa).toBeCloseTo(1 + 75 + 75, 9);
+    expect(source(b, 'pack.pos')?.typMa).toBeCloseTo(1.5 + 75 + 75, 9);
     expect(source(b, 'pack.pos')?.cutoffV).toBe(3); // the motors' 3 V over the driver's 2.7 V
     expect(load(b, 'sw')).toBeUndefined(); // a conductor, not a load
   });
@@ -142,9 +142,14 @@ describe('staticBudget (FR-SIM-15, TD §18.4)', () => {
         [[`${B}.5V`, 'strip.vcc']],
       ),
     );
-    expect(load(b, 'strip')).toMatchObject({ typMa: 160, peakMa: 296 });
+    expect(load(b, 'strip')).toMatchObject({ typMa: 240, peakMa: 296 });
     expect(load(b, 'led')).toMatchObject({ source: null, typMa: 15 });
     expect(load(b, 'r')).toBeUndefined(); // draws nothing on its own
+  });
+
+  it('rates the board 3.3 V pin 50 mA (Arduino spec)', () => {
+    const b = staticBudget(doc([part('line', 'sensor.line-5ch')], [[`${B}.3V3`, 'line.vcc']]));
+    expect(source(b, `${B}.3V3`)).toMatchObject({ ratingMa: 50, typMa: 75, status: 'over' });
   });
 
   it('stays under 10 ms at 200 parts', () => {

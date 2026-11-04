@@ -79,7 +79,7 @@
     "maxOutputCurrentMa": 35,
     "maxSupplyCurrentMa": 70,
     "typicalCurrentMa": 0.1,
-    "idleCurrentMa": 0.002,
+    "idleCurrentMa": 0.008,
     "minSupplyV": 2
   },
   "polarity": ["vcc", "gnd"]

@@ -17,7 +17,7 @@
     "ratedVoltageV": 5,
     "coilOhms": 42,
     "resonantHz": 2700,
-    "typicalCurrentMa": 20,
+    "typicalCurrentMa": 60,
     "idleCurrentMa": 0,
     "minSupplyV": 0
   }
