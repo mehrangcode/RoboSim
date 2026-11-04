@@ -354,5 +354,62 @@
       "all": "Export CSV (whole buffer)"
     },
     "fineRetry": "Turn fine mode on again"
+  },
+  "power": {
+    "title": "Power budget",
+    "mode": {
+      "label": "Values",
+      "static": "Estimate",
+      "measured": "Measured (this run, {seconds} s)",
+      "measuredSince": "Measured (since {since}, {seconds} s)"
+    },
+    "recordAll": "Record power on every run",
+    "basis": {
+      "static": "Estimate from each part's typical current × duty. Run the project with this tab open to measure it.",
+      "measured": "Measured over this run: average and peak of every 1 ms step."
+    },
+    "supplies": "Supplies",
+    "supplyLine": "avg {avg} · peak {peak} · rated {rating}",
+    "status": {
+      "over": "Over rating",
+      "peakOver": "Peak over rating"
+    },
+    "showFinding": "Show the safety finding",
+    "batteries": "Battery life",
+    "boardPin": "Board {pin}",
+    "noSupply": "MCU pin / not on a supply",
+    "empty": "No part draws power yet.",
+    "table": "Current and power per part",
+    "col": {
+      "part": "Part",
+      "supply": "Supply",
+      "duty": "Duty",
+      "typMa": "Typical",
+      "avgMa": "Avg current",
+      "peakMa": "Peak current",
+      "avgMw": "Avg power",
+      "peakMw": "Peak power",
+      "energy": "Energy"
+    },
+    "via": "(via {driver})",
+    "dutyOf": "Duty of {part} (%)",
+    "duration": {
+      "min": "{m} min",
+      "hMin": "{h} h {m} min"
+    },
+    "life": {
+      "range": "≈ {life} ({min} – {max})",
+      "belowCutoff": "Already below the cut-off voltage",
+      "noLoad": "No load: nothing drains it",
+      "assumptions": "Until {cutoff} at {current}; range: high-current bursts to light load. No Peukert effect: real alkalines give less at high current.",
+      "titleEstimate": "{part} — estimate",
+      "titleMeasured": "{part} — from this run"
+    },
+    "chart": {
+      "title": "Power per part over the run (stacked; the area is the energy)",
+      "other": "Other",
+      "at": "At {time}",
+      "summary": "Stacked power of {count} series, up to {max}. Use the left and right arrow keys to read each moment; the table lists every part."
+    }
   }
 }

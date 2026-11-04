@@ -155,4 +155,25 @@ describe('Simulation measurements (FR-SIM-13, ADR-026)', () => {
     // τ = 0.1 ms ≪ 1 ms slice: the charge energy dissipated in R is ½·C·V² over the slice.
     expect(p * 1e-3).toBeCloseTo(0.5 * 1e-7 * 25, 7);
   });
+
+  it('mcuPower closes the energy balance with the MCU pins (TD §18.4)', () => {
+    const core = new FakeCore(
+      CLOCK,
+      () => new Map([['D5', { mode: 'output', level: 1, pwm: { dutyRatio: 0.5, freqHz: 980 } } as const]]),
+    );
+    const sim = new Simulation({
+      netCount: 2,
+      seed: 1,
+      mcu: { core, pins: [{ pin: 'D5', net: 1 }], electrical: UNO_ELECTRICAL },
+      components: [
+        { id: 'r1', model: new Resistor(), pins: { a: 1, b: 2 }, props: { ohms: 220 } },
+        { id: 'led1', model: new Led(), pins: { a: 2, k: 0 }, props: { vf: 2, rs: 10 } },
+      ],
+    });
+    sim.run(5);
+    const mcu = sim.mcuPower();
+    expect(mcu).toBeLessThan(0); // the pin delivers
+    expect(mcu + sim.partPower('r1') + sim.partPower('led1')).toBeCloseTo(0, 9);
+    expect(ledCircuit().mcuPower()).toBe(0); // no MCU
+  });
 });

@@ -29,7 +29,11 @@
   },
   "limits": {
     "maxVoltageV": 35,
-    "maxOutputCurrentMa": 1500
+    "maxOutputCurrentMa": 1500,
+    "typicalCurrentMa": 5,
+    "idleCurrentMa": 5,
+    "minSupplyV": 7,
+    "dropoutV": 2
   },
   "polarity": ["in", "gnd"],
   "supplyPins": [

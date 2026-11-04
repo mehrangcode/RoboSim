@@ -16,6 +16,9 @@
   "traits": ["capacitor"],
   "massG": 0.2,
   "limits": {
-    "ratedVoltageV": 50
+    "ratedVoltageV": 50,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

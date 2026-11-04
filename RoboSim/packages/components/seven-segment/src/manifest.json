@@ -65,7 +65,10 @@
   "limits": {
     "ratedCurrentMa": 20,
     "maxCurrentMa": 30,
-    "maxReverseV": 5
+    "maxReverseV": 5,
+    "typicalCurrentMa": 15,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   },
   "traits": ["led"]
 }

@@ -22,6 +22,9 @@
   "massG": 1.2,
   "limits": {
     "reverseVoltageV": 1,
-    "surgeFactor": 1.15
+    "surgeFactor": 1.15,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

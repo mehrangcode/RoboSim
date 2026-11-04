@@ -76,7 +76,10 @@
   "massG": 1,
   "limits": {
     "maxVoltageV": 50,
-    "maxChannelCurrentMa": 500
+    "maxChannelCurrentMa": 500,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   },
   "polarity": ["com", "gnd"]
 }

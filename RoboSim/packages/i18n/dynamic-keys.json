@@ -72,6 +72,8 @@
     "editor:scope.trigger.mode.",
     "editor:scope.status.",
     "editor:scope.col.",
-    "editor:scope.window."
+    "editor:scope.window.",
+    "editor:power.status.",
+    "editor:power.life."
   ]
 }

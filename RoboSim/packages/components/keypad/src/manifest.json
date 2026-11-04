@@ -124,6 +124,9 @@
   ],
   "massG": 8,
   "limits": {
-    "maxContactCurrentMa": 20
+    "maxContactCurrentMa": 20,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

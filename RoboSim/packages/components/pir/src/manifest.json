@@ -17,6 +17,13 @@
   "inputs": [{ "name": "motion", "type": "boolean", "default": false }],
   "massG": 7,
   "mounting": { "lengthMm": 32, "widthMm": 24, "heightMm": 25 },
-  "limits": { "minVoltageV": 4.5, "maxVoltageV": 20, "peakCurrentMa": 1 },
+  "limits": {
+    "minVoltageV": 4.5,
+    "maxVoltageV": 20,
+    "peakCurrentMa": 1,
+    "typicalCurrentMa": 0.065,
+    "idleCurrentMa": 0.05,
+    "minSupplyV": 4.5
+  },
   "polarity": ["vcc", "gnd"]
 }

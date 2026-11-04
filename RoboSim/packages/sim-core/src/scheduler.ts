@@ -211,6 +211,11 @@ export class Simulation {
   private readonly mcuElectrical: PinElectrical | null;
   /** Parts whose power is integrated per sub-step in transient slices (view-only, see watchPower). */
   private powerWatch: readonly number[] = [];
+  /** Accumulator slot per component index (-1: not watched), and the MCU's. */
+  private powerSlot = new Int32Array(0);
+  private mcuPowerSlot = -1;
+  private readonly slotOf = (owner: number): number =>
+    owner >= 0 ? (this.powerSlot[owner] ?? -1) : owner === OWNER_MCU ? this.mcuPowerSlot : -1;
   private powerAcc = new Float64Array(0);
   private powerWeight = 0;
 
@@ -854,20 +859,40 @@ export class Simulation {
   partPower(componentId: string): number {
     const i = this.indexById.get(componentId);
     if (i === undefined) throw new Error(`Unknown component '${componentId}'`);
-    const w = this.powerWatch.indexOf(i);
+    const w = this.powerSlot[i] ?? -1;
     if (w >= 0 && this.powerWeight > 0 && this.published instanceof WeightedSolution)
       return (this.powerAcc[w] ?? 0) / this.powerWeight;
     return phaseAveragedPower((s) => this.circuit.ownerPower(i, s), this.published);
   }
 
   /**
-   * Parts whose power is integrated per sub-step from the next transient slice on (an instrument
-   * subscribing). View-only: it only reads solutions, so results and replays are unchanged.
+   * Power absorbed by the MCU's pins (W; < 0 while they source current), like `partPower`. With
+   * `partPower` of every part it closes the energy balance (TD §18.4). 0 without an MCU.
    */
-  watchPower(componentIds: readonly string[]): void {
+  mcuPower(): number {
+    if (!this.bus) return 0;
+    const w = this.mcuPowerSlot;
+    if (w >= 0 && this.powerWeight > 0 && this.published instanceof WeightedSolution)
+      return (this.powerAcc[w] ?? 0) / this.powerWeight;
+    return phaseAveragedPower((s) => this.circuit.ownerPower(OWNER_MCU, s), this.published);
+  }
+
+  /**
+   * Parts (and with `mcu`, the MCU pins) whose power is integrated per sub-step from the next transient
+   * slice on (an instrument subscribing). View-only: it only reads solutions, so results and replays
+   * are unchanged.
+   */
+  watchPower(componentIds: readonly string[], options: { readonly mcu?: boolean } = {}): void {
     this.powerWatch = componentIds.flatMap((id) => {
       const i = this.indexById.get(id);
       return i === undefined ? [] : [i];
+    });
+    if (options.mcu && this.bus) this.powerWatch = [...this.powerWatch, OWNER_MCU];
+    this.powerSlot = new Int32Array(this.components.length).fill(-1);
+    this.mcuPowerSlot = -1;
+    this.powerWatch.forEach((owner, slot) => {
+      if (owner === OWNER_MCU) this.mcuPowerSlot = slot;
+      else this.powerSlot[owner] = slot;
     });
     this.powerAcc = new Float64Array(this.powerWatch.length);
     this.powerWeight = 0;
@@ -875,11 +900,16 @@ export class Simulation {
 
   private accumulatePower(s: MnaSolution, h: number): void {
     if (this.powerWatch.length === 0) return;
-    this.powerWatch.forEach((i, k) => {
-      this.powerAcc[k] =
-        (this.powerAcc[k] ?? 0) + h * phaseAveragedPower((v) => this.circuit.ownerPower(i, v), s);
-    });
+    this.addPowers(s, h);
     this.powerWeight += h;
+  }
+
+  /** One ledger pass per solution, per PWM phase when `s` is a phase average (see phaseAveragedPower). */
+  private addPowers(s: MnaSolution, h: number): void {
+    const phased = s as Partial<{ phases(): readonly { solution: MnaSolution; weight: number }[] }>;
+    if (typeof phased.phases === 'function') {
+      for (const ph of phased.phases()) if (ph.weight !== 0) this.addPowers(ph.solution, h * ph.weight);
+    } else this.circuit.addOwnerPowers(s, this.slotOf, this.powerAcc, h);
   }
 
   /** Owner index of a component in the measurement ledger, for KCL audits and tests. */

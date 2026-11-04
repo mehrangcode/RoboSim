@@ -761,6 +761,9 @@ importers:
       '@robosim/catalog':
         specifier: workspace:*
         version: link:../catalog
+      '@robosim/component-battery':
+        specifier: workspace:*
+        version: link:../components/battery
       '@robosim/safety-rules':
         specifier: workspace:*
         version: link:../safety-rules
@@ -2226,6 +2229,9 @@ importers:
       '@robosim/code-analysis':
         specifier: workspace:*
         version: link:../code-analysis
+      '@robosim/component-battery':
+        specifier: workspace:*
+        version: link:../components/battery
       '@robosim/component-chassis-2wd':
         specifier: workspace:*
         version: link:../components/chassis-2wd

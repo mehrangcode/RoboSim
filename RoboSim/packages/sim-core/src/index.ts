@@ -38,7 +38,7 @@ export {
   type SubstepObserver,
 } from './scheduler.js';
 export { Pacer, type PacerOptions, type TickResult } from './pacer.js';
-export { resolveProps, validateManifest, type PropValue } from './manifest.js';
+export { POWER_LIMIT_KEYS, resolveProps, validateManifest, type PropValue } from './manifest.js';
 export {
   CD4000_FAMILY,
   HC_FAMILY,

@@ -15,6 +15,9 @@
   "limits": {
     "maxForwardCurrentMa": 200,
     "zenerV": 5.1,
-    "maxPowerMw": 1000
+    "maxPowerMw": 1000,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

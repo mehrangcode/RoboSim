@@ -149,4 +149,15 @@ describe('component catalog', () => {
     expect(findManifest('sensor.dht11')?.signalDirection?.['data']).toBe('bidir');
     expect(findManifest('sensor.ds18b20')?.signalDirection?.['dq']).toBe('bidir');
   });
+
+  it('gives every part power-budget data (TD §18.4)', () => {
+    for (const m of CATALOG_MANIFESTS)
+      for (const key of ['typicalCurrentMa', 'idleCurrentMa', 'minSupplyV'])
+        expect(m.limits[key] ?? -1, `${m.id} limits.${key}`).toBeGreaterThanOrEqual(0);
+    // A part never idles above its typical draw; a regulator's cut-off covers its dropout.
+    for (const m of CATALOG_MANIFESTS) {
+      expect(m.limits['idleCurrentMa'], m.id).toBeLessThanOrEqual(m.limits['typicalCurrentMa'] ?? 0);
+      if (m.limits['dropoutV'] !== undefined) expect(m.supplyPins?.length, m.id).toBeGreaterThan(0);
+    }
+  });
 });

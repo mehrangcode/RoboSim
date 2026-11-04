@@ -67,3 +67,14 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] g. docs sync (PRD, US-SIM-10 AC3 unchanged, TD §18.3 note: time_ms + PWM rebuild + fine mode deferred, Release-Plan 490/980 wording, README)
 - [x] h. phase 2: fine mode (`addSubstepObserver`, `scopeFine`, auto-disable when RTF < 0.8 × speed for 2 s) + tests
 - [x] i. 4-channel real-time check: `pnpm test:perf` gates the slowest scenario with 4 ch (± fine) < 1 ms/slice; production-build browser A/B at 1.00×; worker tick-period fix
+
+## IT-4 detailed steps (owner answers 2026-11-04: hybrid power capture (phase-avg per slice + sub-step on re-solving slices via watchPower path); I fill all manifests from datasheets + review table; duty % in localStorage per project; buckets merge 2:1 past 300; no flag; never commit)
+- [x] a. manifests: `limits.typicalCurrentMa` / `idleCurrentMa` / `minSupplyV` (+ `peakCurrentMa` where missing) on every part; `validateManifest` ≥ 0 check + catalog test
+- [x] b. sim-runtime: `battery-life.ts` `batteryLife()` (bisection, range) + tests (analytic, monotonic, below cut-off)
+- [x] c. sim-runtime: `energy.ts` `EnergyMeter` (viewOnly, identity caching, hybrid capture, 1 s buckets with 2:1 merge) + tests (conservation 2 % motor-driver/dimmer, cached = uncached, digest unchanged)
+- [x] d. sim-runtime: protocol `energy` message (≤ 500 ms, on pause), host register, client store
+- [x] e. circuit-canvas: `power-budget.ts` `staticBudget(doc)` (supply tree, regulator chaining, buck η) + tests
+- [x] f. web: `lab/power-panel.tsx` (table, stacked SVG energy chart, battery cards, static/measured toggle, warnings → SAF-SUPPLY-OVERLOAD), dock tab `'power'`, duty in localStorage + tests
+- [x] g. i18n EN/FA `power.*`
+- [ ] h. cross-check test (motor-driver brown-out vs estimate ≤ 10 %); perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN
+- [x] i. docs sync (PRD, TD §18.4 note, Release-Plan, README)

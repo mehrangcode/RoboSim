@@ -30,9 +30,16 @@ function timeMs(fn: () => void): number {
 }
 
 /** Average slice of a whole line-follower lap (Uno, 7 parts, physics, safety), until the challenge decides. */
-function lapSliceMs(instrument: 'none' | 'meter' | 'scope' = 'none'): number {
+function lapSliceMs(instrument: 'none' | 'energy' | 'meter' | 'scope' = 'none'): number {
   const run = buildRun({ scenario: 'line-follower' });
   let drain = () => {};
+  if (instrument === 'energy') {
+    // The power budget meter alone (TD §18.4), recording as while its panel is open.
+    const hub = new MeasureHub(run);
+    hub.setEnergy(true);
+    run.circuit.sim.addObserver(hub);
+    drain = () => void hub.energy?.drain();
+  }
   if (instrument === 'scope') {
     // 4 channels (FR-SIM-14): 3 net voltages with their envelope + 1 part current, drained like the host.
     const hub = new MeasureHub(run);
@@ -160,7 +167,74 @@ function netlistInput(): NetlistInput {
   return { terminals, connections, ground: ['p0.a'] };
 }
 
+/** 25 resistor + capacitor pairs on D13: 50 parts, a transient re-solve every slice (TD §18.4 worst case). */
+function fiftyReactiveParts(): Parameters<typeof buildRun>[0] {
+  const { project, firmware } = builtinSource('blink');
+  const components = [];
+  const wires = [];
+  for (let i = 0; i < 25; i++) {
+    components.push(
+      {
+        id: `r${i}`,
+        type: 'passive.resistor',
+        typeVersion: '1.0.0',
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipped: false,
+        props: { ohms: 1000 },
+      },
+      {
+        id: `c${i}`,
+        type: 'passive.capacitor-ceramic',
+        typeVersion: '1.0.0',
+        x: 0,
+        y: 0,
+        rotation: 0,
+        flipped: false,
+        props: { capacitanceNf: 100 },
+      },
+    );
+    wires.push(
+      {
+        id: `a${i}`,
+        from: { part: 'board', pin: 'D13' },
+        to: { part: `r${i}`, pin: 'a' },
+        color: 'yellow',
+        points: [],
+      },
+      {
+        id: `b${i}`,
+        from: { part: `r${i}`, pin: 'b' },
+        to: { part: `c${i}`, pin: 'a' },
+        color: 'yellow',
+        points: [],
+      },
+      {
+        id: `g${i}`,
+        from: { part: `c${i}`, pin: 'b' },
+        to: { part: 'board', pin: 'GND1' },
+        color: 'black',
+        points: [],
+      },
+    );
+  }
+  return { project: { ...project, components, wires } as ProjectDocument, firmware };
+}
+
+/** Average slice (ms) of `slices` slices of a run, with or without the energy meter's hub. */
+function runSliceMs(source: Parameters<typeof buildRun>[0], energy: boolean, slices = 2000): number {
+  const run = buildRun(source);
+  if (energy) {
+    const hub = new MeasureHub(run);
+    hub.setEnergy(true);
+    run.circuit.sim.addObserver(hub);
+  }
+  return timeMs(() => run.circuit.sim.run(slices)) / slices;
+}
+
 const big = twoHundredParts();
+const reactive50 = fiftyReactiveParts();
 const bigRun = buildRun(big);
 const net = netlistInput();
 const budgets = [
@@ -184,6 +258,27 @@ const budgets = [
     measure: () => {
       lapSliceMs('scope');
       const runs = [0, 1, 2, 3, 4].map(() => (lapSliceMs('scope') - lapSliceMs()) * 1000);
+      return Math.max(0, median(runs));
+    },
+  },
+  {
+    // Recording only while the power panel is open (owner decision 2026-11-04; TD §18.4 said 1 %).
+    name: 'Energy meter while recording, added time per slice on the lap (%)',
+    budget: 8,
+    measure: () => {
+      lapSliceMs('energy');
+      const runs = [0, 1, 2, 3, 4].map(() => (lapSliceMs('energy') / lapSliceMs() - 1) * 100);
+      return Math.max(0, median(runs));
+    },
+  },
+  {
+    name: 'Energy meter while recording, re-solve every slice with 50 parts, added time (%)',
+    budget: 12,
+    measure: () => {
+      runSliceMs(reactive50, true, 500);
+      const runs = [0, 1, 2, 3, 4].map(
+        () => (runSliceMs(reactive50, true) / runSliceMs(reactive50, false) - 1) * 100,
+      );
       return Math.max(0, median(runs));
     },
   },

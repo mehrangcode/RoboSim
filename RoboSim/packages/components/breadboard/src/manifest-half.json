@@ -10,5 +10,5 @@
   "inputs": [],
   "massG": 40,
   "mounting": { "lengthMm": 82.5, "widthMm": 54.5, "heightMm": 9 },
-  "limits": { "maxCurrentMa": 1000 }
+  "limits": { "maxCurrentMa": 1000, "typicalCurrentMa": 0, "idleCurrentMa": 0, "minSupplyV": 0 }
 }

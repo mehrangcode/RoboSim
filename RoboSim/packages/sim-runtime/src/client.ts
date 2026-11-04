@@ -1,5 +1,7 @@
 import type {
   Damage,
+  EnergyPart,
+  EnergySource,
   Fault,
   FindingView,
   Frame,
@@ -15,6 +17,9 @@ import { SharedSnapshotReader, unpackSnapshot, type SnapshotData } from './snaps
 import { SnapshotDecoder } from './snapshot-codec.js';
 import { SerialLog } from './serial.js';
 
+export { batteryLife, type BatteryLife, type BatteryLifeInput } from './battery-life.js';
+export type { EnergyPart, EnergySource } from './protocol.js';
+
 /** Serial Monitor keeps this much of the output (characters). */
 export const SERIAL_TAIL_CHARS = 8192;
 /** The meter display averages the last 100 ms of slices (FR-SIM-13: ≈10 Hz readout). */
@@ -29,6 +34,21 @@ export interface ProbeReading {
 
 /** Answer to an `ohms` request. */
 export type OhmsAnswer = Extract<WorkerToMain, { type: 'ohms' }>;
+
+/** Power budget of the present run (FR-SIM-15) as the panel reads it. */
+export interface EnergyView {
+  readonly session: number;
+  /** Slice recording started at (> 0: the panel was opened mid-run). */
+  readonly fromSlice: number;
+  readonly upToSlice: number;
+  readonly seconds: number;
+  readonly parts: readonly EnergyPart[];
+  readonly sources: readonly EnergySource[];
+  readonly mcuJoules: number;
+  readonly bucketSeconds: number;
+  /** Energy per bucket (J) per part id, oldest first. */
+  readonly series: ReadonlyMap<string, Float32Array>;
+}
 
 interface MeasureBatch {
   readonly slices: number;
@@ -72,6 +92,8 @@ export class SimClient {
   private scopeSession = -1;
   /** Oscilloscope samples of the latest scope subscription (FR-SIM-14), or null before the first. */
   scope: ScopeBuffer | null = null;
+  /** Power budget of the present run (FR-SIM-15), or null before its first report. */
+  energy: EnergyView | null = null;
 
   receive(msg: WorkerToMain): boolean {
     switch (msg.type) {
@@ -92,6 +114,7 @@ export class SimClient {
         this.damaged = { parts: [], pins: [] };
         this.measures.clear();
         this.scope = null;
+        this.energy = null;
         return true;
       case 'channel':
         this.reader = new SharedSnapshotReader(msg.buffer);
@@ -123,6 +146,8 @@ export class SimClient {
         if (this.capture?.id !== msg.capture || this.capture.stopped) return false;
         this.capture.append(msg.data, msg.until, msg.full === true);
         return true;
+      case 'energy':
+        return this.foldEnergy(msg);
       case 'scopeFine':
         if (msg.session !== this.scopeSession || !this.scope) return false;
         this.scope.appendFine(msg.reactive, msg.data);
@@ -178,6 +203,25 @@ export class SimClient {
       out.push({ avg: weighted / weight, min, max });
     }
     return out;
+  }
+
+  private foldEnergy(msg: Extract<WorkerToMain, { type: 'energy' }>): boolean {
+    const prev = this.energy;
+    if (prev && msg.session < prev.session) return false; // a replaced run
+    const same = prev?.session === msg.session;
+    const count = msg.parts.length ? msg.buckets.length / msg.parts.length : 0;
+    const series = new Map<string, Float32Array>();
+    msg.parts.forEach((part, k) => {
+      const old = same ? prev.series.get(part.id) : undefined;
+      const keep = old ? old.subarray(0, Math.min(msg.bucketFrom, old.length)) : new Float32Array(0);
+      const next = new Float32Array(keep.length + count);
+      next.set(keep);
+      next.set(msg.buckets.subarray(k * count, (k + 1) * count), keep.length);
+      series.set(part.id, next);
+    });
+    const { type: _type, buckets: _buckets, bucketFrom: _from, ...rest } = msg;
+    this.energy = { ...rest, series };
+    return true;
   }
 
   private foldScope(msg: Extract<WorkerToMain, { type: 'measures' }>): boolean {

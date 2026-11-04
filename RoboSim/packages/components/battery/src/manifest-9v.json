@@ -49,7 +49,10 @@
   "massG": 45,
   "mounting": { "lengthMm": 48.5, "widthMm": 26.5, "heightMm": 17.5 },
   "limits": {
-    "maxCurrentMa": 800
+    "maxCurrentMa": 800,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   },
   "traits": ["source"],
   "supplyPins": [

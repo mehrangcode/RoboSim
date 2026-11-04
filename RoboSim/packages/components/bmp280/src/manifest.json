@@ -31,6 +31,9 @@
   },
   "limits": {
     "maxVoltageV": 3.6,
-    "peakCurrentMa": 1
+    "peakCurrentMa": 1,
+    "typicalCurrentMa": 0.5,
+    "idleCurrentMa": 0.1,
+    "minSupplyV": 1.71
   }
 }

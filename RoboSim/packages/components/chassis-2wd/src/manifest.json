@@ -17,5 +17,5 @@
   },
   "inputs": [],
   "massG": 160,
-  "limits": { "maxPayloadG": 1000 }
+  "limits": { "maxPayloadG": 1000, "typicalCurrentMa": 0, "idleCurrentMa": 0, "minSupplyV": 0 }
 }

@@ -16,6 +16,9 @@
   "limits": {
     "ratedVoltageV": 5,
     "coilOhms": 42,
-    "resonantHz": 2700
+    "resonantHz": 2700,
+    "typicalCurrentMa": 20,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

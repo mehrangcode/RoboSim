@@ -51,6 +51,8 @@ import { Multimeter } from '../lab/multimeter.js';
 import { useMultimeter } from '../lab/use-multimeter.js';
 import { Oscilloscope } from '../lab/oscilloscope.js';
 import { useScope } from '../lab/use-scope.js';
+import { PowerPanel } from '../lab/power-panel.js';
+import { usePower } from '../lab/use-power.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
 import { SerialMonitor } from '../lab/serial-monitor.js';
@@ -101,6 +103,7 @@ type DockTab =
   | 'analyzer'
   | 'meter'
   | 'scope'
+  | 'power'
   | 'safety'
   | 'challenge'
   | 'verify'
@@ -650,6 +653,13 @@ function Workspace({
     active: dockTab === 'scope' && (size === 'narrow' || !layout.collapsed.dock),
     speed: Number(speed),
   });
+  // Power budget (FR-SIM-15): static from the document; the run is measured while the tab is shown.
+  const power = usePower({
+    doc,
+    sim,
+    active: dockTab === 'power' && (size === 'narrow' || !layout.collapsed.dock),
+    projectKey: cloudOpen?.id ?? 'local',
+  });
   const canvasMode: CanvasMode =
     run.phase === 'live' ? 'run' : size === 'narrow' || readOnly ? 'view' : 'edit';
 
@@ -887,6 +897,7 @@ function Workspace({
     'analyzer',
     'meter',
     'scope',
+    'power',
     'safety',
     ...(live?.challenge ? (['challenge'] as const) : []),
     ...(verified.state.status !== 'idle' ? (['verify'] as const) : []),
@@ -981,6 +992,16 @@ function Workspace({
           />
         ) : shownDock === 'scope' ? (
           <Oscilloscope doc={doc} scope={scope} run={!run.ready ? 'none' : running ? 'running' : 'paused'} />
+        ) : shownDock === 'power' ? (
+          <PowerPanel
+            doc={doc}
+            power={power}
+            findings={live && scene ? [...scene.staticFindings, ...live.findings] : []}
+            onShowFinding={(key) => {
+              setDockTab('safety');
+              showFinding(key);
+            }}
+          />
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : shownDock === 'pins' ? (
@@ -1288,6 +1309,18 @@ function Workspace({
         }}
       >
         {t('shell:editor.dock.scope')}
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        aria-pressed={dockTab === 'power' && !layout.collapsed.dock}
+        onClick={() => {
+          setDockTab('power');
+          if (layout.collapsed.dock) toggle('dock');
+          setMobileTab('monitor');
+        }}
+      >
+        {t('shell:editor.dock.power')}
       </Button>
       <SegmentedControl
         label={t('shell:lab.controls.speed')}

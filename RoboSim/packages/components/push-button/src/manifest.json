@@ -14,5 +14,5 @@
   "props": {},
   "inputs": [{ "name": "pressed", "type": "boolean", "default": false }],
   "massG": 1,
-  "limits": { "maxCurrentMa": 50 }
+  "limits": { "maxCurrentMa": 50, "typicalCurrentMa": 0, "idleCurrentMa": 0, "minSupplyV": 0 }
 }

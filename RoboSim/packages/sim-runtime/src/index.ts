@@ -3,6 +3,7 @@ export {
   SimClient,
   SERIAL_TAIL_CHARS,
   METER_WINDOW_SLICES,
+  type EnergyView,
   type OhmsAnswer,
   type ProbeReading,
 } from './client.js';
@@ -14,6 +15,8 @@ export {
   type ChannelRecorder,
   type ResolvedPoint,
 } from './measure.js';
+export { EnergyMeter, MAX_ENERGY_BUCKETS } from './energy.js';
+export { batteryLife, type BatteryLife, type BatteryLifeInput } from './battery-life.js';
 export {
   SCOPE_BUFFER_SLICES,
   SCOPE_FINE_MAX_POINTS,
@@ -75,6 +78,9 @@ export {
   type HotFrame,
   type FirmwarePayload,
   type InputLog,
+  type EnergyPart,
+  type EnergyReport,
+  type EnergySource,
   type MeasureChannel,
   type MeasureProbe,
   type OhmsRefusal,

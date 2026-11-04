@@ -1,5 +1,6 @@
 import { BOARD_PART } from '@robosim/shared';
 import type { MnaSolution, NetId, Simulation, SliceContext, SliceObserver } from '@robosim/sim-core';
+import { EnergyMeter } from './energy.js';
 import { boardTerminal, type Scenario } from './project-loader.js';
 import { MAX_FINE_PER_SLICE, type MeasureChannel, type MeasureProbe, type PointRef } from './protocol.js';
 
@@ -429,8 +430,24 @@ export class MeasureHub implements SliceObserver {
   readonly viewOnly = true;
   private readonly recorders = new Map<MeasureChannel, ChannelRecorder>();
   private fine = false;
+  private meter: EnergyMeter | null = null;
 
   constructor(private readonly scenario: Scenario) {}
+
+  /** The power budget meter (TD §18.4), while the panel is open or "record every run" is on. */
+  get energy(): EnergyMeter | null {
+    return this.meter;
+  }
+
+  /**
+   * Starts or stops the energy meter. It costs a few % of slice time on a circuit that re-solves every
+   * slice, so it only runs on request; started mid-run, it reports from that slice on.
+   */
+  setEnergy(on: boolean): void {
+    if (on === (this.meter !== null)) return;
+    this.meter = on ? EnergyMeter.for(this.scenario) : null;
+    this.watch();
+  }
 
   set(channel: MeasureChannel, probes: readonly MeasureProbe[] | null): ChannelRecorder | null {
     const prev = this.recorders.get(channel);
@@ -442,8 +459,15 @@ export class MeasureHub implements SliceObserver {
         this.recorders.set(channel, scope);
       } else this.recorders.set(channel, new MeasureRecorder(this.scenario, probes));
     } else this.recorders.delete(channel);
-    this.scenario.circuit.sim.watchPower([...this.recorders.values()].flatMap((r) => r.powerParts));
+    this.watch();
     return this.recorders.get(channel) ?? null;
+  }
+
+  /** Parts whose power is integrated per sub-step: every part for the energy meter, plus probes. */
+  private watch(): void {
+    const parts = new Set([...this.recorders.values()].flatMap((r) => r.powerParts));
+    for (const id of this.meter?.watched ?? []) parts.add(id);
+    this.scenario.circuit.sim.watchPower([...parts], { mcu: this.meter !== null });
   }
 
   /** Scope fine mode, kept for the scope subscriptions that follow (TD §18.3). */
@@ -461,8 +485,9 @@ export class MeasureHub implements SliceObserver {
     return this.recorders.entries();
   }
 
-  afterSlice(_ctx: SliceContext): void {
+  afterSlice(ctx: SliceContext): void {
     const sim = this.scenario.circuit.sim;
+    this.meter?.record(sim, ctx.solution);
     for (const r of this.recorders.values()) r.record(sim);
   }
 }

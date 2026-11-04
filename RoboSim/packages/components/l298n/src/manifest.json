@@ -80,7 +80,10 @@
     "maxVsV": 35,
     "maxChannelCurrentMa": 2000,
     "regulatorMinVsV": 7,
-    "peakCurrentMa": 36
+    "peakCurrentMa": 36,
+    "typicalCurrentMa": 36,
+    "idleCurrentMa": 13,
+    "minSupplyV": 7
   },
   "polarity": ["vs", "gnd"],
   "supplyPins": [

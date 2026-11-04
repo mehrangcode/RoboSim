@@ -18,6 +18,9 @@
   "polarity": ["vdd", "gnd"],
   "limits": {
     "maxVoltageV": 5.5,
-    "peakCurrentMa": 1.5
+    "peakCurrentMa": 1.5,
+    "typicalCurrentMa": 1,
+    "idleCurrentMa": 0.001,
+    "minSupplyV": 3
   }
 }

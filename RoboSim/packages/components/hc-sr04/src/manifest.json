@@ -48,7 +48,10 @@
     "maxVoltageV": 5.5,
     "minRangeCm": 2,
     "maxRangeCm": 400,
-    "peakCurrentMa": 15
+    "peakCurrentMa": 15,
+    "typicalCurrentMa": 15,
+    "idleCurrentMa": 2,
+    "minSupplyV": 4.5
   },
   "polarity": ["vcc", "gnd"]
 }

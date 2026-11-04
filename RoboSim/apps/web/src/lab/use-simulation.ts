@@ -133,6 +133,9 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     [send],
   );
 
+  /** Power budget recording (TD §18.4): while the power panel is open or "record every run" is set. */
+  const energyOn = useCallback((on: boolean) => send({ type: 'energy', on }), [send]);
+
   /** Oscilloscope fine mode (TD §18.3): sub-step samples of reactive circuits while on. */
   const scopeFine = useCallback((on: boolean) => send({ type: 'scopeFine', on }), [send]);
 
@@ -172,6 +175,9 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     clearCapture,
     measure,
     scopeFine,
+    energyOn,
+    /** Power budget of the present run (FR-SIM-15), null before its first report. */
+    energy: client.energy,
     ohms,
     meterReadings: client.readings('meter'),
     /** Oscilloscope samples (mutated in place; `scopeVersion` changes with every batch). */

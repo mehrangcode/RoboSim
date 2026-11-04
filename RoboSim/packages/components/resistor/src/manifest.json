@@ -35,6 +35,9 @@
   "massG": 0.3,
   "signalPassthrough": [["a", "b"]],
   "limits": {
-    "maxPowerMw": 250
+    "maxPowerMw": 250,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

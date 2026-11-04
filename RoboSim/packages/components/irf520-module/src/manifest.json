@@ -28,6 +28,9 @@
     "vdssV": 100,
     "maxPowerMw": 2400,
     "tjMaxC": 175,
-    "fullEnhancementV": 10
+    "fullEnhancementV": 10,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

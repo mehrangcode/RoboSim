@@ -39,7 +39,10 @@
     "ratedVoltageV": 5,
     "maxVoltageV": 6,
     "coilOhms": 50,
-    "peakCurrentMa": 200
+    "peakCurrentMa": 200,
+    "typicalCurrentMa": 150,
+    "idleCurrentMa": 0,
+    "minSupplyV": 4.5
   },
   "traits": ["inductive"]
 }

@@ -16,6 +16,7 @@
   "dependencies": {
     "@robosim/board-avr-uno": "workspace:*",
     "@robosim/catalog": "workspace:*",
+    "@robosim/component-battery": "workspace:*",
     "@robosim/safety-rules": "workspace:*",
     "@robosim/shared": "workspace:*",
     "@robosim/sim-core": "workspace:*",

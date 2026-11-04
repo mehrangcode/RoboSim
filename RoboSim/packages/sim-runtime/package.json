@@ -27,6 +27,7 @@
     "@robosim/board-avr-uno": "workspace:*",
     "@robosim/catalog": "workspace:*",
     "@robosim/code-analysis": "workspace:*",
+    "@robosim/component-battery": "workspace:*",
     "@robosim/component-chassis-2wd": "workspace:*",
     "@robosim/content": "workspace:*",
     "@robosim/safety-rules": "workspace:*",

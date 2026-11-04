@@ -460,21 +460,40 @@ export class MnaCircuit implements MnaStamper {
   /** Feeds every terminal current of `owner`'s elements to `emit`, walking its segments in place. */
   private visit(owner: number, s: MnaSolution, emit: (n: NetId, amps: number) => void): void {
     const segs = this.segments;
+    for (let j = 0; j < segs.length; j++)
+      if ((segs[j] as OwnerSegment).owner === owner) this.visitSegment(j, s, emit);
+  }
+
+  private visitSegment(j: number, s: MnaSolution, emit: (n: NetId, amps: number) => void): void {
+    const seg = this.segments[j] as OwnerSegment;
+    const next = this.segments[j + 1];
+    for (let k = seg.g, e = next ? next.g : this.conductances.length; k < e; k++)
+      elementTerminalCurrents(this.conductances[k] as Conductance, s, emit);
+    for (let k = seg.i, e = next ? next.i : this.currents.length; k < e; k++)
+      elementTerminalCurrents(this.currents[k] as CurrentSource, s, emit);
+    for (let k = seg.src, e = next ? next.src : this.sources.length; k < e; k++)
+      elementTerminalCurrents(this.sources[k] as Branch, s, emit);
+    for (let k = seg.d, e = next ? next.d : this.diodes.length; k < e; k++)
+      elementTerminalCurrents(this.diodes[k] as Diode, s, emit);
+    for (let k = seg.dev, e = next ? next.dev : this.devices.length; k < e; k++)
+      elementTerminalCurrents(this.devices[k] as Bjt | Mosfet, s, emit);
+  }
+
+  /**
+   * Adds `h` × the power each watched owner absorbs in `s` (W) to `out[slotOf(owner)]` in one pass over
+   * the ledger; owners with a slot < 0 are skipped. The per-sub-step energy integration (TD §18.4).
+   */
+  addOwnerPowers(s: MnaSolution, slotOf: (owner: number) => number, out: Float64Array, h: number): void {
+    const segs = this.segments;
+    this.acc.s = s;
     for (let j = 0; j < segs.length; j++) {
-      const seg = segs[j] as OwnerSegment;
-      if (seg.owner !== owner) continue;
-      const next = segs[j + 1];
-      for (let k = seg.g, e = next ? next.g : this.conductances.length; k < e; k++)
-        elementTerminalCurrents(this.conductances[k] as Conductance, s, emit);
-      for (let k = seg.i, e = next ? next.i : this.currents.length; k < e; k++)
-        elementTerminalCurrents(this.currents[k] as CurrentSource, s, emit);
-      for (let k = seg.src, e = next ? next.src : this.sources.length; k < e; k++)
-        elementTerminalCurrents(this.sources[k] as Branch, s, emit);
-      for (let k = seg.d, e = next ? next.d : this.diodes.length; k < e; k++)
-        elementTerminalCurrents(this.diodes[k] as Diode, s, emit);
-      for (let k = seg.dev, e = next ? next.dev : this.devices.length; k < e; k++)
-        elementTerminalCurrents(this.devices[k] as Bjt | Mosfet, s, emit);
+      const slot = slotOf((segs[j] as OwnerSegment).owner);
+      if (slot < 0) continue;
+      this.acc.sum = 0;
+      this.visitSegment(j, s, this.addPower);
+      out[slot] = (out[slot] ?? 0) + h * this.acc.sum;
     }
+    this.acc.s = null;
   }
 
   /** Current flowing from `net` into the elements `owner` stamped (A). */

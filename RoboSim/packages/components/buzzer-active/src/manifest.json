@@ -24,7 +24,10 @@
     "minVoltageV": 3,
     "maxVoltageV": 8,
     "ratedCurrentMa": 30,
-    "peakCurrentMa": 30
+    "peakCurrentMa": 30,
+    "typicalCurrentMa": 25,
+    "idleCurrentMa": 0,
+    "minSupplyV": 3
   },
   "polarity": ["pos", "neg"]
 }

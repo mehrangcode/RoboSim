@@ -77,7 +77,10 @@
   "limits": {
     "maxVoltageV": 7,
     "maxOutputCurrentMa": 35,
-    "maxSupplyCurrentMa": 70
+    "maxSupplyCurrentMa": 70,
+    "typicalCurrentMa": 0.1,
+    "idleCurrentMa": 0.002,
+    "minSupplyV": 2
   },
   "polarity": ["vcc", "gnd"]
 }

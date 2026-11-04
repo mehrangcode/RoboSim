@@ -16,5 +16,10 @@
   "inputs": [{ "name": "pressed", "type": "boolean", "default": false }],
   "massG": 2,
   "mounting": { "lengthMm": 13, "widthMm": 6, "heightMm": 10 },
-  "limits": { "maxContactCurrentMa": 5000 }
+  "limits": {
+    "maxContactCurrentMa": 5000,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
+  }
 }

@@ -190,6 +190,8 @@ export type MainToWorker =
    * subscription; it does not start a new one, so the scope history stays. View only.
    */
   | { readonly type: 'scopeFine'; readonly on: boolean }
+  /** Power budget recording (TD §18.4): on while the panel is open or "record every run" is set. */
+  | { readonly type: 'energy'; readonly on: boolean }
   /**
    * Resistance between two points on a fresh static instance: of the loaded run while it is not
    * running, or of `project` when given (the circuit being edited; no run needed).
@@ -492,4 +494,54 @@ export type WorkerToMain =
       readonly ohms: number | null;
       readonly reason?: OhmsRefusal;
     }
+  /**
+   * Power budget of the run (FR-SIM-15, TD §18.4): at most every 500 ms wall time and on pause.
+   * `session` counts loads, so a report of a replaced run is dropped. Buckets are incremental: the
+   * client replaces its series from `bucketFrom` on (0 after a 2:1 merge).
+   */
+  | ({ readonly type: 'energy'; readonly session: number } & EnergyReport)
   | { readonly type: 'error'; readonly message: string };
+
+/** One part's run totals in an `energy` message (mA, mW, J). */
+export interface EnergyPart {
+  readonly id: string;
+  /** Supply current: into its power pins, or the through-current of a part without one. */
+  readonly avgMa: number;
+  readonly peakMa: number;
+  /** < 0 for a part that delivers energy (a battery, a rail). */
+  readonly avgMw: number;
+  readonly peakMw: number;
+  readonly joules: number;
+}
+
+/** One supply output (battery +, regulator out, board rail) in an `energy` message. */
+export interface EnergySource {
+  readonly id: string;
+  readonly pin: string;
+  /** Delivered current (mA). */
+  readonly avgMa: number;
+  readonly peakMa: number;
+  /** 90th percentile of the bucket currents, for the pessimistic battery life. */
+  readonly p90Ma: number;
+  readonly ratingMa: number | null;
+  /** Batteries: present state of charge 0..1. */
+  readonly charge?: number;
+}
+
+/** The fields of an `energy` message the meter fills (TD §18.4). */
+export interface EnergyReport {
+  /** Slice the recording started at (> 0 when the panel was opened mid-run). */
+  readonly fromSlice: number;
+  readonly upToSlice: number;
+  /** Simulated seconds recorded. */
+  readonly seconds: number;
+  readonly parts: readonly EnergyPart[];
+  readonly sources: readonly EnergySource[];
+  /** MCU pins' energy (J; < 0 while they source), so the balance closes. */
+  readonly mcuJoules: number;
+  readonly bucketSeconds: number;
+  /** Index of the first bucket in `buckets`; 0 means the client replaces its whole series. */
+  readonly bucketFrom: number;
+  /** Energy per part per bucket (J), part-major: parts.length × (n − bucketFrom). */
+  readonly buckets: Float32Array;
+}

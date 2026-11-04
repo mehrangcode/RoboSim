@@ -43,7 +43,11 @@
   "limits": {
     "maxVoltageV": 40,
     "minInputV": 4.5,
-    "maxOutputCurrentMa": 3000
+    "maxOutputCurrentMa": 3000,
+    "typicalCurrentMa": 5,
+    "idleCurrentMa": 5,
+    "minSupplyV": 6.5,
+    "dropoutV": 1.5
   },
   "polarity": ["in+", "in-"],
   "supplyPins": [

@@ -75,7 +75,10 @@
     "maxVoltageV": 15,
     "maxChannelCurrentMa": 1200,
     "peakChannelCurrentMa": 3200,
-    "peakCurrentMa": 2
+    "peakCurrentMa": 2,
+    "typicalCurrentMa": 1,
+    "idleCurrentMa": 0.002,
+    "minSupplyV": 2.7
   },
   "polarity": ["vm", "gnd"],
   "pinMaxVolts": {

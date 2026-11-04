@@ -15,6 +15,9 @@
   "limits": {
     "maxForwardCurrentMa": 300,
     "surgeCurrentMa": 2000,
-    "maxReverseV": 100
+    "maxReverseV": 100,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

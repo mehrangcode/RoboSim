@@ -38,6 +38,12 @@ function checkProp(id: string, key: string, spec: PropSpec, value: PropValue): v
   }
 }
 
+/**
+ * Power-budget data (TD §18.4, ADR-028): typical / idle supply current, lowest working supply voltage and
+ * a regulator's dropout. Read only by the power budget and the battery-life estimate, never by a model.
+ */
+export const POWER_LIMIT_KEYS = ['typicalCurrentMa', 'idleCurrentMa', 'minSupplyV', 'dropoutV'] as const;
+
 /** Structural checks every catalogue manifest must pass (run by each component package's tests). */
 export function validateManifest(m: ComponentManifest): string[] {
   const errors: string[] = [];
@@ -91,6 +97,10 @@ export function validateManifest(m: ComponentManifest): string[] {
     if (m.i2c.addressProp && m.props[m.i2c.addressProp]?.type !== 'enum')
       errors.push(`i2c addressProp '${m.i2c.addressProp}' must be an enum prop`);
     if (!(m.i2c.address >= 0x08 && m.i2c.address <= 0x77)) errors.push('i2c address must be 0x08–0x77');
+  }
+  for (const key of POWER_LIMIT_KEYS) {
+    const v = m.limits[key];
+    if (v !== undefined && !(v >= 0)) errors.push(`limits.${key} must be ≥ 0`);
   }
   for (const input of m.inputs) {
     if (typeof input.default !== input.type)

@@ -21,7 +21,7 @@ export function formatSliceTime(slice: number): string {
 }
 
 /** Units the multimeter shows (FR-SIM-13). */
-export type SiUnit = 'V' | 'A' | 'Ω' | 'W';
+export type SiUnit = 'V' | 'A' | 'Ω' | 'W' | 'J';
 
 /** A value scaled to a readable prefix, with the decimals a 4-digit meter display would show. */
 export interface SiValue {
@@ -43,6 +43,11 @@ const PREFIXES: Readonly<Record<SiUnit, readonly (readonly [number, string])[]>>
     [1e-6, 'µ'],
   ],
   W: [
+    [1, ''],
+    [1e-3, 'm'],
+    [1e-6, 'µ'],
+  ],
+  J: [
     [1, ''],
     [1e-3, 'm'],
     [1e-6, 'µ'],

@@ -27,6 +27,9 @@
     "maxCollectorCurrentMa": 5000,
     "vceoV": 60,
     "maxPowerMw": 2000,
-    "tjMaxC": 150
+    "tjMaxC": 150,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
   }
 }

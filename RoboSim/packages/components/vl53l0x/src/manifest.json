@@ -25,6 +25,9 @@
     "maxVoltageV": 5.5,
     "minRangeCm": 3,
     "maxRangeCm": 200,
-    "peakCurrentMa": 40
+    "peakCurrentMa": 40,
+    "typicalCurrentMa": 19,
+    "idleCurrentMa": 0.005,
+    "minSupplyV": 2.6
   }
 }

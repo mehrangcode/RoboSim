@@ -53,7 +53,10 @@
     "maxVoltageV": 7.2,
     "minVoltageV": 4.0,
     "stallCurrentMa": 2500,
-    "peakCurrentMa": 2500
+    "peakCurrentMa": 2500,
+    "typicalCurrentMa": 500,
+    "idleCurrentMa": 10,
+    "minSupplyV": 4
   },
   "traits": ["inductive"],
   "polarity": ["vcc", "gnd"]

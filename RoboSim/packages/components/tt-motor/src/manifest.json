@@ -94,7 +94,10 @@
   "limits": {
     "maxVoltageV": 9,
     "stallCurrentMa": 1200,
-    "peakCurrentMa": 1200
+    "peakCurrentMa": 1200,
+    "typicalCurrentMa": 150,
+    "idleCurrentMa": 0,
+    "minSupplyV": 3
   },
   "traits": ["inductive"]
 }

@@ -58,7 +58,10 @@
   "limits": {
     "maxVoltageV": 12,
     "maxChannelCurrentMa": 800,
-    "peakChannelCurrentMa": 1500
+    "peakChannelCurrentMa": 1500,
+    "typicalCurrentMa": 1,
+    "idleCurrentMa": 0.1,
+    "minSupplyV": 2.5
   },
   "polarity": ["vcc", "gnd"]
 }

@@ -29,6 +29,8 @@ import { ALL_MCU_PINS, challengeView, damageView, obstacleViews, pinViews, robot
 
 /** Snapshots to the UI at most this often (wall ms); the simulation itself is unaffected. */
 const FRAME_INTERVAL_MS = 33;
+/** The power budget reaches the panel at most this often (TD §18.4); every pause sends one too. */
+const ENERGY_INTERVAL_MS = 500;
 
 export interface SimHostOptions {
   /** Publish snapshots through a shared buffer (needs cross-origin isolation); else transfer them. */
@@ -84,6 +86,11 @@ export class SimHost {
   private measureSession = 0;
   /** Scope fine mode (TD §18.3); kept across resets and loads like the probes. */
   private scopeFine = false;
+  /** Power budget recording requested by the UI; kept across resets and loads. */
+  private energyOn = false;
+  /** Loads so far: an `energy` message names the run it reports. */
+  private loadSession = 0;
+  private lastEnergyWall = -Infinity;
   /** Ohmmeter of the document last measured without a run. */
   private staticOhms: {
     key: string;
@@ -140,6 +147,11 @@ export class SimHost {
           else this.measureProbes.delete(msg.channel);
           this.measureSession++;
           this.run?.measure.set(msg.channel, this.measureProbes.get(msg.channel) ?? null);
+          this.publish(true);
+          break;
+        case 'energy':
+          this.energyOn = msg.on;
+          this.run?.measure.setEnergy(msg.on);
           this.publish(true);
           break;
         case 'scopeFine':
@@ -218,8 +230,11 @@ export class SimHost {
     const scenario = buildRun(source, seed);
     const logger = new InputLogger(scenario, replay);
     // Instruments observe before the logger, which must stay last: replayed inputs land where live ones did.
+    this.loadSession++;
+    this.lastEnergyWall = -Infinity;
     const measure = new MeasureHub(scenario);
     measure.setFine(this.scopeFine);
+    measure.setEnergy(this.energyOn);
     for (const [channel, probes] of this.measureProbes) measure.set(channel, probes);
     scenario.circuit.sim.addObserver(measure);
     scenario.circuit.sim.addObserver(logger);
@@ -424,6 +439,14 @@ export class SimHost {
           { type: 'scopeFine', session: this.measureSession, reactive: fine.reactive, data: fine.data },
           [fine.data.buffer as ArrayBuffer],
         );
+    }
+    const energy = run.measure.energy;
+    if (energy?.pending && (force || wall - this.lastEnergyWall >= ENERGY_INTERVAL_MS)) {
+      this.lastEnergyWall = wall;
+      const report = energy.drain();
+      this.post({ type: 'energy', session: this.loadSession, ...report }, [
+        report.buckets.buffer as ArrayBuffer,
+      ]);
     }
     if (run.serialOut.length) {
       const chunks = run.serialOut.map((c) => ({

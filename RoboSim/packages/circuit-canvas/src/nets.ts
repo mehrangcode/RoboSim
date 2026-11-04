@@ -42,6 +42,11 @@ export class CircuitNets {
     return this.#parent.has(key(pin)) ? (this.#members.get(this.#find(key(pin))) ?? [pin]) : [pin];
   }
 
+  /** A stable identity of `pin`'s net (pins on one net give the same string). */
+  netOf(pin: PinRef): string {
+    return this.#find(key(pin));
+  }
+
   sameNet(a: PinRef, b: PinRef): boolean {
     return this.#find(key(a)) === this.#find(key(b));
   }

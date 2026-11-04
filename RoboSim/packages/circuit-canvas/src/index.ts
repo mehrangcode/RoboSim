@@ -35,6 +35,15 @@ export {
 export { LibraryPanel } from './library-panel.js';
 export { boardPinView } from './board-pin-view.js';
 export { CircuitNets } from './nets.js';
+export {
+  BUCK_EFFICIENCY,
+  defaultDuty,
+  staticBudget,
+  type Budget,
+  type BudgetLoad,
+  type BudgetSource,
+  type BudgetStatus,
+} from './power-budget.js';
 export { PropertyPanel } from './property-panel.js';
 export { E12_OHMS, matches, normalizeSearch } from './search.js';
 export {

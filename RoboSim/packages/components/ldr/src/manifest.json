@@ -16,5 +16,11 @@
   },
   "inputs": [{ "name": "lux", "type": "number", "default": 300, "min": 0, "max": 100000 }],
   "massG": 0.5,
-  "limits": { "maxPowerMw": 100, "maxVoltageV": 150 }
+  "limits": {
+    "maxPowerMw": 100,
+    "maxVoltageV": 150,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0
+  }
 }

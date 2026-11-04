@@ -76,7 +76,10 @@
   "massG": 1,
   "limits": {
     "maxVoltageV": 20,
-    "maxOutputCurrentMa": 10
+    "maxOutputCurrentMa": 10,
+    "typicalCurrentMa": 1,
+    "idleCurrentMa": 0.01,
+    "minSupplyV": 3
   },
   "polarity": ["vdd", "vss"]
 }

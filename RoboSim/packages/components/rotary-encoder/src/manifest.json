@@ -18,6 +18,6 @@
     { "name": "pressed", "type": "boolean", "default": false }
   ],
   "massG": 7,
-  "limits": { "maxVoltageV": 5.5 },
+  "limits": { "maxVoltageV": 5.5, "typicalCurrentMa": 1, "idleCurrentMa": 1, "minSupplyV": 3.3 },
   "polarity": ["vcc", "gnd"]
 }

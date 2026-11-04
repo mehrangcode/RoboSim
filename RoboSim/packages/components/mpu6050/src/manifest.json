@@ -28,6 +28,9 @@
   "i2c": { "sda": "sda", "scl": "scl", "address": 104, "addressPin": { "pin": "ad0", "whenHigh": 105 } },
   "limits": {
     "maxVoltageV": 6,
-    "peakCurrentMa": 5
+    "peakCurrentMa": 5,
+    "typicalCurrentMa": 4,
+    "idleCurrentMa": 0.5,
+    "minSupplyV": 3
   }
 }

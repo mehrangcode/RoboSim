@@ -96,7 +96,10 @@
   "limits": {
     "minVoltageV": 3.3,
     "maxVoltageV": 5.5,
-    "peakCurrentMa": 80
+    "peakCurrentMa": 80,
+    "typicalCurrentMa": 60,
+    "idleCurrentMa": 60,
+    "minSupplyV": 3.3
   },
   "polarity": ["vcc", "gnd"]
 }

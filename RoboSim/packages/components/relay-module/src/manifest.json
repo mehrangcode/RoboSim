@@ -55,7 +55,10 @@
     "coilCurrentMa": 72,
     "peakCurrentMa": 75,
     "contactMaxCurrentMa": 10000,
-    "contactMaxDcV": 30
+    "contactMaxDcV": 30,
+    "typicalCurrentMa": 72,
+    "idleCurrentMa": 0.5,
+    "minSupplyV": 3.75
   },
   "traits": ["inductive"],
   "polarity": ["vcc", "gnd"]

@@ -71,4 +71,16 @@ describe('validateManifest', () => {
       "pinMaxVolts pin 'z' does not exist",
     ]);
   });
+
+  it('checks the power-budget limits are ≥ 0 (TD §18.4, ADR-028)', () => {
+    const bad: ComponentManifest = {
+      ...manifest,
+      limits: { typicalCurrentMa: -1, idleCurrentMa: Number.NaN, minSupplyV: 3, dropoutV: -0.5 },
+    };
+    expect(validateManifest(bad)).toEqual([
+      'limits.typicalCurrentMa must be ≥ 0',
+      'limits.idleCurrentMa must be ≥ 0',
+      'limits.dropoutV must be ≥ 0',
+    ]);
+  });
 });

@@ -345,7 +345,8 @@
       "assistant": "Assistant",
       "verify": "Verified run",
       "meter": "Multimeter",
-      "scope": "Oscilloscope"
+      "scope": "Oscilloscope",
+      "power": "Power"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {
