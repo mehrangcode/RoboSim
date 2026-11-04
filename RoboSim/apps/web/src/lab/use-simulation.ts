@@ -133,6 +133,9 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     [send],
   );
 
+  /** Oscilloscope fine mode (TD §18.3): sub-step samples of reactive circuits while on. */
+  const scopeFine = useCallback((on: boolean) => send({ type: 'scopeFine', on }), [send]);
+
   /**
    * Resistance between two points: of the loaded run while it is not running, or of `project` (the
    * circuit being edited). Answers arrive in request order; a superseded answer still resolves.
@@ -168,8 +171,12 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     probe,
     clearCapture,
     measure,
+    scopeFine,
     ohms,
     meterReadings: client.readings('meter'),
+    /** Oscilloscope samples (mutated in place; `scopeVersion` changes with every batch). */
+    scope: client.scope,
+    scopeVersion: client.scope?.version ?? 0,
     replaying: client.replaying,
     send,
     exportLog,

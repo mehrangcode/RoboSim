@@ -49,6 +49,8 @@ import { useConsistency } from '../lab/use-consistency.js';
 import { LogicAnalyzer } from '../lab/logic-analyzer.js';
 import { Multimeter } from '../lab/multimeter.js';
 import { useMultimeter } from '../lab/use-multimeter.js';
+import { Oscilloscope } from '../lab/oscilloscope.js';
+import { useScope } from '../lab/use-scope.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
 import { SerialMonitor } from '../lab/serial-monitor.js';
@@ -94,7 +96,16 @@ import { useRun } from './use-run.js';
 
 const SPEEDS = ['0.25', '0.5', '1', '2', '4'] as const;
 type DockTab =
-  'serial' | 'pins' | 'analyzer' | 'meter' | 'safety' | 'challenge' | 'verify' | 'assistant' | BomTab;
+  | 'serial'
+  | 'pins'
+  | 'analyzer'
+  | 'meter'
+  | 'scope'
+  | 'safety'
+  | 'challenge'
+  | 'verify'
+  | 'assistant'
+  | BomTab;
 
 // The assistant is a chunk of its own, loaded when its tab first opens.
 const AiPanel = lazy(() => import('../ai/ai-panel.js').then((m) => ({ default: m.AiPanel })));
@@ -632,6 +643,13 @@ function Workspace({
     active: dockTab === 'meter' && (size === 'narrow' || !layout.collapsed.dock),
     run: !run.ready ? 'none' : running ? 'running' : 'paused',
   });
+  // Oscilloscope (FR-SIM-14): records while it has channels, so its history survives tab switches.
+  const scope = useScope({
+    doc,
+    sim,
+    active: dockTab === 'scope' && (size === 'narrow' || !layout.collapsed.dock),
+    speed: Number(speed),
+  });
   const canvasMode: CanvasMode =
     run.phase === 'live' ? 'run' : size === 'narrow' || readOnly ? 'view' : 'edit';
 
@@ -753,7 +771,7 @@ function Workspace({
       damaged={live?.damaged.parts}
       onInput={(componentId, name, value) => send({ type: 'input', componentId, name, value })}
       highlight={highlight}
-      probe={meter.canvasProbe}
+      probe={scope.canvasProbe ?? meter.canvasProbe}
       className="h-full rounded-none border-0"
     />
   );
@@ -868,6 +886,7 @@ function Workspace({
     'pins',
     'analyzer',
     'meter',
+    'scope',
     'safety',
     ...(live?.challenge ? (['challenge'] as const) : []),
     ...(verified.state.status !== 'idle' ? (['verify'] as const) : []),
@@ -948,7 +967,20 @@ function Workspace({
             onFix={readOnly ? undefined : applyFix}
           />
         ) : shownDock === 'meter' ? (
-          <Multimeter doc={doc} meter={meter} />
+          <Multimeter
+            doc={doc}
+            meter={meter}
+            onAddToScope={
+              scope.full
+                ? null
+                : (probe) => {
+                    scope.add(probe);
+                    setDockTab('scope');
+                  }
+            }
+          />
+        ) : shownDock === 'scope' ? (
+          <Oscilloscope doc={doc} scope={scope} run={!run.ready ? 'none' : running ? 'running' : 'paused'} />
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
         ) : shownDock === 'pins' ? (
@@ -1244,6 +1276,18 @@ function Workspace({
         }}
       >
         {t('shell:editor.dock.meter')}
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        aria-pressed={dockTab === 'scope' && !layout.collapsed.dock}
+        onClick={() => {
+          setDockTab('scope');
+          if (layout.collapsed.dock) toggle('dock');
+          setMobileTab('monitor');
+        }}
+      >
+        {t('shell:editor.dock.scope')}
       </Button>
       <SegmentedControl
         label={t('shell:lab.controls.speed')}

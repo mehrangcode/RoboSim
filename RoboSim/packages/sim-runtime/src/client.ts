@@ -10,6 +10,7 @@ import type {
   WorkerToMain,
 } from './protocol.js';
 import { PinCapture } from './capture.js';
+import { ScopeBuffer } from './scope.js';
 import { SharedSnapshotReader, unpackSnapshot, type SnapshotData } from './snapshot-channel.js';
 import { SnapshotDecoder } from './snapshot-codec.js';
 import { SerialLog } from './serial.js';
@@ -68,6 +69,9 @@ export class SimClient {
   private damaged: Damage = { parts: [], pins: [] };
   /** Recent measurement batches per channel (newest last) of the latest subscription. */
   private measures = new Map<MeasureChannel, { session: number; batches: MeasureBatch[] }>();
+  private scopeSession = -1;
+  /** Oscilloscope samples of the latest scope subscription (FR-SIM-14), or null before the first. */
+  scope: ScopeBuffer | null = null;
 
   receive(msg: WorkerToMain): boolean {
     switch (msg.type) {
@@ -87,6 +91,7 @@ export class SimClient {
         this.faults = [];
         this.damaged = { parts: [], pins: [] };
         this.measures.clear();
+        this.scope = null;
         return true;
       case 'channel':
         this.reader = new SharedSnapshotReader(msg.buffer);
@@ -118,7 +123,12 @@ export class SimClient {
         if (this.capture?.id !== msg.capture || this.capture.stopped) return false;
         this.capture.append(msg.data, msg.until, msg.full === true);
         return true;
+      case 'scopeFine':
+        if (msg.session !== this.scopeSession || !this.scope) return false;
+        this.scope.appendFine(msg.reactive, msg.data);
+        return true;
       case 'measures': {
+        if (msg.channel === 'scope') return this.foldScope(msg);
         const prev = this.measures.get(msg.channel);
         if (prev && msg.session < prev.session) return false; // answers a superseded subscription
         const batches = prev?.session === msg.session ? prev.batches : [];
@@ -170,6 +180,18 @@ export class SimClient {
     return out;
   }
 
+  private foldScope(msg: Extract<WorkerToMain, { type: 'measures' }>): boolean {
+    if (msg.session < this.scopeSession) return false; // answers a superseded subscription
+    // A paused sample (0 slices) carries no history; it only tells how many channels there are.
+    const channels = msg.data.length / 3 / Math.max(1, msg.slices);
+    if (!this.scope || msg.session !== this.scopeSession || this.scope.channels !== channels) {
+      this.scope = new ScopeBuffer(channels, msg.unresolved ?? []);
+      this.scopeSession = msg.session;
+    }
+    this.scope.append(msg.fromSlice, msg.slices, msg.data, msg.pwm);
+    return true;
+  }
+
   /** Reads the shared buffer; true when a new snapshot arrived. */
   poll(): boolean {
     const data = this.reader?.read();
@@ -201,6 +223,8 @@ export class SimClient {
 export {
   BENCH_SCENARIOS,
   MAX_METER_PROBES,
+  MAX_SCOPE_CHANNELS,
+  MAX_FINE_PER_SLICE,
   MAX_SIM_SECONDS,
   SAFETY_SCENARIOS,
   SCENARIOS,
@@ -208,6 +232,14 @@ export {
 // Encoding side, for stand-in workers in UI tests.
 export { SnapshotEncoder } from './snapshot-codec.js';
 export { PinCapture, type PinTrace } from './capture.js';
+export {
+  SCOPE_BUFFER_SLICES,
+  SCOPE_FINE_MAX_POINTS,
+  SCOPE_FINE_SECONDS,
+  ScopeBuffer,
+  type FineTrace,
+  type ScopePwm,
+} from './scope.js';
 export { MAX_PROBE_PINS } from './probe.js';
 export { SERIAL_BAUD_RATES, SerialLog, decodeSerial, resample, standardBaud } from './serial.js';
 export type { DecodedSerial, SerialLine } from './serial.js';

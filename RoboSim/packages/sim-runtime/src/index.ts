@@ -6,7 +6,22 @@ export {
   type OhmsAnswer,
   type ProbeReading,
 } from './client.js';
-export { MeasureHub, MeasureRecorder, resolvePoint, type ResolvedPoint } from './measure.js';
+export {
+  MeasureHub,
+  MeasureRecorder,
+  ScopeRecorder,
+  resolvePoint,
+  type ChannelRecorder,
+  type ResolvedPoint,
+} from './measure.js';
+export {
+  SCOPE_BUFFER_SLICES,
+  SCOPE_FINE_MAX_POINTS,
+  SCOPE_FINE_SECONDS,
+  ScopeBuffer,
+  type FineTrace,
+  type ScopePwm,
+} from './scope.js';
 export { HeadlessRun, InputLogError, InputLogger, applyInput, type LiveInput } from './input-log.js';
 export {
   EngineVersionMismatchError,
@@ -45,6 +60,8 @@ export { buildCircuit, type Circuit, type CircuitSpec } from './circuit.js';
 export {
   BENCH_SCENARIOS,
   MAX_METER_PROBES,
+  MAX_SCOPE_CHANNELS,
+  MAX_FINE_PER_SLICE,
   SAFETY_SCENARIOS,
   SCENARIOS,
   type BenchScenarioId,

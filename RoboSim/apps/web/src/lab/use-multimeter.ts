@@ -214,6 +214,8 @@ export function useMultimeter({
     setState,
     canvasProbe,
     hint: resolved.hint,
+    /** The probe the meter reads now (V, A or P), e.g. to add it to the scope. */
+    probe: resolved.probe,
     reading,
     ohms: ohmsKey && ohms?.key === ohmsKey ? ohms.answer : null,
     ohmsPending: ohmsKey !== '' && ohms?.key !== ohmsKey,

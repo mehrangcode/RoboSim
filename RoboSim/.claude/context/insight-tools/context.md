@@ -1,6 +1,6 @@
 # Context — Insight & tooling track
 
-**Status (2026-11-03):** IT-2 done: `pnpm verify` green (279/279), perf budgets met, browser check FA/EN passed, docs synced. IT-1 still has its own browser check open (step h). Next: IT-3 (scope reuses `MeasureHub`, channel `'scope'`).
+**Status (2026-11-04):** IT-3 done incl. fine mode (phase 2) and the 4-channel real-time exit check (perf gate + production-build browser A/B at 1.00×). Found and fixed a worker pacing cap (sim.worker slept 16 ms after each tick → max 12/28 ms simulating). IT-1 browser check (step h) still open. Next: IT-4 (power budget) or IT-5.
 
 ## Where the spec lives
 - PRD §6: FR-SAF-08, FR-SIM-12 (status note), FR-SIM-13…21, FR-CIR-11/12, FR-COD-08/09, FR-ARN-13/14, FR-BOM-07, FR-AI-11, FR-WRK-08; PRD §9 row "IT".
@@ -23,3 +23,5 @@
 - See each TD §18.<n> "Risks & open points".
 - IT-2 decisions (2026-11-03): no `it.multimeter` flag (web has no flag consumer; same as IT-1); probes placed via armed "Place red/black" buttons, keyboard Enter/Shift+Enter; probes session-only (no schema change); KCL-audit model fixes only when goldens are unchanged, otherwise document the part here.
 - IT-2 implementation notes: ledger = per-owner stamp segments + in-place `LedgerElement` fields (copying elements per read blew the 5 µs/slice meter budget); transient power is integrated only for parts a `p` probe watches (`Simulation.watchPower`); `ohms` can carry the edited `project` so Ω works without a run; keyboard placement is via point lists in the panel (the canvas has no pin focus traversal); KCL audit over all built-in scenarios found no model to fix (goldens untouched).
+- IT-3 decisions (2026-11-04): PWM edges rebuilt in the main thread from `measures.pwm` (timer freq/duty) between phase levels (`Simulation.stepSolution` for transient circuits); test D5 980 Hz + D9 490 Hz; CSV `time_ms`; no worker `ScopeRing` (scope stays subscribed while it has channels); "Add to scope" lives in the meter panel (canvas has no context menu); no `it.scope` flag; fine mode deferred.
+- IT-3 fine-mode decisions (2026-11-04): toggle is a separate `scopeFine {on}` message (no new session, history kept); ≤ 64 samples/slice/channel, min/max of 32 runs beyond; client keeps 10 s / 500 k points per channel; rebuilt PWM wins over fine samples; auto-off at RTF < 0.8 × chosen speed for 2 s with a retry button; timebases down to 10 µs/div.

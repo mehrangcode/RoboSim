@@ -6,7 +6,7 @@ import { SimClient } from './client.js';
 import { SimHost } from './host.js';
 import { SCENARIOS, type Frame, type MeasureProbe, type WorkerToMain } from './protocol.js';
 import { buildRun, builtinSource } from './scenarios.js';
-import { MeasureHub } from './measure.js';
+import { MeasureHub, ScopeRecorder } from './measure.js';
 
 type Part = {
   id: string;
@@ -345,4 +345,160 @@ describe('KCL audit per catalogue part (TD §18.2 risks)', () => {
       expect(types.size).toBeGreaterThan(40);
     },
   );
+});
+
+describe('scope channel (FR-SIM-14, TD §18.3)', () => {
+  /** Scope readings of `probes` over `slices` slices of a built-in run, as `[avg, min, max]` rows. */
+  function scope(
+    id: 'timer-555' | 'no-flyback' | 'rgb-melody',
+    probes: readonly MeasureProbe[],
+    slices: number,
+  ) {
+    const run = buildRun({ scenario: id });
+    const hub = new MeasureHub(run);
+    const rec = hub.set('scope', probes);
+    run.circuit.sim.addObserver(hub);
+    const rows: { avg: number; min: number; max: number }[][] = [];
+    let pwm: number[] = [];
+    for (let done = 0; done < slices; done += 100) {
+      run.circuit.sim.run(100);
+      const d = rec?.drain(run.circuit.sim);
+      if (!d) break;
+      for (let k = 0; k < d.slices; k++)
+        rows.push(
+          probes.map((_, c) => {
+            const o = (k * probes.length + c) * 3;
+            return { avg: d.data[o] ?? NaN, min: d.data[o + 1] ?? NaN, max: d.data[o + 2] ?? NaN };
+          }),
+        );
+      if (d.pwm) pwm = [...pwm, ...d.pwm];
+    }
+    return { rows, pwm };
+  }
+  const on = (part: string, pin: string): MeasureProbe => ({ kind: 'v', red: { part, pin }, black: null });
+
+  it('timer-555: the envelope max of the output net exceeds the slice average at its edges', () => {
+    const { rows } = scope('timer-555', [on('timer', 'out')], 4000);
+    expect(rows).toHaveLength(4000);
+    const excess = Math.max(...rows.map(([r]) => (r?.max ?? 0) - (r?.avg ?? 0)));
+    expect(excess).toBeGreaterThan(1);
+    for (const [r] of rows) expect(r?.min).toBeLessThanOrEqual(r?.avg ?? NaN);
+  });
+
+  it('no-flyback: the inductive kickback on the collector is visible in max, hidden by the average', () => {
+    const { rows } = scope('no-flyback', [on('q', 'c')], 4000);
+    const peak = Math.max(...rows.map(([r]) => r?.max ?? 0));
+    const avgPeak = Math.max(...rows.map(([r]) => r?.avg ?? 0));
+    expect(peak).toBeGreaterThan(20); // far above the 6 V pack
+    expect(peak).toBeGreaterThan(avgPeak + 10);
+  });
+
+  it('reports PWM for rebuilding: D5 at 976.6 Hz (rgb-melody), D9 at 490.2 Hz in a transient circuit', () => {
+    const fast = scope('rgb-melody', [on('board', 'D5')], 300);
+    expect(fast.pwm.slice(1, 4)).toEqual([0, 976.5625, 0.5]);
+    const last = fast.rows.at(-1)?.[0];
+    expect(last?.min).toBeLessThan(0.5);
+    expect(last?.max).toBeGreaterThan(4.5);
+    const slow = scope('no-flyback', [on('board', 'D9')], 300);
+    const d9 = slow.pwm.slice(-4);
+    expect(d9[2]).toBeCloseTo(490.196, 2);
+    expect(d9[3]).toBeGreaterThan(0);
+    const row = slow.rows.at(-1)?.[0];
+    expect((row?.max ?? 0) - (row?.min ?? 0)).toBeGreaterThan(4); // phase levels survive the transient average
+  });
+
+  it('i and p channels read min = max = avg', () => {
+    const { rows } = scope(
+      'rgb-melody',
+      [
+        { kind: 'i', pins: [{ part: 'board', pin: 'D5' }], scale: -1 },
+        { kind: 'p', part: 'rb' },
+      ],
+      200,
+    );
+    for (const row of rows) for (const r of row) expect([r.min, r.max]).toEqual([r.avg, r.avg]);
+  });
+});
+
+describe('scope fine mode (TD §18.3 phase 2)', () => {
+  const on = (part: string, pin: string): MeasureProbe => ({ kind: 'v', red: { part, pin }, black: null });
+  /** Fine samples `[ch, t, v]` and the readings of `slices` slices with fine mode on. */
+  function fine(id: 'timer-555' | 'no-flyback' | 'blink', probes: readonly MeasureProbe[], slices: number) {
+    const run = buildRun({ scenario: id });
+    const hub = new MeasureHub(run);
+    hub.setFine(true);
+    const rec = hub.set('scope', probes) as ScopeRecorder;
+    run.circuit.sim.addObserver(hub);
+    const samples: number[] = [];
+    const max: number[] = [];
+    let reactive: boolean | null = null;
+    for (let done = 0; done < slices; done += 100) {
+      run.circuit.sim.run(100);
+      const d = rec.drain(run.circuit.sim);
+      for (let k = 0; k < d.slices; k++) max.push(d.data[k * probes.length * 3 + 2] ?? NaN);
+      const f = rec.drainFine(run.circuit.sim);
+      if (f) {
+        reactive = f.reactive;
+        samples.push(...f.data);
+      }
+    }
+    return { samples, max, reactive, rec, run };
+  }
+
+  it('no-flyback: sub-steps show the kickback; ≤ 64 per slice, in time order, extremes kept', () => {
+    const { samples, max, reactive } = fine('no-flyback', [on('q', 'c')], 2000);
+    expect(reactive).toBe(true);
+    const t = samples.filter((_, i) => i % 3 === 1);
+    const v = samples.filter((_, i) => i % 3 === 2);
+    expect(t.length).toBeGreaterThan(2000); // at least the slice-end step of every slice
+    for (let i = 1; i < t.length; i++) expect(t[i]).toBeGreaterThan(t[i - 1] ?? Infinity);
+    const perSlice = new Map<number, number>();
+    for (const x of t) {
+      const k = Math.ceil(x * 1000 - 1e-6);
+      perSlice.set(k, (perSlice.get(k) ?? 0) + 1);
+    }
+    expect(Math.max(...perSlice.values())).toBeLessThanOrEqual(64);
+    // Decimation keeps the min and max of every run: the peak equals the envelope's.
+    expect(Math.fround(Math.max(...v))).toBe(Math.max(...max)); // readings are Float32
+    expect(Math.max(...v)).toBeGreaterThan(20);
+  });
+
+  it('a circuit without capacitors or inductors answers reactive: false and no samples', () => {
+    const { samples, reactive } = fine('blink', [on('board', 'D13')], 300);
+    expect(reactive).toBe(false);
+    expect(samples).toHaveLength(0);
+  });
+
+  it('turning fine mode off stops observing sub-steps', () => {
+    const { rec, run } = fine('timer-555', [on('timer', 'out')], 100);
+    rec.setFine(false);
+    run.circuit.sim.run(100);
+    expect(rec.drainFine(run.circuit.sim)).toBeNull();
+  });
+});
+
+describe('determinism with the scope attached (US-SIM-10 AC4)', () => {
+  for (const id of ['timer-555', 'no-flyback', 'rgb-melody'] as const) {
+    it(`${id}: bit-identical state with 4 scope channels`, { timeout: 120_000 }, () => {
+      const plain = buildRun({ scenario: id });
+      const scoped = buildRun({ scenario: id });
+      const hub = new MeasureHub(scoped);
+      const parts = scoped.circuit.assembled.parts;
+      const pins = parts.flatMap((p) => Object.keys(p.pins).map((pin) => ({ part: p.id, pin })));
+      hub.setFine(true); // fine mode only reads sub-steps
+      const rec = hub.set('scope', [
+        ...pins.slice(0, 2).map((red): MeasureProbe => ({ kind: 'v', red, black: null })),
+        { kind: 'v', red: { part: 'board', pin: 'D9' }, black: null },
+        { kind: 'i', pins: pins.slice(0, 1), scale: 1 },
+      ]);
+      scoped.circuit.sim.addObserver(hub);
+      for (let k = 0; k < 20; k++) {
+        plain.circuit.sim.run(100);
+        scoped.circuit.sim.run(100);
+        rec?.drain(scoped.circuit.sim);
+        if (rec instanceof ScopeRecorder) rec.drainFine(scoped.circuit.sim);
+      }
+      expect(scoped.circuit.sim.snapshot()).toEqual(plain.circuit.sim.snapshot());
+    });
+  }
 });

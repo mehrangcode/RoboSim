@@ -6,7 +6,15 @@ import { buildNetlist, ohmmeterInstance, type NetlistInput } from '@robosim/sim-
 import type { ProjectDocument } from '@robosim/shared';
 import { initCodeAnalysis } from '@robosim/code-analysis';
 import { nodeCodeAnalysisWasm } from '@robosim/code-analysis/node';
-import { MeasureHub, buildRun, builtinSource, type MeasureProbe } from '@robosim/sim-runtime';
+import {
+  MeasureHub,
+  SCENARIOS,
+  ScopeRecorder,
+  buildRun,
+  builtinSource,
+  type MeasureProbe,
+  type ScenarioId,
+} from '@robosim/sim-runtime';
 
 const SCALE = Number(process.env['ROBOSIM_PERF_SCALE'] ?? 1);
 
@@ -22,9 +30,22 @@ function timeMs(fn: () => void): number {
 }
 
 /** Average slice of a whole line-follower lap (Uno, 7 parts, physics, safety), until the challenge decides. */
-function lapSliceMs(meter = false): number {
+function lapSliceMs(instrument: 'none' | 'meter' | 'scope' = 'none'): number {
   const run = buildRun({ scenario: 'line-follower' });
-  if (meter) {
+  let drain = () => {};
+  if (instrument === 'scope') {
+    // 4 channels (FR-SIM-14): 3 net voltages with their envelope + 1 part current, drained like the host.
+    const hub = new MeasureHub(run);
+    const parts = run.circuit.assembled.parts;
+    const pins = parts.flatMap((p) => Object.keys(p.pins).map((pin) => ({ part: p.id, pin })));
+    const rec = hub.set('scope', [
+      ...pins.slice(0, 3).map((red): MeasureProbe => ({ kind: 'v', red, black: null })),
+      { kind: 'i', pins: pins.slice(3, 4), scale: 1 },
+    ]);
+    run.circuit.sim.addObserver(hub);
+    drain = () => void rec?.drain(run.circuit.sim);
+  }
+  if (instrument === 'meter') {
     // 8 probes of every kind (FR-SIM-13), read after every slice like the live meter.
     const hub = new MeasureHub(run);
     const parts = run.circuit.assembled.parts;
@@ -41,10 +62,55 @@ function lapSliceMs(meter = false): number {
   const ms = timeMs(() => {
     while (run.challenge?.result().status === 'running' && slices < 60_000) {
       run.circuit.sim.run(100);
+      drain();
       slices += 100;
     }
   });
   return ms / slices;
+}
+
+/**
+ * Average slice (ms) of `slices` slices of a built-in scenario with the scope on 4 channels (3 net
+ * voltages + 1 current, drained every 33 slices like the host's frames), optionally in fine mode.
+ */
+function scopedSliceMs(id: ScenarioId, fine: boolean | 'none', slices = 2000): number {
+  const run = buildRun({ scenario: id });
+  const sim = run.circuit.sim;
+  let drain = () => {};
+  if (fine !== 'none') {
+    const hub = new MeasureHub(run);
+    hub.setFine(fine);
+    const parts = run.circuit.assembled.parts;
+    const pins = parts.flatMap((p) => Object.keys(p.pins).map((pin) => ({ part: p.id, pin })));
+    const rec = hub.set('scope', [
+      ...pins.slice(0, 3).map((red): MeasureProbe => ({ kind: 'v', red, black: null })),
+      { kind: 'i', pins: pins.slice(0, 1), scale: 1 },
+    ]);
+    sim.addObserver(hub);
+    drain = () => {
+      rec?.drain(sim);
+      if (rec instanceof ScopeRecorder) rec.drainFine(sim);
+    };
+  }
+  sim.run(200); // power-on transients
+  drain();
+  const ms = timeMs(() => {
+    for (let done = 0; done < slices; done += 33) {
+      sim.run(33);
+      drain();
+    }
+  });
+  return ms / slices;
+}
+
+/** Real-time check (Release-Plan IT-3 exit): the slowest scenario with the scope on, in ms per slice. */
+function slowestScoped(fine: boolean): { id: ScenarioId; ms: number } {
+  // One pass over every scenario, then the median of 3 for the three slowest (noise picks the order).
+  const first = SCENARIOS.map((id) => ({ id, ms: scopedSliceMs(id, fine, 1000) }));
+  const top = first.sort((a, b) => b.ms - a.ms).slice(0, 3);
+  return top
+    .map(({ id }) => ({ id, ms: median([0, 1, 2].map(() => scopedSliceMs(id, fine))) }))
+    .reduce((a, b) => (b.ms > a.ms ? b : a));
 }
 
 /** 100 resistor + LED pairs on the digital pins: 200 parts, 300 wires. */
@@ -107,8 +173,47 @@ const budgets = [
     name: 'Meter with 8 probes, added time per slice on the lap (µs)',
     budget: 5,
     measure: () => {
-      lapSliceMs(true);
-      const runs = [0, 1, 2, 3, 4].map(() => (lapSliceMs(true) - lapSliceMs()) * 1000);
+      lapSliceMs('meter');
+      const runs = [0, 1, 2, 3, 4].map(() => (lapSliceMs('meter') - lapSliceMs()) * 1000);
+      return Math.max(0, median(runs));
+    },
+  },
+  {
+    name: 'Scope with 4 channels, added time per slice on the lap (µs)',
+    budget: 10,
+    measure: () => {
+      lapSliceMs('scope');
+      const runs = [0, 1, 2, 3, 4].map(() => (lapSliceMs('scope') - lapSliceMs()) * 1000);
+      return Math.max(0, median(runs));
+    },
+  },
+  {
+    // 1 ms of simulated time per slice: below 1 ms of work per slice the run keeps RTF ≥ 1×.
+    name: 'Scope with 4 channels, slowest built-in scenario (ms/slice; < 1 = real time)',
+    budget: 1,
+    measure: () => {
+      const w = slowestScoped(false);
+      console.warn(`     slowest: ${w.id}`);
+      return w.ms;
+    },
+  },
+  {
+    name: 'Scope with 4 channels in fine mode, slowest built-in scenario (ms/slice; < 1 = real time)',
+    budget: 1,
+    measure: () => {
+      const w = slowestScoped(true);
+      console.warn(`     slowest: ${w.id}`);
+      return w.ms;
+    },
+  },
+  {
+    name: 'Scope fine mode, extra time on no-flyback (the most sub-steps) (%)',
+    budget: 15,
+    measure: () => {
+      scopedSliceMs('no-flyback', true, 500);
+      const runs = [0, 1, 2, 3, 4].map(
+        () => (scopedSliceMs('no-flyback', true) / scopedSliceMs('no-flyback', false) - 1) * 100,
+      );
       return Math.max(0, median(runs));
     },
   },

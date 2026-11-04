@@ -35,6 +35,7 @@ export {
   type SimulationSnapshot,
   type SliceContext,
   type SliceObserver,
+  type SubstepObserver,
 } from './scheduler.js';
 export { Pacer, type PacerOptions, type TickResult } from './pacer.js';
 export { resolveProps, validateManifest, type PropValue } from './manifest.js';

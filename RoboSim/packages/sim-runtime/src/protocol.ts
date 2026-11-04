@@ -185,6 +185,12 @@ export type MainToWorker =
       readonly probes: readonly MeasureProbe[] | null;
     }
   /**
+   * Oscilloscope fine mode (TD §18.3): while on, `v` scope channels also record their value at every
+   * integration sub-step of a reactive circuit, answered with `scopeFine`. Kept across resets like the
+   * subscription; it does not start a new one, so the scope history stays. View only.
+   */
+  | { readonly type: 'scopeFine'; readonly on: boolean }
+  /**
    * Resistance between two points on a fresh static instance: of the loaded run while it is not
    * running, or of `project` when given (the circuit being edited; no run needed).
    */
@@ -210,11 +216,15 @@ export type MeasureProbe =
 
 /** The meter reads at most this many probes at once (TD §18.2 budget). */
 export const MAX_METER_PROBES = 8;
+/** Oscilloscope channels (FR-SIM-14). */
+export const MAX_SCOPE_CHANNELS = 4;
+/** Fine mode keeps at most this many sub-step samples per slice and channel (TD §18.3). */
+export const MAX_FINE_PER_SLICE = 64;
 
 /** Why an ohms request has no value: running, OL (`open`), nothing to measure, an unsimulated point. */
 export type OhmsRefusal = 'running' | 'open' | 'not-loaded' | 'unresolved';
 
-/** Instruments sharing the measurement channel (the scope arrives with IT-3). */
+/** Instruments sharing the measurement channel: multimeter (IT-2) and oscilloscope (IT-3). */
 export type MeasureChannel = 'meter' | 'scope';
 
 export interface PartInfo {
@@ -446,7 +456,9 @@ export type WorkerToMain =
     }
   /**
    * Measurement-channel readings over `slices` slices from `fromSlice` (0 slices: a sample of the paused
-   * operating point). Meter: `[avg, min, max]` per probe. Probes in `unresolved` read NaN.
+   * operating point). Meter: `[avg, min, max]` per probe over all slices. Scope: `[avg, min, max]` per
+   * slice and channel, slice-major (`slices × channels × 3`); reading `k` was taken after slice
+   * `fromSlice + k` (sim time `(fromSlice + k) ms`). Probes in `unresolved` read NaN.
    */
   | {
       readonly type: 'measures';
@@ -456,6 +468,22 @@ export type WorkerToMain =
       readonly slices: number;
       readonly data: Float32Array;
       readonly unresolved?: readonly number[];
+      /**
+       * Scope only: PWM driving a `v` channel against GND, as `[slice, channel, freqHz, duty]` per change
+       * (freqHz 0: no longer PWM). The main thread rebuilds the edges between the slice's min and max.
+       */
+      readonly pwm?: Float64Array;
+    }
+  /**
+   * Fine-mode sub-step samples of the scope subscription `session`, as `[channel, t_s, value]` triples
+   * in time order (≤ 64 per slice and channel, decimated by min/max beyond). `reactive` false: the
+   * circuit has no sub-steps (no capacitor or inductor), so there is nothing finer than the readings.
+   */
+  | {
+      readonly type: 'scopeFine';
+      readonly session: number;
+      readonly reactive: boolean;
+      readonly data: Float64Array;
     }
   /** Answer to `ohms`: Ω, or null with why (`open` = over range, shown as OL). */
   | {

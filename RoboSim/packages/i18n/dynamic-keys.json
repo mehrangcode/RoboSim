@@ -66,6 +66,12 @@
     "editor:meter.modes.",
     "editor:meter.units.",
     "editor:meter.armed.",
-    "editor:meter.hint."
+    "editor:meter.hint.",
+    "editor:scope.kind.",
+    "editor:scope.trigger.edge.",
+    "editor:scope.trigger.mode.",
+    "editor:scope.status.",
+    "editor:scope.col.",
+    "editor:scope.window."
   ]
 }

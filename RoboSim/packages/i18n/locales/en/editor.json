@@ -264,6 +264,95 @@
       "measuring": "Measuring…",
       "direction": "Positive: current flows from {from} to {to}.",
       "powerSign": "Negative power: the part delivers energy (a source)."
-    }
+    },
+    "addToScope": "Add to scope"
+  },
+  "scope": {
+    "title": "Oscilloscope",
+    "channels": "Channels",
+    "channel": "CH{n}",
+    "kind": {
+      "v": "voltage to GND",
+      "i": "current",
+      "p": "power"
+    },
+    "gone": "This part is no longer in the circuit: the channel reads nothing.",
+    "scale": "Scale",
+    "scaleOf": "{channel} scale",
+    "perDiv": "{value}/div",
+    "up": "Move {channel} up",
+    "down": "Move {channel} down",
+    "remove": "Remove {channel}",
+    "add": {
+      "point": "Add a voltage channel (to GND)",
+      "choose": "Choose a pin…",
+      "button": "Add",
+      "place": "Place on canvas",
+      "armed": "Click a pin or hole to add a voltage channel · Esc cancels",
+      "full": "All 4 channels are in use. Remove one to add another."
+    },
+    "timebase": "Timebase",
+    "trigger": {
+      "source": "Trigger",
+      "none": "Free run",
+      "edge": {
+        "label": "Edge",
+        "rising": "Rising",
+        "falling": "Falling"
+      },
+      "level": "Level ({unit})",
+      "holdoff": "Holdoff (ms)",
+      "mode": {
+        "label": "Mode",
+        "auto": "Auto",
+        "normal": "Normal",
+        "single": "Single"
+      },
+      "arm": "Arm"
+    },
+    "status": {
+      "auto": "Auto: free-running (no trigger)",
+      "triggered": "Triggered",
+      "waiting": "Waiting for a trigger",
+      "armed": "Armed: waiting for a trigger"
+    },
+    "live": "Live",
+    "held": "Held: drag, scroll or use the arrow keys to look back. Live returns to the latest sweep.",
+    "empty": "Add a channel: pick a pin below or place it on the canvas.",
+    "noRun": "Run the project to see the traces.",
+    "chart": "Oscilloscope traces {channels}, {from} to {to}",
+    "note": {
+      "aliasing": "Sampled at 1 kHz: use the logic analyzer for faster digital signals, or a timebase below 1 ms/div for fine mode on circuits with a capacitor or inductor.",
+      "pwm": "PWM edges are rebuilt from the timer's frequency and duty.",
+      "fineOn": "Fine mode: between the 1 kHz readings the trace follows the solver's sub-steps.",
+      "fineNone": "Fine mode: this circuit has no capacitor or inductor, so there is nothing finer than the 1 kHz readings. Use the logic analyzer for faster digital signals.",
+      "fineSlow": "Fine mode was turned off: the simulation ran slower than 0.8× the chosen speed."
+    },
+    "cursor": {
+      "hint": "Click to place cursor A, Shift+click for B. Arrow keys move A (with Shift: B); + and − change the timebase.",
+      "a": "A {time}",
+      "b": "B {time}",
+      "delta": "Δt {time} · 1/Δt {freq}"
+    },
+    "window": {
+      "cursors": "Between cursors A and B",
+      "screen": "Over the screen"
+    },
+    "col": {
+      "channel": "Channel",
+      "atA": "At A",
+      "atB": "At B",
+      "delta": "B − A",
+      "min": "Min",
+      "max": "Max",
+      "avg": "Average",
+      "rms": "RMS",
+      "freq": "Frequency"
+    },
+    "csv": {
+      "screen": "Export CSV (screen)",
+      "all": "Export CSV (whole buffer)"
+    },
+    "fineRetry": "Turn fine mode on again"
   }
 }

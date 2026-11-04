@@ -1,18 +1,10 @@
 import { zipSync } from 'fflate';
 import { utf8 } from '../editor/project-file.js';
+import type { Cell } from '../lib/csv.js';
 
 /** Exports of the parts list and the circuit (FR-BOM-05), built in the browser. */
 
-export type Cell = string | number | null;
-
-/** CSV for spreadsheets: a UTF-8 byte-order mark (so Excel reads Persian), quoted fields, CRLF lines. */
-export function toCsv(rows: readonly (readonly Cell[])[]): string {
-  const field = (v: Cell) => {
-    const s = v === null ? '' : String(v);
-    return /[",\r\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
-  };
-  return `\uFEFF${rows.map((r) => r.map(field).join(',')).join('\r\n')}\r\n`;
-}
+export { toCsv, type Cell } from '../lib/csv.js';
 
 const xml = (s: string) =>
   s

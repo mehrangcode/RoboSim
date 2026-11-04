@@ -3,8 +3,8 @@ import type { ProjectDocument } from '@robosim/shared';
 import type { Level } from '@robosim/sim-core';
 import { ENGINE_VERSION } from './engine-version.js';
 import { InputLogger, type LiveInput } from './input-log.js';
-import { MeasureHub, resolvePoint } from './measure.js';
-import { MAX_METER_PROBES } from './protocol.js';
+import { MeasureHub, ScopeRecorder, resolvePoint } from './measure.js';
+import { MAX_METER_PROBES, MAX_SCOPE_CHANNELS } from './protocol.js';
 import type {
   Damage,
   FirmwarePayload,
@@ -82,6 +82,8 @@ export class SimHost {
   private readonly measureProbes = new Map<MeasureChannel, readonly MeasureProbe[]>();
   /** Subscription counter: a `measures` message names the subscription it answers. */
   private measureSession = 0;
+  /** Scope fine mode (TD §18.3); kept across resets and loads like the probes. */
+  private scopeFine = false;
   /** Ohmmeter of the document last measured without a run. */
   private staticOhms: {
     key: string;
@@ -130,10 +132,19 @@ export class SimHost {
           this.publish(true);
           break;
         case 'measure':
-          if (msg.probes?.length) this.measureProbes.set(msg.channel, msg.probes.slice(0, MAX_METER_PROBES));
+          if (msg.probes?.length)
+            this.measureProbes.set(
+              msg.channel,
+              msg.probes.slice(0, msg.channel === 'scope' ? MAX_SCOPE_CHANNELS : MAX_METER_PROBES),
+            );
           else this.measureProbes.delete(msg.channel);
           this.measureSession++;
           this.run?.measure.set(msg.channel, this.measureProbes.get(msg.channel) ?? null);
+          this.publish(true);
+          break;
+        case 'scopeFine':
+          this.scopeFine = msg.on;
+          this.run?.measure.setFine(msg.on);
           this.publish(true);
           break;
         case 'ohms': {
@@ -208,6 +219,7 @@ export class SimHost {
     const logger = new InputLogger(scenario, replay);
     // Instruments observe before the logger, which must stay last: replayed inputs land where live ones did.
     const measure = new MeasureHub(scenario);
+    measure.setFine(this.scopeFine);
     for (const [channel, probes] of this.measureProbes) measure.set(channel, probes);
     scenario.circuit.sim.addObserver(measure);
     scenario.circuit.sim.addObserver(logger);
@@ -392,7 +404,7 @@ export class SimHost {
     }
     for (const [channel, recorder] of run.measure.channels()) {
       if (recorder.pending === 0 && !force) continue;
-      const { fromSlice, slices, data } = recorder.drain(sim);
+      const { fromSlice, slices, data, pwm } = recorder.drain(sim);
       this.post(
         {
           type: 'measures',
@@ -402,9 +414,16 @@ export class SimHost {
           slices,
           data,
           ...(recorder.unresolved.length ? { unresolved: recorder.unresolved } : {}),
+          ...(pwm ? { pwm } : {}),
         },
-        [data.buffer as ArrayBuffer],
+        pwm ? [data.buffer as ArrayBuffer, pwm.buffer as ArrayBuffer] : [data.buffer as ArrayBuffer],
       );
+      const fine = recorder instanceof ScopeRecorder ? recorder.drainFine(sim) : null;
+      if (fine)
+        this.post(
+          { type: 'scopeFine', session: this.measureSession, reactive: fine.reactive, data: fine.data },
+          [fine.data.buffer as ArrayBuffer],
+        );
     }
     if (run.serialOut.length) {
       const chunks = run.serialOut.map((c) => ({

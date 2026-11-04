@@ -89,6 +89,12 @@ export interface SliceObserver {
   readonly viewOnly?: boolean;
 }
 
+/**
+ * Called after every accepted integration step of a reactive slice with its end time (s) and solution
+ * (TD §18.3 fine mode). View-only: it must not change the run.
+ */
+export type SubstepObserver = (t: number, s: MnaSolution) => void;
+
 export interface ComponentSnapshot {
   readonly id: string;
   readonly type: string;
@@ -180,6 +186,7 @@ export class Simulation {
   private readonly world: WorldModel | null;
   private readonly components: readonly ComponentInstance[];
   private readonly observers: SliceObserver[] = [];
+  private readonly substepObservers: SubstepObserver[] = [];
   private readonly io: ComponentIO;
   /** MCU output edges of the current slice per pin, and the pins wired to each net. */
   private readonly sliceEdges = new Map<string, PinEdge[]>();
@@ -443,6 +450,14 @@ export class Simulation {
     return this.nowS;
   }
 
+  /**
+   * The last solved operating point (a reactive circuit's final sub-step; else the published one).
+   * View-only: a PWM average still carries its phases here, which a transient slice average loses.
+   */
+  get stepSolution(): MnaSolution {
+    return this.solution;
+  }
+
   /** The operating point components read (the slice average in a reactive circuit). */
   get currentSolution(): MnaSolution {
     return this.published;
@@ -490,6 +505,18 @@ export class Simulation {
     this.solveIfDirty();
     this.settleLogic();
     this.bus.applyInputs(this.solution, this.bus.core.cycle);
+  }
+
+  /**
+   * Sees every accepted sub-step of a reactive slice (an instrument: the scope's fine mode). Non-reactive
+   * circuits have no sub-steps, so it is never called for them. Returns the unsubscribe function.
+   */
+  addSubstepObserver(o: SubstepObserver): () => void {
+    this.substepObservers.push(o);
+    return () => {
+      const i = this.substepObservers.indexOf(o);
+      if (i >= 0) this.substepObservers.splice(i, 1);
+    };
   }
 
   /** Advances exactly one 1 ms slice. */
@@ -598,6 +625,7 @@ export class Simulation {
         }
         acc.average?.add(s, h);
         this.accumulatePower(s, h);
+        for (const o of this.substepObservers) o(this.nowS, s);
       });
       if (t <= from) break; // defensive: no progress
       this.bus?.applyInputs(this.solution, this.bus.core.cycle);

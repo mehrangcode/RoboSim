@@ -13,7 +13,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 ## Slices (recommended order)
 - [ ] IT-1 — Wiring ↔ sketch consistency check · FR-SAF-08 · US-SAF-06 · TD §18.1
 - [x] IT-2 — Virtual multimeter + measure channel (ADR-026) · FR-SIM-13 · US-SIM-09 · TD §18.2
-- [ ] IT-3 — Analog oscilloscope · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
+- [x] IT-3 — Analog oscilloscope (phase 1 + fine mode) · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
 - [ ] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
 - [ ] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
 - [ ] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
@@ -56,3 +56,14 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] g. i18n EN/FA `meter.*`
 - [x] h. goldens unchanged; `pnpm verify` (279/279); browser check FA/EN (Ω 220.0 Ω without a run, live V/A, stop-run hint, Persian digits, RTL min/max)
 - [x] i. docs sync (PRD, TD §18.2 note, Release-Plan, README; note: no web flag consumer)
+
+## IT-3 detailed steps (owner answers 2026-11-04: rebuild PWM edges from pin PWM freq/duty/phase for v probes on PWM-driven nets; test D5 980 Hz + D9 490 Hz; CSV `time_ms`; phase 1 only — fine mode deferred; no flag (like IT-1/2); never commit)
+- [x] a. sim-runtime: scope channel in `MeasureRecorder` ([avg,min,max] with `netEnvelope`) + PWM edge descriptors for v probes on PWM nets; tests (timer-555 max > avg, no-flyback kickback, digest unchanged)
+- [x] b. sim-runtime: `scope.ts` `ScopeRing` (worker, 30 s) + `ScopeBuffer` (client, 60 s), host refill, client export; tests
+- [x] c. web: `lib/csv.ts` (move `toCsv`), `lab/scope-math.ts` (trigger/holdoff/cursors/RMS/freq, PWM reconstruction) + tests
+- [x] d. web: `lab/oscilloscope.tsx` (canvas, bands, dash+label, keyboard cursors, modes, CSV, settings `robosim.scope.v1`), dock tab `'scope'`, "Add to scope" (meter + canvas menu) + tests
+- [x] e. i18n EN/FA `scope.*`
+- [x] f. goldens unchanged; perf (≤ 10 µs/slice 4 ch); `pnpm verify`; browser check FA/EN
+- [x] g. docs sync (PRD, US-SIM-10 AC3 unchanged, TD §18.3 note: time_ms + PWM rebuild + fine mode deferred, Release-Plan 490/980 wording, README)
+- [x] h. phase 2: fine mode (`addSubstepObserver`, `scopeFine`, auto-disable when RTF < 0.8 × speed for 2 s) + tests
+- [x] i. 4-channel real-time check: `pnpm test:perf` gates the slowest scenario with 4 ch (± fine) < 1 ms/slice; production-build browser A/B at 1.00×; worker tick-period fix

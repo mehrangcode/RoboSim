@@ -1,10 +1,12 @@
 import { breadboardLayout } from '@robosim/catalog/manifests';
-import { BOARD_FOOTPRINT, pinNamesOf, type ProbeArm } from '@robosim/circuit-canvas';
-import { BOARD_PART, type PinRef, type ProjectDocument } from '@robosim/shared';
+import type { ProbeArm } from '@robosim/circuit-canvas';
+import type { MeasureProbe } from '@robosim/sim-runtime/client';
+import type { PinRef, ProjectDocument } from '@robosim/shared';
 import { Button, SegmentedControl } from '@robosim/ui';
 import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatSi, useFormat } from './format.js';
+import { decodePoint as decode, encodePoint as encode, ltr, pointOptions } from './probe-points.js';
 import {
   ANNOUNCE_MS,
   DISPLAY_MS,
@@ -16,43 +18,20 @@ import {
   type MultimeterModel,
 } from './use-multimeter.js';
 
-/** All points of the circuit a probe can sit on, for keyboard and screen-reader users. */
-function pointOptions(
-  doc: ProjectDocument,
-): { group: string; options: { value: string; label: string }[] }[] {
-  const enc = (r: PinRef) => `${r.part}\u0000${r.pin}`;
-  return [
-    {
-      group: 'Uno',
-      options: Object.keys(BOARD_FOOTPRINT.pins).map((pin) => ({
-        value: enc({ part: BOARD_PART, pin }),
-        label: pin,
-      })),
-    },
-    ...doc.components
-      .filter((c) => !breadboardLayout(c.type))
-      .map((c) => ({
-        group: c.id,
-        options: pinNamesOf(c.type).map((pin) => ({
-          value: enc({ part: c.id, pin }),
-          label: `${c.id} · ${pin}`,
-        })),
-      })),
-  ];
-}
-/** Wraps text in Unicode LEFT-TO-RIGHT ISOLATE … POP DIRECTIONAL ISOLATE. */
-const ltr = (text: string): string => `\u2066${text}\u2069`;
-const decode = (v: string): PinRef => {
-  const [part = '', pin = ''] = v.split('\u0000');
-  return { part, pin };
-};
-const encode = (r: PinRef | null) => (r ? `${r.part}\u0000${r.pin}` : '');
-
 /**
  * Multimeter dock panel (FR-SIM-13, US-SIM-09): V / A / Ω / P, autoranged FA/EN readout at ≈10 Hz
  * with min and max, probes placed on the canvas ("Place" arms the next click) or picked from lists.
  */
-export function Multimeter({ doc, meter }: { doc: ProjectDocument; meter: MultimeterModel }) {
+export function Multimeter({
+  doc,
+  meter,
+  onAddToScope,
+}: {
+  doc: ProjectDocument;
+  meter: MultimeterModel;
+  /** Adds the meter's probe as an oscilloscope channel (FR-SIM-14); null: the scope is full. */
+  onAddToScope?: ((probe: MeasureProbe) => void) | null;
+}) {
   const { t } = useTranslation();
   const fmt = useFormat();
   const { state, setState, run } = meter;
@@ -275,10 +254,20 @@ export function Multimeter({ doc, meter }: { doc: ProjectDocument; meter: Multim
           {place.part}
         </div>
       )}
-      <div>
+      <div className="flex flex-wrap gap-2">
         <Button variant="ghost" size="sm" onClick={() => setState({ ...EMPTY_METER, mode: state.mode })}>
           {t('editor:meter.clear')}
         </Button>
+        {onAddToScope !== undefined && (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!onAddToScope || !meter.probe}
+            onClick={() => meter.probe && onAddToScope?.(meter.probe)}
+          >
+            {t('editor:meter.addToScope')}
+          </Button>
+        )}
       </div>
     </section>
   );

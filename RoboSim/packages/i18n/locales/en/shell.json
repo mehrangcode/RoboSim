@@ -344,7 +344,8 @@
       "noSerial": "This sketch does not use Serial.",
       "assistant": "Assistant",
       "verify": "Verified run",
-      "meter": "Multimeter"
+      "meter": "Multimeter",
+      "scope": "Oscilloscope"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {

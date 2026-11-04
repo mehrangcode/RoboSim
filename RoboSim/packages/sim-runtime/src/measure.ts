@@ -1,7 +1,7 @@
 import { BOARD_PART } from '@robosim/shared';
-import type { NetId, Simulation, SliceContext, SliceObserver } from '@robosim/sim-core';
+import type { MnaSolution, NetId, Simulation, SliceContext, SliceObserver } from '@robosim/sim-core';
 import { boardTerminal, type Scenario } from './project-loader.js';
-import type { MeasureChannel, MeasureProbe, PointRef } from './protocol.js';
+import { MAX_FINE_PER_SLICE, type MeasureChannel, type MeasureProbe, type PointRef } from './protocol.js';
 
 /** A point resolved to the engine: its net, and how to read current into it (null: no current). */
 export interface ResolvedPoint {
@@ -89,7 +89,7 @@ function compile(scenario: Scenario, probe: MeasureProbe): Reader | null {
  * Meter recorder (FR-SIM-13): reads its probes after every slice and keeps avg / min / max until the
  * host drains them with the next snapshot. View-only (ADR-026): it only reads the simulation.
  */
-export class MeasureRecorder {
+export class MeasureRecorder implements ChannelRecorder {
   readonly unresolved: readonly number[];
   private readonly readers: readonly (Reader | null)[];
   private sum: Float64Array;
@@ -162,28 +162,302 @@ export class MeasureRecorder {
   }
 }
 
+/** What the host drains from an instrument of the measurement channel. */
+export interface ChannelRecorder {
+  readonly unresolved: readonly number[];
+  readonly powerParts: readonly string[];
+  readonly pending: number;
+  record(sim: Simulation): void;
+  drain(sim: Simulation): { fromSlice: number; slices: number; data: Float32Array; pwm?: Float64Array };
+}
+
+type Phased = MnaSolution & {
+  phases(): readonly { readonly solution: MnaSolution; readonly weight: number }[];
+};
+const isPhased = (s: MnaSolution): s is Phased => typeof (s as Partial<Phased>).phases === 'function';
+
+/** Writes `[avg, min, max]` at `out[o..o+2]`; returns the PWM to rebuild the trace from, or null. */
+type ScopeReader = (
+  sim: Simulation,
+  out: Float32Array,
+  o: number,
+) => { freqHz: number; dutyRatio: number } | null;
+
+function compileScope(scenario: Scenario, probe: MeasureProbe): ScopeReader | null {
+  const plain = compile(scenario, probe);
+  if (!plain) return null;
+  if (probe.kind !== 'v')
+    return (sim, out, o) => {
+      out[o] = out[o + 1] = out[o + 2] = plain(sim);
+      return null;
+    };
+  // Resolved again for the nets (compile already proved both points resolve).
+  const a = resolvePoint(scenario, probe.red)?.net ?? 0;
+  const b = probe.black ? (resolvePoint(scenario, probe.black)?.net ?? 0) : 0;
+  // Per-phase extremes only change with the solution, which stays the same object while nothing changes.
+  let seen: MnaSolution | null = null;
+  let lo = 0;
+  let hi = 0;
+  return (sim, out, o) => {
+    const published = sim.currentSolution;
+    const avg = published.voltage(a) - published.voltage(b);
+    // PWM phase levels; a transient slice average has none, its last sub-step still does.
+    const s = sim.transient ? sim.stepSolution : published;
+    if (s !== seen) {
+      seen = s;
+      lo = hi = s.voltage(a) - s.voltage(b);
+      if (isPhased(s))
+        for (const ph of s.phases()) {
+          if (ph.weight <= 0) continue;
+          const v = ph.solution.voltage(a) - ph.solution.voltage(b);
+          if (v < lo) lo = v;
+          if (v > hi) hi = v;
+        }
+    }
+    let min = Math.min(lo, avg);
+    let max = Math.max(hi, avg);
+    if (sim.transient && b === 0) {
+      // Sub-step extremes (a kickback the average hides); only against GND, where they are exact.
+      const e = sim.netEnvelope(a);
+      min = Math.min(min, e.min);
+      max = Math.max(max, e.max);
+    }
+    out[o] = avg;
+    out[o + 1] = min;
+    out[o + 2] = max;
+    // PWM edges are rebuilt between the phase levels (against GND only, where they are the pin's).
+    return b === 0 && hi > lo ? sim.pwmOn(a) : null;
+  };
+}
+
+/**
+ * Oscilloscope recorder (FR-SIM-14, TD §18.3): `[avg, min, max]` per channel after every slice, kept
+ * until the host drains them. `min`/`max` of a `v` channel are the transient sub-step envelope, or the
+ * PWM phase levels; PWM driving a channel is reported on change so the main thread can rebuild its
+ * edges (1 kHz sampling cannot show a 490 / 980 Hz square wave). View-only (ADR-026).
+ */
+export class ScopeRecorder implements ChannelRecorder {
+  readonly unresolved: readonly number[];
+  readonly powerParts: readonly string[] = [];
+  private readonly readers: readonly (ScopeReader | null)[];
+  private data: Float32Array;
+  private slices = 0;
+  private fromSlice: number;
+  private events: number[] = [];
+  /** Last reported PWM per channel as `[freqHz, duty]` (NaN: nothing reported yet). */
+  private readonly sent: Float64Array;
+
+  /** Fine mode (TD §18.3): `v` channels and their nets, sampled at every integration sub-step. */
+  private readonly fineNets: readonly { readonly ch: number; readonly a: NetId; readonly b: NetId }[];
+  private fineOff: (() => void) | null = null;
+  /** This slice's sub-steps: times, and per fine channel the values (row-major by sub-step). */
+  private subT = new Float64Array(64);
+  private subV = new Float64Array(0);
+  private subN = 0;
+  private fine: number[] = [];
+  /** `reactive` last told to the main thread (null: nothing sent since fine mode went on). */
+  private fineSent: boolean | null = null;
+
+  constructor(
+    private readonly scenario: Scenario,
+    readonly probes: readonly MeasureProbe[],
+  ) {
+    this.fineNets = probes.flatMap((p, ch) => {
+      if (p.kind !== 'v') return [];
+      const a = resolvePoint(scenario, p.red)?.net;
+      const b = p.black ? resolvePoint(scenario, p.black)?.net : 0;
+      return a === undefined || b === undefined ? [] : [{ ch, a, b }];
+    });
+    this.subV = new Float64Array(64 * this.fineNets.length);
+    this.readers = probes.map((p) => compileScope(scenario, p));
+    this.unresolved = this.readers.flatMap((r, i) => (r ? [] : [i]));
+    this.data = new Float32Array(probes.length * 3 * 64);
+    this.sent = new Float64Array(probes.length * 2).fill(NaN);
+    this.fromSlice = scenario.circuit.sim.slice;
+  }
+
+  get pending(): number {
+    return this.slices;
+  }
+
+  /** True while fine mode records sub-steps. */
+  get fineOn(): boolean {
+    return this.fineOff !== null;
+  }
+
+  /** Turns fine mode on or off; only reads the simulation (view-only). */
+  setFine(on: boolean): void {
+    if (on === this.fineOn) return;
+    if (on) this.fineOff = this.scenario.circuit.sim.addSubstepObserver(this.onSubstep);
+    else {
+      this.fineOff?.();
+      this.fineOff = null;
+      this.fine = [];
+    }
+    this.subN = 0;
+    this.fineSent = null;
+  }
+
+  /** Stops observing the simulation (the subscription ended). */
+  dispose(): void {
+    this.setFine(false);
+  }
+
+  private readonly onSubstep = (t: number, s: MnaSolution): void => {
+    const n = this.fineNets.length;
+    if (n === 0) return;
+    if (this.subN >= this.subT.length) {
+      const t2 = new Float64Array(this.subT.length * 2);
+      t2.set(this.subT);
+      this.subT = t2;
+      const v2 = new Float64Array(this.subV.length * 2);
+      v2.set(this.subV);
+      this.subV = v2;
+    }
+    this.subT[this.subN] = t;
+    const o = this.subN * n;
+    for (let j = 0; j < n; j++) {
+      const f = this.fineNets[j];
+      if (f) this.subV[o + j] = s.voltage(f.a) - s.voltage(f.b);
+    }
+    this.subN++;
+  };
+
+  /**
+   * Moves this slice's sub-steps to the outgoing samples: all of them up to MAX_FINE_PER_SLICE, else
+   * per channel the min and max of each of MAX_FINE_PER_SLICE / 2 equal runs, in time order.
+   */
+  private flushSubsteps(): void {
+    const n = this.fineNets.length;
+    const count = this.subN;
+    this.subN = 0;
+    if (count === 0) return;
+    for (let j = 0; j < n; j++) {
+      const ch = this.fineNets[j]?.ch ?? 0;
+      const at = (k: number) => this.subV[k * n + j] ?? NaN;
+      if (count <= MAX_FINE_PER_SLICE) {
+        for (let k = 0; k < count; k++) this.fine.push(ch, this.subT[k] ?? 0, at(k));
+        continue;
+      }
+      const buckets = MAX_FINE_PER_SLICE / 2;
+      for (let b = 0; b < buckets; b++) {
+        const k0 = Math.floor((b * count) / buckets);
+        const k1 = Math.floor(((b + 1) * count) / buckets);
+        let lo = k0;
+        let hi = k0;
+        for (let k = k0 + 1; k < k1; k++) {
+          if (at(k) < at(lo)) lo = k;
+          if (at(k) > at(hi)) hi = k;
+        }
+        const first = Math.min(lo, hi);
+        const second = Math.max(lo, hi);
+        this.fine.push(ch, this.subT[first] ?? 0, at(first));
+        if (second !== first) this.fine.push(ch, this.subT[second] ?? 0, at(second));
+      }
+    }
+  }
+
+  /**
+   * Sub-step samples since the last call, as `[channel, t_s, value]` triples per channel in time order;
+   * null when fine mode is off or there is nothing new to tell (no samples and `reactive` unchanged).
+   */
+  drainFine(sim: Simulation): { reactive: boolean; data: Float64Array } | null {
+    if (!this.fineOn) return null;
+    const reactive = sim.transient;
+    if (this.fine.length === 0 && this.fineSent === reactive) return null;
+    this.fineSent = reactive;
+    const data = Float64Array.from(this.fine);
+    this.fine = [];
+    return { reactive, data };
+  }
+
+  record(sim: Simulation): void {
+    if (this.fineOn) this.flushSubsteps();
+    const row = this.readers.length * 3;
+    if (this.slices === 0) this.fromSlice = sim.slice;
+    if ((this.slices + 1) * row > this.data.length) {
+      const grown = new Float32Array(this.data.length * 2);
+      grown.set(this.data);
+      this.data = grown;
+    }
+    const base = this.slices * row;
+    for (let i = 0; i < this.readers.length; i++) {
+      const r = this.readers[i];
+      const o = base + 3 * i;
+      if (!r) {
+        this.data[o] = this.data[o + 1] = this.data[o + 2] = NaN;
+        continue;
+      }
+      const pwm = r(sim, this.data, o);
+      const f = pwm?.freqHz ?? 0;
+      const d = pwm?.dutyRatio ?? 0;
+      if (this.sent[2 * i] !== f || this.sent[2 * i + 1] !== d) {
+        this.sent[2 * i] = f;
+        this.sent[2 * i + 1] = d;
+        this.events.push(sim.slice, i, f, d);
+      }
+    }
+    this.slices++;
+  }
+
+  drain(sim: Simulation): { fromSlice: number; slices: number; data: Float32Array; pwm?: Float64Array } {
+    const slices = this.slices;
+    const row = this.readers.length * 3;
+    let data: Float32Array;
+    if (slices > 0) data = this.data.slice(0, slices * row);
+    else {
+      // A paused sample of the present operating point, like the meter's.
+      data = new Float32Array(row);
+      this.readers.forEach((r, i) => {
+        if (r) r(sim, data, 3 * i);
+        else data[3 * i] = data[3 * i + 1] = data[3 * i + 2] = NaN;
+      });
+    }
+    const fromSlice = slices > 0 ? this.fromSlice : sim.slice;
+    const pwm = this.events.length ? Float64Array.from(this.events) : undefined;
+    this.events = [];
+    this.slices = 0;
+    return { fromSlice, slices, data, ...(pwm ? { pwm } : {}) };
+  }
+}
+
 /**
  * The run's single measurement observer, registered before the InputLogger (which must stay last):
  * instruments subscribe and unsubscribe through it mid-run without reordering observers.
  */
 export class MeasureHub implements SliceObserver {
   readonly viewOnly = true;
-  private readonly recorders = new Map<MeasureChannel, MeasureRecorder>();
+  private readonly recorders = new Map<MeasureChannel, ChannelRecorder>();
+  private fine = false;
 
   constructor(private readonly scenario: Scenario) {}
 
-  set(channel: MeasureChannel, probes: readonly MeasureProbe[] | null): MeasureRecorder | null {
-    if (probes?.length) this.recorders.set(channel, new MeasureRecorder(this.scenario, probes));
-    else this.recorders.delete(channel);
+  set(channel: MeasureChannel, probes: readonly MeasureProbe[] | null): ChannelRecorder | null {
+    const prev = this.recorders.get(channel);
+    if (prev instanceof ScopeRecorder) prev.dispose();
+    if (probes?.length) {
+      if (channel === 'scope') {
+        const scope = new ScopeRecorder(this.scenario, probes);
+        scope.setFine(this.fine);
+        this.recorders.set(channel, scope);
+      } else this.recorders.set(channel, new MeasureRecorder(this.scenario, probes));
+    } else this.recorders.delete(channel);
     this.scenario.circuit.sim.watchPower([...this.recorders.values()].flatMap((r) => r.powerParts));
     return this.recorders.get(channel) ?? null;
   }
 
-  get(channel: MeasureChannel): MeasureRecorder | null {
+  /** Scope fine mode, kept for the scope subscriptions that follow (TD §18.3). */
+  setFine(on: boolean): void {
+    this.fine = on;
+    const scope = this.recorders.get('scope');
+    if (scope instanceof ScopeRecorder) scope.setFine(on);
+  }
+
+  get(channel: MeasureChannel): ChannelRecorder | null {
     return this.recorders.get(channel) ?? null;
   }
 
-  channels(): IterableIterator<[MeasureChannel, MeasureRecorder]> {
+  channels(): IterableIterator<[MeasureChannel, ChannelRecorder]> {
     return this.recorders.entries();
   }
 

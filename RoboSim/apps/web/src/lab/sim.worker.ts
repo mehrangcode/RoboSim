@@ -17,8 +17,14 @@ self.onmessage = (event: MessageEvent<MainToWorker>) =>
       self.postMessage({ type: 'error', message: `code analysis failed to load: ${String(e)}` }),
   );
 
+/** Tick period (ms). The tick's own work counts towards it: the pacer simulates ≤ 12 ms of each 16. */
+const TICK_MS = 16;
+
 function loop(): void {
+  const start = performance.now();
   host.tick();
-  setTimeout(loop, 16);
+  // Sleeping a full period after the work capped the worker at 12 of every 28 ms (RTF < 1× for any
+  // demo above ≈ 0.43 ms/slice). The rest of the period stays free for incoming messages.
+  setTimeout(loop, Math.max(0, TICK_MS - (performance.now() - start)));
 }
 loop();
