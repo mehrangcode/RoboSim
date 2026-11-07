@@ -68,7 +68,10 @@
     "maxReverseV": 5,
     "typicalCurrentMa": 50,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
+    "minSupplyV": 0,
+    "forwardVoltageV": 2
   },
-  "traits": ["led"]
+  "traits": ["led"],
+  "functions": ["show-number"],
+  "interfaces": ["digital"]
 }

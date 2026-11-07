@@ -24,5 +24,7 @@
     "idleCurrentMa": 5,
     "minSupplyV": 3.3
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["measure-soil-moisture"],
+  "interfaces": ["analog", "digital"]
 }

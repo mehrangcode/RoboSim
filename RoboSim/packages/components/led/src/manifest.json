@@ -31,7 +31,10 @@
     "peakCurrentMa": 20,
     "typicalCurrentMa": 15,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
+    "minSupplyV": 0,
+    "forwardVoltageV": 2
   },
-  "traits": ["led"]
+  "traits": ["led"],
+  "functions": ["show-status-light"],
+  "interfaces": ["digital", "pwm"]
 }

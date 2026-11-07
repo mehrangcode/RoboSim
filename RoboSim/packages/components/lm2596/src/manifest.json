@@ -55,5 +55,6 @@
       "pin": "out+",
       "maxCurrentMa": 3000
     }
-  ]
+  ],
+  "functions": ["step-down-voltage", "regulate-5v"]
 }

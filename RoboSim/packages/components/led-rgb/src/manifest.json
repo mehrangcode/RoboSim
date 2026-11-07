@@ -22,7 +22,10 @@
     "maxReverseV": 5,
     "typicalCurrentMa": 10,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
+    "minSupplyV": 0,
+    "forwardVoltageV": 3.2
   },
-  "traits": ["led"]
+  "traits": ["led"],
+  "functions": ["show-colors", "show-status-light"],
+  "interfaces": ["pwm", "digital"]
 }

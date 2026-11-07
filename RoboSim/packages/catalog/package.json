@@ -11,6 +11,10 @@
     "./manifests": {
       "types": "./dist/manifests.d.ts",
       "default": "./dist/manifests.js"
+    },
+    "./functions": {
+      "types": "./dist/functions.d.ts",
+      "default": "./dist/functions.js"
     }
   },
   "files": [

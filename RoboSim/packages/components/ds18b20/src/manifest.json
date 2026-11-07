@@ -22,5 +22,7 @@
     "typicalCurrentMa": 1,
     "idleCurrentMa": 0.001,
     "minSupplyV": 3
-  }
+  },
+  "functions": ["measure-temperature"],
+  "interfaces": ["onewire"]
 }

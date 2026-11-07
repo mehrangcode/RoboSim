@@ -31,6 +31,9 @@
     "fullEnhancementV": 4.5,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "ratedVoltageV": 55
+  },
+  "functions": ["switch-high-current"],
+  "interfaces": ["digital", "pwm"]
 }

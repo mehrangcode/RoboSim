@@ -18,6 +18,8 @@
     "maxReverseV": 1000,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "ratedVoltageV": 1000
+  },
+  "functions": ["block-reverse-current", "absorb-flyback"]
 }

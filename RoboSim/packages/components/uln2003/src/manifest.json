@@ -81,5 +81,7 @@
     "idleCurrentMa": 0,
     "minSupplyV": 0
   },
-  "polarity": ["com", "gnd"]
+  "polarity": ["com", "gnd"],
+  "functions": ["drive-stepper", "switch-high-current"],
+  "interfaces": ["digital"]
 }

@@ -52,7 +52,8 @@
     "maxCurrentMa": 3000,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
+    "minSupplyV": 0,
+    "nominalVoltageV": 6
   },
   "traits": ["source"],
   "supplyPins": [
@@ -60,5 +61,6 @@
       "pin": "pos",
       "maxCurrentMa": 3000
     }
-  ]
+  ],
+  "functions": ["supply-battery-power"]
 }

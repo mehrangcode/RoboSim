@@ -44,6 +44,13 @@ function checkProp(id: string, key: string, spec: PropSpec, value: PropValue): v
  */
 export const POWER_LIMIT_KEYS = ['typicalCurrentMa', 'idleCurrentMa', 'minSupplyV', 'dropoutV'] as const;
 
+/**
+ * Display-only voltage data (TD §18.6 library chips, ADR-028 metadata): a part's rated maximum where
+ * `maxVoltageV` would be wrong for SAF-OVERVOLTAGE (it checks across the polarity / first two pins), a
+ * supply's nominal output, an LED's forward voltage. Never read by a model or a safety rule.
+ */
+export const CHIP_VOLTAGE_KEYS = ['ratedVoltageV', 'nominalVoltageV', 'forwardVoltageV'] as const;
+
 /** Structural checks every catalogue manifest must pass (run by each component package's tests). */
 export function validateManifest(m: ComponentManifest): string[] {
   const errors: string[] = [];
@@ -81,6 +88,15 @@ export function validateManifest(m: ComponentManifest): string[] {
     if (!['in', 'out', 'bidir', 'none'].includes(dir))
       errors.push(`signalDirection '${pin}': unknown '${dir}'`);
   }
+  const kebab = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+  for (const id of m.functions ?? [])
+    if (!kebab.test(id)) errors.push(`function id '${id}' is not kebab-case`);
+  if (m.functions && new Set(m.functions).size !== m.functions.length)
+    errors.push('functions has duplicates');
+  const interfaces = ['digital', 'analog', 'pwm', 'i2c', 'onewire', 'uart', 'pulse'];
+  for (const i of m.interfaces ?? []) if (!interfaces.includes(i)) errors.push(`unknown interface '${i}'`);
+  if (m.interfaces && new Set(m.interfaces).size !== m.interfaces.length)
+    errors.push('interfaces has duplicates');
   for (const pin of Object.keys(m.pinMaxVolts ?? {}))
     if (!hasPin(pin)) errors.push(`pinMaxVolts pin '${pin}' does not exist`);
   if (m.pinMaxVolts && !m.polarity) errors.push('pinMaxVolts needs a polarity pair as reference');
@@ -101,6 +117,10 @@ export function validateManifest(m: ComponentManifest): string[] {
   for (const key of POWER_LIMIT_KEYS) {
     const v = m.limits[key];
     if (v !== undefined && !(v >= 0)) errors.push(`limits.${key} must be ≥ 0`);
+  }
+  for (const key of CHIP_VOLTAGE_KEYS) {
+    const v = m.limits[key];
+    if (v !== undefined && !(v > 0)) errors.push(`limits.${key} must be > 0`);
   }
   for (const input of m.inputs) {
     if (typeof input.default !== input.type)

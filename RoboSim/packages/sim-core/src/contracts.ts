@@ -639,7 +639,16 @@ export interface ComponentManifest {
    * `out`, others `none`. Read by the editor's wiring ↔ sketch check (FR-SAF-08), never by the engine.
    */
   readonly signalDirection?: Readonly<Record<string, SignalDirection>>;
+  /**
+   * What the part is for (ADR-028, metadata only): kebab ids from `@robosim/catalog/functions`, read by
+   * the library's search by function (FR-CIR-12), never by the engine.
+   */
+  readonly functions?: readonly string[];
+  /** How a sketch talks to it (ADR-028, metadata only): the library's interface chip (FR-CIR-12). */
+  readonly interfaces?: readonly PartInterface[];
 }
+
+export type PartInterface = 'digital' | 'analog' | 'pwm' | 'i2c' | 'onewire' | 'uart' | 'pulse';
 
 export type SignalDirection = 'in' | 'out' | 'bidir' | 'none';
 

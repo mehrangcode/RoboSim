@@ -25,5 +25,7 @@
     "typicalCurrentMa": 25,
     "idleCurrentMa": 25,
     "minSupplyV": 4.5
-  }
+  },
+  "functions": ["show-text", "show-number"],
+  "interfaces": ["i2c"]
 }

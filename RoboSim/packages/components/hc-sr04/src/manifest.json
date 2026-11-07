@@ -53,5 +53,7 @@
     "idleCurrentMa": 2,
     "minSupplyV": 4.5
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["measure-distance", "detect-obstacle"],
+  "interfaces": ["pulse"]
 }

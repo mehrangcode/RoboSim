@@ -20,5 +20,7 @@
   ],
   "massG": 10,
   "limits": { "maxVoltageV": 5.5, "typicalCurrentMa": 1, "idleCurrentMa": 1, "minSupplyV": 3.3 },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["user-input-joystick", "user-input-button"],
+  "interfaces": ["analog", "digital"]
 }

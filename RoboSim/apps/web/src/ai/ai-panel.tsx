@@ -22,6 +22,8 @@ export interface AiPanelProps {
   /** Applies a suggestion; returns why it no longer fits. Absent for read-only projects. */
   onApply?: ((p: AiProposal) => string | null) | undefined;
   onPaywall: (reason: PaywallReason) => void;
+  /** Text to put in the question box, e.g. the library's "Ask AI" (FR-CIR-12); a new `key` refills it. Never sent by itself. */
+  draft?: { readonly key: number; readonly text: string } | undefined;
 }
 
 /** AI assistant chat (FR-AI-01…05): answers stream in, suggestions wait for Apply. Signed-in users only. */
@@ -51,7 +53,7 @@ function SignInPrompt() {
 const PROVIDERS_KEY = ['ai', 'providers'] as const;
 const USAGE_KEY = ['ai', 'usage'] as const;
 
-function Chat({ client, projectId, context, onApply, onPaywall }: AiPanelProps) {
+function Chat({ client, projectId, context, onApply, onPaywall, draft }: AiPanelProps) {
   const { t, i18n } = useTranslation();
   const locale: Locale = i18n.language === 'fa' ? 'fa' : 'en';
   const queryClient = useQueryClient();
@@ -63,7 +65,13 @@ function Chat({ client, projectId, context, onApply, onPaywall }: AiPanelProps) 
     queryFn: () => client.conversations(projectId),
   });
   const { state, send, stop, reset, open, dismissError } = useAiChat(client, projectId, locale);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(draft?.text ?? '');
+  // A newer draft (the library's "Ask AI" again) replaces the box; derived during render, not in an effect.
+  const [draftKey, setDraftKey] = useState(draft?.key);
+  if (draft && draft.key !== draftKey) {
+    setDraftKey(draft.key);
+    setText(draft.text);
+  }
   const [chosen, setChosen] = useState<AiProviderId | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const usable = (providers.data ?? []).filter((p) => p.usable);

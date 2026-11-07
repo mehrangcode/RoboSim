@@ -79,6 +79,8 @@
     "shell:lab.serialDiff.source.",
     "shell:lab.serialDiff.side.",
     "shell:lab.serialDiff.first.",
-    "shell:lab.serialDiff.kind."
+    "shell:lab.serialDiff.kind.",
+    "editor:library.interface.",
+    "editor:library.compare.row."
   ]
 }

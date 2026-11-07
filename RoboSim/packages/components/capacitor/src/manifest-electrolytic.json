@@ -25,6 +25,8 @@
     "surgeFactor": 1.15,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "ratedVoltageV": 16
+  },
+  "functions": ["smooth-voltage", "store-energy"]
 }

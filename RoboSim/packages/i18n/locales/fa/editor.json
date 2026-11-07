@@ -20,6 +20,39 @@
       "display": "نمایشگرها",
       "comms": "ارتباطات",
       "mechanical": "مکانیکی"
+    },
+    "why": "چرا: {label} — {why}",
+    "askAi": "نتیجهٔ خوبی پیدا نشد. از هوش مصنوعی بپرسید کدام قطعه می‌تواند: «{query}»",
+    "askAiPrompt": "کدام قطعه می‌تواند: {query}؟",
+    "chip": {
+      "voltageRange": "{min}–{max} ولت",
+      "voltageMax": "≤ {max} ولت",
+      "noPrice": "قیمت —",
+      "none": "—",
+      "voltageNominal": "{v} ولت",
+      "voltageForward": "ولتاژ مستقیم {v} ولت"
+    },
+    "interface": {
+      "digital": "دیجیتال",
+      "analog": "آنالوگ",
+      "pwm": "PWM",
+      "i2c": "I²C",
+      "onewire": "1-Wire",
+      "uart": "UART",
+      "pulse": "پالس"
+    },
+    "compare": {
+      "short": "مقایسه",
+      "tick": "مقایسهٔ {name}",
+      "title": "مقایسه ({count}/{max})",
+      "clear": "پاک کردن",
+      "property": "ویژگی",
+      "row": {
+        "voltage": "ولتاژ",
+        "interface": "رابط",
+        "price": "قیمت",
+        "functions": "کاربرد"
+      }
     }
   },
   "canvas": {

@@ -25,5 +25,7 @@
     "idleCurrentMa": 0.05,
     "minSupplyV": 4.5
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["detect-motion"],
+  "interfaces": ["digital"]
 }

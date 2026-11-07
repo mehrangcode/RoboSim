@@ -84,3 +84,46 @@ describe('AI suggestions in the editor (US-AI-02 AC1)', () => {
     expect(saved.code.files[0]?.content).toContain('l < 500');
   }, 30_000);
 });
+
+describe('Ask AI from the library search (US-CIR-09 AC4)', () => {
+  async function renderEditor(signedIn: boolean, ai = new FakeAi()) {
+    const i18n = await initI18n('en');
+    render(
+      <I18nextProvider i18n={i18n}>
+        <QueryClientProvider client={new QueryClient()}>
+          <AuthContext value={{ me: signedIn ? SARA : null, client: new FakeAuth(), setMe: () => undefined }}>
+            <EditorPage createWorker={() => new FakeWorker()} projects={new FakeProjects()} ai={ai} />
+          </AuthContext>
+        </QueryClientProvider>
+      </I18nextProvider>,
+    );
+    return { user: userEvent.setup(), ai };
+  }
+
+  it('a weak search offers Ask AI, which fills the question box without sending', async () => {
+    const { user, ai } = await renderEditor(true);
+    const search = await screen.findByRole('searchbox', { name: 'Search parts (English or Persian)' });
+    await user.type(search, 'measure distance');
+    expect(screen.queryByRole('button', { name: /Ask AI/ })).not.toBeInTheDocument();
+    await user.clear(search);
+    await user.type(search, 'teleport the cat');
+    await user.click(await screen.findByRole('button', { name: /Ask AI/ }));
+    expect(
+      await screen.findByDisplayValue('Which part can: teleport the cat?', {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
+    expect(ai.requests).toHaveLength(0);
+  }, 30_000);
+
+  it('signed out: no Ask AI, the search still works offline', async () => {
+    const { user } = await renderEditor(false);
+    const search = await screen.findByRole('searchbox', { name: 'Search parts (English or Persian)' });
+    await user.type(search, 'teleport the cat');
+    expect(screen.getByText('No part matches.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ask AI/ })).not.toBeInTheDocument();
+    await user.clear(search);
+    await user.type(search, 'drive two motors');
+    expect(screen.getAllByRole('button', { name: /^Add / })[0]).toHaveAccessibleName(
+      'Add L298N motor driver',
+    );
+  }, 30_000);
+});

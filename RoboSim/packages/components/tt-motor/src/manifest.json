@@ -99,5 +99,6 @@
     "idleCurrentMa": 0,
     "minSupplyV": 3
   },
-  "traits": ["inductive"]
+  "traits": ["inductive"],
+  "functions": ["spin-wheel"]
 }

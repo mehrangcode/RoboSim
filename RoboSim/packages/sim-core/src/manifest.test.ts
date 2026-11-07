@@ -83,4 +83,37 @@ describe('validateManifest', () => {
       'limits.dropoutV must be ≥ 0',
     ]);
   });
+
+  it('checks the display-only voltage keys are > 0 (TD §18.6)', () => {
+    const bad: ComponentManifest = {
+      ...manifest,
+      limits: { ratedVoltageV: 0, nominalVoltageV: -9, forwardVoltageV: Number.NaN },
+    };
+    expect(validateManifest(bad)).toEqual([
+      'limits.ratedVoltageV must be > 0',
+      'limits.nominalVoltageV must be > 0',
+      'limits.forwardVoltageV must be > 0',
+    ]);
+  });
+
+  it('checks function ids are kebab-case and functions/interfaces have no duplicates (TD §18.6)', () => {
+    expect(
+      validateManifest({
+        ...manifest,
+        functions: ['limit-current', 'divide-voltage'],
+        interfaces: ['analog'],
+      }),
+    ).toEqual([]);
+    const bad = {
+      ...manifest,
+      functions: ['Limit_Current', 'limit-current', 'limit-current'],
+      interfaces: ['analog', 'analog', 'spi'],
+    } as unknown as ComponentManifest;
+    expect(validateManifest(bad)).toEqual([
+      "function id 'Limit_Current' is not kebab-case",
+      'functions has duplicates',
+      "unknown interface 'spi'",
+      'interfaces has duplicates',
+    ]);
+  });
 });

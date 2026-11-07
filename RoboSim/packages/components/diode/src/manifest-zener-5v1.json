@@ -18,6 +18,8 @@
     "maxPowerMw": 1000,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "nominalVoltageV": 5.1
+  },
+  "functions": ["clamp-voltage"]
 }

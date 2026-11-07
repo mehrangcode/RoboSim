@@ -83,7 +83,8 @@
     "peakCurrentMa": 36,
     "typicalCurrentMa": 40,
     "idleCurrentMa": 10,
-    "minSupplyV": 7
+    "minSupplyV": 7,
+    "ratedVoltageV": 35
   },
   "polarity": ["vs", "gnd"],
   "supplyPins": [
@@ -96,5 +97,7 @@
   "pinMaxVolts": {
     "vs": 35,
     "v5": 7
-  }
+  },
+  "functions": ["drive-two-dc-motors", "drive-dc-motor", "drive-stepper"],
+  "interfaces": ["digital", "pwm"]
 }

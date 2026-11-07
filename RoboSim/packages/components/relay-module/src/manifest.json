@@ -61,5 +61,7 @@
     "minSupplyV": 3.75
   },
   "traits": ["inductive"],
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["isolate-load", "switch-high-current"],
+  "interfaces": ["digital"]
 }

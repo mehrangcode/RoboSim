@@ -53,7 +53,10 @@
       "name": "TB6612FNG motor driver"
     },
     "irf520-module": {
-      "name": "IRF520 MOSFET module"
+      "name": "IRF520 MOSFET module",
+      "why": {
+        "drive-dc-motor": "One direction only; speed by PWM."
+      }
     }
   },
   "ic": {
@@ -79,7 +82,10 @@
       "name": "CD4017 decade counter"
     },
     "uln2003a": {
-      "name": "ULN2003A Darlington driver"
+      "name": "ULN2003A Darlington driver",
+      "why": {
+        "switch-high-current": "Seven sink channels, up to 500 mA each."
+      }
     },
     "ne555": {
       "name": "NE555 timer"
@@ -118,7 +124,10 @@
       "name": "9 V battery"
     },
     "lm2596": {
-      "name": "LM2596 buck converter"
+      "name": "LM2596 buck converter",
+      "why": {
+        "regulate-5v": "Adjustable: set its output to 5 V."
+      }
     },
     "switch": {
       "name": "On/off switch"
@@ -132,7 +141,10 @@
       "name": "1N4007 rectifier diode"
     },
     "diode-1n4148": {
-      "name": "1N4148 signal diode"
+      "name": "1N4148 signal diode",
+      "why": {
+        "absorb-flyback": "Fine for small relays; use a 1N4007 for motors."
+      }
     },
     "lm7805": {
       "name": "LM7805 5 V regulator"
@@ -150,7 +162,10 @@
       "name": "2N3906 PNP transistor"
     },
     "tip120": {
-      "name": "TIP120 Darlington transistor"
+      "name": "TIP120 Darlington transistor",
+      "why": {
+        "amplify-signal": "A Darlington pair: very high gain."
+      }
     },
     "irlz44n": {
       "name": "IRLZ44N logic-level MOSFET"
@@ -158,7 +173,10 @@
   },
   "sensor": {
     "bump-switch": {
-      "name": "Bump / limit switch"
+      "name": "Bump / limit switch",
+      "why": {
+        "detect-obstacle": "Only once the robot touches it."
+      }
     },
     "hc-sr04": {
       "name": "HC-SR04 ultrasonic sensor"
@@ -167,7 +185,10 @@
       "name": "FC-51 IR obstacle sensor"
     },
     "joystick": {
-      "name": "KY-023 joystick"
+      "name": "KY-023 joystick",
+      "why": {
+        "user-input-button": "Press the stick down."
+      }
     },
     "keypad-4x4": {
       "name": "4×4 keypad"
@@ -197,13 +218,19 @@
       "name": "KY-038 sound sensor"
     },
     "tcrt5000": {
-      "name": "TCRT5000 line sensor"
+      "name": "TCRT5000 line sensor",
+      "why": {
+        "detect-obstacle": "Only at very short range (a few mm to ~2 cm)."
+      }
     },
     "mpu6050": {
       "name": "MPU-6050 accelerometer + gyroscope"
     },
     "bmp280": {
-      "name": "BMP280 pressure + temperature sensor"
+      "name": "BMP280 pressure + temperature sensor",
+      "why": {
+        "measure-temperature": "Mainly a pressure sensor; it also reads temperature."
+      }
     },
     "vl53l0x": {
       "name": "VL53L0X laser distance sensor"
@@ -213,6 +240,232 @@
     },
     "ds18b20": {
       "name": "DS18B20 digital thermometer (1-Wire)"
+    }
+  },
+  "functions": {
+    "measure-distance": {
+      "label": "Measure distance",
+      "why": "Reports how far the nearest object is."
+    },
+    "detect-obstacle": {
+      "label": "Detect obstacles",
+      "why": "Tells your robot something is in its way."
+    },
+    "detect-collision": {
+      "label": "Detect collisions",
+      "why": "Closes a contact when the robot touches something."
+    },
+    "follow-line": {
+      "label": "Follow a line",
+      "why": "Sees a dark line on a light floor so the robot can track it."
+    },
+    "measure-temperature": {
+      "label": "Measure temperature",
+      "why": "Reads the temperature in °C."
+    },
+    "measure-humidity": {
+      "label": "Measure humidity",
+      "why": "Reads the relative humidity of the air."
+    },
+    "measure-pressure": {
+      "label": "Measure air pressure",
+      "why": "Reads air pressure, which also gives altitude."
+    },
+    "measure-soil-moisture": {
+      "label": "Measure soil moisture",
+      "why": "Tells how wet the soil is, for plant projects."
+    },
+    "sense-light": {
+      "label": "Sense light",
+      "why": "Its reading changes with how bright it is."
+    },
+    "detect-motion": {
+      "label": "Detect motion",
+      "why": "Notices a person or animal moving nearby."
+    },
+    "detect-sound": {
+      "label": "Detect sound",
+      "why": "Reacts to loud sounds such as a clap."
+    },
+    "measure-tilt": {
+      "label": "Measure tilt",
+      "why": "Tells which way the part is leaning."
+    },
+    "measure-acceleration": {
+      "label": "Measure acceleration",
+      "why": "Measures speeding up, shaking and gravity."
+    },
+    "measure-rotation": {
+      "label": "Measure rotation",
+      "why": "Tells how far or how fast something turns."
+    },
+    "user-input-button": {
+      "label": "Button input",
+      "why": "The user presses it to give a command."
+    },
+    "user-input-knob": {
+      "label": "Knob input",
+      "why": "The user turns it to set a value."
+    },
+    "user-input-joystick": {
+      "label": "Joystick input",
+      "why": "Two-axis stick for steering or games."
+    },
+    "user-input-keypad": {
+      "label": "Keypad input",
+      "why": "Lets the user type digits and codes."
+    },
+    "drive-dc-motor": {
+      "label": "Drive a DC motor",
+      "why": "Lets a pin control a motor’s speed and direction."
+    },
+    "drive-two-dc-motors": {
+      "label": "Drive two motors",
+      "why": "Has two channels: one per wheel."
+    },
+    "drive-stepper": {
+      "label": "Drive a stepper",
+      "why": "Powers the coils of a stepper motor in order."
+    },
+    "spin-wheel": {
+      "label": "Spin a wheel",
+      "why": "A geared motor that turns a robot wheel."
+    },
+    "move-to-angle": {
+      "label": "Move to an angle",
+      "why": "Turns to the angle your code asks for and holds it."
+    },
+    "rotate-in-steps": {
+      "label": "Rotate in steps",
+      "why": "Turns in exact steps for precise positions."
+    },
+    "show-text": {
+      "label": "Show text",
+      "why": "Displays words and messages."
+    },
+    "show-number": {
+      "label": "Show numbers",
+      "why": "Displays digits such as a count or a reading."
+    },
+    "show-graphics": {
+      "label": "Show graphics",
+      "why": "Draws pixels, shapes and simple graphs."
+    },
+    "show-status-light": {
+      "label": "Status light",
+      "why": "Lights up to show a state."
+    },
+    "show-colors": {
+      "label": "Show colours",
+      "why": "Mixes red, green and blue into any colour."
+    },
+    "light-strip": {
+      "label": "LED strip",
+      "why": "Many LEDs, each set separately from one pin."
+    },
+    "make-sound": {
+      "label": "Make a sound",
+      "why": "Beeps for alarms and alerts."
+    },
+    "play-tone": {
+      "label": "Play tones",
+      "why": "Plays the note frequency your code chooses."
+    },
+    "switch-high-current": {
+      "label": "Switch a big load",
+      "why": "Lets a pin turn on loads that need more current than a pin can give."
+    },
+    "switch-small-load": {
+      "label": "Switch a small load",
+      "why": "A transistor switch for LEDs, buzzers and small relays."
+    },
+    "isolate-load": {
+      "label": "Isolate a load",
+      "why": "Switches a separate circuit with no electrical link to the board."
+    },
+    "amplify-signal": {
+      "label": "Amplify",
+      "why": "A small current controls a much larger one."
+    },
+    "regulate-5v": {
+      "label": "Make 5 V",
+      "why": "Gives a steady 5 V from a higher supply."
+    },
+    "regulate-3v3": {
+      "label": "Make 3.3 V",
+      "why": "Gives a steady 3.3 V for 3.3 V parts."
+    },
+    "step-down-voltage": {
+      "label": "Lower a voltage",
+      "why": "Turns a higher supply into a lower, steady one."
+    },
+    "supply-battery-power": {
+      "label": "Battery power",
+      "why": "Powers the circuit without a cable."
+    },
+    "switch-power": {
+      "label": "Power switch",
+      "why": "Turns the whole circuit on and off."
+    },
+    "store-energy": {
+      "label": "Store energy",
+      "why": "Holds charge and releases it later."
+    },
+    "smooth-voltage": {
+      "label": "Smooth a supply",
+      "why": "Absorbs dips and noise on a supply line."
+    },
+    "limit-current": {
+      "label": "Limit current",
+      "why": "Keeps the current low enough to be safe, e.g. for an LED."
+    },
+    "divide-voltage": {
+      "label": "Divide a voltage",
+      "why": "Makes a fraction of a voltage, e.g. to read it on an analog pin."
+    },
+    "pull-up-input": {
+      "label": "Pull-up / pull-down",
+      "why": "Gives an input a known level when nothing drives it."
+    },
+    "block-reverse-current": {
+      "label": "Block reverse current",
+      "why": "Lets current flow one way only."
+    },
+    "absorb-flyback": {
+      "label": "Flyback protection",
+      "why": "Absorbs the voltage spike when a coil or motor switches off."
+    },
+    "clamp-voltage": {
+      "label": "Clamp a voltage",
+      "why": "Stops a voltage from rising above its rating."
+    },
+    "logic-gate": {
+      "label": "Logic gates",
+      "why": "Combines digital signals with AND, OR, NOT or XOR."
+    },
+    "clean-up-signal": {
+      "label": "Clean up a signal",
+      "why": "Turns a slow or noisy edge into a sharp one."
+    },
+    "expand-outputs": {
+      "label": "More outputs",
+      "why": "Drives 8 outputs from 3 pins."
+    },
+    "count-pulses": {
+      "label": "Count pulses",
+      "why": "Steps through its outputs on each pulse."
+    },
+    "generate-pulses": {
+      "label": "Generate pulses",
+      "why": "Makes a steady on/off signal without any code."
+    },
+    "prototype-connections": {
+      "label": "Prototyping",
+      "why": "Connects parts without soldering."
+    },
+    "build-robot-base": {
+      "label": "Robot base",
+      "why": "The frame that carries the board, motors and sensors."
     }
   }
 }

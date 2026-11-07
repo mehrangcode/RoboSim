@@ -29,5 +29,7 @@
     "idleCurrentMa": 0,
     "minSupplyV": 4
   },
-  "polarity": ["pos", "neg"]
+  "polarity": ["pos", "neg"],
+  "functions": ["make-sound"],
+  "interfaces": ["digital"]
 }

@@ -26,7 +26,7 @@ import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@rob
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { findArena } from '@robosim/content/arenas';
 import type { Pose } from '@robosim/renderer-2d';
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, use, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   arenaViewOf,
@@ -64,7 +64,9 @@ import { useSimulation, type WorkerLike } from '../lab/use-simulation.js';
 import { useVerifiedRun, type GradeWorkerLike } from '../lab/use-verified-run.js';
 import { VerifyPanel } from '../lab/verify-panel.js';
 import { SignInGate } from '../auth/auth-ui.js';
-import { useAuth } from '../auth/use-auth.js';
+import { AuthContext, useAuth } from '../auth/use-auth.js';
+import { useAiUsable } from '../ai/use-ai-usable.js';
+import { priceOfType, useCatalogPrices } from '../lib/catalog-prices.js';
 import { ApiError } from '../lib/api.js';
 import { PaywallDialog } from '../plans/paywall.js';
 import { paywallReason, type PaywallReason } from '../plans/paywall-reason.js';
@@ -425,6 +427,10 @@ function Workspace({
   const learningClient = learning ?? learningFallback;
   const [aiFallback] = useState(() => aiApi(() => i18n.language));
   const aiClient = ai ?? aiFallback;
+  // Library search by function (FR-CIR-12): price chips from the shared list, "Ask AI" only when usable.
+  const { prices: catalogPrices } = useCatalogPrices(bomClient);
+  const aiUsable = useAiUsable(aiClient, Boolean(use(AuthContext)?.me));
+  const [aiDraft, setAiDraft] = useState<{ key: number; text: string } | undefined>(undefined);
   /** Label of the version to take once an applied AI suggestion has rendered (US-AI-02: Apply creates a version). */
   const aiVersion = useRef<string | null>(null);
   /** The guided step on screen, sent with questions (FR-AI-01). */
@@ -806,10 +812,21 @@ function Workspace({
       onChange={setCentre}
     />
   );
+  const openAskAi = (query: string) => {
+    setAiDraft((d) => ({ key: (d?.key ?? 0) + 1, text: t('editor:library.askAiPrompt', { query }) }));
+    setDockTab('assistant');
+    if (layout.collapsed.dock) toggle('dock');
+    setMobileTab('monitor');
+  };
   const leftPane = (
     <div className="flex h-full flex-col gap-3 p-2">
       <div className="flex max-h-[55%] min-h-0 flex-col">
-        <LibraryPanel editor={editor} />
+        <LibraryPanel
+          editor={editor}
+          priceOf={(type) => priceOfType(catalogPrices, type)}
+          formatPrice={(irr) => t('bom:money', { amount: fmt(irr) })}
+          {...(aiUsable ? { onAskAi: openAskAi } : {})}
+        />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto border-t border-line pt-2">
         <PropertyPanel editor={editor} />
@@ -977,6 +994,7 @@ function Workspace({
               context={aiContext}
               onApply={readOnly ? undefined : applyProposal}
               onPaywall={setPaywall}
+              draft={aiDraft}
             />
           </Suspense>
         ) : shownDock === 'verify' ? (

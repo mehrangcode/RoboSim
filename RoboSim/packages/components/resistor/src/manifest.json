@@ -38,6 +38,8 @@
     "maxPowerMw": 250,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "ratedVoltageV": 250
+  },
+  "functions": ["limit-current", "divide-voltage", "pull-up-input"]
 }

@@ -16,7 +16,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] IT-3 — Analog oscilloscope (phase 1 + fine mode) · FR-SIM-14 · US-SIM-10 · TD §18.3 · after IT-2
 - [x] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
 - [x] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
-- [ ] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
+- [x] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
 - [ ] IT-7 — Wiring hints and auto-tidy · FR-CIR-11 · US-CIR-08 · TD §18.7
 - [ ] IT-8 — Damage post-mortem · FR-SIM-16 · US-SIM-12 · TD §18.8 · after IT-2, IT-3
 - [ ] IT-9 — Time-travel scrubber (ADR-027) · FR-SIM-17 · US-SIM-13 · TD §18.9
@@ -89,3 +89,15 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] g. i18n EN/FA
 - [x] h. perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN
 - [x] i. docs sync (PRD, TD §18.5 note, Release-Plan, README)
+
+## IT-6 detailed steps (owner answers 2026-11-07: Ask AI when top score < 60 (AC4 reworded); shared price loader + localStorage offline cache (BOM reuses it); compare table below the list in the sidebar; generic why per function + per-part why only where needed, review table for owner; tag all 66 parts incl. chassis; no flag; never commit)
+- [x] a. catalog: `src/functions.ts` (`PART_FUNCTIONS`, `functionById`) + `exports["./functions"]`
+- [x] b. sim-core: `functions?`/`interfaces?` in `ManifestExtensions`; `validateManifest` kebab + no duplicates + tests
+- [x] c. manifests: `functions`, `interfaces` on all 66; catalog.test cross-checks (ids exist, every fn ≥ 1 part, every part ≥ 1 fn, FA+EN synonyms)
+- [x] d. circuit-canvas: `rankParts` + search.test (FA/EN/Arabic/ZWNJ/"۵ ولت"/two motors, name queries unchanged, < 2 ms)
+- [x] e. web: shared price loader (`lib/catalog-prices.ts`, localStorage cache) used by BOM + library
+- [x] f. circuit-canvas: library-panel ranked list, why line, chips, compare (≤ 3), `priceOf`/`onAskAi` props + tests
+- [x] g. web: editor-page passes `priceOf`, `onAskAi` (AI usable → open assistant tab prefilled)
+- [x] h. i18n EN/FA `components:functions.*`, editor library keys
+- [x] i. goldens unchanged; `pnpm verify`; browser check FA/EN; review table for owner
+- [x] j. docs sync (PRD, US-CIR-09 AC4, TD §18.6 note, Release-Plan, README)

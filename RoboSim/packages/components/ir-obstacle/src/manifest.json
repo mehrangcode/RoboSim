@@ -24,5 +24,7 @@
     "idleCurrentMa": 40,
     "minSupplyV": 3
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["detect-obstacle"],
+  "interfaces": ["digital"]
 }

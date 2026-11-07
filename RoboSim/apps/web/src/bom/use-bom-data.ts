@@ -2,6 +2,7 @@ import { INVENTORY_MAX_ITEMS, type CatalogPriceList, type Inventory } from '@rob
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { AuthContext } from '../auth/use-auth.js';
 import type { BomClient } from '../lib/bom-api.js';
+import { useCatalogPrices } from '../lib/catalog-prices.js';
 
 /** Owned parts of a guest in this browser (FR-BOM-03); moved to the account on sign-in. */
 const GUEST_KEY = 'robosim.inventory.v1';
@@ -60,8 +61,6 @@ export interface BomData {
  */
 export function useBomData(client: BomClient): BomData {
   const me = use(AuthContext)?.me ?? null;
-  const [prices, setPrices] = useState<CatalogPriceList | null>(null);
-  const [pricesFailed, setPricesFailed] = useState(false);
   const userId = me?.id ?? null;
   const [owned, setOwnedState] = useState<Owned>(() => (me ? {} : loadGuestOwned()));
   // Signing in or out swaps whose marks are shown; the account's arrive from the effect below.
@@ -73,16 +72,7 @@ export function useBomData(client: BomClient): BomData {
   const [saveFailed, setSaveFailed] = useState(false);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    let live = true;
-    client.prices().then(
-      (p) => live && setPrices(p),
-      () => live && setPricesFailed(true),
-    );
-    return () => {
-      live = false;
-    };
-  }, [client]);
+  const { prices, failed: pricesFailed } = useCatalogPrices(client);
 
   useEffect(() => {
     if (!userId) return;

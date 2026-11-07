@@ -30,6 +30,9 @@
     "tjMaxC": 150,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "ratedVoltageV": 45
+  },
+  "functions": ["switch-small-load", "amplify-signal"],
+  "interfaces": ["digital", "pwm"]
 }

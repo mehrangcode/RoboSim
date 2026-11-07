@@ -63,5 +63,7 @@
     "idleCurrentMa": 0.1,
     "minSupplyV": 2.5
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["drive-two-dc-motors", "drive-dc-motor"],
+  "interfaces": ["digital", "pwm"]
 }

@@ -20,6 +20,9 @@
     "maxContactCurrentMa": 5000,
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
-    "minSupplyV": 0
-  }
+    "minSupplyV": 0,
+    "ratedVoltageV": 125
+  },
+  "functions": ["detect-collision", "detect-obstacle"],
+  "interfaces": ["digital"]
 }

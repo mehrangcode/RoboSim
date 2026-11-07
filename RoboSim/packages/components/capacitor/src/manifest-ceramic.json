@@ -20,5 +20,6 @@
     "typicalCurrentMa": 0,
     "idleCurrentMa": 0,
     "minSupplyV": 0
-  }
+  },
+  "functions": ["store-energy", "smooth-voltage"]
 }

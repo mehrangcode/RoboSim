@@ -41,5 +41,6 @@
       "pin": "out",
       "maxCurrentMa": 800
     }
-  ]
+  ],
+  "functions": ["regulate-3v3", "step-down-voltage"]
 }

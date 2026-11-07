@@ -82,5 +82,7 @@
     "idleCurrentMa": 0.008,
     "minSupplyV": 2
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["expand-outputs"],
+  "interfaces": ["digital"]
 }

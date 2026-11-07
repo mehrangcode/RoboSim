@@ -81,5 +81,7 @@
     "idleCurrentMa": 0.001,
     "minSupplyV": 3
   },
-  "polarity": ["vdd", "vss"]
+  "polarity": ["vdd", "vss"],
+  "functions": ["count-pulses"],
+  "interfaces": ["digital", "pulse"]
 }

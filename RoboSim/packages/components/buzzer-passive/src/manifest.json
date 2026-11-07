@@ -20,5 +20,7 @@
     "typicalCurrentMa": 60,
     "idleCurrentMa": 0,
     "minSupplyV": 0
-  }
+  },
+  "functions": ["make-sound", "play-tone"],
+  "interfaces": ["pwm"]
 }

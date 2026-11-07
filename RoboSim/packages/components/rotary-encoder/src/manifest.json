@@ -19,5 +19,7 @@
   ],
   "massG": 7,
   "limits": { "maxVoltageV": 5.5, "typicalCurrentMa": 0.5, "idleCurrentMa": 0.5, "minSupplyV": 3.3 },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["user-input-knob", "measure-rotation"],
+  "interfaces": ["digital"]
 }

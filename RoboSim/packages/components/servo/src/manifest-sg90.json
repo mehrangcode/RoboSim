@@ -55,5 +55,7 @@
     "minSupplyV": 4.8
   },
   "traits": ["inductive"],
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["move-to-angle"],
+  "interfaces": ["pwm"]
 }

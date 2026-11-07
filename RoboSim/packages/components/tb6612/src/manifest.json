@@ -83,5 +83,7 @@
   "polarity": ["vm", "gnd"],
   "pinMaxVolts": {
     "vcc": 7
-  }
+  },
+  "functions": ["drive-two-dc-motors", "drive-dc-motor", "drive-stepper"],
+  "interfaces": ["digital", "pwm"]
 }

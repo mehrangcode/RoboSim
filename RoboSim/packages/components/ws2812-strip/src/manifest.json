@@ -26,5 +26,7 @@
     "typicalCurrentMa": 30,
     "idleCurrentMa": 1,
     "minSupplyV": 3.5
-  }
+  },
+  "functions": ["light-strip", "show-colors"],
+  "interfaces": ["digital"]
 }

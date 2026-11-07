@@ -164,7 +164,7 @@ Format: **ID — requirement** · priority · phase. Phases are defined in [Rele
 | FR-CIR-09 | Copy/paste between projects; paste preserves wiring inside the selection. *Status: done 2026-10-27 (system clipboard, in-app fallback).* | Should | P2 |
 | FR-CIR-10 | Library search in FA and EN (with Persian normalization of ی/ي and ک/ك and ZWNJ), filtering by category, board compatibility, and "in stock in shop". | Must | P1 |
 | FR-CIR-11 | Wiring hints and auto-tidy: readability lint (colour conventions such as red for +V and black for GND, overly long wires, wires crossing parts, overlapping wires) and a **Tidy** command that recolours wires by net role and orthogonalises bend points in one undo step. Tidy never changes connectivity (netlist identical before and after). *Slice IT-7.* | Could | P2 |
-| FR-CIR-12 | Find a part by function: library search also matches what a part does ("measure distance", "drive two motors", FA and EN with the FR-CIR-10 normalization), via a controlled function vocabulary in component manifests; results explain why each part matches and compare key specs and price. Works offline without AI. *Slice IT-6.* | Could | P2 |
+| FR-CIR-12 | Find a part by function: library search also matches what a part does ("measure distance", "drive two motors", FA and EN with the FR-CIR-10 normalization), via a controlled function vocabulary in component manifests; results explain why each part matches and compare key specs and price. Works offline without AI. *Slice IT-6. Status: done 2026-11-07 — 56 function ids (`@robosim/catalog/functions`) on all 66 parts, ranked library search with why line, voltage/interface/price chips, compare (≤ 3), "Ask AI" when the best match is weak.* | Could | P2 |
 
 ### 6.3 Code editor and languages (COD)
 

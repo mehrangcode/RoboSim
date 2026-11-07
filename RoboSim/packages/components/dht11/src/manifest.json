@@ -26,5 +26,7 @@
     "typicalCurrentMa": 0.5,
     "idleCurrentMa": 0.15,
     "minSupplyV": 3
-  }
+  },
+  "functions": ["measure-temperature", "measure-humidity"],
+  "interfaces": ["digital"]
 }

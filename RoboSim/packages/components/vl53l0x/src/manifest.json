@@ -29,5 +29,7 @@
     "typicalCurrentMa": 19,
     "idleCurrentMa": 0.005,
     "minSupplyV": 2.6
-  }
+  },
+  "functions": ["measure-distance", "detect-obstacle"],
+  "interfaces": ["i2c"]
 }

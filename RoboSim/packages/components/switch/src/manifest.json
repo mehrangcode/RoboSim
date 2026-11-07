@@ -13,5 +13,12 @@
   "inputs": [{ "name": "on", "type": "boolean", "default": false }],
   "massG": 2,
   "mounting": { "lengthMm": 20, "widthMm": 10, "heightMm": 10 },
-  "limits": { "maxCurrentMa": 3000, "typicalCurrentMa": 0, "idleCurrentMa": 0, "minSupplyV": 0 }
+  "limits": {
+    "maxCurrentMa": 3000,
+    "typicalCurrentMa": 0,
+    "idleCurrentMa": 0,
+    "minSupplyV": 0,
+    "ratedVoltageV": 250
+  },
+  "functions": ["switch-power"]
 }

@@ -45,7 +45,16 @@ export {
   type BudgetStatus,
 } from './power-budget.js';
 export { PropertyPanel } from './property-panel.js';
-export { E12_OHMS, matches, normalizeSearch } from './search.js';
+export {
+  E12_OHMS,
+  matches,
+  NAME_SCORE,
+  normalizeSearch,
+  PHRASE_SCORE,
+  rankParts,
+  WEAK_SCORE,
+  type RankedPart,
+} from './search.js';
 export {
   NO_SELECTION,
   useCircuitEditor,

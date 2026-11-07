@@ -140,7 +140,7 @@
 - **AC1** Given the query "measure distance", then HC-SR04 appears first with a "why this part" line and chips for voltage, interface, and price from the catalogue.
 - **AC2** Given "اندازه‌گیری فاصله" typed with Arabic "ي"/"ك", then results are identical to the Persian "ی"/"ک" query and to the English query.
 - **AC3** Given "drive two motors", then L298N and TB6612FNG are ranked above single-motor parts, and the search works offline with no AI call.
-- **AC4** Given a user without an AI entitlement, then no "Ask AI" fallback is shown; with one, it appears only when there are zero matches.
+- **AC4** Given a user without an AI entitlement, then no "Ask AI" fallback is shown; with one, it appears only when there is no good match (no result, or the best one is a partial match scoring < 60, TD §18.6), and it only fills the question box.
 
 ## E3 — Programming (COD)
 

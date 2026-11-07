@@ -32,5 +32,7 @@
     "typicalCurrentMa": 4,
     "idleCurrentMa": 0.5,
     "minSupplyV": 3
-  }
+  },
+  "functions": ["measure-tilt", "measure-acceleration", "measure-rotation"],
+  "interfaces": ["i2c"]
 }

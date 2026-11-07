@@ -27,5 +27,7 @@
     "typicalCurrentMa": 3,
     "idleCurrentMa": 3,
     "minSupplyV": 4.5
-  }
+  },
+  "functions": ["generate-pulses"],
+  "interfaces": ["pulse"]
 }

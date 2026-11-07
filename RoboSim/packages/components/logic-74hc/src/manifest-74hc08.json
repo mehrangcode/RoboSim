@@ -74,5 +74,7 @@
     "idleCurrentMa": 0.002,
     "minSupplyV": 2
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["logic-gate"],
+  "interfaces": ["digital"]
 }

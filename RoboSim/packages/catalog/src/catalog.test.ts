@@ -2,6 +2,7 @@ import { resources } from '@robosim/i18n';
 import { validateManifest } from '@robosim/sim-core';
 import { describe, expect, it } from 'vitest';
 import { CATALOG, catalogFor, findDefinition } from './index.js';
+import { functionById, PART_FUNCTIONS } from './functions.js';
 import { CATALOG_MANIFESTS, findManifest, internalConnectionsOf, variantPropsOf } from './manifests.js';
 
 function lookup(tree: unknown, key: string): unknown {
@@ -159,5 +160,55 @@ describe('component catalog', () => {
       expect(m.limits['idleCurrentMa'], m.id).toBeLessThanOrEqual(m.limits['typicalCurrentMa'] ?? 0);
       if (m.limits['dropoutV'] !== undefined) expect(m.supplyPins?.length, m.id).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('function vocabulary (FR-CIR-12, TD §18.6)', () => {
+  const tagged = CATALOG_MANIFESTS.flatMap((m) => m.functions ?? []);
+
+  it('every manifest function id exists in PART_FUNCTIONS', () => {
+    for (const m of CATALOG_MANIFESTS)
+      for (const id of m.functions ?? []) expect(functionById(id), `${m.id}: ${id}`).toBeDefined();
+  });
+
+  it('every catalogue part has ≥ 1 function and every function has ≥ 1 part', () => {
+    for (const m of CATALOG_MANIFESTS) expect(m.functions?.length ?? 0, m.id).toBeGreaterThan(0);
+    for (const f of PART_FUNCTIONS) expect(tagged, f.id).toContain(f.id);
+  });
+
+  it('ids are unique and every function has EN and FA synonyms, a label and a why text', () => {
+    expect(new Set(PART_FUNCTIONS.map((f) => f.id)).size).toBe(PART_FUNCTIONS.length);
+    for (const f of PART_FUNCTIONS) {
+      expect(f.synonyms.en.length, f.id).toBeGreaterThan(0);
+      expect(f.synonyms.fa.length, f.id).toBeGreaterThan(0);
+      for (const locale of ['en', 'fa'] as const)
+        for (const k of ['label', 'why'])
+          expect(
+            typeof lookup(resources[locale].components, `functions.${f.id}.${k}`),
+            `${locale}: functions.${f.id}.${k}`,
+          ).toBe('string');
+    }
+  });
+
+  it('per-part why texts name a function the part has, in both languages', () => {
+    for (const m of CATALOG_MANIFESTS) {
+      const base = m.nameKey.replace(/\.name$/, '');
+      const en = lookup(resources.en.components, `${base}.why`) as Record<string, string> | undefined;
+      const fa = lookup(resources.fa.components, `${base}.why`) as Record<string, string> | undefined;
+      expect(Object.keys(fa ?? {}).sort(), m.id).toEqual(Object.keys(en ?? {}).sort());
+      for (const fnId of Object.keys(en ?? {})) expect(m.functions, `${m.id}.why.${fnId}`).toContain(fnId);
+    }
+  });
+
+  it('every part except breadboards and the chassis has a voltage for its library chip', () => {
+    const keys = ['maxVoltageV', 'ratedVoltageV', 'nominalVoltageV', 'forwardVoltageV'];
+    const without = CATALOG_MANIFESTS.filter((m) => !keys.some((k) => m.limits[k] !== undefined)).map(
+      (m) => m.id,
+    );
+    expect(without.sort()).toEqual([
+      'mechanical.chassis-2wd',
+      'passive.breadboard-full',
+      'passive.breadboard-half',
+    ]);
   });
 });

@@ -25,5 +25,7 @@
     "idleCurrentMa": 4,
     "minSupplyV": 3.3
   },
-  "polarity": ["vcc", "gnd"]
+  "polarity": ["vcc", "gnd"],
+  "functions": ["detect-sound"],
+  "interfaces": ["analog", "digital"]
 }

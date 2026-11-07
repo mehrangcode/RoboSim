@@ -20,6 +20,39 @@
       "display": "Displays",
       "comms": "Communication",
       "mechanical": "Mechanical"
+    },
+    "why": "Why: {label} — {why}",
+    "askAi": "No good match. Ask AI which part can: “{query}”",
+    "askAiPrompt": "Which part can: {query}?",
+    "chip": {
+      "voltageRange": "{min}–{max} V",
+      "voltageMax": "≤ {max} V",
+      "noPrice": "Price —",
+      "none": "—",
+      "voltageNominal": "{v} V",
+      "voltageForward": "Vf {v} V"
+    },
+    "interface": {
+      "digital": "Digital",
+      "analog": "Analog",
+      "pwm": "PWM",
+      "i2c": "I²C",
+      "onewire": "1-Wire",
+      "uart": "UART",
+      "pulse": "Pulse"
+    },
+    "compare": {
+      "short": "Compare",
+      "tick": "Compare {name}",
+      "title": "Compare ({count}/{max})",
+      "clear": "Clear",
+      "property": "Property",
+      "row": {
+        "voltage": "Voltage",
+        "interface": "Interface",
+        "price": "Price",
+        "functions": "Does"
+      }
     }
   },
   "canvas": {
