@@ -102,6 +102,8 @@ export {
   type PinArg,
   type PinUse,
   type PinUseKind,
+  type DamageRecord,
+  type PendingCondition,
   type RuntimeContext,
   type RuntimeRule,
   type SafetyRule,

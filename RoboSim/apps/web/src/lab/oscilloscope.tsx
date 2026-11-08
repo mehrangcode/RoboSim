@@ -29,6 +29,7 @@ import {
   type Edge,
   type TriggerMode,
 } from './scope-math.js';
+import { TRACE_DASHES, drawGrid, drawTrace, prepareCanvas, seriesColor } from './trace-render.js';
 import { DIVS_X, DIVS_Y, probeLabel, unitOf, type ScopeModel } from './use-scope.js';
 import { useWidth } from './use-width.js';
 
@@ -36,8 +37,6 @@ const HEIGHT = 240;
 /** 10 µs/div … 1 s/div; below 1 ms/div fine mode shows a reactive circuit's sub-steps. */
 const TIMEBASES = steps125(0.00001, 1);
 const SCALES = steps125(0.001, 10);
-/** Line style per channel, so channels differ by more than colour (WCAG 1.4.1). */
-const DASHES: readonly (readonly number[])[] = [[], [6, 3], [2, 3], [8, 3, 2, 3]];
 const MODES: readonly TriggerMode[] = ['auto', 'normal', 'single'];
 const EDGES: readonly Edge[] = ['rising', 'falling'];
 const COLUMNS = ['channel', 'atA', 'atB', 'delta', 'min', 'max', 'avg', 'rms', 'freq'] as const;
@@ -107,32 +106,11 @@ export function Oscilloscope({
 
   // Draw (canvas 2D): grid, per channel a min/max band, the trace in its colour and dash, cursors.
   useEffect(() => {
-    const ctx = canvas.current?.getContext('2d');
     const el = canvas.current;
-    if (!ctx || !el) return;
-    const dpr = window.devicePixelRatio || 1;
-    el.width = Math.round(width * dpr);
-    el.height = Math.round(HEIGHT * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const css = getComputedStyle(el);
-    const color = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
-    ctx.clearRect(0, 0, width, HEIGHT);
-    ctx.strokeStyle = color('--color-line', '#ccc');
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= DIVS_X; i++) {
-      const gx = Math.round((i * width) / DIVS_X) + 0.5;
-      ctx.beginPath();
-      ctx.moveTo(gx, 0);
-      ctx.lineTo(gx, HEIGHT);
-      ctx.stroke();
-    }
-    for (let j = 0; j <= DIVS_Y; j++) {
-      const gy = Math.round((j * HEIGHT) / DIVS_Y) + 0.5;
-      ctx.beginPath();
-      ctx.moveTo(0, gy);
-      ctx.lineTo(width, gy);
-      ctx.stroke();
-    }
+    const prepared = el ? prepareCanvas(el, width, HEIGHT) : null;
+    if (!prepared) return;
+    const { ctx, color } = prepared;
+    drawGrid(ctx, width, HEIGHT, DIVS_X, DIVS_Y, color('--color-line', '#ccc'));
     if (!buffer) return;
     const n = Math.max(1, Math.floor(width));
     const dy = HEIGHT / DIVS_Y;
@@ -140,43 +118,11 @@ export function Oscilloscope({
       if (buffer.unresolved.includes(i)) return;
       const y = (v: number) => HEIGHT / 2 - (v / c.scale + c.offset) * dy;
       const col = columns(buffer, i, from, from + span, n);
-      const stroke = color(
-        `--color-series-${i + 1}`,
-        ['#2563eb', '#dc2626', '#059669', '#9333ea'][i] ?? '#000',
-      );
-      ctx.fillStyle = stroke;
-      ctx.globalAlpha = 0.2;
-      for (let k = 0; k < n; k++) {
-        const lo = col.lo[k] ?? NaN;
-        const hi = col.hi[k] ?? NaN;
-        if (Number.isFinite(lo) && Number.isFinite(hi) && hi > lo && !col.edge[k])
-          ctx.fillRect(k, y(hi), 1, y(lo) - y(hi));
-      }
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([...(DASHES[i] ?? [])]);
-      ctx.beginPath();
-      let pen = false;
-      for (let k = 0; k < n; k++) {
-        const v = col.avg[k] ?? NaN;
-        if (!Number.isFinite(v)) {
-          pen = false;
-          continue;
-        }
-        if (col.edge[k]) {
-          // A rebuilt PWM edge: a vertical step from the level before to the level after.
-          const before = valueAt(buffer, i, from + (k / n) * span);
-          const after = valueAt(buffer, i, from + ((k + 1) / n) * span);
-          if (pen) ctx.lineTo(k + 0.5, y(before));
-          else ctx.moveTo(k + 0.5, y(before));
-          ctx.lineTo(k + 0.5, y(after));
-        } else if (pen) ctx.lineTo(k + 0.5, y(v));
-        else ctx.moveTo(k + 0.5, y(v));
-        pen = true;
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // A rebuilt PWM edge: a vertical step from the level before to the level after.
+      drawTrace(ctx, col, n, y, seriesColor(color, i), TRACE_DASHES[i] ?? [], (k) => [
+        valueAt(buffer, i, from + (k / n) * span),
+        valueAt(buffer, i, from + ((k + 1) / n) * span),
+      ]);
     });
     ctx.strokeStyle = color('--color-ink', '#111');
     ctx.lineWidth = 1;
@@ -285,7 +231,7 @@ export function Oscilloscope({
                   y2="5"
                   stroke={`var(--color-series-${i + 1})`}
                   strokeWidth="2"
-                  strokeDasharray={DASHES[i]?.join(' ') || undefined}
+                  strokeDasharray={TRACE_DASHES[i]?.join(' ') || undefined}
                 />
               </svg>
               <span className="font-semibold">{name(i)}</span>

@@ -137,6 +137,11 @@ export class AvrUnoCore implements McuCore {
     return this.machine.cpu.cycles;
   }
 
+  /** Byte address of the next instruction (avr8js counts words). */
+  pc(): number {
+    return this.machine.cpu.pc * 2;
+  }
+
   run(untilCycle: number): void {
     const { cpu, usart } = this.machine;
     while (cpu.cycles < untilCycle) {

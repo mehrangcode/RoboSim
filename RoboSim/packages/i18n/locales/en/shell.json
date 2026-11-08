@@ -397,7 +397,8 @@
       "meter": "Multimeter",
       "scope": "Oscilloscope",
       "power": "Power",
-      "diff": "Serial diff"
+      "diff": "Serial diff",
+      "postmortem": "What happened?"
     },
     "narrow": "Editing needs a screen at least 768 px wide. You can still view and run this project here.",
     "shortcuts": {

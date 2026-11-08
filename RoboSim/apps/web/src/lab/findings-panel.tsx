@@ -3,7 +3,7 @@ import type { FindingView } from '@robosim/sim-runtime/client';
 import { Button, Card, SegmentedControl, cn } from '@robosim/ui';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { findingKey, type AnyFinding } from './finding-key.js';
+import { findingKey, findingParams, type AnyFinding } from './finding-key.js';
 
 type Severity = AnyFinding['severity'];
 type Filter = 'all' | Severity;
@@ -39,20 +39,7 @@ export function FindingsPanel({
   onFix?: ((fix: QuickFix) => void) | undefined;
 }) {
   const { t } = useTranslation();
-  /** Message params with part ids replaced by component names and fault codes translated. */
-  const params = (f: AnyFinding): Record<string, string | number> => {
-    const name = (id: string): string => {
-      const [part, pin] = id.split('.');
-      const type = partTypes[part ?? ''];
-      return type ? `${t(`components:${type}.name`)}${pin ? ` (${pin})` : ''}` : id;
-    };
-    const out: Record<string, string | number> = { ...f.params };
-    for (const key of ['part', 'supply'] as const)
-      if (typeof out[key] === 'string') out[key] = name(out[key]);
-    if (typeof out['parts'] === 'string') out['parts'] = out['parts'].split(', ').map(name).join('، ');
-    if (typeof out['code'] === 'string') out['code'] = t(`safety:codes.${out['code']}`);
-    return out;
-  };
+  const params = (f: AnyFinding) => findingParams(f, partTypes, t);
   const all: readonly AnyFinding[] = useMemo(() => [...consistency, ...findings], [consistency, findings]);
   const [filter, setFilter] = useState<Filter>('all');
   const [acked, setAcked] = useState<ReadonlySet<string>>(new Set());

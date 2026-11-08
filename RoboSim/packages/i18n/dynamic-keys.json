@@ -84,6 +84,9 @@
     "editor:library.compare.row.",
     "editor:lint.",
     "editor:tidy.",
-    "editor:hints."
+    "editor:hints.",
+    "editor:postmortem.narrative.",
+    "editor:postmortem.quantity.",
+    "editor:postmortem.code."
   ]
 }

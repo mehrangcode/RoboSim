@@ -18,7 +18,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
 - [x] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
 - [x] IT-7 — Wiring hints and auto-tidy · FR-CIR-11 · US-CIR-08 · TD §18.7
-- [ ] IT-8 — Damage post-mortem · FR-SIM-16 · US-SIM-12 · TD §18.8 · after IT-2, IT-3
+- [x] IT-8 — Damage post-mortem · FR-SIM-16 · US-SIM-12 · TD §18.8 · after IT-2, IT-3
 - [ ] IT-9 — Time-travel scrubber (ADR-027) · FR-SIM-17 · US-SIM-13 · TD §18.9
 - [ ] IT-10 — Ghost run and A/B · FR-ARN-13 · US-ARN-09 · TD §18.10
 - [ ] IT-11 — Shareable run links (ADR-031) · FR-SIM-12 · US-SIM-08 · TD §18.11
@@ -101,3 +101,12 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] h. i18n EN/FA `components:functions.*`, editor library keys
 - [x] i. goldens unchanged; `pnpm verify`; browser check FA/EN; review table for owner
 - [x] j. docs sync (PRD, US-CIR-09 AC4, TD §18.6 note, Release-Plan, README)
+
+## IT-8 detailed steps (owner answers 2026-11-08: Replay via `fastForwardTo` now (IT-9 swaps in seek later); black box itself keeps last serial line + MCU pins changed in last 50 ms; new dock tab 'postmortem' listing every record of the run, kept after Stop; black box always on — relax budget and document if > 2 %; no flag; never commit)
+- [x] a. sim-core: `DamageRecord` (finding nullable), `SafetyMonitor` `onDamage` + `pending()`, `McuCore.pc?()`; avr-uno `pc()` + tests
+- [x] b. sim-runtime: `blackbox.ts` `BlackBox` (100 Hz avg/max 10 s ring, 1 kHz on suspicion 2 s ring, serial line, changed pins, cap 64 parts) + tests (1 kHz window ≥ limit for sustain, ring wrap, digest unchanged)
+- [x] c. sim-runtime: protocol `postmortem` + `progress`, `load.fastForwardTo`, host wiring (before `damaged`), client store + host test (damage at same slice)
+- [x] d. web: extract `trace-plot.tsx` from oscilloscope; `postmortem-panel.tsx` (toast aria-live, narrative, markers, Show on circuit / Fix / Replay) + dock tab + tests
+- [x] e. i18n EN/FA `postmortem.*`
+- [x] f. perf budgets; goldens unchanged; `pnpm verify`; browser check FA/EN on safety demos
+- [x] g. docs sync (PRD, TD §18.8 note, Release-Plan, README)

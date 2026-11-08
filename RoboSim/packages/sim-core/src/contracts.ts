@@ -96,6 +96,11 @@ export interface McuCore {
    */
   onPinInput?(cb: (pin: PinId, level: Level, cycle: number) => void): Unsubscribe;
   uart(index: number): UartPort;
+  /**
+   * Program counter as a byte address (FR-SIM-16 post-mortem, a source-line lookup with IT-20). A read of
+   * the running core: it never changes the run.
+   */
+  pc?(): number;
   /** Pins the I²C and SPI peripherals use (Tier C). */
   readonly busPins?: BusPins;
   /** Routes the I²C peripheral's transfers to `handler` (one handler; a new one replaces it). */

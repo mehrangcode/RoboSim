@@ -157,6 +157,11 @@ export type MainToWorker =
       readonly seed?: number;
       /** Replays these inputs at their recorded slices. */
       readonly inputLog?: readonly InputLogEntry[];
+      /**
+       * Runs unpaced to this slice first, posting `progress`, then waits paused (FR-SIM-16 *Replay the
+       * last 5 s*, until IT-9's seek). Cancelled by `control: pause` or `reset`.
+       */
+      readonly fastForwardTo?: number;
     })
   | { readonly type: 'control'; readonly action: 'run' | 'pause' | 'reset' | 'step' }
   | { readonly type: 'speed'; readonly value: number }
@@ -225,6 +230,9 @@ export const MAX_FINE_PER_SLICE = 64;
 
 /** Why an ohms request has no value: running, OL (`open`), nothing to measure, an unsimulated point. */
 export type OhmsRefusal = 'running' | 'open' | 'not-loaded' | 'unresolved';
+
+/** Damageable parts the post-mortem black box watches at most (TD §18.8 memory cap). */
+export const BLACKBOX_MAX_PARTS = 64;
 
 /** Instruments sharing the measurement channel: multimeter (IT-2) and oscilloscope (IT-3). */
 export type MeasureChannel = 'meter' | 'scope';
@@ -500,7 +508,64 @@ export type WorkerToMain =
    * client replaces its series from `bucketFrom` on (0 after a 2:1 merge).
    */
   | ({ readonly type: 'energy'; readonly session: number } & EnergyReport)
+  /**
+   * What the black box saw before a part or pin was damaged (FR-SIM-16, TD §18.8): posted once per
+   * damage record, before the `damaged` event of the same frame.
+   */
+  | ({ readonly type: 'postmortem' } & PostMortem)
+  /** Fast-forward of a `load` with `fastForwardTo`: `done` of `total` slices; `done === total` ends it. */
+  | { readonly type: 'progress'; readonly done: number; readonly total: number; readonly cancelled?: true }
   | { readonly type: 'error'; readonly message: string };
+
+/** {@link import('@robosim/sim-core').DamageRecord} as plain data (the finding as a view). */
+export interface DamageRecordView {
+  readonly slice: number;
+  readonly simTime: number;
+  readonly componentIds: readonly string[];
+  readonly pins: readonly string[];
+  readonly reason: string;
+  readonly finding: FindingView | null;
+  readonly conditionKey: string;
+  /** Sim time (s) the violation started. */
+  readonly conditionSince: number;
+  /** MCU byte address at the damage, or null; a source line needs IT-20's line table. */
+  readonly pc: number | null;
+}
+
+/** One recorded quantity of a victim. */
+export interface PostMortemSeries {
+  readonly key: string;
+  readonly label: { readonly part: string; readonly pin: string } | { readonly mcuPin: string };
+  /** Volts at the point (to GND), or amps flowing into the part's pin / the MCU pin. */
+  readonly quantity: 'V' | 'A';
+  /** Sample `k` covers slices `startSlice + k·intervalSlices` up to the next sample. */
+  readonly startSlice: number;
+  /** 10: 100 Hz averages of the always-on ring; 1: the 1 kHz ring recorded while the condition was pending. */
+  readonly intervalSlices: 1 | 10;
+  /** Average per sample (the value itself at 1 kHz). */
+  readonly data: Float32Array;
+  /** 100 Hz only: the extreme (largest |value|, signed) within each sample. */
+  readonly peak?: Float32Array;
+}
+
+/** What the code was doing just before the damage (no source line before IT-20). */
+export interface PostMortemCode {
+  /** Last line the firmware printed (the unfinished one if it had text), or null. */
+  readonly serialLine: string | null;
+  /**
+   * MCU pins that changed level from 50 ms before the violation began until the damage, with their level
+   * after the change and how many ms before the damage it was.
+   */
+  readonly changedPins: readonly { readonly pin: string; readonly level: 0 | 1; readonly msBefore: number }[];
+}
+
+export interface PostMortem {
+  readonly record: DamageRecordView;
+  readonly series: readonly PostMortemSeries[];
+  readonly code: PostMortemCode;
+  /** The circuit has more damageable parts than the black box watches (the rest are not recorded). */
+  readonly capped?: true;
+}
 
 /** One part's run totals in an `energy` message (mA, mW, J). */
 export interface EnergyPart {

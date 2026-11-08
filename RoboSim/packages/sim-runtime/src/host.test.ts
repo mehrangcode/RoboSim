@@ -172,6 +172,59 @@ describe('SimHost safety (slice 5)', () => {
     expect(f?.findings.every((x) => x.kind === 'runtime' && x.severity === 'error')).toBe(true);
   });
 
+  it('posts a post-mortem per damage record, before the damaged event of the frame (FR-SIM-16)', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'led-no-resistor' });
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(300);
+    const types = h.messages.map((m) => m.type);
+    const firstPm = types.indexOf('postmortem');
+    const firstDamage = types.findIndex((t, i) => t === 'damaged' && i > 0);
+    expect(firstPm).toBeGreaterThan(-1);
+    expect(firstPm).toBeLessThan(firstDamage);
+    expect(h.client.postmortems.map((p) => p.record.conditionKey).sort()).toEqual([
+      'SAF-COMPONENT-FAULT:led:OVER_CURRENT',
+      'SAF-PIN-CURRENT:D13:e',
+    ]);
+  });
+
+  it('fastForwardTo runs to the slice paused, then the damage repeats at the same slice', () => {
+    const live = harness();
+    live.host.handle({ type: 'load', scenario: 'led-no-resistor' });
+    live.host.handle({ type: 'control', action: 'run' });
+    live.advance(300);
+    const damageSlice = defined(live.client.postmortems[0]).record.slice;
+
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'led-no-resistor', fastForwardTo: damageSlice - 20 });
+    expect(h.client.fastForward).toEqual({ done: 0, total: damageSlice - 20 });
+    h.advance(200);
+    expect(h.client.fastForward).toBeNull();
+    const progress = h.messages.filter((m) => m.type === 'progress');
+    expect(progress.at(-1)).toEqual({ type: 'progress', done: damageSlice - 20, total: damageSlice - 20 });
+    expect(h.last()?.running).toBe(false);
+    expect(h.last()?.simTime).toBeCloseTo((damageSlice - 20) / 1000, 9);
+    expect(h.client.postmortems).toEqual([]);
+    h.host.handle({ type: 'control', action: 'run' });
+    h.advance(200);
+    expect(h.client.postmortems.map((p) => p.record.slice)).toEqual(
+      live.client.postmortems.map((p) => p.record.slice),
+    );
+  });
+
+  it('pause cancels a fast-forward where it is', () => {
+    const h = harness();
+    h.host.handle({ type: 'load', scenario: 'blink', fastForwardTo: 1_000_000 });
+    h.advance(16);
+    h.host.handle({ type: 'control', action: 'pause' });
+    const last = h.messages.filter((m) => m.type === 'progress').at(-1);
+    expect(last).toMatchObject({ type: 'progress', cancelled: true, total: 1_000_000 });
+    expect(h.client.fastForward).toBeNull();
+    const t = h.last()?.simTime ?? 0;
+    h.advance(100);
+    expect(h.last()?.simTime).toBe(t);
+  });
+
   it('outputs fighting damages both pins; reset clears the damage', () => {
     const h = harness();
     h.host.handle({ type: 'load', scenario: 'outputs-fighting' });

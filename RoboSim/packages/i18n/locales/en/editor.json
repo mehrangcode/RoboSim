@@ -504,5 +504,56 @@
       "supply": "{count} +V wires go into breadboard rows",
       "why": "Wire the board once to the breadboard's {rail} rail and plug the parts into the rail: fewer, shorter wires. This is a suggestion only; Tidy never moves wire ends."
     }
+  },
+  "postmortem": {
+    "toast": "Part damaged: what happened?",
+    "open": "What happened?",
+    "dismiss": "Dismiss",
+    "empty": "No part has been damaged in this run.",
+    "records": "Damage in this run",
+    "victim": {
+      "pin": "pin {pin}",
+      "part": "{part} ({pin})"
+    },
+    "damagedAt": "{victim} damaged at {time}",
+    "narrative": {
+      "limit": "At {since} the current into {target} rose to {peak} (limit {limit}). It stayed above the limit for {sustain}, so at {at} it was damaged.",
+      "noLimit": "At {since} the current into {target} reached {peak}. The problem lasted {sustain}, so at {at} it was damaged.",
+      "noTrace": "The problem started at {since} and lasted {sustain}, so at {at} it was damaged."
+    },
+    "markers": {
+      "since": "problem starts",
+      "at": "damaged"
+    },
+    "quantity": {
+      "A": "Current",
+      "V": "Voltage"
+    },
+    "series": "Trace",
+    "chart": "{quantity} at {point} from {from} to {to}, peak {peak}",
+    "why": "Why",
+    "fix": "How to fix it",
+    "code": {
+      "title": "What the code was doing",
+      "line": "Code line: unknown (needs the source-level debugger).",
+      "serial": "Last serial line: {line}",
+      "noSerial": "No serial output before the damage.",
+      "pins": "Pins that changed just before: {pins}",
+      "pin": "{pin} → {level} ({ms} ms before)",
+      "noPins": "No pin changed just before.",
+      "high": "HIGH",
+      "low": "LOW"
+    },
+    "capped": "This circuit has more than {count} parts that can be damaged; only the first {count} are recorded.",
+    "actions": {
+      "show": "Show on circuit",
+      "fix": "Fix",
+      "replay": "Replay last {seconds} s"
+    },
+    "replay": {
+      "progress": "Replaying to {seconds} s before the damage… {percent}%",
+      "cancel": "Cancel",
+      "ready": "Paused before the damage. Press Run to watch it happen."
+    }
   }
 }

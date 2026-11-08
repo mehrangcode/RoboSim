@@ -8,6 +8,7 @@ import type {
   HotFrame,
   InputLog,
   MeasureChannel,
+  PostMortem,
   SceneInfo,
   WorkerToMain,
 } from './protocol.js';
@@ -98,6 +99,10 @@ export class SimClient {
   scope: ScopeBuffer | null = null;
   /** Power budget of the present run (FR-SIM-15), or null before its first report. */
   energy: EnergyView | null = null;
+  /** Damage post-mortems of the present run, oldest first (FR-SIM-16). */
+  postmortems: readonly PostMortem[] = [];
+  /** A `load` with `fastForwardTo` in progress (slices done of total), or null. */
+  fastForward: { readonly done: number; readonly total: number } | null = null;
 
   receive(msg: WorkerToMain): boolean {
     switch (msg.type) {
@@ -121,6 +126,8 @@ export class SimClient {
         this.measures.clear();
         this.scope = null;
         this.energy = null;
+        this.postmortems = [];
+        this.fastForward = null;
         return true;
       case 'channel':
         this.reader = new SharedSnapshotReader(msg.buffer);
@@ -179,6 +186,15 @@ export class SimClient {
       case 'ohms':
         this.onOhms?.(msg);
         return false;
+      case 'postmortem': {
+        const { type: _type, ...pm } = msg;
+        this.postmortems = [...this.postmortems, pm];
+        return true;
+      }
+      case 'progress':
+        this.fastForward =
+          msg.cancelled || msg.done >= msg.total ? null : { done: msg.done, total: msg.total };
+        return true;
       case 'error':
         this.error = msg.message;
         return true;
@@ -273,6 +289,7 @@ export class SimClient {
 // Main-thread entry (`@robosim/sim-runtime/client`): the protocol without the engine behind it.
 export {
   BENCH_SCENARIOS,
+  BLACKBOX_MAX_PARTS,
   MAX_METER_PROBES,
   MAX_SCOPE_CHANNELS,
   MAX_FINE_PER_SLICE,

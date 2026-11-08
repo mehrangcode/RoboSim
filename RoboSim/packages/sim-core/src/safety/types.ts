@@ -148,6 +148,37 @@ export interface Condition extends Omit<Finding, 'kind'> {
   };
 }
 
+/**
+ * What the damage model broke at one latch (FR-SIM-16, TD §18.8), for the post-mortem panel. View data:
+ * built after the damage is applied, so listening never changes the run.
+ */
+export interface DamageRecord {
+  readonly slice: number;
+  readonly simTime: number;
+  readonly componentIds: readonly string[];
+  readonly pins: readonly string[];
+  /** `Condition.damage.reason`, e.g. 'pin over-current' or a fault code. */
+  readonly reason: string;
+  /** The latched Error; null for damage without a runtime rule (none exist today). */
+  readonly finding: Finding | null;
+  /** e.g. `SAF-PIN-CURRENT:D13:e`. */
+  readonly conditionKey: string;
+  /** Sim time (s) the violation started: the monitor's `since` for the condition. */
+  readonly conditionSince: number;
+  /** MCU byte address at the latch slice, when the core exposes it. */
+  readonly pc: number | null;
+}
+
+/** A condition seen but not yet latched (its sustain window is running). */
+export interface PendingCondition {
+  readonly key: string;
+  readonly severity: Severity;
+  readonly componentIds: readonly string[];
+  readonly pins: readonly string[];
+  /** Sim time (s) the condition was first seen. */
+  readonly since: number;
+}
+
 export interface RuntimeContext {
   readonly sim: Simulation;
   readonly circuit: AssembledCircuit;

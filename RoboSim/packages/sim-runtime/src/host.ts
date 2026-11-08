@@ -1,6 +1,7 @@
 import { Pacer, ohmmeterInstance, type NetId } from '@robosim/sim-core';
 import type { ProjectDocument } from '@robosim/shared';
 import type { Level } from '@robosim/sim-core';
+import { BlackBox } from './blackbox.js';
 import { ENGINE_VERSION } from './engine-version.js';
 import { InputLogger, type LiveInput } from './input-log.js';
 import { MeasureHub, ScopeRecorder, resolvePoint } from './measure.js';
@@ -31,6 +32,12 @@ import { ALL_MCU_PINS, challengeView, damageView, obstacleViews, pinViews, robot
 const FRAME_INTERVAL_MS = 33;
 /** The power budget reaches the panel at most this often (TD §18.4); every pause sends one too. */
 const ENERGY_INTERVAL_MS = 500;
+/** Wall-time budget of one fast-forward chunk per tick, so `pause` and other messages get through. */
+const FAST_FORWARD_CHUNK_MS = 50;
+/** Slices simulated between wall-clock checks while fast-forwarding. */
+const FAST_FORWARD_STEP = 100;
+/** At most this many slices per tick, whatever the clock says (a stalled clock never blocks messages). */
+const FAST_FORWARD_MAX_PER_TICK = 2000;
 
 export interface SimHostOptions {
   /** Publish snapshots through a shared buffer (needs cross-origin isolation); else transfer them. */
@@ -62,6 +69,10 @@ interface Run {
   readonly measure: MeasureHub;
   /** Ohmmeter on a fresh static instance, for one (input-log length, damage) state. */
   ohmmeter: { key: string; read: (a: NetId, b: NetId) => number | null } | null;
+  /** Damage post-mortem recorder (FR-SIM-16), always on. */
+  readonly blackbox: BlackBox;
+  /** Unpaced run to this slice before waiting paused (`load.fastForwardTo`), or null. */
+  fastForward: { readonly from: number; readonly to: number } | null;
 }
 
 /**
@@ -118,6 +129,7 @@ export class SimHost {
                 : { project: msg.project, firmware: msg.firmware },
             msg.seed ?? 1,
             msg.inputLog ?? [],
+            msg.fastForwardTo,
           );
           break;
         case 'control':
@@ -194,6 +206,10 @@ export class SimHost {
   tick(): void {
     this.guard(() => {
       const run = this.run;
+      if (run?.fastForward) {
+        this.fastForwardChunk(run, run.fastForward);
+        return;
+      }
       if (run && this.running) {
         run.pacer.tick();
         // The pacer stops on the decisive slice (stopWhen); mirror that as a paused run.
@@ -223,8 +239,14 @@ export class SimHost {
     if (!this.running) this.publish(true);
   }
 
-  private load(source: RunSource, seed: number, replay: readonly InputLogEntry[]): void {
+  private load(
+    source: RunSource,
+    seed: number,
+    replay: readonly InputLogEntry[],
+    fastForwardTo?: number,
+  ): void {
     this.run?.probe?.recorder.stop();
+    this.run?.blackbox.dispose();
     this.run = null;
     this.running = false;
     const scenario = buildRun(source, seed);
@@ -232,6 +254,8 @@ export class SimHost {
     // Instruments observe before the logger, which must stay last: replayed inputs land where live ones did.
     this.loadSession++;
     this.lastEnergyWall = -Infinity;
+    const blackbox = new BlackBox(scenario);
+    scenario.circuit.sim.addObserver(blackbox);
     const measure = new MeasureHub(scenario);
     measure.setFine(this.scopeFine);
     measure.setEnergy(this.energyOn);
@@ -259,6 +283,8 @@ export class SimHost {
       probe: null,
       measure,
       ohmmeter: null,
+      blackbox,
+      fastForward: fastForwardTo && fastForwardTo > 0 ? { from: 0, to: Math.floor(fastForwardTo) } : null,
     };
     const uart = scenario.scene.serial ? scenario.circuit.sim.mcu?.uart(0) : undefined;
     uart?.onData((bytes) => {
@@ -278,7 +304,24 @@ export class SimHost {
       replaying: replay.length,
     });
     this.startProbe(run);
+    if (run.fastForward) this.post({ type: 'progress', done: 0, total: run.fastForward.to });
     this.publish(true);
+  }
+
+  /**
+   * One tick of an unpaced run to `ff.to` (FR-SIM-16 replay): simulates for up to
+   * {@link FAST_FORWARD_CHUNK_MS} wall ms, reports progress, and stops paused on the target slice.
+   */
+  private fastForwardChunk(run: Run, ff: { readonly from: number; readonly to: number }): void {
+    const sim = run.scenario.circuit.sim;
+    const start = this.now();
+    const limit = Math.min(ff.to, sim.slice + FAST_FORWARD_MAX_PER_TICK);
+    while (sim.slice < limit && this.now() - start < FAST_FORWARD_CHUNK_MS)
+      sim.run(Math.min(FAST_FORWARD_STEP, limit - sim.slice));
+    const done = sim.slice >= ff.to;
+    if (done) run.fastForward = null;
+    this.post({ type: 'progress', done: Math.min(sim.slice, ff.to) - ff.from, total: ff.to - ff.from });
+    this.publish(done);
   }
 
   /**
@@ -369,6 +412,17 @@ export class SimHost {
       const { scenario, project, firmware } = run.source;
       this.load(scenario ? { scenario } : { project, firmware }, run.seed, []);
       return;
+    }
+    const ff = run.fastForward;
+    if (ff) {
+      // Any control ends a fast-forward where it is; the run then waits paused (or runs on).
+      run.fastForward = null;
+      const done = run.scenario.circuit.sim.slice - ff.from;
+      this.post({ type: 'progress', done, total: ff.to - ff.from, cancelled: true });
+      if (action === 'pause') {
+        this.publish(true);
+        return;
+      }
     }
     if (action === 'run') {
       this.running = true;
@@ -471,6 +525,16 @@ export class SimHost {
       run.sentFaults = faultsKey;
       this.post({ type: 'faults', faults });
     }
+    // Post-mortems go before the `damaged` event of the same frame (TD §18.8).
+    for (const pm of run.blackbox.drain())
+      this.post(
+        { type: 'postmortem', ...pm },
+        pm.series.flatMap((x) =>
+          x.peak
+            ? [x.data.buffer as ArrayBuffer, x.peak.buffer as ArrayBuffer]
+            : [x.data.buffer as ArrayBuffer],
+        ),
+      );
     const damaged = damageView(s);
     const damageKey = JSON.stringify(damaged);
     if (damageKey !== run.sentDamage) {

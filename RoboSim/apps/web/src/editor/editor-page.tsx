@@ -23,7 +23,13 @@ import {
   type SharedLink,
 } from '@robosim/shared';
 import { applyPinEdits, type QuickFix } from '@robosim/safety-rules/consistency';
-import { MAX_SIM_SECONDS, SCENARIOS, type ScenarioId, type SourceFile } from '@robosim/sim-runtime/client';
+import {
+  MAX_SIM_SECONDS,
+  SCENARIOS,
+  type PostMortem,
+  type ScenarioId,
+  type SourceFile,
+} from '@robosim/sim-runtime/client';
 import { Button, ResizeHandle, SegmentedControl, buttonVariants, cn } from '@robosim/ui';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { findArena } from '@robosim/content/arenas';
@@ -54,6 +60,8 @@ import { useMultimeter } from '../lab/use-multimeter.js';
 import { Oscilloscope } from '../lab/oscilloscope.js';
 import { useScope } from '../lab/use-scope.js';
 import { PowerPanel } from '../lab/power-panel.js';
+import { PostmortemPanel, PostmortemToast } from '../lab/postmortem-panel.js';
+import { POSTMORTEM_WINDOW_S, postMortemKey } from '../lab/postmortem.js';
 import { usePower } from '../lab/use-power.js';
 import { useFormat } from '../lab/format.js';
 import { PinTable } from '../lab/pin-table.js';
@@ -113,6 +121,7 @@ type DockTab =
   | 'scope'
   | 'power'
   | 'safety'
+  | 'postmortem'
   | 'challenge'
   | 'verify'
   | 'assistant'
@@ -663,6 +672,26 @@ function Workspace({
   }, []);
 
   const live = run.ready ? frame : null;
+  const partTypes = useMemo(() => Object.fromEntries(doc.components.map((c) => [c.id, c.type])), [doc]);
+  // Damage post-mortems (FR-SIM-16): the run's records; kept for this circuit while a replay reloads it.
+  const pmCircuit = runKey(current);
+  const [pmKept, setPmKept] = useState<{ key: string; list: readonly PostMortem[] } | null>(null);
+  if (sim.postmortems.length && pmKept?.list !== sim.postmortems)
+    setPmKept({ key: pmCircuit, list: sim.postmortems });
+  const postmortems = sim.postmortems.length ? sim.postmortems : pmKept?.key === pmCircuit ? pmKept.list : [];
+  const [pmShown, setPmShown] = useState<string | null>(null);
+  const [pmToast, setPmToast] = useState<PostMortem | null>(null);
+  const [pmSeen, setPmSeen] = useState<PostMortem | null>(null);
+  const newestPm = sim.postmortems.at(-1) ?? null;
+  if (newestPm && newestPm !== pmSeen) {
+    setPmSeen(newestPm);
+    setPmToast(newestPm);
+  }
+  /** A replay: requested (the old run may still report running), then paused before the damage until Run. */
+  const [pmReplay, setPmReplay] = useState<'requested' | 'paused' | null>(null);
+  if (pmReplay === 'requested' && !running) setPmReplay('paused');
+  if (pmReplay === 'paused' && running) setPmReplay(null);
+  const [pmHighlight, setPmHighlight] = useState<CanvasHighlight | null>(null);
   const sound = useBuzzerAudio(live?.parts, running);
   // Virtual multimeter (FR-SIM-13): probes on the canvas while its dock tab is shown; view-only.
   const meter = useMultimeter({
@@ -712,7 +741,7 @@ function Workspace({
     );
     if (!f) {
       const h = wireHintList.find((x) => hintKey(x) === shownHint);
-      return h ? { parts: h.partIds, wires: h.wireIds, pins: [] } : null;
+      return h ? { parts: h.partIds, wires: h.wireIds, pins: [] } : pmHighlight;
     }
     return {
       parts: f.componentIds,
@@ -720,7 +749,7 @@ function Workspace({
       pins: f.pinIds.map((pin) => ({ part: BOARD_PART, pin })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- findings is rebuilt every render; its content follows live
-  }, [consistency, live, scene, shownFinding, wireHintList, shownHint]);
+  }, [consistency, live, scene, shownFinding, wireHintList, shownHint, pmHighlight]);
   /** A wiring ↔ sketch quick fix (FR-SAF-08): one code edit or one circuit edit, each one undo step. */
   const applyFix = (fix: QuickFix) => {
     if (fix.kind === 'code.replacePin') {
@@ -741,6 +770,7 @@ function Workspace({
   };
   const showFinding = (key: string | null) => {
     setShownFinding(key);
+    setPmHighlight(null);
     if (key) setShownHint(null);
     if (key) {
       setCentre('circuit');
@@ -749,11 +779,50 @@ function Workspace({
   };
   const showHint = (key: string | null) => {
     setShownHint(key);
+    setPmHighlight(null);
     if (key) {
       setShownFinding(null);
       setCentre('circuit');
       setMobileTab('circuit');
     }
+  };
+  /** Post-mortem "Show on circuit": the damaged parts and MCU pins. */
+  const showDamage = (pm: PostMortem) => {
+    setShownFinding(null);
+    setShownHint(null);
+    setPmHighlight({
+      parts: pm.record.componentIds,
+      wires: [],
+      pins: pm.record.pins.map((pin) => ({ part: BOARD_PART, pin })),
+    });
+    setCentre('circuit');
+    setMobileTab('circuit');
+  };
+  /** Post-mortem "Fix": the finding in the Safety tab, shown on the circuit. */
+  const fixDamage = (pm: PostMortem) => {
+    if (!pm.record.finding) return;
+    setDockTab('safety');
+    showFinding(findingKey(pm.record.finding));
+  };
+  /**
+   * Post-mortem "Replay the last 5 s" (TD §18.8, before IT-9's seek): reloads the run with its inputs up to
+   * the damage, runs it unpaced to 5 s before, and waits paused there; Run then shows the damage again.
+   */
+  const replayDamage = async (pm: PostMortem) => {
+    const log = await sim.exportLog();
+    clearVerified();
+    const source = log.scenario
+      ? { scenario: log.scenario }
+      : { project: log.project, firmware: log.firmware };
+    const to = Math.max(0, pm.record.slice - POSTMORTEM_WINDOW_S * 1000);
+    setPmReplay('requested');
+    send({
+      type: 'load',
+      ...source,
+      seed: log.seed,
+      inputLog: log.entries.filter((e) => e.slice <= pm.record.slice),
+      ...(to > 0 ? { fastForwardTo: to } : {}),
+    });
   };
   const startTidy = () => {
     tidy.start();
@@ -961,6 +1030,7 @@ function Workspace({
     'scope',
     'power',
     'safety',
+    ...(postmortems.length ? (['postmortem'] as const) : []),
     ...(live?.challenge ? (['challenge'] as const) : []),
     ...(verified.state.status !== 'idle' ? (['verify'] as const) : []),
     'parts',
@@ -1056,7 +1126,7 @@ function Workspace({
             <FindingsPanel
               findings={findings}
               consistency={consistency}
-              partTypes={Object.fromEntries(doc.components.map((c) => [c.id, c.type]))}
+              partTypes={partTypes}
               running={!!live}
               selected={shownFinding}
               onSelect={showFinding}
@@ -1101,6 +1171,19 @@ function Workspace({
               setDockTab('safety');
               showFinding(key);
             }}
+          />
+        ) : shownDock === 'postmortem' ? (
+          <PostmortemPanel
+            records={postmortems}
+            partTypes={partTypes}
+            selected={pmShown}
+            onSelect={setPmShown}
+            onShow={showDamage}
+            onFix={live ? fixDamage : undefined}
+            onReplay={run.ready ? (pm) => void replayDamage(pm) : undefined}
+            fastForward={sim.fastForward}
+            onCancelReplay={() => send({ type: 'control', action: 'pause' })}
+            replayReady={pmReplay === 'paused' && !sim.fastForward}
           />
         ) : !live || !scene ? (
           <p className="text-sm text-ink-muted">{t('shell:editor.dock.notRunning')}</p>
@@ -1518,6 +1601,22 @@ function Workspace({
             {t('shell:lab.restart')}
           </Button>
         </p>
+      )}
+      {pmToast && (
+        <div className="border-b border-line px-3 py-1">
+          <PostmortemToast
+            record={pmToast}
+            partTypes={partTypes}
+            onOpen={() => {
+              setPmShown(postMortemKey(pmToast));
+              setDockTab('postmortem');
+              if (layout.collapsed.dock) toggle('dock');
+              setMobileTab('monitor');
+              setPmToast(null);
+            }}
+            onDismiss={() => setPmToast(null)}
+          />
+        </div>
       )}
       {notice && (
         <p role="status" className="flex items-center gap-2 border-b border-line px-3 py-1 text-sm">

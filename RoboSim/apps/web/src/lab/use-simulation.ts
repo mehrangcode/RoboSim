@@ -187,6 +187,10 @@ export function useSimulation(createWorker: () => WorkerLike = createSimWorker) 
     scope: client.scope,
     scopeVersion: client.scope?.version ?? 0,
     replaying: client.replaying,
+    /** Damage post-mortems of the present run, oldest first (FR-SIM-16). */
+    postmortems: client.postmortems,
+    /** A replay fast-forwarding to before the damage (slices done of total), or null. */
+    fastForward: client.fastForward,
     send,
     exportLog,
   };
