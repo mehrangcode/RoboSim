@@ -11,7 +11,7 @@ export { ProbeOverlay, type ProbeMarkers } from './probe-overlay.js';
 export { electricalPoint, wireCut, type WireCut } from './wire-cut.js';
 export { interactionOf, type Interaction } from './interaction.js';
 export { resistorBands } from './colors.js';
-export { PART_DRAG_TYPE, WIRE_COLORS, contentBox } from './view.js';
+export { PART_DRAG_TYPE, contentBox } from './view.js';
 export { CircuitEditor } from './circuit-editor.js';
 export * from './document.js';
 export {
@@ -35,6 +35,10 @@ export {
 export { LibraryPanel } from './library-panel.js';
 export { boardPinView } from './board-pin-view.js';
 export { CircuitNets } from './nets.js';
+export { namedNets, netSignature } from './net-signature.js';
+export * from './wire-convention.js';
+export * from './wire-lint.js';
+export { useTidy, type TidyChoices, type TidyState } from './use-tidy.js';
 export {
   BUCK_EFFICIENCY,
   defaultDuty,

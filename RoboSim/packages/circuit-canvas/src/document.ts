@@ -21,6 +21,7 @@ import {
   type Placement,
   type Point,
 } from './geometry.js';
+import { DEFAULT_WIRE_CONVENTION, type WireConvention } from './wire-convention.js';
 
 /*
  * Editing operations on a project document (FR-CIR-01/02/05). Every operation is pure and returns
@@ -477,13 +478,21 @@ export function setProp(
 
 const samePin = (a: PinRef, b: PinRef) => a.part === b.part && a.pin === b.pin;
 
-/** Wire colour by convention: black to ground, red to 5 V, otherwise the given default. */
-export function conventionalColor(from: PinRef, to: PinRef, fallback: string): string {
+/** Wire colour by convention (FR-CIR-11): ground colour to GND, supply colour to 5 V / 3.3 V / VIN, else the default. */
+export function conventionalColor(
+  from: PinRef,
+  to: PinRef,
+  fallback: string,
+  conv: WireConvention = DEFAULT_WIRE_CONVENTION,
+): string {
   const pins = [from, to].filter((p) => p.part === BOARD_PART).map((p) => p.pin);
-  if (pins.some((p) => p.startsWith('GND'))) return 'black';
-  if (pins.includes('5V')) return 'red';
+  if (pins.some((p) => p.startsWith('GND'))) return conv.ground;
+  if (pins.some((p) => BOARD_SUPPLY_PINS.has(p))) return conv.supply;
   return fallback;
 }
+
+/** The board's supply outputs. */
+export const BOARD_SUPPLY_PINS: ReadonlySet<string> = new Set(['5V', '3V3', 'VIN']);
 
 export function addWire(
   doc: ProjectDocument,

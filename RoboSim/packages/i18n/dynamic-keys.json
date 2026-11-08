@@ -81,6 +81,9 @@
     "shell:lab.serialDiff.first.",
     "shell:lab.serialDiff.kind.",
     "editor:library.interface.",
-    "editor:library.compare.row."
+    "editor:library.compare.row.",
+    "editor:lint.",
+    "editor:tidy.",
+    "editor:hints."
   ]
 }

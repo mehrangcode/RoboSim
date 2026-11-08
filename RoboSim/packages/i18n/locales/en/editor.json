@@ -445,5 +445,64 @@
       "summary": "Stacked power of {count} series, up to {max}. Use the left and right arrow keys to read each moment; the table lists every part."
     },
     "includesOutputs": "(includes what it passes to its outputs)"
+  },
+  "tidy": {
+    "button": "Tidy wires: recolour and straighten (preview first)",
+    "title": "Tidy wires",
+    "scopeAll": "All {count} wires",
+    "scopeSelection": "Selected wires only ({count})",
+    "recolour": "Recolour by role",
+    "reroute": "Straighten routes",
+    "recolourSignals": "A colour per signal",
+    "changes": "Wires changing: {count}",
+    "nothing": "Already tidy",
+    "failed": "Tidy would have changed the connections, so nothing was changed. Please report this.",
+    "apply": "Apply",
+    "cancel": "Cancel"
+  },
+  "hints": {
+    "title": "Wiring hints",
+    "intro": "Readability tips, not safety findings. Nothing here stops a run.",
+    "marker": "Wiring hint: see Safety › Wiring hints",
+    "none": "No wiring hints: the wires are easy to follow.",
+    "kind": "Info · Wiring hint",
+    "show": "Show on circuit",
+    "hide": "Hide on circuit",
+    "dismiss": "Dismiss",
+    "restore": "Restore",
+    "showDismissed": "Show dismissed ({count})",
+    "hideDismissed": "Hide dismissed",
+    "tidy": "Tidy wires…",
+    "settings": "Wire colour convention",
+    "ground": "Ground (GND) wires",
+    "supply": "Supply (+V) wires",
+    "signalAvoid": "Hint when a signal wire uses these colours",
+    "reset": "Reset to black / red",
+    "board": "Uno {pin}"
+  },
+  "lint": {
+    "color": {
+      "ground": "Ground wire {wire} is {color}",
+      "supply": "Supply wire {wire} is {color}",
+      "signal": "Signal wire {wire} is {color}",
+      "why": "{supply} is usually +V, {ground} GND. Matching colours make a circuit easy to read and to copy onto a real breadboard."
+    },
+    "long": {
+      "title": "Wire {wire} is long ({length} mm)",
+      "why": "A shorter, straighter route is easier to follow. Tidy can straighten it."
+    },
+    "overPart": {
+      "title": "Wire {wire} runs over {parts}",
+      "why": "A wire drawn across a part hides its pins and labels. Tidy routes around parts where it can."
+    },
+    "overlap": {
+      "title": "Wires {wire} and {other} overlap",
+      "why": "Overlapping wires of different nets look connected when they are not."
+    },
+    "rail": {
+      "ground": "{count} GND wires go into breadboard rows",
+      "supply": "{count} +V wires go into breadboard rows",
+      "why": "Wire the board once to the breadboard's {rail} rail and plug the parts into the rail: fewer, shorter wires. This is a suggestion only; Tidy never moves wire ends."
+    }
   }
 }

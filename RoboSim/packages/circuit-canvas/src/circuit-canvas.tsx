@@ -38,7 +38,11 @@ import { Minimap } from './minimap.js';
 import { CircuitNets } from './nets.js';
 import { ProbeOverlay, type ProbeMarkers } from './probe-overlay.js';
 import { Scene } from './scene.js';
+import { TidyBar } from './tidy-bar.js';
 import type { CircuitEditorState } from './use-circuit-editor.js';
+import { useTidy, type TidyState } from './use-tidy.js';
+import { DEFAULT_WIRE_CONVENTION, type WireConvention } from './wire-convention.js';
+import { WireOverlay } from './wire-overlay.js';
 import { MAX_K, MIN_K, PART_DRAG_TYPE, contentBox, fitView, type View } from './view.js';
 
 type Drag =
@@ -129,6 +133,9 @@ export function CircuitCanvas({
   damaged,
   highlight = null,
   probe = null,
+  hintedWires,
+  tidy: tidyProp,
+  convention = DEFAULT_WIRE_CONVENTION,
 }: {
   editor: CircuitEditorState;
   /** Live part states by component id (from the running simulation). */
@@ -146,6 +153,12 @@ export function CircuitCanvas({
   highlight?: CanvasHighlight | null | undefined;
   /** Virtual multimeter probes (FR-SIM-13): an armed probe takes the next click in any mode. */
   probe?: CanvasProbe | null | undefined;
+  /** Wires with a wiring hint (FR-CIR-11): an "i" badge sits on each while editing. */
+  hintedWires?: readonly string[] | undefined;
+  /** Tidy with preview, when the page shares it (command palette); otherwise the canvas keeps its own. */
+  tidy?: TidyState | undefined;
+  /** Colours new supply and ground wires get (FR-CIR-11). */
+  convention?: WireConvention | undefined;
 }) {
   const { t } = useTranslation();
   const { doc, apply, selection, setSelection, viewCenterRef } = editor;
@@ -166,6 +179,9 @@ export function CircuitCanvas({
   /** Values sent to inputs the live state does not report (line-sensor surfaces…). */
   const [sent, setSent] = useState<Readonly<Record<string, Readonly<Record<string, number | boolean>>>>>({});
   const nets = useMemo(() => new CircuitNets(doc), [doc]);
+  const ownTidy = useTidy(editor, convention);
+  const tidy = tidyProp ?? ownTidy;
+  const hinted = useMemo(() => new Set(hintedWires ?? []), [hintedWires]);
   // The board stays in colour: the pins a finding is about are on it.
   const focus = useMemo(
     () =>
@@ -343,7 +359,13 @@ export function CircuitCanvas({
     if (!samePin(drawing.from, to)) {
       apply(
         (d) =>
-          addWire(d, drawing.from, to, drawing.points, conventionalColor(drawing.from, to, WIRE_DEFAULT)).doc,
+          addWire(
+            d,
+            drawing.from,
+            to,
+            drawing.points,
+            conventionalColor(drawing.from, to, WIRE_DEFAULT, convention),
+          ).doc,
       );
     }
     setDrawing(null);
@@ -649,6 +671,15 @@ export function CircuitCanvas({
             marks={highlight?.pins ?? []}
             probing={probe?.armed != null}
           />
+          {editing && (hinted.size > 0 || tidy.open) && (
+            <WireOverlay
+              doc={doc}
+              hinted={hinted}
+              hintLabel={t('editor:hints.marker')}
+              preview={tidy.open ? tidy.preview : null}
+              changed={tidy.changed}
+            />
+          )}
           {probe && <ProbeOverlay doc={doc} markers={probe.markers} />}
           {band && (
             <rect
@@ -676,16 +707,46 @@ export function CircuitCanvas({
           {hover.pin.part === BOARD_PART ? `Uno · ${hover.pin.pin}` : `${hover.pin.part} · ${hover.pin.pin}`}
         </div>
       )}
-      {alignable > 1 && (
-        <div className="absolute start-2 top-2">
-          <AlignToolbar
-            count={alignable}
-            onAlign={(how) => apply((d) => alignComponents(d, selection.parts, how))}
-            onDistribute={(axis) => apply((d) => distributeComponents(d, selection.parts, axis))}
-          />
+      {editing && tidy.open ? (
+        <div className="absolute start-2 top-2 end-40">
+          <TidyBar tidy={tidy} total={doc.wires.length} />
         </div>
+      ) : (
+        alignable > 1 && (
+          <div className="absolute start-2 top-2">
+            <AlignToolbar
+              count={alignable}
+              onAlign={(how) => apply((d) => alignComponents(d, selection.parts, how))}
+              onDistribute={(axis) => apply((d) => distributeComponents(d, selection.parts, axis))}
+            />
+          </div>
+        )
       )}
       <div className="absolute end-2 top-2 flex gap-1">
+        {editing && (
+          <button
+            type="button"
+            title={t('editor:tidy.button')}
+            aria-label={t('editor:tidy.button')}
+            aria-pressed={tidy.open}
+            disabled={doc.wires.length === 0}
+            onClick={() => (tidy.open ? tidy.cancel() : tidy.start())}
+            className="grid size-7 place-items-center rounded border border-line bg-surface shadow-sm hover:bg-surface-raised disabled:opacity-40 aria-pressed:bg-surface-raised"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              className="size-4"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M2 4h5v8h7M2 8h3M9 2v4h5" />
+            </svg>
+          </button>
+        )}
         {ZOOM_BUTTONS.map(({ key, glyph }) => (
           <button
             key={key}

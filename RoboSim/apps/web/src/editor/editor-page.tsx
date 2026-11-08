@@ -4,8 +4,10 @@ import {
   PropertyPanel,
   copyParts,
   cutParts,
+  hintKey,
   pasteParts,
   useCircuitEditor,
+  useTidy,
   type CanvasHighlight,
   type CanvasMode,
 } from '@robosim/circuit-canvas';
@@ -78,6 +80,8 @@ import { PARTS } from '../ai/parts.js';
 import { learningApi, type LearningClient } from '../lib/learning-api.js';
 import { ConflictDialog, VersionsDialog } from './cloud-dialogs.js';
 import { CommandPalette, type PaletteCommand } from './command-palette.js';
+import { useDismissedHints, useWireConvention, useWireHints } from './use-wire-hints.js';
+import { WireHintsPanel } from './wire-hints-panel.js';
 import { HelpDialog } from './help-dialog.js';
 import { OnboardingTour } from './onboarding-tour.js';
 import { useTourState, type TourStop } from './tour-state.js';
@@ -411,6 +415,16 @@ function Workspace({
   // Wiring ↔ sketch check while editing (FR-SAF-08), and the finding shown on the circuit.
   const consistency = useConsistency(doc, files);
   const [shownFinding, setShownFinding] = useState<string | null>(null);
+  // Wiring hints and Tidy (FR-CIR-11): readability only, apart from the safety findings.
+  const [wireConvention, setWireConvention] = useWireConvention();
+  const wireHintList = useWireHints(doc, wireConvention);
+  const {
+    dismissed: dismissedHints,
+    dismiss: dismissHint,
+    restore: restoreHint,
+  } = useDismissedHints(cloudOpen?.id ?? 'local');
+  const [shownHint, setShownHint] = useState<string | null>(null);
+  const tidy = useTidy(editor, wireConvention);
   const [pristine, setPristine] = useState(() => stored?.pristine ?? runKey(doc));
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>('1');
   const [demoChoice, setDemoChoice] = useState<ScenarioId>('blink');
@@ -696,14 +710,17 @@ function Workspace({
     const f: AnyFinding | undefined = [...consistency, ...findings].find(
       (x) => findingKey(x) === shownFinding,
     );
-    if (!f) return null;
+    if (!f) {
+      const h = wireHintList.find((x) => hintKey(x) === shownHint);
+      return h ? { parts: h.partIds, wires: h.wireIds, pins: [] } : null;
+    }
     return {
       parts: f.componentIds,
       wires: 'wireIds' in f ? f.wireIds : [],
       pins: f.pinIds.map((pin) => ({ part: BOARD_PART, pin })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- findings is rebuilt every render; its content follows live
-  }, [consistency, live, scene, shownFinding]);
+  }, [consistency, live, scene, shownFinding, wireHintList, shownHint]);
   /** A wiring ↔ sketch quick fix (FR-SAF-08): one code edit or one circuit edit, each one undo step. */
   const applyFix = (fix: QuickFix) => {
     if (fix.kind === 'code.replacePin') {
@@ -724,11 +741,29 @@ function Workspace({
   };
   const showFinding = (key: string | null) => {
     setShownFinding(key);
+    if (key) setShownHint(null);
     if (key) {
       setCentre('circuit');
       setMobileTab('circuit');
     }
   };
+  const showHint = (key: string | null) => {
+    setShownHint(key);
+    if (key) {
+      setShownFinding(null);
+      setCentre('circuit');
+      setMobileTab('circuit');
+    }
+  };
+  const startTidy = () => {
+    tidy.start();
+    setCentre('circuit');
+    setMobileTab('circuit');
+  };
+  const hintedWires = useMemo(
+    () => wireHintList.filter((h) => !dismissedHints.has(hintKey(h))).flatMap((h) => h.wireIds),
+    [wireHintList, dismissedHints],
+  );
   const queuedAt =
     run.phase === 'building' && run.build.status === 'building' && run.build.progress?.phase === 'queued'
       ? run.build.progress.position
@@ -794,6 +829,9 @@ function Workspace({
       onInput={(componentId, name, value) => send({ type: 'input', componentId, name, value })}
       highlight={highlight}
       probe={scope.canvasProbe ?? meter.canvasProbe}
+      hintedWires={readOnly ? undefined : hintedWires}
+      tidy={tidy}
+      convention={wireConvention}
       className="h-full rounded-none border-0"
     />
   );
@@ -1014,15 +1052,31 @@ function Workspace({
             {...(diffRequest ? { initial: diffRequest } : {})}
           />
         ) : shownDock === 'safety' ? (
-          <FindingsPanel
-            findings={findings}
-            consistency={consistency}
-            partTypes={Object.fromEntries(doc.components.map((c) => [c.id, c.type]))}
-            running={!!live}
-            selected={shownFinding}
-            onSelect={showFinding}
-            onFix={readOnly ? undefined : applyFix}
-          />
+          <div className="grid gap-3">
+            <FindingsPanel
+              findings={findings}
+              consistency={consistency}
+              partTypes={Object.fromEntries(doc.components.map((c) => [c.id, c.type]))}
+              running={!!live}
+              selected={shownFinding}
+              onSelect={showFinding}
+              onFix={readOnly ? undefined : applyFix}
+            />
+            {!readOnly && (
+              <WireHintsPanel
+                doc={doc}
+                hints={wireHintList}
+                dismissed={dismissedHints}
+                onDismiss={dismissHint}
+                onRestore={restoreHint}
+                selected={shownHint}
+                onSelect={showHint}
+                convention={wireConvention}
+                onConventionChange={setWireConvention}
+                onTidy={startTidy}
+              />
+            )}
+          </div>
         ) : shownDock === 'meter' ? (
           <Multimeter
             doc={doc}
@@ -1166,6 +1220,12 @@ function Workspace({
         }),
       circuit &&
         cmd('paste', t('shell:palette.paste'), () => void pasteParts(editor), { shortcut: 'Ctrl+V' }),
+      editing &&
+        circuit &&
+        cmd('tidy', t('editor:tidy.title'), startTidy, {
+          disabled: doc.wires.length === 0,
+          keywords: ['tidy', 'wires', 'clean', 'route', 'colour', 'color', 'مرتب', 'سیم'],
+        }),
       ...dockTabs.map((v) =>
         cmd(`dock:${v}`, t('shell:palette.showPanel', { name: t(`shell:editor.dock.${v}`) }), () =>
           openDock(v),

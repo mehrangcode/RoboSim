@@ -15,16 +15,7 @@ export interface View {
 export const MIN_K = 0.6;
 export const MAX_K = 40;
 
-export const WIRE_COLORS: Readonly<Record<string, string>> = {
-  red: '#dc2626',
-  black: '#111827',
-  yellow: '#eab308',
-  green: '#16a34a',
-  blue: '#2563eb',
-  orange: '#ea580c',
-  white: '#e5e7eb',
-  purple: '#9333ea',
-};
+export { WIRE_COLORS } from './wire-convention.js';
 
 /** Bounding box of the board and every part (document mm). */
 export function contentBox(doc: ProjectDocument): Box {

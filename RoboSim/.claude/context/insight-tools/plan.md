@@ -17,7 +17,7 @@ Technical-Design §18.<n> and the Release-Plan IT table row before starting.
 - [x] IT-4 — Power budget and battery life · FR-SIM-15 · US-SIM-11 · TD §18.4 · after IT-2
 - [x] IT-5 — Serial log export and diff · FR-SIM-21 · US-SIM-17 · TD §18.5
 - [x] IT-6 — Find a part by function (ADR-028 manifest extensions) · FR-CIR-12 · US-CIR-09 · TD §18.6
-- [ ] IT-7 — Wiring hints and auto-tidy · FR-CIR-11 · US-CIR-08 · TD §18.7
+- [x] IT-7 — Wiring hints and auto-tidy · FR-CIR-11 · US-CIR-08 · TD §18.7
 - [ ] IT-8 — Damage post-mortem · FR-SIM-16 · US-SIM-12 · TD §18.8 · after IT-2, IT-3
 - [ ] IT-9 — Time-travel scrubber (ADR-027) · FR-SIM-17 · US-SIM-13 · TD §18.9
 - [ ] IT-10 — Ghost run and A/B · FR-ARN-13 · US-ARN-09 · TD §18.10

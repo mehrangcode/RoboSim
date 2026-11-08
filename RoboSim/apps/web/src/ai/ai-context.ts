@@ -1,5 +1,5 @@
-import { CircuitNets } from '@robosim/circuit-canvas';
-import type { BuildDiagnostic, ChatContext, PinRef, ProjectDocument } from '@robosim/shared';
+import { namedNets } from '@robosim/circuit-canvas';
+import type { BuildDiagnostic, ChatContext, ProjectDocument } from '@robosim/shared';
 import {
   decodeSerial,
   type ChallengeNodeView,
@@ -13,30 +13,9 @@ import {
  * findings, compiler diagnostics and a short summary of the run. The server trims it to its token budget.
  */
 
-const pinKey = (p: PinRef): string => `${p.part}:${p.pin}`;
-
 /** Electrical nets that touch a wire or a seated leg (breadboard rows included), largest first. */
 export function netsOf(doc: ProjectDocument): string[][] {
-  const nets = new CircuitNets(doc);
-  const boards = new Set(
-    doc.components.filter((c) => c.type.startsWith('passive.breadboard')).map((c) => c.id),
-  );
-  const hole = (key: string): boolean => boards.has(key.slice(0, key.indexOf(':')));
-  const seen = new Set<string>();
-  const out: string[][] = [];
-  const ends: PinRef[] = [
-    ...doc.wires.flatMap((w) => [w.from, w.to]),
-    ...doc.components.flatMap((c) => Object.keys(c.seats ?? {}).map((pin) => ({ part: c.id, pin }))),
-  ];
-  for (const end of ends) {
-    if (seen.has(pinKey(end))) continue;
-    const members = [...new Set([end, ...nets.connectedTo(end)].map(pinKey))];
-    for (const m of members) seen.add(m);
-    // Breadboard holes are wiring, not destinations: keep them only when nothing else names the net.
-    const named = members.every(hole) ? members : members.filter((m) => !hole(m));
-    if (named.length > 1) out.push(named.sort());
-  }
-  return out.sort((a, b) => b.length - a.length).slice(0, 300);
+  return namedNets(doc).slice(0, 300);
 }
 
 /** Last lines the sketch printed, decoded at the rate it transmits at. */

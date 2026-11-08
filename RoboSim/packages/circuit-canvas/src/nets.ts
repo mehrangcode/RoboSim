@@ -37,6 +37,11 @@ export class CircuitNets {
     }
   }
 
+  /** Every net with its pins (each pin that touches a wire, a seat, a part-internal link or the board ground). */
+  nets(): readonly (readonly PinRef[])[] {
+    return [...this.#members.values()];
+  }
+
   /** Every pin on the same net as `pin` (itself included). */
   connectedTo(pin: PinRef): readonly PinRef[] {
     return this.#parent.has(key(pin)) ? (this.#members.get(this.#find(key(pin))) ?? [pin]) : [pin];

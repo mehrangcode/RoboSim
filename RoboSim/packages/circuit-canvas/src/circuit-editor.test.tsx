@@ -6,7 +6,7 @@ import type { i18n as I18n } from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { CircuitEditor } from './circuit-editor.js';
-import { addComponent, blankProject } from './document.js';
+import { addComponent, addWire, blankProject } from './document.js';
 import { PITCH } from './geometry.js';
 import { normalizeSearch } from './search.js';
 import { useCircuitEditor, type CircuitEditorState } from './use-circuit-editor.js';
@@ -53,6 +53,53 @@ describe('circuit editor', () => {
     await user.clear(screen.getByRole('searchbox'));
     await user.type(screen.getByRole('searchbox'), 'مقاومت');
     expect(within(list).getByRole('button', { name: 'Add Resistor' })).toBeInTheDocument();
+  });
+
+  it('Tidy previews the new routes, applies them as one step, and one undo restores the document (US-CIR-08 AC2/AC3)', async () => {
+    let doc = addComponent(blankProject('t', ''), 'actuator.led', [40 * PITCH, 4 * PITCH]).doc;
+    doc = addWire(
+      doc,
+      { part: 'board', pin: '5V' },
+      { part: 'led1', pin: 'a' },
+      [
+        [20, 60],
+        [90, 5],
+      ],
+      'black',
+    ).doc;
+    doc = addWire(doc, { part: 'board', pin: 'GND1' }, { part: 'led1', pin: 'k' }, [], 'red').doc;
+    const { editor, container } = setup(doc);
+    const user = userEvent.setup();
+    const before = editor().doc;
+    await user.click(screen.getByRole('button', { name: /^Tidy wires/ }));
+    const bar = screen.getByRole('region', { name: 'Tidy wires' });
+    expect(within(bar).getByRole('status')).toHaveTextContent('Wires changing: 2');
+    expect(container.querySelectorAll('[data-tidy-preview]')).toHaveLength(2);
+    expect(editor().doc).toBe(before);
+    await user.click(within(bar).getByRole('button', { name: 'Apply' }));
+    expect(screen.queryByRole('region', { name: 'Tidy wires' })).toBeNull();
+    expect(editor().doc.wires.map((w) => w.color)).toEqual(['red', 'black']);
+    expect(editor().doc.wires[0]?.points.length).toBeLessThanOrEqual(2);
+    expect(editor().doc.wires.map((w) => [w.from, w.to])).toEqual(before.wires.map((w) => [w.from, w.to]));
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(editor().doc).toEqual(before);
+  });
+
+  it('Tidy on a selection only touches its wires; Cancel changes nothing', async () => {
+    let doc = addComponent(blankProject('t', ''), 'actuator.led', [40 * PITCH, 4 * PITCH]).doc;
+    doc = addWire(doc, { part: 'board', pin: '5V' }, { part: 'led1', pin: 'a' }, [], 'black').doc;
+    doc = addWire(doc, { part: 'board', pin: 'GND1' }, { part: 'led1', pin: 'k' }, [], 'red').doc;
+    const { editor } = setup(doc);
+    const user = userEvent.setup();
+    act(() => editor().setSelection({ parts: [], wire: 'w2' }));
+    await user.click(screen.getByRole('button', { name: /^Tidy wires/ }));
+    const bar = screen.getByRole('region', { name: 'Tidy wires' });
+    expect(bar).toHaveTextContent('Selected wires only (1)');
+    await user.click(within(bar).getByRole('button', { name: 'Cancel' }));
+    expect(editor().doc).toBe(doc);
+    await user.click(screen.getByRole('button', { name: /^Tidy wires/ }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(editor().doc.wires.map((w) => w.color)).toEqual(['black', 'black']);
   });
 
   it('draws a wire from a board pin to a part pin with a bend, then undoes it', () => {
